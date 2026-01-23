@@ -5236,6 +5236,19 @@ void ScriptEngine::init( void )
 	curTemplate->m_numUiStrings = 1;
 	curTemplate->m_uiStrings[0] = "Show Weather = ";
 
+	curTemplate = &m_conditionTemplates[Condition::RELATION_IS];
+	curTemplate->m_internalName = "RELATION_IS";
+	curTemplate->m_uiName = "Alliance/Check the relation of two players.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "Player ";
+	curTemplate->m_uiStrings[1] = "'s relation is ";
+	curTemplate->m_uiStrings[2] = " to ";
+
+
 	Int i;
 	for (i=0; i<Condition::NUM_ITEMS; i++) {
 		AsciiString str;
