@@ -2718,6 +2718,18 @@ Bool ScriptConditions::evaluatePlayerLostObjectType(Parameter *pPlayerParm, Para
 	return (sumOfObjs < currentCount);
 }
 
+
+Bool ScriptConditions::evaluatePlayerRelation(const AsciiString& playerSrcName, Int relationType, const AsciiString& playerDstName)
+{
+	Player* pPlayerSrcName = TheScriptEngine->getPlayerFromAsciiString(playerSrcName);
+	Player* pPlayerDstName = TheScriptEngine->getPlayerFromAsciiString(playerDstName);
+
+	Team* pTeamDst = pPlayerDstName->getDefaultTeam();
+
+	if (pPlayerSrcName->getRelationship(pTeamDst) == relationType) { return true; }
+	return false;
+}
+
 //-------------------------------------------------------------------------------------------------
 /** Evaluate a condition */
 //-------------------------------------------------------------------------------------------------
@@ -2981,6 +2993,10 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 		case Condition::PLAYER_LOST_OBJECT_TYPE:
 			return evaluatePlayerLostObjectType(pCondition->getParameter(0), pCondition->getParameter(1));
 
+
+
+		case Condition::RELATION_IS:
+			return evaluatePlayerRelation(pCondition->getParameter(0)->getString(), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2)->getString());
 
 	}
 }

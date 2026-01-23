@@ -971,6 +971,15 @@ public:
 		START_POSITION_IS,											// True if our start position matches.
 		NAMED_HAS_FREE_CONTAINER_SLOTS,					///< Kris -- Checks if any given container has any free slots.
 
+
+
+
+
+		RELATION_IS,
+
+
+
+
 		NUM_ITEMS		 // Always the last condition.
 	};
 
