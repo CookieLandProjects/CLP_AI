@@ -178,10 +178,21 @@ protected:
 	Bool evaluateSkirmishSupplySourceSafe(Condition *pCondition, Parameter *pSkirmishPlayerParm, Parameter *pMinAmountOfSupplies );
 	Bool evaluateSkirmishSupplySourceAttacked(Parameter *pSkirmishPlayerParm );
 	Bool evaluateSkirmishStartPosition(Parameter *pSkirmishPlayerParm, Parameter *startNdx );
-	Bool evaluatePlayerRelation(const AsciiString& playerSrcName, Int relationType, const AsciiString& playerDstName);
-
 	// Stubs
-	Bool evaluateMissionAttempts(Parameter *pPlayerParm, Parameter *pComparisonParm, Parameter *pAttemptsParm);
+	Bool evaluateMissionAttempts(Parameter* pPlayerParm, Parameter* pComparisonParm, Parameter* pAttemptsParm);
 
+	//-------------------------------------------------------------------------------------------------
+	//-------------------------------  OUR SCRIPT CONDITION ADDITIONS  --------------------------------
+	//-------------------------------------------------------------------------------------------------
+
+	Bool evaluatePlayerRelation(const AsciiString& playerSrcName, Int relationType, const AsciiString& playerDstName);
+  Bool evaluateEmptySpot(Parameter* pStartNdx);
+	Bool evaluateNeighbouringSpot(Parameter* pPlayerParm, Parameter* pStartNdx);
+	Bool evaluateNeighbouringSpotsEmpty(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pCount);
+	Bool evaluateClosestEnemyUnit(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pDistanceParm);
+
+	//-------------------------------------------------------------------------------------------------
+	//------------------------------ OUR SCRIPT CONDITION ADDITIONS END -------------------------------
+	//-------------------------------------------------------------------------------------------------
 
 };
