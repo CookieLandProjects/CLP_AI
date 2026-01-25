@@ -973,13 +973,20 @@ public:
 
 
 
+		//-------------------------------------------------------------------------------------------------
+		//-------------------------------  OUR SCRIPT CONDITION ADDITIONS  --------------------------------
+		//-------------------------------------------------------------------------------------------------
 
+    RELATION_IS,														// True if the relation between two players is as specified.
+    SPOT_EMPTY,															// True if a specified spot is empty.
+    SPOT_NEIGHBOURING,											// True if the index of a specified spot is neighbouring the player.
+    NEIGHBOURING_SPOTS_EMPTY,								// True if <comparison> amount of neighbouring spots are empty.
+    CLOSEST_ENEMY_UNIT_DISTANCE,						// True if the distance to the closest enemy unit compares to a value.
+    STARTING_CASH_COMPARE,								  // True if the player's starting cash compares to a value.
 
-		RELATION_IS,
-
-
-
-
+		//-------------------------------------------------------------------------------------------------
+		//------------------------------ OUR SCRIPT CONDITION ADDITIONS END -------------------------------
+		//-------------------------------------------------------------------------------------------------
 		NUM_ITEMS		 // Always the last condition.
 	};
 

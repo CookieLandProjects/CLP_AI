@@ -5236,6 +5236,14 @@ void ScriptEngine::init( void )
 	curTemplate->m_numUiStrings = 1;
 	curTemplate->m_uiStrings[0] = "Show Weather = ";
 
+
+
+
+
+	//-------------------------------------------------------------------------------------------------
+	//-------------------------------  OUR SCRIPT CONDITION ADDITIONS  --------------------------------
+	//-------------------------------------------------------------------------------------------------
+
 	curTemplate = &m_conditionTemplates[Condition::RELATION_IS];
 	curTemplate->m_internalName = "RELATION_IS";
 	curTemplate->m_uiName = "Alliance/Check the relation of two players.";
@@ -5247,6 +5255,42 @@ void ScriptEngine::init( void )
 	curTemplate->m_uiStrings[0] = "Player ";
 	curTemplate->m_uiStrings[1] = "'s relation is ";
 	curTemplate->m_uiStrings[2] = " to ";
+
+	curTemplate = &m_conditionTemplates[Condition::SPOT_EMPTY];
+	curTemplate->m_internalName = "SPOT_EMPTY";
+	curTemplate->m_uiName = "Skirmish/Check whether spot is empty.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::INT;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = "Spot (Player_N_Start) ";
+	curTemplate->m_uiStrings[1] = " is not a starting point for any player.";
+
+	curTemplate = &m_conditionTemplates[Condition::SPOT_NEIGHBOURING];
+	curTemplate->m_internalName = "SPOT_NEIGHBOURING";
+	curTemplate->m_uiName = "Skirmish/Check whether spot is neighbouring the player.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = "Player ";
+	curTemplate->m_uiStrings[1] = " is neighbouring spot (Player_N_Start) ";
+	
+	curTemplate = &m_conditionTemplates[Condition::NEIGHBOURING_SPOTS_EMPTY];
+	curTemplate->m_internalName = "NEIGHBOURING_SPOTS_EMPTY";
+	curTemplate->m_uiName = "Skirmish/Check if N number of neighbouring spots are empty.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::INT;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = "Player ";  
+	curTemplate->m_uiStrings[1] = " has ";
+  curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = " empty neighbouring spots.";
+
+	//-------------------------------------------------------------------------------------------------
+	//------------------------------ OUR SCRIPT CONDITION ADDITIONS END -------------------------------
+	//-------------------------------------------------------------------------------------------------
 
 
 	Int i;

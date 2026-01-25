@@ -2719,16 +2719,212 @@ Bool ScriptConditions::evaluatePlayerLostObjectType(Parameter *pPlayerParm, Para
 }
 
 
+
+
+
+//-------------------------------------------------------------------------------------------------
+//-------------------------------  OUR SCRIPT CONDITION ADDITIONS  --------------------------------
+//-------------------------------------------------------------------------------------------------
+
+
 Bool ScriptConditions::evaluatePlayerRelation(const AsciiString& playerSrcName, Int relationType, const AsciiString& playerDstName)
 {
 	Player* pPlayerSrcName = TheScriptEngine->getPlayerFromAsciiString(playerSrcName);
 	Player* pPlayerDstName = TheScriptEngine->getPlayerFromAsciiString(playerDstName);
 
+  if (!pPlayerSrcName || !pPlayerDstName) {
+		return false;
+	}
+  //use the default team to get an indirect relationship between players
 	Team* pTeamDst = pPlayerDstName->getDefaultTeam();
 
-	if (pPlayerSrcName->getRelationship(pTeamDst) == relationType) { return true; }
+	return pPlayerSrcName->getRelationship(pTeamDst) == relationType;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateEmptySpot(Parameter* pStartNdx)
+{
+	Int ndx = pStartNdx->getInt() - 1;
+	if (ndx >= 0)
+	{
+		Int pPlayerCount = ThePlayerList->getPlayerCount();
+    //iterate through all players
+		// i=2 because player 0 is "neutral" & player 1 is "PlyrCivilian".
+		// playerCount-1 to skip any possible "observer" player at the end.
+		for (int i = 2; i < pPlayerCount - 1; i++)
+		{
+			Player* pPlayers = ThePlayerList->getNthPlayer(i);
+			if (pPlayers->getMpStartIndex() == ndx)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
 	return false;
 }
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateNeighbouringSpot(Parameter* pPlayerParm, Parameter* pStartNdx)
+{
+  Player* player = playerFromParam(pPlayerParm);
+	if (!player || pStartNdx->getInt() < 1 || pStartNdx->getInt() == player->getMpStartIndex() + 1) { return false; }
+
+  //format the waypoint name for this player's start position
+	AsciiString pSpot;
+  pSpot.format("Player_%d_Start", player->getMpStartIndex() + 1);
+
+  Waypoint* pWay = TheTerrainLogic->getWaypointByName(pSpot);
+	if (!pWay) { return false; }
+
+	//iterate through all player start waypoints to find the closest one
+	Coord3D pCoords = *pWay->getLocation();
+	Real minDist = FLT_MAX;
+
+	for (Waypoint* iWay = TheTerrainLogic->getFirstWaypoint(); iWay; iWay = iWay->getNext())
+	{
+		const AsciiString& name = iWay->getName();
+		if (name.startsWith("Player_") && name.endsWith("_Start"))
+		{
+			if (iWay != pWay)
+			{
+				Coord3D cCoords = *iWay->getLocation();
+				Real dx = pCoords.x - cCoords.x;
+				Real dy = pCoords.y - cCoords.y;
+				Real dist = sqrtf(dx * dx + dy * dy);
+
+				if (dist < minDist) { minDist = dist; }
+			}
+		}
+	}
+  //if the closest distance still is FLT_MAX, then this is no skirmish map.
+	if (minDist == FLT_MAX) { return false; }
+
+	// consider neighbouring if within 1.5 times the closest distance.
+	minDist *= 1.5f;
+
+	//create a Waypoint for the start position to check against
+	AsciiString targetName;
+	targetName.format("Player_%d_Start", pStartNdx->getInt());
+	Waypoint* target = TheTerrainLogic->getWaypointByName(targetName);
+	if (!target) { return false; }
+
+	Coord3D tCoords = *target->getLocation();
+	Real cX = pCoords.x - tCoords.x;
+	Real cY = pCoords.y - tCoords.y;
+	Real targetDist = sqrtf(cX * cX + cY * cY);
+
+	return targetDist <= minDist;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateNeighbouringSpotsEmpty(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pCountParm)
+{
+  Player* player = playerFromParam(pPlayerParm);
+	Int playerCount = ThePlayerList->getPlayerCount();
+  if (!player || !playerCount) { return false; }
+
+	AsciiString pSpot;
+	pSpot.format("Player_%d_Start", player->getMpStartIndex() + 1);
+  Waypoint* pWay = TheTerrainLogic->getWaypointByName(pSpot);
+  if (!pWay) { return false; }
+
+
+  Coord3D pCoords = *pWay->getLocation();
+  Real minDist = FLT_MAX;
+	//iterate through all player start waypoints to find the closest one
+	for (Waypoint* iWay = TheTerrainLogic->getFirstWaypoint(); iWay; iWay = iWay->getNext())
+	{
+		const AsciiString& name = iWay->getName();
+		if (name.startsWith("Player_") && name.endsWith("_Start"))
+		{
+			if (iWay != pWay)
+			{
+				Coord3D cCoords = *iWay->getLocation();
+				Real dx = pCoords.x - cCoords.x;
+				Real dy = pCoords.y - cCoords.y;
+				Real dist = sqrtf(dx * dx + dy * dy);
+				if (dist < minDist)
+				{
+					minDist = dist;
+				}
+			}
+		}
+   }
+
+	std::vector<Waypoint*> neighbouringWaypoints;
+
+  // if the closest distance still is FLT_MAX, then this is no skirmish map.
+  if (minDist == FLT_MAX) { return false; }
+
+  // consider neighbouring if within 1.5 times the closest distance.
+  minDist *= 1.5f;
+
+  //find all neighbouring waypoints
+  for (Waypoint* iWay = TheTerrainLogic->getFirstWaypoint(); iWay; iWay = iWay->getNext())
+	{
+		const AsciiString& name = iWay->getName();
+		if (name.startsWith("Player_") && name.endsWith("_Start"))
+		{
+			if (iWay != pWay)
+			{
+				Coord3D cCoords = *iWay->getLocation();
+				Real dx = pCoords.x - cCoords.x;
+				Real dy = pCoords.y - cCoords.y;
+				Real dist = sqrtf(dx * dx + dy * dy);
+				if (dist <= minDist)
+				{
+					neighbouringWaypoints.push_back(iWay);
+				}
+			}
+		}
+  }
+	
+  // Make sure that the newly found neighbouring starting points are *indeed* empty.
+	// i=2 because player 0 is "neutral" & player 1 is "PlyrCivilian".
+  // playerCount-1 to skip any possible "observer" player at the end.
+	for (int i = 2; i < playerCount - 1; i++) {
+		Int pIndex = ThePlayerList->getNthPlayer(i)->getMpStartIndex() + 1;
+		AsciiString tName;
+		tName.format("Player_%d_Start", pIndex);
+
+		for (int j = neighbouringWaypoints.size() - 1; j >= 0; j--) {
+			AsciiString sName = neighbouringWaypoints[j]->getName();
+			if (sName == tName) {
+				neighbouringWaypoints.erase(neighbouringWaypoints.begin() + j);
+			}
+		}
+	}
+
+  //compare the new size of the neighbouring EMPTY waypoints with the given count
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:			return neighbouringWaypoints.size() < pCountParm;
+	case Parameter::LESS_EQUAL:			return neighbouringWaypoints.size() <= pCountParm;
+	case Parameter::EQUAL:					return neighbouringWaypoints.size() == pCountParm;
+	case Parameter::GREATER_EQUAL:	return neighbouringWaypoints.size() >= pCountParm;
+	case Parameter::GREATER:				return neighbouringWaypoints.size() > pCountParm;
+	case Parameter::NOT_EQUAL:			return neighbouringWaypoints.size() != pCountParm;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateClosestEnemyUnit(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pDistanceParm)
+{
+  Player* player = playerFromParam(pPlayerParm);
+  if (!player) { return false; }
+	return false;
+}
+
+
+//-------------------------------------------------------------------------------------------------
+//------------------------------ OUR SCRIPT CONDITION ADDITIONS END -------------------------------
+//-------------------------------------------------------------------------------------------------
+
+
+
+
 
 //-------------------------------------------------------------------------------------------------
 /** Evaluate a condition */
@@ -2997,7 +3193,13 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 
 		case Condition::RELATION_IS:
 			return evaluatePlayerRelation(pCondition->getParameter(0)->getString(), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2)->getString());
-
+		case Condition::SPOT_EMPTY:
+      return evaluateEmptySpot(pCondition->getParameter(0));
+    case Condition::SPOT_NEIGHBOURING:
+      return evaluateNeighbouringSpot(pCondition->getParameter(0), pCondition->getParameter(1));
+		case Condition::NEIGHBOURING_SPOTS_EMPTY:
+			return evaluateNeighbouringSpotsEmpty(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getInt());
+		
 	}
 }
 

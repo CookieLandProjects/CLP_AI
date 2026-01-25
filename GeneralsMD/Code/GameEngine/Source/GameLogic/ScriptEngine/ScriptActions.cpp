@@ -6534,6 +6534,7 @@ void ScriptActions::doNamedSetTrainHeld( const AsciiString &locoName, const Bool
 }
 
 
+
 //-------------------------------------------------------------------------------------------------
 /** Execute an action */
 //-------------------------------------------------------------------------------------------------
@@ -7697,6 +7698,5 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 		case ScriptAction::DISABLE_OBJECT_SOUND:
 			doEnableObjectSound(pAction->getParameter(0)->getString(), false);
 			return;
-
 	}
 }
