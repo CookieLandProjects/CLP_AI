@@ -5236,6 +5236,7 @@ void ScriptEngine::init( void )
 	curTemplate->m_numUiStrings = 1;
 	curTemplate->m_uiStrings[0] = "Show Weather = ";
 
+<<<<<<< HEAD
 
 
 
@@ -5293,6 +5294,8 @@ void ScriptEngine::init( void )
 	//-------------------------------------------------------------------------------------------------
 
 
+=======
+>>>>>>> parent of 9e6172a12 (Addition of Bool ScriptConditions::evaluatePlayerRelation)
 	Int i;
 	for (i=0; i<Condition::NUM_ITEMS; i++) {
 		AsciiString str;

@@ -971,6 +971,7 @@ public:
 		START_POSITION_IS,											// True if our start position matches.
 		NAMED_HAS_FREE_CONTAINER_SLOTS,					///< Kris -- Checks if any given container has any free slots.
 
+<<<<<<< HEAD
 
 
 		//-------------------------------------------------------------------------------------------------
@@ -987,6 +988,8 @@ public:
 		//-------------------------------------------------------------------------------------------------
 		//------------------------------ OUR SCRIPT CONDITION ADDITIONS END -------------------------------
 		//-------------------------------------------------------------------------------------------------
+=======
+>>>>>>> parent of 9e6172a12 (Addition of Bool ScriptConditions::evaluatePlayerRelation)
 		NUM_ITEMS		 // Always the last condition.
 	};
 

@@ -178,6 +178,11 @@ protected:
 	Bool evaluateSkirmishSupplySourceSafe(Condition *pCondition, Parameter *pSkirmishPlayerParm, Parameter *pMinAmountOfSupplies );
 	Bool evaluateSkirmishSupplySourceAttacked(Parameter *pSkirmishPlayerParm );
 	Bool evaluateSkirmishStartPosition(Parameter *pSkirmishPlayerParm, Parameter *startNdx );
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> parent of 9e6172a12 (Addition of Bool ScriptConditions::evaluatePlayerRelation)
 	// Stubs
 	Bool evaluateMissionAttempts(Parameter* pPlayerParm, Parameter* pComparisonParm, Parameter* pAttemptsParm);
 

@@ -2718,6 +2718,7 @@ Bool ScriptConditions::evaluatePlayerLostObjectType(Parameter *pPlayerParm, Para
 	return (sumOfObjs < currentCount);
 }
 
+<<<<<<< HEAD
 
 
 
@@ -2764,6 +2765,8 @@ Bool ScriptConditions::evaluateEmptySpot(Parameter* pStartNdx)
 	return false;
 }
 
+=======
+>>>>>>> parent of 9e6172a12 (Addition of Bool ScriptConditions::evaluatePlayerRelation)
 //-------------------------------------------------------------------------------------------------
 Bool ScriptConditions::evaluateNeighbouringSpot(Parameter* pPlayerParm, Parameter* pStartNdx)
 {
@@ -3190,6 +3193,7 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 			return evaluatePlayerLostObjectType(pCondition->getParameter(0), pCondition->getParameter(1));
 
 
+<<<<<<< HEAD
 
 		case Condition::RELATION_IS:
 			return evaluatePlayerRelation(pCondition->getParameter(0)->getString(), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2)->getString());
@@ -3200,6 +3204,8 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 		case Condition::NEIGHBOURING_SPOTS_EMPTY:
 			return evaluateNeighbouringSpotsEmpty(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getInt());
 		
+=======
+>>>>>>> parent of 9e6172a12 (Addition of Bool ScriptConditions::evaluatePlayerRelation)
 	}
 }
 
