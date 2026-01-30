@@ -435,6 +435,17 @@ void ScriptEngine::addConditionTemplateInfo( Template *actionTemplate)
 //-------------------------------------------------------------------------------------------------
 ScriptEngine::ScriptEngine():
 m_numCounters(0),
+
+//-------------------------------------------------------------------------------------------------
+//------------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS ---------------------------------
+//-------------------------------------------------------------------------------------------------
+
+m_numKDRatios(0),
+
+//-------------------------------------------------------------------------------------------------
+//----------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS END -------------------------------
+//-------------------------------------------------------------------------------------------------
+
 m_numFlags(0),
 m_callingTeam(nullptr),
 m_callingObject(nullptr),
@@ -5236,14 +5247,104 @@ void ScriptEngine::init( void )
 	curTemplate->m_numUiStrings = 1;
 	curTemplate->m_uiStrings[0] = "Show Weather = ";
 
-<<<<<<< HEAD
-
 
 
 
 	//-------------------------------------------------------------------------------------------------
-	//-------------------------------  OUR SCRIPT CONDITION ADDITIONS  --------------------------------
+	//--------------------------------- @CLP_AI SCRIPT UI ADDITIONS -----------------------------------
 	//-------------------------------------------------------------------------------------------------
+
+	curTemplate = &m_actionTemplates[ScriptAction::SET_COUNTER_RANDOM];
+	curTemplate->m_internalName = "SET_COUNTER_RANDOM";
+	curTemplate->m_uiName = "Scripting - Counters/Set counter to a value -- random";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::COUNTER;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_parameters[2] = Parameter::INT;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = "Set Counter ";
+	curTemplate->m_uiStrings[1] = " to a value between ";
+	curTemplate->m_uiStrings[2] = " and ";
+	curTemplate->m_uiStrings[3] = " .";
+
+	curTemplate = &m_actionTemplates[ScriptAction::SET_KD_RATIO];
+	curTemplate->m_internalName = "SET_KD_RATIOR";
+	curTemplate->m_uiName = "Scripting - KD-Ratio/Set KD Ratio to a value";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::KD_RATIO;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_parameters[2] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = "Set ";
+	curTemplate->m_uiStrings[1] = " to ";
+	curTemplate->m_uiStrings[2] = " kills and ";
+	curTemplate->m_uiStrings[3] = " deaths ";
+
+
+	curTemplate = &m_conditionTemplates[Condition::KD_RATIO];
+	curTemplate->m_internalName = "KD_RATIO";
+	curTemplate->m_uiName = "Scripting/KD-Ratio compared to a value.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::KD_RATIO;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "KD-Ratio ";
+	curTemplate->m_uiStrings[1] = " IS ";
+	curTemplate->m_uiStrings[2] = " \nNOTE: Due to the way floats are stored, EQUALS does not really work.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::INCREMENT_KD_RATIO_KILLS];
+	curTemplate->m_internalName = "INCREMENT_KD_RATIO_KILLS";
+	curTemplate->m_uiName = "Scripting - KD-Ratio/Increment KD-Ratio kills.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::REAL;
+	curTemplate->m_parameters[1] = Parameter::KD_RATIO;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "Add ";
+	curTemplate->m_uiStrings[1] = " to ratio ";
+	curTemplate->m_uiStrings[2] = " 's kills ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::DECREMENT_KD_RATIO_KILLS];
+	curTemplate->m_internalName = "DECREMENT_KD_RATIO_KILLS";
+	curTemplate->m_uiName = "Scripting - KD-Ratio/Decrement KD-Ratio kills.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::REAL;
+	curTemplate->m_parameters[1] = Parameter::KD_RATIO;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "Subtract ";
+	curTemplate->m_uiStrings[1] = " from ratio ";
+	curTemplate->m_uiStrings[2] = " 's deaths. ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::INCREMENT_KD_RATIO_DEATHS];
+	curTemplate->m_internalName = "INCREMENT_KD_RATIO_DEATHS";
+	curTemplate->m_uiName = "Scripting - KD-Ratio/Increment KD-Ratio deaths.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::REAL;
+	curTemplate->m_parameters[1] = Parameter::KD_RATIO;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "Add ";
+	curTemplate->m_uiStrings[1] = " to ratio ";
+	curTemplate->m_uiStrings[2] = " 's deaths ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::DECREMENT_KD_RATIO_DEATHS];
+	curTemplate->m_internalName = "DECREMENT_KD_RATIO_DEATHS";
+	curTemplate->m_uiName = "Scripting - KD-Ratio/Decrement KD-Ratio deaths.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::REAL;
+	curTemplate->m_parameters[1] = Parameter::KD_RATIO;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "Subtract ";
+	curTemplate->m_uiStrings[1] = " from ratio ";
+	curTemplate->m_uiStrings[2] = " 's kills. ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_SURRENDER];
+	curTemplate->m_internalName = "PLAYER_SURRENDER";
+	curTemplate->m_uiName = "Skirmish Only/Surrender all assets to an allied player if existing; otherwise quit.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " surrenders.";
 
 	curTemplate = &m_conditionTemplates[Condition::RELATION_IS];
 	curTemplate->m_internalName = "RELATION_IS";
@@ -5289,13 +5390,388 @@ void ScriptEngine::init( void )
   curTemplate->m_uiStrings[2] = " ";
 	curTemplate->m_uiStrings[3] = " empty neighbouring spots.";
 
+	curTemplate = &m_conditionTemplates[Condition::STARTING_CASH_COMPARE];
+	curTemplate->m_internalName = "STARTING_CASH_COMPARE";
+	curTemplate->m_uiName = "Skirmish/Starting cash is a value.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::COMPARISON;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "Starting Cash is ";
+	curTemplate->m_uiStrings[1] = " ";
+	curTemplate->m_uiStrings[2] = " .";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILDS_UNNAMED];
+	curTemplate->m_internalName = "PLAYER_BUILDS_UNIT";
+	curTemplate->m_uiName = "Player/AI/Build an unnamed unit.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "Have AI ";
+	curTemplate->m_uiStrings[1] = " build a ";
+	curTemplate->m_uiStrings[2] = ".";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_RELATIVE];
+	curTemplate->m_internalName = "TEAM_MOVE_RELATIVE";
+	curTemplate->m_uiName = "Team/Move/Team moves relative to its position";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::COORD3D;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = "Team ";
+	curTemplate->m_uiStrings[1] = " moves relative to its position by ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::UNIT_MOVE_RELATIVE];
+	curTemplate->m_internalName = "UNIT_MOVE_RELATIVE";
+	curTemplate->m_uiName = "Unit/Move/Unit moves relative to its position";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::UNIT;
+	curTemplate->m_parameters[1] = Parameter::COORD3D;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = "Unit ";
+	curTemplate->m_uiStrings[1] = " moves relative to its position by ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_NEAREST_BELONGING_TO_PLAYER];
+	curTemplate->m_internalName = "TEAM_MOVE_NEAREST_BELONGING_TO_PLAYER";
+	curTemplate->m_uiName = "Team/Move/Move team towards the nearst object type belonging to a player.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will move towards the nearest ";
+	curTemplate->m_uiStrings[2] = " belonging to ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::UNIT_MOVE_NEAREST_BELONGING_TO_PLAYER];
+	curTemplate->m_internalName = "UNIT_MOVE_NEAREST_BELONGING_TO_PLAYER";
+	curTemplate->m_uiName = "Unit/Move/Move unit towards the nearst object type belonging to a player.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::UNIT;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will move towards the nearest ";
+	curTemplate->m_uiStrings[2] = " belonging to ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_AWAY_FROM_RELATION_TYPE];
+	curTemplate->m_internalName = "TEAM_MOVE_AWAY_FROM_RELATION_TYPE";
+	curTemplate->m_uiName = "Team/Move/Move team away from the nearest friendly|neutral|enemy object type.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will move ";
+	curTemplate->m_uiStrings[2] = " feet away from the nearest ";
+	curTemplate->m_uiStrings[3] = " object of type ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::UNIT_MOVE_AWAY_FROM_RELATION_TYPE];
+	curTemplate->m_internalName = "UNIT_MOVE_AWAY_FROM_RELATION_TYPE";
+	curTemplate->m_uiName = "Unit/Move/Move unit away from the nearest friendly|neutral|enemy object type.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::UNIT;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will move ";
+	curTemplate->m_uiStrings[2] = " feet away from the nearest ";
+	curTemplate->m_uiStrings[3] = " object of type ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MEET];
+	curTemplate->m_internalName = "TEAM_MEET";
+	curTemplate->m_uiName = "Team/Move/Meet and group together.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " meets at their center point.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MEET_AT_KINDOF];
+	curTemplate->m_internalName = "TEAM_MEET_AT_KINDOF";
+	curTemplate->m_uiName = "Team/Move/Meet and group together at KindOf.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::KIND_OF_PARAM;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " meets at the center point of their units with kindOf ";
+	curTemplate->m_uiStrings[2] = " .";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MEET_AT_TYPE];
+	curTemplate->m_internalName = "TEAM_MEET_AT_KINDOF";
+	curTemplate->m_uiName = "Team/Move/Meet and group together at object type.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " meets at the center point of their object type ";
+	curTemplate->m_uiStrings[2] = " .";
+
+	curTemplate = &m_conditionTemplates[Condition::CLOSEST_ENEMY_DISTANCE];
+	curTemplate->m_internalName = "CLOSEST_ENEMY_DISTANCE";
+	curTemplate->m_uiName = "Skirmish/Closest enemy unit to Player";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::RELATION;
+	curTemplate->m_parameters[1] = Parameter::SIDE;
+	curTemplate->m_parameters[2] = Parameter::COMPARISON;
+	curTemplate->m_parameters[3] = Parameter::INT;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = "The closest ";
+	curTemplate->m_uiStrings[1] = " unit to ";
+	curTemplate->m_uiStrings[2] = " 's starting point is";
+	curTemplate->m_uiStrings[3] = " ";
+	curTemplate->m_uiStrings[4] = " feet away.";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_NOT_HUNTED];
+	curTemplate->m_internalName = "PLAYER_HUNTED";
+	curTemplate->m_uiName = "Player/Owns/Player is NOT hunted.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = "Player ";
+	curTemplate->m_uiStrings[1] = " still owns construction units & has capabilities to produce them.";
+
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_LOST_TYPE_AREA];
+	curTemplate->m_internalName = "PLAYER_LOST_TYPE_AREA";
+	curTemplate->m_uiName = "Player/Destroyed/Player has lost an object of type in an area.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " has lost an object of type ";
+	curTemplate->m_uiStrings[2] = " in area ";
+	curTemplate->m_uiStrings[3] = ".";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_SIGHTED_RELATION_TYPE];
+	curTemplate->m_internalName = "TEAM_SIGHTED_RELATION_TYPE";
+	curTemplate->m_uiName = "Team/Sighted/Team has sighted a(n) friendly|neutral|enemy unit type.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " sees a(n) ";
+	curTemplate->m_uiStrings[2] = " object of type ";
+	curTemplate->m_uiStrings[3] = ".";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_USE_COMMAND_BUTTON_ABILITY_WITH_TYPE];
+	curTemplate->m_internalName = "TEAM_USE_COMMAND_BUTTON_ABILITY_WITH_TYPE";
+	curTemplate->m_uiName = "Team/CommandButton/Use command ability -- object type";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::COMMANDBUTTON_ALL_ABILITIES;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " use ";
+	curTemplate->m_uiStrings[2] = " with all objects of type ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_USE_COMMAND_BUTTON_ABILITY_ON_TEAM];
+	curTemplate->m_internalName = "TEAM_USE_COMMAND_BUTTON_ABILITY_ON_TEAM";
+	curTemplate->m_uiName = "Team/CommandButton/Use command ability -- team";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::COMMANDBUTTON_ALL_ABILITIES;
+	curTemplate->m_parameters[2] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " use ";
+	curTemplate->m_uiStrings[2] = " on team ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_MERGE_KINDOF];
+	curTemplate->m_internalName = "PLAYER_MERGE_KINDOF";
+	curTemplate->m_uiName = "Player/Merge/Merge all units with kindOf into another team.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::KIND_OF_PARAM;
+	curTemplate->m_parameters[2] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " merges all units with ";
+	curTemplate->m_uiStrings[2] = " into ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MERGE_KINDOF];
+	curTemplate->m_internalName = "TEAM_MERGE_KINDOF";
+	curTemplate->m_uiName = "Team/Merge/Merge all units with kindOf into another team.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::KIND_OF_PARAM;
+	curTemplate->m_parameters[2] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " merges all units with ";
+	curTemplate->m_uiStrings[2] = " into ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_MERGE_TYPE];
+	curTemplate->m_internalName = "PLAYER_MERGE_TYPE";
+	curTemplate->m_uiName = "Player/Merge/Merge all units of a specific type into another team.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " merges all units of type ";
+	curTemplate->m_uiStrings[2] = " into ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MERGE_TYPE];
+	curTemplate->m_internalName = "TEAM_MERGE_TYPE";
+	curTemplate->m_uiName = "Team/Merge/Merge all units of a specific type into another team.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " merges all units of type ";
+	curTemplate->m_uiStrings[2] = " into ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_DISBAND_TYPE];
+	curTemplate->m_internalName = "TEAM_DISBAND_TYPE";
+	curTemplate->m_uiName = "Team/Disband/Disband all units of a specific type.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " merges all units of type ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_DISBAND_KINDOF];
+	curTemplate->m_internalName = "TEAM_DISBAND_KINDOF";
+	curTemplate->m_uiName = "Team/Disband/Disband all units with kindOf.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::KIND_OF_PARAM;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " disbands all units with ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_DISBAND_TYPE];
+	curTemplate->m_internalName = "PLAYER_DISBAND_TYPE";
+	curTemplate->m_uiName = "Player/Disband/Disband all units of a specific type.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " disbands all units of type ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_DISBAND_KINDOF];
+	curTemplate->m_internalName = "PLAYER_DISBAND_KINDOF";
+	curTemplate->m_uiName = "Player/Disband/Disband all units with kindOf.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::KIND_OF_PARAM;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " disbands all units with ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::CREATE_TEAM_FROM_TEAMLESS];
+	curTemplate->m_internalName = "CREATE_TEAM_FROM_TEAMLESS";
+	curTemplate->m_uiName = "Player/Create/Create a new team from disbaned or teamless units.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " creates a new team with disbanded or teamless units as ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::CREATE_TEAM_FROM_TEAMLESS_KINDOF];
+	curTemplate->m_internalName = "CREATE_TEAM_FROM_TEAMLESS_KINDOF";
+	curTemplate->m_uiName = "Player/Create/Create a new team from disbaned or teamless units with kindOf.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::KIND_OF_PARAM;
+	curTemplate->m_parameters[2] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " creates a new team with disbanded or teamless units with ";
+	curTemplate->m_uiStrings[2] = " as ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::CREATE_TEAM_FROM_TEAMLESS_TYPE];
+	curTemplate->m_internalName = "CREATE_TEAM_FROM_TEAMLESS_TYPE";
+	curTemplate->m_uiName = "Player/Create/Create a new team from disbaned or teamless units of object type.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " creates a new team with disbanded or teamless units of type ";
+	curTemplate->m_uiStrings[2] = " as ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_GARRISON_BUILDINGS_WITH_MAX_NUMBER];
+	curTemplate->m_internalName = "PLAYER_GARRISON_BUILDINGS_WITH_MAX_NUMBER";
+	curTemplate->m_uiName = "Player/Garrison/Garrison nearby buildings with a maximum number.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " garrisons nearby buildings with a maximum of ";
+	curTemplate->m_uiStrings[2] = " units each.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_GARRISON_BUILDINGS_WITH_MAX_NUMBER];
+	curTemplate->m_internalName = "TEAM_GARRISON_BUILDINGS_WITH_MAX_NUMBER";
+	curTemplate->m_uiName = "Team/Garrison/Garrison nearby buildings with a maximum number.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " garrisons nearby buildings with a maximum of ";
+	curTemplate->m_uiStrings[2] = " units each.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_GARRISON_NUMBER_BUILDINGS];
+	curTemplate->m_internalName = "PLAYER_GARRISON_NUMBER_BUILDINGS";
+	curTemplate->m_uiName = "Player/Garrison/Garrison a number of nearby buildings equally.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " garrisons ";
+	curTemplate->m_uiStrings[2] = " nearby buildings equally.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_GARRISON_NUMBER_BUILDINGS];
+	curTemplate->m_internalName = "TEAM_GARRISON_NUMBER_BUILDINGS";
+	curTemplate->m_uiName = "Team/Garrison/Garrison a number of nearby buildings equally.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " garrisons ";
+	curTemplate->m_uiStrings[2] = " nearby buildings equally.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::SKIRMISH_FIRE_SPECIAL_POWER_AT_MOST_COST_ECONOMY];
+	curTemplate->m_internalName = "SKIRMISH_FIRE_SPECIAL_POWER_AT_MOST_COST_ECONOMY";
+	curTemplate->m_uiName = "Player/Special power/Special power -- fire at enemy's highest cost area, computed with secondary economy.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::SPECIAL_POWER;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " fire ";
+
+
 	//-------------------------------------------------------------------------------------------------
-	//------------------------------ OUR SCRIPT CONDITION ADDITIONS END -------------------------------
+	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
 	//-------------------------------------------------------------------------------------------------
 
 
-=======
->>>>>>> parent of 9e6172a12 (Addition of Bool ScriptConditions::evaluatePlayerRelation)
 	Int i;
 	for (i=0; i<Condition::NUM_ITEMS; i++) {
 		AsciiString str;
@@ -5336,6 +5812,23 @@ void ScriptEngine::reset( void )
 	m_numFlags = 1;
 	m_endGameTimer = -1;
 	m_closeWindowTimer = -1;
+
+//-------------------------------------------------------------------------------------------------
+//------------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS ---------------------------------
+//-------------------------------------------------------------------------------------------------
+
+	m_numKDRatios = 1;
+
+	Int n;
+	for (n = 0; n < MAX_KD_RATIOS; n++) {
+		m_KDRatios[n].valueKills = 0.0f;
+		m_KDRatios[n].valueDeaths = 0.0f;
+		m_KDRatios[n].name.clear();
+	}
+
+//-------------------------------------------------------------------------------------------------
+//----------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS END -------------------------------
+//-------------------------------------------------------------------------------------------------
 
 	m_callingTeam = nullptr;
 	m_callingObject = nullptr;
@@ -5494,6 +5987,23 @@ void ScriptEngine::newMap( void )
 		m_counters[i].isCountdownTimer = false;
 		m_counters[i].name.clear();
 	}
+
+//-------------------------------------------------------------------------------------------------
+//------------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS ---------------------------------
+//-------------------------------------------------------------------------------------------------
+
+	m_numKDRatios = 1;
+	Int n;
+	for (n = 0; n < MAX_KD_RATIOS; n++) {
+		m_KDRatios[n].valueKills = 0.0f;
+		m_KDRatios[n].valueDeaths = 0.0f;
+		m_KDRatios[n].name.clear();
+	}
+
+//-------------------------------------------------------------------------------------------------
+//----------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS END -------------------------------
+//-------------------------------------------------------------------------------------------------
+
 	m_numFlags = 1;
 	for (i=0; i<MAX_FLAGS; i++) {
 		m_flags[i].value = false;
@@ -5668,6 +6178,18 @@ void ScriptEngine::update( void )
 		for (int k = 1; k < m_numFlags; ++k) {
 			_adjustVariable(m_flags[k].name.str(), m_flags[k].value);
 		}
+	
+//-------------------------------------------------------------------------------------------------
+//------------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS ---------------------------------
+//-------------------------------------------------------------------------------------------------
+
+		for (int l = 1; l < m_numKDRatios; ++l) {
+			_adjustVariable(m_KDRatios[l].name.str(), m_KDRatios[l].valueKills, m_KDRatios[l].valueDeaths);
+		}
+
+//-------------------------------------------------------------------------------------------------
+//----------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS END -------------------------------
+//-------------------------------------------------------------------------------------------------
 	}
 #ifdef RTS_DEBUG
 	if (TheGameLogic->getFrame()==0) {
@@ -6219,7 +6741,46 @@ const TCounter *ScriptEngine::getCounter(const AsciiString& counterName)
 	return nullptr;
 }
 
+
 //-------------------------------------------------------------------------------------------------
+//------------------------------- @CLP_AI SCRIPT ACTION ADDITIONS ---------------------------------
+//-------------------------------------------------------------------------------------------------
+
+Real ScriptEngine::allocateKDRatio(const AsciiString& name)
+{
+	Int i;
+	// Note - KDRatios start at 1.  0 means not assigned.
+	for (i = 1; i < m_numKDRatios; i++) {
+		if (name == m_KDRatios[i].name) {
+			return i;
+		}
+	}
+	if (m_numKDRatios < MAX_KD_RATIOS) {
+		m_KDRatios[m_numKDRatios].name = name;
+		i = m_numKDRatios;
+		m_numKDRatios++;
+		return(i);
+	}
+	return 0; // Shouldn't ever happen.
+}
+
+//-------------------------------------------------------------------------------------------------
+const TKDRatio* ScriptEngine::getKDRatio(const AsciiString& counterName)
+{
+	Int i;
+	for (i = 1; i < m_numKDRatios; i++)
+	{
+		if (counterName == m_KDRatios[i].name)
+		{
+			return &(m_KDRatios[i]);
+		}
+	}
+	return nullptr;
+}
+//-------------------------------------------------------------------------------------------------
+//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
+//-------------------------------------------------------------------------------------------------
+
 void ScriptEngine::createNamedMapReveal(const AsciiString& revealName, const AsciiString& waypointName, Real radiusToReveal, const AsciiString& playerName)
 {
 	VecNamedRevealIt it;
@@ -6425,6 +6986,115 @@ void ScriptEngine::setCounter( ScriptAction *pAction )
 	Int value = pAction->getParameter(1)->getInt();
 	m_counters[counterNdx].value = value;
 }
+
+
+
+//-------------------------------------------------------------------------------------------------
+//------------------------------- @CLP_AI SCRIPT ACTION ADDITIONS ---------------------------------
+//-------------------------------------------------------------------------------------------------
+
+void ScriptEngine::setCounterRandom(ScriptAction* pAction, Bool random)
+{
+	Int counterNdx = pAction->getParameter(0)->getInt();
+	if (counterNdx == 0) {
+		counterNdx = allocateCounter(pAction->getParameter(0)->getString());
+		pAction->getParameter(0)->friend_setInt(counterNdx);
+	}
+	Int value = pAction->getParameter(1)->getInt();
+	if (random) {
+		Int randomValue = pAction->getParameter(2)->getInt();
+		value = GameLogicRandomValue(value, randomValue);
+	}
+	m_counters[counterNdx].value = value;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptEngine::evaluateKDRatio(Condition* pCondition)
+{
+	Int counterNdx = pCondition->getParameter(0)->getInt();
+	if (counterNdx == 0) {
+		counterNdx = allocateKDRatio(pCondition->getParameter(0)->getString());
+		pCondition->getParameter(0)->friend_setInt(counterNdx);
+	}
+	Int value = pCondition->getParameter(2)->getReal();
+	switch (pCondition->getParameter(1)->getInt()) {
+	case Parameter::LESS_THAN: return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths < value;
+	case Parameter::LESS_EQUAL: return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths <= value;
+	case Parameter::EQUAL: return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths == value;
+	case Parameter::GREATER_EQUAL: return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths >= value;
+	case Parameter::GREATER: return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths > value;
+	case Parameter::NOT_EQUAL: return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths != value;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptEngine::setKDRatio(ScriptAction* pAction)
+{
+	Int counterNdx = pAction->getParameter(0)->getInt();
+	if (counterNdx == 0) {
+		counterNdx = allocateCounter(pAction->getParameter(0)->getString());
+		pAction->getParameter(0)->friend_setInt(counterNdx);
+	}
+	Real valueKills = pAction->getParameter(1)->getReal();
+	Real valueDeaths = pAction->getParameter(2)->getReal();
+	m_KDRatios[counterNdx].valueKills = valueKills;
+	m_KDRatios[counterNdx].valueDeaths = valueDeaths;
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptEngine::addKDRatioKills(ScriptAction* pAction)
+{
+	Real valueKills = pAction->getParameter(0)->getReal();
+	Int counterNdx = pAction->getParameter(1)->getInt();
+	if (counterNdx == 0) {
+		counterNdx = allocateKDRatio(pAction->getParameter(1)->getString());
+		pAction->getParameter(1)->friend_setInt(counterNdx);
+	}
+	m_KDRatios[counterNdx].valueKills += valueKills;
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptEngine::addKDRatioDeaths(ScriptAction* pAction)
+{
+	Real valueDeaths = pAction->getParameter(0)->getReal();
+	Int counterNdx = pAction->getParameter(1)->getInt();
+	if (counterNdx == 0) {
+		counterNdx = allocateKDRatio(pAction->getParameter(1)->getString());
+		pAction->getParameter(1)->friend_setInt(counterNdx);
+	}
+	m_KDRatios[counterNdx].valueKills += valueDeaths;
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptEngine::subKDRatioKills(ScriptAction* pAction)
+{
+	Real valueKills = pAction->getParameter(0)->getReal();
+	Int counterNdx = pAction->getParameter(1)->getInt();
+	if (counterNdx == 0) {
+		counterNdx = allocateKDRatio(pAction->getParameter(1)->getString());
+		pAction->getParameter(1)->friend_setInt(counterNdx);
+	}
+	m_KDRatios[counterNdx].valueKills -= valueKills;
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptEngine::subKDRatioDeaths(ScriptAction* pAction)
+{
+	Real valueDeaths = pAction->getParameter(0)->getReal();
+	Int counterNdx = pAction->getParameter(1)->getInt();
+	if (counterNdx == 0) {
+		counterNdx = allocateKDRatio(pAction->getParameter(1)->getString());
+		pAction->getParameter(1)->friend_setInt(counterNdx);
+	}
+	m_KDRatios[counterNdx].valueKills -= valueDeaths;
+}
+
+//-------------------------------------------------------------------------------------------------
+//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
+//-------------------------------------------------------------------------------------------------
+
+
 
 //-------------------------------------------------------------------------------------------------
 /** Sets a fade. */
@@ -7120,6 +7790,7 @@ Bool ScriptEngine::evaluateCondition( Condition *pCondition )
 		case Condition::COUNTER: return evaluateCounter(pCondition);
 		case Condition::FLAG: return evaluateFlag(pCondition);
 		case Condition::TIMER_EXPIRED: return evaluateTimer(pCondition);
+		case Condition::KD_RATIO: return evaluateKDRatio(pCondition);
 	}
 }
 
@@ -7707,6 +8378,15 @@ void ScriptEngine::executeActions( ScriptAction *pActionHead )
 			case ScriptAction::ENABLE_SCRIPT: enableScript(pCurAction);break;
 			case ScriptAction::DISABLE_SCRIPT: disableScript(pCurAction);break;
 			case ScriptAction::CALL_SUBROUTINE: callSubroutine(pCurAction);break;
+
+
+
+			case ScriptAction::SET_COUNTER_RANDOM: setCounterRandom(pCurAction, true); break;
+			case ScriptAction::SET_KD_RATIO: setKDRatio(pCurAction); break;
+			case ScriptAction::INCREMENT_KD_RATIO_KILLS: addKDRatioKills(pCurAction); break;
+			case ScriptAction::INCREMENT_KD_RATIO_DEATHS: addKDRatioKills(pCurAction); break;
+			case ScriptAction::DECREMENT_KD_RATIO_KILLS: subKDRatioKills(pCurAction); break;
+			case ScriptAction::DECREMENT_KD_RATIO_DEATHS: subKDRatioKills(pCurAction); break;
 
 			// Fade operations.
 			case ScriptAction::CAMERA_FADE_ADD :
@@ -8984,6 +9664,38 @@ void ScriptEngine::xfer( Xfer *xfer )
 
 	// num counters
 	xfer->xferInt( &m_numCounters );
+
+	//-------------------------------------------------------------------------------------------------
+	//------------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS ---------------------------------
+	//-------------------------------------------------------------------------------------------------
+	
+		// KD Ratio
+	UnsignedShort kdRatiosSize = m_numKDRatios;
+	xfer->xferUnsignedShort(&kdRatiosSize);
+	if (kdRatiosSize > MAX_KD_RATIOS)
+	{
+
+		DEBUG_CRASH(("ScriptEngine::xfer - MAX_KD_RATIOS has changed size, need to version this"));
+		throw SC_INVALID_DATA;
+
+	}
+	for (i = 0; i < kdRatiosSize; ++i)
+	{
+
+		// value
+		xfer->xferReal(&m_KDRatios[i].valueKills);
+		xfer->xferReal(&m_KDRatios[i].valueDeaths);
+
+		// name
+		xfer->xferAsciiString(&m_KDRatios[i].name);
+	}
+
+	// num KDRatios
+	xfer->xferInt(&m_numKDRatios);
+
+	//-------------------------------------------------------------------------------------------------
+	//----------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS END -------------------------------
+	//-------------------------------------------------------------------------------------------------
 
 	// flags
 	UnsignedShort flagsSize = m_numFlags;

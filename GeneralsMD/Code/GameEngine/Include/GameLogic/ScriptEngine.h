@@ -92,6 +92,13 @@ struct TFlag
 	AsciiString name;
 };
 
+struct TKDRatio
+{
+	Real valueKills;
+	Real valueDeaths;
+	AsciiString name;
+};
+
 typedef std::list<AsciiString> ListAsciiString;
 typedef std::list<AsciiString>::iterator ListAsciiStringIt;
 
@@ -215,7 +222,7 @@ class ScriptEngine : public SubsystemInterface,
 {
 
 public:
-	enum {MAX_COUNTERS=256, MAX_FLAGS=256, MAX_ATTACK_PRIORITIES=256};
+	enum {MAX_COUNTERS=1024, MAX_FLAGS=1024, MAX_ATTACK_PRIORITIES=1024, MAX_KD_RATIOS=512};
 	enum TFade {FADE_NONE, FADE_SUBTRACT, FADE_ADD, FADE_SATURATE, FADE_MULTIPLY};
 	ScriptEngine();
 	virtual ~ScriptEngine();
@@ -370,6 +377,7 @@ protected:
 
 	Int allocateCounter( const AsciiString& name);
 	Int allocateFlag( const AsciiString& name);
+	
 	void executeScripts( Script *pScriptHead );
 	void executeScript( Script *pScript );
 	Script *findScript(const AsciiString& name);
@@ -419,6 +427,23 @@ protected:
 	Bool hasUnitCompletedSequentialScript( Object *object, const AsciiString& sequentialScriptName );
 	Bool hasTeamCompletedSequentialScript( Team *team, const AsciiString& sequentialScriptName );
 
+//-------------------------------------------------------------------------------------------------
+//--------------------------------- @CLP_AI SCRIPT UI ADDITIONS -----------------------------------
+//-------------------------------------------------------------------------------------------------
+
+	void setCounterRandom(ScriptAction* pAction, Bool random);
+	void setKDRatio(ScriptAction* pAction);
+	Real allocateKDRatio(const AsciiString& name);
+	const TKDRatio* getKDRatio(const AsciiString& counterName);
+	Bool evaluateKDRatio(Condition* pCondition);
+	void addKDRatioKills(ScriptAction* pAction);
+	void addKDRatioDeaths(ScriptAction* pAction);
+	void subKDRatioKills(ScriptAction* pAction);
+	void subKDRatioDeaths(ScriptAction* pAction);
+
+//-------------------------------------------------------------------------------------------------
+//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
+//-------------------------------------------------------------------------------------------------
 
 
 
@@ -482,6 +507,14 @@ protected:
 	Bool							m_ChooseVictimAlwaysUsesNormal;
 
 	Bool							m_shownMPLocalDefeatWindow;
+//-------------------------------------------------------------------------------------------------
+//--------------------------------- @CLP_AI SCRIPT UI ADDITIONS -----------------------------------
+//-------------------------------------------------------------------------------------------------
+	Int								m_numKDRatios;
+	TKDRatio					m_KDRatios[MAX_KD_RATIOS];
+//-------------------------------------------------------------------------------------------------
+//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
+//-------------------------------------------------------------------------------------------------
 
 #ifdef SPECIAL_SCRIPT_PROFILING
 #ifdef DEBUG_LOGGING

@@ -344,7 +344,7 @@ Bool ScriptConditions::evaluateNamedUnitTotallyDead(Parameter *pUnitParm)
 	}
 
 	if (TheScriptEngine->didUnitExist(pUnitParm->getString())) {
-		// Did exist, now it doesn't.  So it is really, really dead.
+		// Did exist, now it doesnt.  So it is really, really dead.
 		return true; // totally killed
 	}
 	return false; // Non existent unit is not dead.
@@ -2256,7 +2256,7 @@ Bool ScriptConditions::evaluateSkirmishPlayerTechBuildingWithinDistancePerimeter
 	if (!player) {
 		return false;
 	}
-	// If we have a cached value, return it. [8/8/2003]
+	// If we have a chached value, return it. [8/8/2003]
 	if (pCondition->getCustomData()==1) return true;
 	if (pCondition->getCustomData()==-1) return false;
 
@@ -2718,13 +2718,12 @@ Bool ScriptConditions::evaluatePlayerLostObjectType(Parameter *pPlayerParm, Para
 	return (sumOfObjs < currentCount);
 }
 
-<<<<<<< HEAD
 
 
 
 
 //-------------------------------------------------------------------------------------------------
-//-------------------------------  OUR SCRIPT CONDITION ADDITIONS  --------------------------------
+//------------------------------ @CLP_AI SCRIPT CONDITION ADDITIONS -------------------------------
 //-------------------------------------------------------------------------------------------------
 
 
@@ -2765,8 +2764,6 @@ Bool ScriptConditions::evaluateEmptySpot(Parameter* pStartNdx)
 	return false;
 }
 
-=======
->>>>>>> parent of 9e6172a12 (Addition of Bool ScriptConditions::evaluatePlayerRelation)
 //-------------------------------------------------------------------------------------------------
 Bool ScriptConditions::evaluateNeighbouringSpot(Parameter* pPlayerParm, Parameter* pStartNdx)
 {
@@ -2853,7 +2850,7 @@ Bool ScriptConditions::evaluateNeighbouringSpotsEmpty(Parameter* pPlayerParm, Pa
 				}
 			}
 		}
-   }
+  }
 
 	std::vector<Waypoint*> neighbouringWaypoints;
 
@@ -2882,7 +2879,7 @@ Bool ScriptConditions::evaluateNeighbouringSpotsEmpty(Parameter* pPlayerParm, Pa
 			}
 		}
   }
-	
+
   // Make sure that the newly found neighbouring starting points are *indeed* empty.
 	// i=2 because player 0 is "neutral" & player 1 is "PlyrCivilian".
   // playerCount-1 to skip any possible "observer" player at the end.
@@ -2913,16 +2910,237 @@ Bool ScriptConditions::evaluateNeighbouringSpotsEmpty(Parameter* pPlayerParm, Pa
 }
 
 //-------------------------------------------------------------------------------------------------
-Bool ScriptConditions::evaluateClosestEnemyUnit(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pDistanceParm)
+Bool ScriptConditions::evaluateStartingCash(Parameter* pComparisonParm, Int pAmount)
 {
-  Player* player = playerFromParam(pPlayerParm);
+	//ThePlayerList->getPlayerCount() - 1 = Last (Dummy) Player. Also receives the starting cash value
+	Player* player = ThePlayerList->getNthPlayer(ThePlayerList->getPlayerCount() - 1);
   if (!player) { return false; }
+	Int startingCash = player->getMoney()->countMoney();
+
+	switch (pComparisonParm->getInt())
+	{
+    case Parameter::LESS_THAN:			return startingCash < pAmount;
+    case Parameter::LESS_EQUAL:			return startingCash <= pAmount;
+    case Parameter::EQUAL:					return startingCash == pAmount;
+    case Parameter::GREATER_EQUAL:	return startingCash >= pAmount;
+    case Parameter::GREATER:				return startingCash > pAmount;
+    case Parameter::NOT_EQUAL:			return startingCash != pAmount;
+	}
 	return false;
 }
 
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateClosestRelationUnitToMySpawn(Int relationType, Parameter* pPlayerParm, Parameter* pComparisonParm, Int pDist)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer) return false;
+
+	AsciiString pSpot;
+	pSpot.format("Player_%d_Start", pPlayer->getMpStartIndex() + 1);
+	Waypoint* pWay = TheTerrainLogic->getWaypointByName(pSpot);
+	if (!pWay) return false;
+
+	Real minDist = FLT_MAX;
+	Player::PlayerTeamList::const_iterator it;
+
+	for (int i = 2; i < ThePlayerList->getPlayerCount() - 1; i++){
+		if (ThePlayerList->getNthPlayer(i)->getRelationship(pPlayer->getDefaultTeam()) == relationType && ThePlayerList->getNthPlayer(i) != pPlayer) {
+			for (it = ThePlayerList->getNthPlayer(i)->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+			{
+				for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+					Team* team = iter.cur();
+					if (!team) continue;
+
+					for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
+						Object* pObj = iter.cur();
+						if (!pObj) continue;
+
+						Coord3D oCoords = *pObj->getPosition();
+						Real dx = pWay->getLocation()->x - oCoords.x;
+						Real dy = pWay->getLocation()->y - oCoords.y;
+						Real dist = sqrtf(dx * dx + dy * dy);
+
+						if (dist < minDist) { minDist = dist; }
+
+					}
+				}
+			}
+		}
+	}
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:			return minDist < pDist;
+	case Parameter::LESS_EQUAL:			return minDist <= pDist;
+	case Parameter::EQUAL:					return minDist = pDist;
+	case Parameter::GREATER_EQUAL:	return minDist >= pDist;
+	case Parameter::GREATER:				return minDist > pDist;
+	case Parameter::NOT_EQUAL:			return minDist != pDist;
+	}
+	return false;
+}
 
 //-------------------------------------------------------------------------------------------------
-//------------------------------ OUR SCRIPT CONDITION ADDITIONS END -------------------------------
+Bool ScriptConditions::evaluateNotHunted(Parameter* pPlayerParm)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer) return false;
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
+				Object* pObj = iter.cur();
+				if (!pObj) continue;
+
+				const ThingTemplate* objTmpl = pObj->getTemplate();
+				if (!objTmpl) continue;
+
+				if (pObj->isKindOf(KINDOF_COMMANDCENTER) || pObj->isKindOf(KINDOF_DOZER)) return true; // GLA Workers are also Dozers!
+
+				const ThingTemplate* GLAStashTemplate = TheThingFactory->findTemplate("GLASupplyStash");
+				const ThingTemplate* ToxStashTemplate = TheThingFactory->findTemplate("Chem_GLASupplyStash");
+				const ThingTemplate* DemoStashTemplate = TheThingFactory->findTemplate("Demo_GLASupplyStash");
+				const ThingTemplate* SlthStashTemplate = TheThingFactory->findTemplate("Slth_GLASupplyStash");
+
+				if (objTmpl == GLAStashTemplate		||
+						objTmpl == ToxStashTemplate		||
+						objTmpl == DemoStashTemplate	||
+						objTmpl == SlthStashTemplate)
+					return true;
+			}
+		}
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluatePlayerLostTypeInArea(Parameter* pPlayerParm, Parameter* pObjectType, Parameter* pArea)
+{
+	// --- Trigger / Area ---
+	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(pArea->getString());
+	if (!pTrig) { return FALSE; }
+
+	// --- Player ---
+	Player* player = playerFromParam(pPlayerParm);
+	if (!player) { return FALSE;}
+
+	// --- ObjectTypes ---
+	ObjectTypesTemp objs;
+	objectTypesFromParam(pObjectType, objs.m_types);
+
+	// --- Prepare templates ---
+	std::vector<Int> counts;
+	std::vector<const ThingTemplate*> templates;
+
+	Int numTemplates = objs.m_types->prepForPlayerCounting(templates, counts);
+	if (numTemplates <= 0) { return FALSE; }
+
+	// --- Manual counting in AREA ---
+	// counts[] initializes already with 0
+	Player::PlayerTeamList::const_iterator it;
+	for (it = player->getPlayerTeams()->begin(); it != player->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> teamIter = (*it)->iterate_TeamInstanceList(); !teamIter.done(); teamIter.advance())
+		{
+			Team* team = teamIter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+			{
+				Object* pObj = objIter.cur();
+				if (!pObj) continue;
+
+				// Area-Check
+				if (!pObj->isInside(pTrig)) {
+					continue;
+				}
+
+				// Dead-Filter (identical to HasUnitTypeInArea)
+				if ((pObj->isEffectivelyDead() || pObj->isKindOf(KINDOF_INERT)) && !pObj->isKindOf(KINDOF_CRATE)) {
+					continue;
+				}
+
+				// Template-Match
+				const ThingTemplate* tmpl = pObj->getTemplate();
+				for (Int i = 0; i < numTemplates; ++i) {
+					if (tmpl == templates[i]) {
+						counts[i]++;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	// --- Sum ---
+	Int sumOfObjs = rts::sum(counts);
+
+	// --- ScriptEngine-State ---
+	// IMPORTANT: Area has to be in the key
+	AsciiString key;
+	key.format("%s_AREA_%s", pObjectType->getString(), pArea->getString());
+
+	Int currentCount = TheScriptEngine->getObjectCount(player->getPlayerIndex(), key);
+
+	if (sumOfObjs != currentCount) {
+		TheScriptEngine->setObjectCount(player->getPlayerIndex(), key, sumOfObjs);
+	}
+
+	// --- lost a unit? ---
+	return (sumOfObjs < currentCount);
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateTeamSightedRelationType(Parameter* pTeamParm, Int relationType, Parameter* pObjectType)
+{
+
+	Team* pTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
+	if (!pTeam) return false;
+
+	ObjectTypesTemp types;
+	objectTypesFromParam(pObjectType, types.m_types);
+
+	// and only stuff that is not dead
+	PartitionFilterAlive filterAlive;
+
+	// and only nonstealthed items.
+	PartitionFilterRejectByObjectStatus filterStealth(MAKE_OBJECT_STATUS_MASK(OBJECT_STATUS_STEALTHED),
+		MAKE_OBJECT_STATUS_MASK2(OBJECT_STATUS_DETECTED, OBJECT_STATUS_DISGUISED));
+
+
+	for (DLINK_ITERATOR<Object> teamIter = pTeam->iterate_TeamMemberList(); !teamIter.done(); teamIter.advance())
+	{
+		Object* obj = teamIter.cur();
+		
+		// and only on-map (or not)
+		PartitionFilterSameMapStatus filterMapStatus(obj);
+
+		PartitionFilter* filters[] = { &filterAlive, &filterStealth, &filterMapStatus, nullptr };
+
+		Real visionRange = obj->getVisionRange();
+		if (visionRange <= 0.0f) continue;
+
+		SimpleObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(obj, visionRange, FROM_CENTER_2D, filters);
+		MemoryPoolObjectHolder hold(iter);
+
+		for (Object* them = iter->first(); them; them = iter->next())
+		{
+			if (them == obj) continue;
+			if (them->getRelationship(obj) == relationType) {
+				if (types.m_types->isInSet(them->getTemplate()->getName()))
+					return true;
+			}
+		}
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 //-------------------------------------------------------------------------------------------------
 
 
@@ -3193,7 +3411,6 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 			return evaluatePlayerLostObjectType(pCondition->getParameter(0), pCondition->getParameter(1));
 
 
-<<<<<<< HEAD
 
 		case Condition::RELATION_IS:
 			return evaluatePlayerRelation(pCondition->getParameter(0)->getString(), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2)->getString());
@@ -3203,9 +3420,17 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
       return evaluateNeighbouringSpot(pCondition->getParameter(0), pCondition->getParameter(1));
 		case Condition::NEIGHBOURING_SPOTS_EMPTY:
 			return evaluateNeighbouringSpotsEmpty(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getInt());
-		
-=======
->>>>>>> parent of 9e6172a12 (Addition of Bool ScriptConditions::evaluatePlayerRelation)
+		case Condition::STARTING_CASH_COMPARE:
+      return evaluateStartingCash(pCondition->getParameter(0), pCondition->getParameter(1)->getInt());
+		case Condition::CLOSEST_ENEMY_DISTANCE:
+			return evaluateClosestRelationUnitToMySpawn(pCondition->getParameter(0)->getInt(), pCondition->getParameter(1), pCondition->getParameter(2), pCondition->getParameter(3)->getInt());
+		case Condition::PLAYER_NOT_HUNTED:
+			return evaluateNotHunted(pCondition->getParameter(0));
+		case Condition::PLAYER_LOST_TYPE_AREA:
+			return evaluatePlayerLostTypeInArea(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2));
+		case Condition::TEAM_SIGHTED_RELATION_TYPE:
+			return evaluateTeamSightedRelationType(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2));
+
 	}
 }
 

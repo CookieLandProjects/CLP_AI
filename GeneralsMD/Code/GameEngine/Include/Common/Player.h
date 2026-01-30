@@ -443,6 +443,16 @@ public:
 
 	virtual Bool computeSuperweaponTarget(const SpecialPowerTemplate *power, Coord3D *pos, Int playerNdx, Real weaponRadius); ///< Calculates best pos for weapon given radius.
 
+	//-------------------------------------------------------------------------------------------------
+	//----------------------------------- @CLP_AI PLAYER ADDITIONS ------------------------------------
+	//-------------------------------------------------------------------------------------------------
+
+	virtual Bool computeSuperweaponTargetEconomy(const SpecialPowerTemplate* power, Coord3D* retPos, Int playerNdx, Real weaponRadius);
+
+	//-------------------------------------------------------------------------------------------------
+	//--------------------------------- @CLP_AI PLAYER ADDITIONS END ----------------------------------
+	//-------------------------------------------------------------------------------------------------
+
 	/// Get the enemy an ai player is currently focused on.  NOTE - Can be nullptr.
 	Player  *getCurrentEnemy( void );
 
@@ -828,4 +838,7 @@ private:
 
 	Bool									m_isPlayerDead;
 	Bool									m_logicalRetaliationModeEnabled;
+
+	public:
+		AIPlayer* getAIPlayer() { return m_ai; }
 };

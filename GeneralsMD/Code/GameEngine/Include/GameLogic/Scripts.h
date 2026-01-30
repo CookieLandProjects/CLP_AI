@@ -544,6 +544,75 @@ public:
 		SHOW_WEATHER,															///< show map defined weather.
 		AI_PLAYER_BUILD_TYPE_NEAREST_TEAM,				///< Tell the ai player to build an object nearest team.
 		// add new items here, please
+
+
+
+
+
+		//-------------------------------------------------------------------------------------------------
+		//------------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS --------------------------------
+		//-------------------------------------------------------------------------------------------------
+			SET_COUNTER_RANDOM,														///< Set a counter to a random value between x and y.
+			SET_KD_RATIO,																	///< Set a real number variable as a KD ratio to 1.0
+			INCREMENT_KD_RATIO_KILLS,											///< Adds the Kills of a KD ratio by <Real> credits.
+			INCREMENT_KD_RATIO_DEATHS,										///< Adds the Deaths of a KD ration by <Real> credits.
+			DECREMENT_KD_RATIO_KILLS,											///< Subtracts the Kills of a KD ratio by <Real> credits.
+			DECREMENT_KD_RATIO_DEATHS,										///< Subtracts the Deaths of a KD ratio by <Real> credits.
+			
+			PLAYER_SURRENDER,															///< The player surrenders, provided that other allied players are alive; otherwise quit.
+			AI_PLAYER_BUILDS_UNNAMED,                     ///< Tell the ai to produce a new unnamed unit.
+			/*TODO*/AI_PLAYER_BUILD_TYPE_NEAREST_OBJECT_ROTATED,	///< AI player builds a structure near an object type rotated <int> degrees.
+			/*TODO*/AI_PLAYER_BUILD_TYPE_NEAREST_TEAM_ROTATED,		///< AI player builds a structure near a team rotated <int> degrees.
+			/*TODO*/AI_PLAYER_BUILD_TYPE_NEAREST_SUPPLY_ROTATED,	///< AI player builds a structure near a supply source rotaded <int> degrees.
+
+			TEAM_MOVE_RELATIVE,														///< Set a team to move relative to its own position.
+			UNIT_MOVE_RELATIVE,														///< Set a unit to move relative to its own position.
+			TEAM_MOVE_NEAREST_BELONGING_TO_PLAYER,				///< Set a team to move towards the nearest object type belonging to a player.
+			UNIT_MOVE_NEAREST_BELONGING_TO_PLAYER,				///< Set a unit to move towards the nearest object type belonging to a player.
+			TEAM_MOVE_AWAY_FROM_RELATION_TYPE,						///< A team moves <Real> feet into the opposite direction of a <relation> <objectType>.
+			UNIT_MOVE_AWAY_FROM_RELATION_TYPE,						///< A unit moves <Real> feet into the opposite direction of a <relation> <objectType>.
+			TEAM_MEET,																		///< Set a team to meet at their center point.
+			TEAM_MEET_AT_KINDOF,													///< Set a team to meet at the center point of all units with <kindOf>.
+			TEAM_MEET_AT_TYPE,														///< Set a team to meet at the center point of all units with <objectType>.
+
+			TEAM_USE_COMMAND_BUTTON_ABILITY_WITH_TYPE,		///< Set all units with an object type in a team to use a command button ability.
+			/*TODO*/TEAM_USE_COMMAND_BUTTON_ABILITY_ON_TEAM,			///< Set a team to use a command button ability on another team.
+			PLAYER_MERGE_KINDOF,													///< The player merges all units with <kindOf> into another team.
+			PLAYER_MERGE_TYPE,														///< The player merges all units with <objectType> into another team.
+			PLAYER_DISBAND_KINDOF,												///< The player disbands all units with <kindOf>.
+			PLAYER_DISBAND_TYPE,													///< The player disbands all units with <objectType>.
+			TEAM_MERGE_KINDOF,														///< A team merges all units with <kindOf> into another team.
+			TEAM_MERGE_TYPE,															///< A team merges all units with <objectType> into another team.
+			TEAM_DISBAND_KINDOF,													///< A team disbands all units with <kindOf>.
+			TEAM_DISBAND_TYPE,														///< A team disbands all units with <objectType>.
+			CREATE_TEAM_FROM_TEAMLESS,										///< Create a team from all units that are owned by the default team.
+			CREATE_TEAM_FROM_TEAMLESS_TYPE,								///< Create a team from units with <objectType> that are owned by the default team.
+			CREATE_TEAM_FROM_TEAMLESS_KINDOF,							///< Create a team from units with <kindOf> that are owned by the default team.
+
+			/*TODO*/TEAM_USE_PRIMARY_WEAPON,											///< A team starts using their primary weapon.
+			/*TODO*/TEAM_USE_SECONDARY_WEAPON,										///< A team starts using their secondary weapon.
+			/*TODO*/UNIT_USE_PRIMARY_WEAPON,											///< A unit starts using their primary weapon.
+			/*TODO*/UNIT_USE_SECONDARY_WEAPON,										///< A unit starts using their secondary weapon.
+			SKIRMISH_FIRE_SPECIAL_POWER_AT_MOST_COST_ECONOMY,///< The player fires their special power at the highest cost area, computed with heavy focus on secondary eco.
+
+			/*TODO*/PLAYER_GARRISON_BUILDINGS_WITH_MAX_NUMBER,		///< The player garrisons nearby buildings with <int> infrantry each.
+			/*TODO*/PLAYER_GARRISON_NUMBER_BUILDINGS,							///< The player equally garrisons <int> buildings with all available infantry.
+			TEAM_GARRISON_BUILDINGS_WITH_MAX_NUMBER,			///< A team garrisons nearby buildings with <int> infrantry each.
+			TEAM_GARRISON_NUMBER_BUILDINGS,								///< A team equally garrisons <int> buildings with all available infantry.
+
+			/*TODO*/SET_GATHERERS,																///< Set the amount of gatherers for each supply center.
+			/*TODO*/SWITCH_BUILDLIST_ID,													///< The player switches to BuildList ID <int> for its main base.
+			/*TODO*/SWITCH_BUILDLIST_ID_AT_SPOT,									///< The player switches to BuildList ID <int> at a specified spot.
+			/*TODO*/SELL_BUILDING_IN_CAPTURE_PROCESS_PERCENTAGE,	///< Make an AI player sell off a building that is being captured with a % chance.
+
+			//-------------------------------------------------------------------------------------------------
+			//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------
+			//-------------------------------------------------------------------------------------------------
+
+
+
+
+
 		NUM_ITEMS
 	};
 	ScriptAction(ScriptActionType type);
@@ -773,6 +842,17 @@ public:
 		SCIENCE_AVAILABILITY, // String, the name of the different science availabilities.
     LEFT_OR_RIGHT,        // 1=left, 2=right, okay?
 		PERCENT,						// Real.  A percentage.
+
+		//-------------------------------------------------------------------------------------------------
+		//------------------------------- @CLP_AI PARAMETER TYPE ADDITIONS --------------------------------
+		//-------------------------------------------------------------------------------------------------
+
+		KD_RATIO,						// String, Int index into KD ratio array at runtime.
+
+		//-------------------------------------------------------------------------------------------------
+		//----------------------------- @CLP_AI PARAMETER TYPE ADDITIONS END ------------------------------
+		//-------------------------------------------------------------------------------------------------
+
 		NUM_ITEMS
 	};
 
@@ -971,25 +1051,28 @@ public:
 		START_POSITION_IS,											// True if our start position matches.
 		NAMED_HAS_FREE_CONTAINER_SLOTS,					///< Kris -- Checks if any given container has any free slots.
 
-<<<<<<< HEAD
-
 
 		//-------------------------------------------------------------------------------------------------
-		//-------------------------------  OUR SCRIPT CONDITION ADDITIONS  --------------------------------
+		//------------------------------ @CLP_AI SCRIPT CONDITION ADDITIONS -------------------------------
 		//-------------------------------------------------------------------------------------------------
+		KD_RATIO,																// True if the KD Ratio is <comparison> a value
 
     RELATION_IS,														// True if the relation between two players is as specified.
     SPOT_EMPTY,															// True if a specified spot is empty.
     SPOT_NEIGHBOURING,											// True if the index of a specified spot is neighbouring the player.
     NEIGHBOURING_SPOTS_EMPTY,								// True if <comparison> amount of neighbouring spots are empty.
-    CLOSEST_ENEMY_UNIT_DISTANCE,						// True if the distance to the closest enemy unit compares to a value.
-    STARTING_CASH_COMPARE,								  // True if the player's starting cash compares to a value.
+    STARTING_CASH_COMPARE,								  // True if the player's starting cash is <comparison> <Int>.
+		CLOSEST_ENEMY_DISTANCE,									// True if the enemy's closest unit is <comparison> feet away.
+		PLAYER_NOT_HUNTED,											// True if the player has construction units || command center || supply stash.
+		PLAYER_LOST_TYPE_AREA,									// True if the player has lost an object of <type> in <area>
+		TEAM_SIGHTED_RELATION_TYPE,							// True if a team has sighted a <relation> unit of <type>
+		/*TODO*/RELATION_UNDER_ATTACK,									// True if a(n) <relation> player is under attack.
+
 
 		//-------------------------------------------------------------------------------------------------
-		//------------------------------ OUR SCRIPT CONDITION ADDITIONS END -------------------------------
+		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 		//-------------------------------------------------------------------------------------------------
-=======
->>>>>>> parent of 9e6172a12 (Addition of Bool ScriptConditions::evaluatePlayerRelation)
+
 		NUM_ITEMS		 // Always the last condition.
 	};
 

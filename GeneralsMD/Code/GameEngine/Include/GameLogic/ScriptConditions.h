@@ -178,11 +178,6 @@ protected:
 	Bool evaluateSkirmishSupplySourceSafe(Condition *pCondition, Parameter *pSkirmishPlayerParm, Parameter *pMinAmountOfSupplies );
 	Bool evaluateSkirmishSupplySourceAttacked(Parameter *pSkirmishPlayerParm );
 	Bool evaluateSkirmishStartPosition(Parameter *pSkirmishPlayerParm, Parameter *startNdx );
-<<<<<<< HEAD
-=======
-
-
->>>>>>> parent of 9e6172a12 (Addition of Bool ScriptConditions::evaluatePlayerRelation)
 	// Stubs
 	Bool evaluateMissionAttempts(Parameter* pPlayerParm, Parameter* pComparisonParm, Parameter* pAttemptsParm);
 
@@ -194,7 +189,11 @@ protected:
   Bool evaluateEmptySpot(Parameter* pStartNdx);
 	Bool evaluateNeighbouringSpot(Parameter* pPlayerParm, Parameter* pStartNdx);
 	Bool evaluateNeighbouringSpotsEmpty(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pCount);
-	Bool evaluateClosestEnemyUnit(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pDistanceParm);
+	Bool evaluateStartingCash(Parameter* pComparisonParm, Int pAmount);
+	Bool evaluateClosestRelationUnitToMySpawn(Int relationType, Parameter* pPlayerParm, Parameter* pComparisonParm, Int pDist);
+	Bool evaluateNotHunted(Parameter* pPlayerParm);
+	Bool evaluatePlayerLostTypeInArea(Parameter* pPlayerParm, Parameter* pObjectType, Parameter* pArea);
+	Bool evaluateTeamSightedRelationType(Parameter* pTeam, Int relationType, Parameter* pObjectType);
 
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------ OUR SCRIPT CONDITION ADDITIONS END -------------------------------

@@ -121,6 +121,7 @@ public:
 	Bool getBiDirectional( void ) const { return m_biDirectional; }
 
 	void setLocationZ(Real z) { m_location.z = z; }
+	void setLocation(Real x, Real y, Real z) { m_location.x = x; m_location.y = y; m_location.z = z; }
 };
 
 //-------------------------------------------------------------------------------------------------

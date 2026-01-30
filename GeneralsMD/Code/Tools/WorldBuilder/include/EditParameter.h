@@ -94,8 +94,11 @@ protected:
 	static AsciiString getCreatedUnitTemplateName(AsciiString unitName);
 
 	static Bool loadCounters(CComboBox *pCombo, AsciiString match = AsciiString::TheEmptyString);
+	static Bool loadKDRatios(CComboBox* pCombo, AsciiString match);
+	void loadKDRatios(CComboBox* pCombo);
 	static void loadConditionParameter(Script *pScr, Parameter::ParameterType type, CComboBox *pCombo);
 	static Bool loadActionParameter(Script *pScr, Parameter::ParameterType type, CComboBox *pCombo, AsciiString match);
+	void oldLoadActionParameter(Script* pScr, Parameter::ParameterType type, CComboBox* pCombo);
 	static Bool loadFlags(CComboBox *pCombo, AsciiString match = AsciiString::TheEmptyString);
 
 
