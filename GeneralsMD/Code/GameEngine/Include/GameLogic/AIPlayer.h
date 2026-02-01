@@ -222,6 +222,19 @@ public:
 	Bool calcClosestConstructionZoneLocation( const ThingTemplate *constructTemplate, Coord3D *location );
 	virtual Bool startTraining(WorkOrder* order, Bool busyOK, AsciiString teamName);	///< find a production building that can handle the order, and start building
 
+	//-------------------------------------------------------------------------------------------------
+	//---------------------------------- @CLP_AI AIPLAYER ADDITIONS -----------------------------------
+	//-------------------------------------------------------------------------------------------------
+	void buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real bAngle);
+
+	void buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real bAngle);
+
+	void buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real bAngle);
+
+	//-------------------------------------------------------------------------------------------------
+	//-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------
+	//-------------------------------------------------------------------------------------------------
+
 protected:
 
 	// snapshot methods

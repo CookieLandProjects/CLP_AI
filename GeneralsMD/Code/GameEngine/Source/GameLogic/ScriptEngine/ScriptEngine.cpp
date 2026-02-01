@@ -5360,7 +5360,7 @@ void ScriptEngine::init( void )
 
 	curTemplate = &m_conditionTemplates[Condition::SPOT_EMPTY];
 	curTemplate->m_internalName = "SPOT_EMPTY";
-	curTemplate->m_uiName = "Skirmish/Check whether spot is empty.";
+	curTemplate->m_uiName = "Skirmish/Spot/Check whether spot is empty.";
 	curTemplate->m_numParameters = 1;
 	curTemplate->m_parameters[0] = Parameter::INT;
 	curTemplate->m_numUiStrings = 2;
@@ -5369,7 +5369,7 @@ void ScriptEngine::init( void )
 
 	curTemplate = &m_conditionTemplates[Condition::SPOT_NEIGHBOURING];
 	curTemplate->m_internalName = "SPOT_NEIGHBOURING";
-	curTemplate->m_uiName = "Skirmish/Check whether spot is neighbouring the player.";
+	curTemplate->m_uiName = "Skirmish/Spot/Check whether spot is neighbouring the player.";
 	curTemplate->m_numParameters = 2;
 	curTemplate->m_parameters[0] = Parameter::SIDE;
 	curTemplate->m_parameters[1] = Parameter::INT;
@@ -5379,7 +5379,7 @@ void ScriptEngine::init( void )
 	
 	curTemplate = &m_conditionTemplates[Condition::NEIGHBOURING_SPOTS_EMPTY];
 	curTemplate->m_internalName = "NEIGHBOURING_SPOTS_EMPTY";
-	curTemplate->m_uiName = "Skirmish/Check if N number of neighbouring spots are empty.";
+	curTemplate->m_uiName = "Skirmish/Spot/Check if N number of neighbouring spots are empty.";
 	curTemplate->m_numParameters = 3;
 	curTemplate->m_parameters[0] = Parameter::SIDE;
 	curTemplate->m_parameters[1] = Parameter::COMPARISON;
@@ -5484,9 +5484,35 @@ void ScriptEngine::init( void )
 	curTemplate->m_uiStrings[2] = " feet away from the nearest ";
 	curTemplate->m_uiStrings[3] = " object of type ";
 
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_AWAY_FROM_RELATION];
+	curTemplate->m_internalName = "TEAM_MOVE_AWAY_FROM_RELATION";
+	curTemplate->m_uiName = "Team/Move/Move team away from the nearest friendly|neutral|enemy unit.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will move ";
+	curTemplate->m_uiStrings[2] = " feet away from the nearest ";
+	curTemplate->m_uiStrings[3] = " unit.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::UNIT_MOVE_AWAY_FROM_RELATION];
+	curTemplate->m_internalName = "UNIT_MOVE_AWAY_FROM_RELATION";
+	curTemplate->m_uiName = "Unit/Move/Move unit away from the nearest friendly|neutral|enemy unit.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::UNIT;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will move ";
+	curTemplate->m_uiStrings[2] = " feet away from the nearest ";
+	curTemplate->m_uiStrings[3] = " unit.";
+
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MEET];
 	curTemplate->m_internalName = "TEAM_MEET";
-	curTemplate->m_uiName = "Team/Move/Meet and group together.";
+	curTemplate->m_uiName = "Team/Move/Meet/Meet and group together.";
 	curTemplate->m_numParameters = 1;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_numUiStrings = 2;
@@ -5495,7 +5521,7 @@ void ScriptEngine::init( void )
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MEET_AT_KINDOF];
 	curTemplate->m_internalName = "TEAM_MEET_AT_KINDOF";
-	curTemplate->m_uiName = "Team/Move/Meet and group together at KindOf.";
+	curTemplate->m_uiName = "Team/Move/Meet/Meet and group together at kindOf.";
 	curTemplate->m_numParameters = 2;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::KIND_OF_PARAM;
@@ -5506,7 +5532,7 @@ void ScriptEngine::init( void )
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MEET_AT_TYPE];
 	curTemplate->m_internalName = "TEAM_MEET_AT_KINDOF";
-	curTemplate->m_uiName = "Team/Move/Meet and group together at object type.";
+	curTemplate->m_uiName = "Team/Move/Meet/Meet and group together at object type.";
 	curTemplate->m_numParameters = 2;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
@@ -5517,7 +5543,7 @@ void ScriptEngine::init( void )
 
 	curTemplate = &m_conditionTemplates[Condition::CLOSEST_ENEMY_DISTANCE];
 	curTemplate->m_internalName = "CLOSEST_ENEMY_DISTANCE";
-	curTemplate->m_uiName = "Skirmish/Closest enemy unit to Player";
+	curTemplate->m_uiName = "Player/Closest enemy unit to Player";
 	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::RELATION;
 	curTemplate->m_parameters[1] = Parameter::SIDE;
@@ -5765,6 +5791,89 @@ void ScriptEngine::init( void )
 	curTemplate->m_numUiStrings = 2;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " fire ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TEAM_ROTATED];
+	curTemplate->m_internalName = "AI_PLAYER_BUILD_TYPE_NEAREST_TEAM_ROTATED";
+	curTemplate->m_uiName = "Player/AI/Rotated/AI player build nearest team with custom rotation.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TEAM;
+	curTemplate->m_parameters[3] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = "Have AI ";
+	curTemplate->m_uiStrings[1] = " build a ";
+	curTemplate->m_uiStrings[2] = " nearest team ";
+	curTemplate->m_uiStrings[3] = " ,rotated ";
+	curTemplate->m_uiStrings[4] = " degrees.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_SUPPLY_ROTATED];
+	curTemplate->m_internalName = "AI_PLAYER_BUILD_TYPE_NEAREST_SUPPLY_ROTATED";
+	curTemplate->m_uiName = "Player/AI/Rotated/AI player build near a supply source with custom rotation.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::INT;
+	curTemplate->m_parameters[3] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = "Have AI ";
+	curTemplate->m_uiStrings[1] = " build a ";
+	curTemplate->m_uiStrings[2] = " near a supply source with at least ";
+	curTemplate->m_uiStrings[3] = " available resources, rotated ";
+	curTemplate->m_uiStrings[4] = " degrees. ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED];
+	curTemplate->m_internalName = "AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED";
+	curTemplate->m_uiName = "Player/AI/Rotated/AI player build nearest objectType with custom rotation.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[3] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = "Have AI ";
+	curTemplate->m_uiStrings[1] = " build a ";
+	curTemplate->m_uiStrings[2] = " near the closest ";
+	curTemplate->m_uiStrings[3] = " , rotated ";
+	curTemplate->m_uiStrings[4] = " degrees. ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED];
+	curTemplate->m_internalName = "AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED";
+	curTemplate->m_uiName = "Player/AI/Rotated/AI player build nearest kindOf with custom rotation.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::KIND_OF_PARAM;
+	curTemplate->m_parameters[3] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = "Have AI ";
+	curTemplate->m_uiStrings[1] = " build a ";
+	curTemplate->m_uiStrings[2] = " near the closest ";
+	curTemplate->m_uiStrings[3] = " , rotated ";
+	curTemplate->m_uiStrings[4] = " degrees. ";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_RELATION_FACTION];
+	curTemplate->m_internalName = "PLAYER_RELATION_FACTION";
+	curTemplate->m_uiName = "Player/Skirmish/One or more of a player's co-players is a faction.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::FACTION_NAME;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "At least one of ";
+	curTemplate->m_uiStrings[1] = " 's ";
+	curTemplate->m_uiStrings[2] = " co-players is faction ";
+
+	curTemplate = &m_conditionTemplates[Condition::MAP_COMPARE_SIZE];
+	curTemplate->m_internalName = "MAP_COMPARE_SIZE";
+	curTemplate->m_uiName = "Skirmish/Map size is compared to a value.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::COMPARISON;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = "The map size is ";
+	curTemplate->m_uiStrings[1] = " ";
+
 
 
 	//-------------------------------------------------------------------------------------------------

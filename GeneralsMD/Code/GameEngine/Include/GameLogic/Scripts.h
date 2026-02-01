@@ -545,60 +545,66 @@ public:
 		AI_PLAYER_BUILD_TYPE_NEAREST_TEAM,				///< Tell the ai player to build an object nearest team.
 		// add new items here, please
 
-
-
-
-
 		//-------------------------------------------------------------------------------------------------
 		//------------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS --------------------------------
 		//-------------------------------------------------------------------------------------------------
 			SET_COUNTER_RANDOM,														///< Set a counter to a random value between x and y.
-			SET_KD_RATIO,																	///< Set a real number variable as a KD ratio to 1.0
-			INCREMENT_KD_RATIO_KILLS,											///< Adds the Kills of a KD ratio by <Real> credits.
-			INCREMENT_KD_RATIO_DEATHS,										///< Adds the Deaths of a KD ration by <Real> credits.
-			DECREMENT_KD_RATIO_KILLS,											///< Subtracts the Kills of a KD ratio by <Real> credits.
-			DECREMENT_KD_RATIO_DEATHS,										///< Subtracts the Deaths of a KD ratio by <Real> credits.
+			SET_KD_RATIO,																	///< Set a real number variable as a KD ratio to x kills and y deaths.
+			INCREMENT_KD_RATIO_KILLS,											///< Adds the kills of a KD ratio by <Real> credits.
+			INCREMENT_KD_RATIO_DEATHS,										///< Adds the deaths of a KD ration by <Real> credits.
+			DECREMENT_KD_RATIO_KILLS,											///< Subtracts the kills of a KD ratio by <Real> credits.
+			DECREMENT_KD_RATIO_DEATHS,										///< Subtracts the deaths of a KD ratio by <Real> credits.
 			
-			PLAYER_SURRENDER,															///< The player surrenders, provided that other allied players are alive; otherwise quit.
 			AI_PLAYER_BUILDS_UNNAMED,                     ///< Tell the ai to produce a new unnamed unit.
-			/*TODO*/AI_PLAYER_BUILD_TYPE_NEAREST_OBJECT_ROTATED,	///< AI player builds a structure near an object type rotated <int> degrees.
-			/*TODO*/AI_PLAYER_BUILD_TYPE_NEAREST_TEAM_ROTATED,		///< AI player builds a structure near a team rotated <int> degrees.
-			/*TODO*/AI_PLAYER_BUILD_TYPE_NEAREST_SUPPLY_ROTATED,	///< AI player builds a structure near a supply source rotaded <int> degrees.
+			AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED,	///< AI player builds a structure near an object type rotated <Real> degrees.
+			AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED,///< AI player builds a structure near a kindOf rotated <Real> degrees.
+			AI_PLAYER_BUILD_TYPE_NEAREST_TEAM_ROTATED,		///< AI player builds a structure near a team rotated <Real> degrees.
+			AI_PLAYER_BUILD_TYPE_NEAREST_SUPPLY_ROTATED,	///< AI player builds a structure near a supply source rotaded <Real> degrees.
+			/*TODO*/AI_PLAYER_BUILD_TYPE_AT_BACKDOOR,							///< AI player builds a structure at the back door path.
+			/*TODO*/AT_PLAYER_BUILD_TYPE_AT_SPECIAL,							///< AI player builds a structure at the special path.
+			/*TODO*/AI_PLAYER_BUILD_TYPE_AT_PERCENT_FRONT,				///< AI player builds a structure at <Real> percent distance between spot and outskirts at the center path.
+			/*TODO*/AI_PLAYER_BUILD_TYPE_AT_PERCENT_FLANK,				///< AI player builds a structure at <Real> percent distance between spot and outskirts at the flank path.
+			/*TODO*/AI_PLAYER_BUILD_TYPE_AT_PERCENT_BACKDOOR,			///< AI player builds a structure at <Real> percent distance between spot and outskirts at the back door path.
+			/*TODO*/AI_PLAYER_BUILD_TYPE_AT_PERCENT_SPECIAL,			///< AI player builds a structure at <Real> percent distance between spot and outskirts at the special path.
 
-			TEAM_MOVE_RELATIVE,														///< Set a team to move relative to its own position.
-			UNIT_MOVE_RELATIVE,														///< Set a unit to move relative to its own position.
-			TEAM_MOVE_NEAREST_BELONGING_TO_PLAYER,				///< Set a team to move towards the nearest object type belonging to a player.
-			UNIT_MOVE_NEAREST_BELONGING_TO_PLAYER,				///< Set a unit to move towards the nearest object type belonging to a player.
-			TEAM_MOVE_AWAY_FROM_RELATION_TYPE,						///< A team moves <Real> feet into the opposite direction of a <relation> <objectType>.
-			UNIT_MOVE_AWAY_FROM_RELATION_TYPE,						///< A unit moves <Real> feet into the opposite direction of a <relation> <objectType>.
-			TEAM_MEET,																		///< Set a team to meet at their center point.
-			TEAM_MEET_AT_KINDOF,													///< Set a team to meet at the center point of all units with <kindOf>.
-			TEAM_MEET_AT_TYPE,														///< Set a team to meet at the center point of all units with <objectType>.
-
-			TEAM_USE_COMMAND_BUTTON_ABILITY_WITH_TYPE,		///< Set all units with an object type in a team to use a command button ability.
-			/*TODO*/TEAM_USE_COMMAND_BUTTON_ABILITY_ON_TEAM,			///< Set a team to use a command button ability on another team.
+			PLAYER_SURRENDER,															///< The player surrenders, provided that other allied players are alive; otherwise quit.
 			PLAYER_MERGE_KINDOF,													///< The player merges all units with <kindOf> into another team.
 			PLAYER_MERGE_TYPE,														///< The player merges all units with <objectType> into another team.
 			PLAYER_DISBAND_KINDOF,												///< The player disbands all units with <kindOf>.
 			PLAYER_DISBAND_TYPE,													///< The player disbands all units with <objectType>.
+			PLAYER_GARRISON_BUILDINGS_WITH_MAX_NUMBER,		///< The player garrisons nearby buildings with <int> infrantry each.
+			PLAYER_GARRISON_NUMBER_BUILDINGS,							///< The player equally garrisons <int> buildings with all available infantry.
+
+			TEAM_MOVE_RELATIVE,														///< Set a team to move relative to its own position.
+			TEAM_MOVE_NEAREST_BELONGING_TO_PLAYER,				///< Set a team to move towards the nearest object type belonging to a player.
+			TEAM_MOVE_AWAY_FROM_RELATION,									///< A team moves <Real> feet into the opposite direction of a <relation> unit.
+			TEAM_MOVE_AWAY_FROM_RELATION_TYPE,						///< A team moves <Real> feet into the opposite direction of a <relation> <objectType>.
+			TEAM_MEET,																		///< Set a team to meet at their center point.
+			TEAM_MEET_AT_KINDOF,													///< Set a team to meet at the center point of all units with <kindOf>.
+			TEAM_MEET_AT_TYPE,														///< Set a team to meet at the center point of all units with <objectType>.
+			TEAM_USE_COMMAND_BUTTON_ABILITY_WITH_TYPE,		///< Set all units with an object type in a team to use a command button ability.
+			/*TODO*/TEAM_USE_COMMAND_BUTTON_ABILITY_ON_TEAM,			///< Set a team to use a command button ability on another team.
 			TEAM_MERGE_KINDOF,														///< A team merges all units with <kindOf> into another team.
 			TEAM_MERGE_TYPE,															///< A team merges all units with <objectType> into another team.
 			TEAM_DISBAND_KINDOF,													///< A team disbands all units with <kindOf>.
 			TEAM_DISBAND_TYPE,														///< A team disbands all units with <objectType>.
+			/*TODO*/TEAM_USE_PRIMARY_WEAPON,											///< A team starts using their primary weapon.
+			/*TODO*/TEAM_USE_SECONDARY_WEAPON,										///< A team starts using their secondary weapon.
+			TEAM_GARRISON_BUILDINGS_WITH_MAX_NUMBER,			///< A team garrisons nearby buildings with <int> infrantry each.
+			TEAM_GARRISON_NUMBER_BUILDINGS,								///< A team equally garrisons <int> buildings with all available infantry.
+
+			UNIT_MOVE_RELATIVE,														///< Set a unit to move relative to its own position.
+			UNIT_MOVE_NEAREST_BELONGING_TO_PLAYER,				///< Set a unit to move towards the nearest object type belonging to a player.
+			UNIT_MOVE_AWAY_FROM_RELATION,									///< A unit moves <Real> feet into the opposite direction of a <relation> unit.
+			UNIT_MOVE_AWAY_FROM_RELATION_TYPE,						///< A unit moves <Real> feet into the opposite direction of a <relation> <objectType>.
+			/*TODO*/UNIT_USE_PRIMARY_WEAPON,											///< A unit starts using their primary weapon.
+			/*TODO*/UNIT_USE_SECONDARY_WEAPON,										///< A unit starts using their secondary weapon.
+
 			CREATE_TEAM_FROM_TEAMLESS,										///< Create a team from all units that are owned by the default team.
 			CREATE_TEAM_FROM_TEAMLESS_TYPE,								///< Create a team from units with <objectType> that are owned by the default team.
 			CREATE_TEAM_FROM_TEAMLESS_KINDOF,							///< Create a team from units with <kindOf> that are owned by the default team.
 
-			/*TODO*/TEAM_USE_PRIMARY_WEAPON,											///< A team starts using their primary weapon.
-			/*TODO*/TEAM_USE_SECONDARY_WEAPON,										///< A team starts using their secondary weapon.
-			/*TODO*/UNIT_USE_PRIMARY_WEAPON,											///< A unit starts using their primary weapon.
-			/*TODO*/UNIT_USE_SECONDARY_WEAPON,										///< A unit starts using their secondary weapon.
 			SKIRMISH_FIRE_SPECIAL_POWER_AT_MOST_COST_ECONOMY,///< The player fires their special power at the highest cost area, computed with heavy focus on secondary eco.
-
-			/*TODO*/PLAYER_GARRISON_BUILDINGS_WITH_MAX_NUMBER,		///< The player garrisons nearby buildings with <int> infrantry each.
-			/*TODO*/PLAYER_GARRISON_NUMBER_BUILDINGS,							///< The player equally garrisons <int> buildings with all available infantry.
-			TEAM_GARRISON_BUILDINGS_WITH_MAX_NUMBER,			///< A team garrisons nearby buildings with <int> infrantry each.
-			TEAM_GARRISON_NUMBER_BUILDINGS,								///< A team equally garrisons <int> buildings with all available infantry.
 
 			/*TODO*/SET_GATHERERS,																///< Set the amount of gatherers for each supply center.
 			/*TODO*/SWITCH_BUILDLIST_ID,													///< The player switches to BuildList ID <int> for its main base.
@@ -608,10 +614,6 @@ public:
 			//-------------------------------------------------------------------------------------------------
 			//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------
 			//-------------------------------------------------------------------------------------------------
-
-
-
-
 
 		NUM_ITEMS
 	};
@@ -1057,10 +1059,13 @@ public:
 		//-------------------------------------------------------------------------------------------------
 		KD_RATIO,																// True if the KD Ratio is <comparison> a value
 
+		PLAYER_RELATION_FACTION,								// True if one or more of the player's <relation> co-players are a faction.
     RELATION_IS,														// True if the relation between two players is as specified.
     SPOT_EMPTY,															// True if a specified spot is empty.
     SPOT_NEIGHBOURING,											// True if the index of a specified spot is neighbouring the player.
     NEIGHBOURING_SPOTS_EMPTY,								// True if <comparison> amount of neighbouring spots are empty.
+		MAP_COMPARE_SIZE,												// True if there are <comparison> starting points in the map.
+
     STARTING_CASH_COMPARE,								  // True if the player's starting cash is <comparison> <Int>.
 		CLOSEST_ENEMY_DISTANCE,									// True if the enemy's closest unit is <comparison> feet away.
 		PLAYER_NOT_HUNTED,											// True if the player has construction units || command center || supply stash.

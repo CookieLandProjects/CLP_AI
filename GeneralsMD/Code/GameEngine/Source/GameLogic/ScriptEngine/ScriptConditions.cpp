@@ -3138,6 +3138,44 @@ Bool ScriptConditions::evaluateTeamSightedRelationType(Parameter* pTeamParm, Int
 	}
 	return false;
 }
+Bool ScriptConditions::evaluateSkirmishAnyRelationFaction(Parameter* pPlayerParm, Int relationType, Parameter* pFactionParm)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer)return false;
+
+	for (int i = 2; i < ThePlayerList->getPlayerCount() - 1; i++)
+	{
+		if (ThePlayerList->getNthPlayer(i)->getRelationship(pPlayer->getDefaultTeam()) == relationType && ThePlayerList->getNthPlayer(i) != pPlayer)
+		{
+			if (ThePlayerList->getNthPlayer(i)->getSide() == pFactionParm->getString())
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+Bool ScriptConditions::evaluateMapSize(Parameter* pComparisonParm, Int pMapSize)
+{
+	Int actualSize = 0;
+	for (int i = 1; i < MAX_PLAYER_COUNT; i++)
+	{
+		AsciiString pSpot;
+		pSpot.format("Player_%d_Start", i);
+		Waypoint* way = TheTerrainLogic->getWaypointByName(pSpot);
+		if (!way) break;
+		actualSize++;
+	}
+	switch (pComparisonParm->getInt()) {
+		case Parameter::LESS_THAN:			return actualSize < pMapSize;
+		case Parameter::LESS_EQUAL:			return actualSize <= pMapSize;
+		case Parameter::EQUAL:					return actualSize == pMapSize;
+		case Parameter::GREATER_EQUAL:	return actualSize >= pMapSize;
+		case Parameter::GREATER:				return actualSize > pMapSize;
+		case Parameter::NOT_EQUAL:			return actualSize != pMapSize;
+	}
+	return false;
+}
 
 //-------------------------------------------------------------------------------------------------
 //---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
@@ -3430,8 +3468,9 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 			return evaluatePlayerLostTypeInArea(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2));
 		case Condition::TEAM_SIGHTED_RELATION_TYPE:
 			return evaluateTeamSightedRelationType(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2));
-
+		case Condition::PLAYER_RELATION_FACTION:
+			return evaluateSkirmishAnyRelationFaction(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2));
+		case Condition::MAP_COMPARE_SIZE:
+			return evaluateMapSize(pCondition->getParameter(0), pCondition->getParameter(1)->getInt());
 	}
 }
-
-

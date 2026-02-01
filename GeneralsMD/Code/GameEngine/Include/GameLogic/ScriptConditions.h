@@ -194,7 +194,8 @@ protected:
 	Bool evaluateNotHunted(Parameter* pPlayerParm);
 	Bool evaluatePlayerLostTypeInArea(Parameter* pPlayerParm, Parameter* pObjectType, Parameter* pArea);
 	Bool evaluateTeamSightedRelationType(Parameter* pTeam, Int relationType, Parameter* pObjectType);
-
+	Bool evaluateSkirmishAnyRelationFaction(Parameter* pPlayerParm, Int relationType, Parameter* pFactionParm);
+	Bool evaluateMapSize(Parameter* pComparisonParm, Int pMapSize);
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------ OUR SCRIPT CONDITION ADDITIONS END -------------------------------
 	//-------------------------------------------------------------------------------------------------

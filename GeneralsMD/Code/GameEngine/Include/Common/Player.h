@@ -448,7 +448,9 @@ public:
 	//-------------------------------------------------------------------------------------------------
 
 	virtual Bool computeSuperweaponTargetEconomy(const SpecialPowerTemplate* power, Coord3D* retPos, Int playerNdx, Real weaponRadius);
-
+	void buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real angle);
+	void buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real angle);
+	void buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real angle);
 	//-------------------------------------------------------------------------------------------------
 	//--------------------------------- @CLP_AI PLAYER ADDITIONS END ----------------------------------
 	//-------------------------------------------------------------------------------------------------

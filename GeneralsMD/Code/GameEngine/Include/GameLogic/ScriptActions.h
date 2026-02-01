@@ -392,7 +392,10 @@ protected:
 
 	void doPlayerSurrender(const AsciiString& playerName);
 	void doPlayerBuildUnit(const AsciiString& unitName, const AsciiString& playerName);
-	/*TODO*/void doBuildObjectNearestTeamRotated(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& teamName, Real angle);
+	void doBuildObjectNearestTeamAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& teamName, Real angle);
+	void doBuildSupplyCenterAngle(const AsciiString& player, const AsciiString& buildingType, Int cash, Real angle);
+	void doBuildObjectNearestTypeAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, Real angle);
+	void doBuildObjectNearestKindOfAngle(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, Real angle);
 
 	void doTeamMoveRelative(const AsciiString& teamName, Coord3D* coords);
 	void doUnitMoveRelative(const AsciiString& unitName, Coord3D* coords);
@@ -403,6 +406,8 @@ protected:
 	void doTeamMeet(const AsciiString& teamName);
 	void doTeamMeetKindOf(const AsciiString& teamName, Int kindOf);
 	void doTeamMeetType(const AsciiString& teamName, const AsciiString& objectType);
+	void doTeamMoveAwayFromRelation(const AsciiString& teamName, Real feet, Int relationType);
+	void doUnitMoveAwayFromRelation(const AsciiString& unitName, Real feet, Int relationType);
 
 	void doTeamUseCommandButtonAbilityOnType(const AsciiString& teamName, const AsciiString& ability, const AsciiString& objectType);
 	/*TODO*/void doTeamUseCommandButtonAbilityOnTeam(const AsciiString& teamName, const AsciiString& ability, const AsciiString& targetTeam);

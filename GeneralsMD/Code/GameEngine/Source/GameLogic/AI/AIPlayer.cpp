@@ -4115,5 +4115,334 @@ Int AIPlayer::getPlayerSuperweaponValueEconomy(Coord3D* center, Int playerNdx, R
 }
 
 //-------------------------------------------------------------------------------------------------
+void AIPlayer::buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real bAngle)
+{
+	const ThingTemplate* tTemplate = TheThingFactory->findTemplate(thingName);
+
+	if (!tTemplate || !team)
+	{
+		//Assert will already happen in the failed findTemplate call.
+		return;
+	}
+
+	//From the team's location, find the most valid build location.
+	const Coord3D* location = team->getEstimateTeamPosition();
+	if (!location)
+	{
+		return;
+	}
+
+	// offset back towards the base.
+	Coord2D offset;
+	offset.x = location->x - m_baseCenter.x;
+	offset.y = location->y - m_baseCenter.y;
+	offset.normalize();
+
+	Real angle = (PI / 180.0f) * bAngle;
+
+	// validate the the position to build at is valid
+	Bool valid = false;
+	Coord3D newPos = *location;
+	if (TheBuildAssistant->isLocationLegalToBuild(location, tTemplate, angle, BuildAssistant::NO_OBJECT_OVERLAP, nullptr, m_player) != LBC_OK)
+	{
+		// Warn.
+		AsciiString bldgName = tTemplate->getName();
+		bldgName.concat(" - buildSpecificBuildingNearestTeam unable to place.  Attempting to adjust position.");
+		TheScriptEngine->AppendDebugMessage(bldgName, false);
+		// try to fix.
+		Real posOffset;
+		// Wiggle it a little :)
+		for (posOffset = 0; posOffset < 2 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2 * PATHFIND_CELL_SIZE_F)
+		{
+			Real offset = posOffset / 2;
+			Real xPos, yPos;
+			yPos = location->y - offset;
+			for (xPos = location->x - offset; xPos <= location->x + offset; xPos += PATHFIND_CELL_SIZE_F)
+			{
+				newPos.x = xPos;
+				newPos.y = yPos;
+				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::TERRAIN_RESTRICTIONS |
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					nullptr, m_player) == LBC_OK;
+				if (valid)
+					break;
+
+				newPos.y = yPos + posOffset;
+				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::TERRAIN_RESTRICTIONS |
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					nullptr, m_player) == LBC_OK;
+			}
+
+			if (valid)
+				break;
+
+			xPos = location->x - offset;
+			for (yPos = location->y - offset; yPos <= location->y + offset; yPos += PATHFIND_CELL_SIZE_F)
+			{
+				newPos.x = xPos;
+				newPos.y = yPos;
+				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::TERRAIN_RESTRICTIONS |
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					nullptr, m_player) == LBC_OK;
+				if (valid)
+					break;
+
+				newPos.x = xPos + posOffset;
+				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::TERRAIN_RESTRICTIONS |
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					nullptr, m_player) == LBC_OK;
+			}
+
+			if (valid)
+				break;
+		}
+	}
+	if (valid)
+	{
+		newPos.z = 0; // All build list locations are ground relative.
+		m_player->addToPriorityBuildList(thingName, &newPos, angle);
+	}
+
+	TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
+
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real bAngle)
+{
+	const ThingTemplate* tTemplate = TheThingFactory->findTemplate(thingName);
+	if (!tTemplate)
+	{
+		DEBUG_CRASH(("Template %s should exist; check ini and script files.", thingName.str()));
+		return;
+	}
+
+	Object* bestSupplyWarehouse = findSupplyCenter(minimumCash);
+
+	if (!tTemplate->isKindOf(KINDOF_CASH_GENERATOR)) {
+		// Build by the current warehouse.
+		Object* curWarehouse = TheGameLogic->findObjectByID(m_curWarehouseID);
+		if (curWarehouse) {
+			bestSupplyWarehouse = curWarehouse;
+		}
+	}
+
+
+	if (bestSupplyWarehouse) {
+		Coord3D location;
+		location = *bestSupplyWarehouse->getPosition();
+		// offset back towards the base.
+		Coord2D offset;
+		offset.x = location.x - m_baseCenter.x;
+		offset.y = location.y - m_baseCenter.y;
+		offset.normalize();
+		Real radius = 3 * PATHFIND_CELL_SIZE_F;
+		if (!tTemplate->isKindOf(KINDOF_CASH_GENERATOR)) {
+			// It's probably a defensive structure - build towards the enemy.
+			Region2D bounds;
+			Int enemyNdx = TheScriptEngine->getSkirmishEnemyPlayer()->getPlayerIndex();
+			getPlayerStructureBounds(&bounds, enemyNdx);
+			offset.x = location.x - (bounds.lo.x + bounds.hi.x) * 0.5f;
+			offset.y = location.y - (bounds.lo.y + bounds.hi.y) * 0.5f;
+			offset.normalize();
+			radius = bestSupplyWarehouse->getGeometryInfo().getBoundingCircleRadius();
+		}
+		location.x -= offset.x * radius;
+		location.y -= offset.y * radius;
+		Real angle = (PI / 180.0f) * bAngle;
+
+		// validate the the position to build at is valid
+		Bool valid = false;
+		Coord3D newPos = location;
+		if (TheBuildAssistant->isLocationLegalToBuild(&location, tTemplate, angle,
+			BuildAssistant::NO_OBJECT_OVERLAP,
+			nullptr, m_player) != LBC_OK) {
+			// Warn.
+			const Coord3D* warehouseLocation = bestSupplyWarehouse->getPosition();
+			AsciiString debugMessage;
+			debugMessage.format(" %s - buildBySupplies unable to place near dock at (%.2f,%.2f).  Attempting to adjust position.",
+				tTemplate->getName().str(),
+				warehouseLocation->x,
+				warehouseLocation->y
+			);
+			TheScriptEngine->AppendDebugMessage(debugMessage, false);
+			if (TheGlobalData->m_debugSupplyCenterPlacement)
+				DEBUG_LOG(("%s", debugMessage.str()));
+			// try to fix.
+			Real posOffset;
+			// Wiggle it a little :)
+			for (posOffset = 0; posOffset < 2 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2 * PATHFIND_CELL_SIZE_F) {
+				Real offset = posOffset / 2;
+				Real xPos, yPos;
+				yPos = location.y - offset;
+				for (xPos = location.x - offset; xPos <= location.x + offset; xPos += PATHFIND_CELL_SIZE_F) {
+					newPos.x = xPos;
+					newPos.y = yPos;
+					valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+						BuildAssistant::CLEAR_PATH |
+						BuildAssistant::TERRAIN_RESTRICTIONS |
+						BuildAssistant::NO_OBJECT_OVERLAP,
+						nullptr, m_player) == LBC_OK;
+					if (valid) break;
+					if (TheGlobalData->m_debugSupplyCenterPlacement)
+						DEBUG_LOG(("buildBySupplies -- Fail at (%.2f,%.2f)", newPos.x, newPos.y));
+					newPos.y = yPos + posOffset;
+					valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+						BuildAssistant::CLEAR_PATH |
+						BuildAssistant::TERRAIN_RESTRICTIONS |
+						BuildAssistant::NO_OBJECT_OVERLAP,
+						nullptr, m_player) == LBC_OK;
+					if (valid) break;
+					if (TheGlobalData->m_debugSupplyCenterPlacement)
+						DEBUG_LOG(("buildBySupplies -- Fail at (%.2f,%.2f)", newPos.x, newPos.y));
+				}
+				if (valid) break;
+				xPos = location.x - offset;
+				for (yPos = location.y - offset; yPos <= location.y + offset; yPos += PATHFIND_CELL_SIZE_F) {
+					newPos.x = xPos;
+					newPos.y = yPos;
+					valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+						BuildAssistant::CLEAR_PATH |
+						BuildAssistant::TERRAIN_RESTRICTIONS |
+						BuildAssistant::NO_OBJECT_OVERLAP,
+						nullptr, m_player) == LBC_OK;
+					if (valid) break;
+					if (TheGlobalData->m_debugSupplyCenterPlacement)
+						DEBUG_LOG(("buildBySupplies -- Fail at (%.2f,%.2f)", newPos.x, newPos.y));
+					newPos.x = xPos + posOffset;
+					valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+						BuildAssistant::CLEAR_PATH |
+						BuildAssistant::TERRAIN_RESTRICTIONS |
+						BuildAssistant::NO_OBJECT_OVERLAP,
+						nullptr, m_player) == LBC_OK;
+					if (valid) break;
+					if (TheGlobalData->m_debugSupplyCenterPlacement)
+						DEBUG_LOG(("buildBySupplies -- Fail at (%.2f,%.2f)", newPos.x, newPos.y));
+				}
+				if (valid) break;
+			}
+		}
+		if (valid)
+		{
+			if (TheGlobalData->m_debugSupplyCenterPlacement)
+				DEBUG_LOG(("buildAISupplyCenter -- SUCCESS at (%.2f,%.2f)", newPos.x, newPos.y));
+			location = newPos;
+		}
+		TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
+		location.z = 0; // All build list locations are ground relative.
+		m_player->addToPriorityBuildList(thingName, &location, angle);
+		m_curWarehouseID = bestSupplyWarehouse->getID();
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real bAngle)
+{
+	const ThingTemplate* tTemplate = TheThingFactory->findTemplate(thingName);
+
+	if (!tTemplate || !bestObj)
+	{
+		//Assert will already happen in the failed findTemplate call.
+		return;
+	}
+
+	//From the object's location, find the most valid build location.
+	const Coord3D* location = bestObj->getPosition();
+	if (!location)
+	{
+		return;
+	}
+
+	// offset back towards the base.
+	Coord2D offset;
+	offset.x = location->x - m_baseCenter.x;
+	offset.y = location->y - m_baseCenter.y;
+	offset.normalize();
+
+	Real angle = (PI / 180.0f) * bAngle;
+
+	// validate the the position to build at is valid
+	Bool valid = false;
+	Coord3D newPos = *location;
+	if (TheBuildAssistant->isLocationLegalToBuild(location, tTemplate, angle, BuildAssistant::NO_OBJECT_OVERLAP, nullptr, m_player) != LBC_OK)
+	{
+		// Warn.
+		AsciiString bldgName = tTemplate->getName();
+		bldgName.concat(" - buildSpecificBuildingNearestTeam unable to place.  Attempting to adjust position.");
+		TheScriptEngine->AppendDebugMessage(bldgName, false);
+		// try to fix.
+		Real posOffset;
+		// Wiggle it a little :)
+		for (posOffset = 0; posOffset < 2 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2 * PATHFIND_CELL_SIZE_F)
+		{
+			Real offset = posOffset / 2;
+			Real xPos, yPos;
+			yPos = location->y - offset;
+			for (xPos = location->x - offset; xPos <= location->x + offset; xPos += PATHFIND_CELL_SIZE_F)
+			{
+				newPos.x = xPos;
+				newPos.y = yPos;
+				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::TERRAIN_RESTRICTIONS |
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					nullptr, m_player) == LBC_OK;
+				if (valid)
+					break;
+
+				newPos.y = yPos + posOffset;
+				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::TERRAIN_RESTRICTIONS |
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					nullptr, m_player) == LBC_OK;
+			}
+
+			if (valid)
+				break;
+
+			xPos = location->x - offset;
+			for (yPos = location->y - offset; yPos <= location->y + offset; yPos += PATHFIND_CELL_SIZE_F)
+			{
+				newPos.x = xPos;
+				newPos.y = yPos;
+				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::TERRAIN_RESTRICTIONS |
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					nullptr, m_player) == LBC_OK;
+				if (valid)
+					break;
+
+				newPos.x = xPos + posOffset;
+				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::TERRAIN_RESTRICTIONS |
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					nullptr, m_player) == LBC_OK;
+			}
+
+			if (valid)
+				break;
+		}
+	}
+	if (valid)
+	{
+		newPos.z = 0; // All build list locations are ground relative.
+		m_player->addToPriorityBuildList(thingName, &newPos, angle);
+	}
+
+	TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
+}
+
+//-------------------------------------------------------------------------------------------------
 //-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------
 //-------------------------------------------------------------------------------------------------

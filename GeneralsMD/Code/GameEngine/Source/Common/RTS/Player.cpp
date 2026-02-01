@@ -4552,5 +4552,33 @@ Bool Player::computeSuperweaponTargetEconomy(const SpecialPowerTemplate* power, 
 }
 
 //-------------------------------------------------------------------------------------------------
+void Player::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real angle)
+{
+	if (m_ai)
+	{
+		m_ai->buildBySuppliesAngle(minimumCash, thingName, angle);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void Player::buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real angle)
+{
+	if (m_ai)
+	{
+		m_ai->buildSpecificBuildingNearestTeamAngle(thingName, team, angle);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void Player::buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real angle)
+{
+	if (m_ai)
+	{
+		m_ai->buildSpecificBuildingNearestObjectAngle(thingName, bestObj, angle);
+	}
+}
+
+
+//-------------------------------------------------------------------------------------------------
 //--------------------------------- @CLP_AI PLAYER ADDITIONS END ----------------------------------
 //-------------------------------------------------------------------------------------------------
