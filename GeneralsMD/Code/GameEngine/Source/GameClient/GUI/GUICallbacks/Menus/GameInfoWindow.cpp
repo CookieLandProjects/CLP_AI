@@ -171,6 +171,21 @@ void RefreshGameInfoWindow(GameInfo *gameInfo, UnicodeString gameName)
 					addedRow = GadgetListBoxAddEntryText(listBoxPlayers,TheGameText->fetch("GUI:HardAI"),playerColor,-1, 1);
 					break;
 				}
+				case SLOT_MOD_BRUTAL_AI:
+				{
+					addedRow = GadgetListBoxAddEntryText(listBoxPlayers, TheGameText->fetch("GUI:BrutalAI"), playerColor, -1, 1);
+					break;
+				}
+				case SLOT_MOD_ABSURD_AI:
+				{
+					addedRow = GadgetListBoxAddEntryText(listBoxPlayers, TheGameText->fetch("GUI:AbsurdAI"), playerColor, -1, 1);
+					break;
+				}
+				case SLOT_MOD_INHUMANE_AI:
+				{
+					addedRow = GadgetListBoxAddEntryText(listBoxPlayers, TheGameText->fetch("GUI:InhumaneAI"), playerColor, -1, 1);
+					break;
+				}
 				default:
 					break;
 			}

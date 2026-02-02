@@ -194,7 +194,7 @@ void GameSlot::setMapAvailability( Bool hasMap )
 
 void GameSlot::setState( SlotState state, UnicodeString name, UnsignedInt IP )
 {
-	if (!(isAI() &&  (state == SLOT_EASY_AI || state == SLOT_MED_AI || state == SLOT_BRUTAL_AI)))
+	if (!(isAI() &&  (state == SLOT_EASY_AI || state == SLOT_MED_AI || state == SLOT_BRUTAL_AI || state == SLOT_MOD_BRUTAL_AI || state == SLOT_MOD_ABSURD_AI || state == SLOT_MOD_INHUMANE_AI)))
 	{
 		m_color = -1;
 		m_startPos = -1;
@@ -231,6 +231,15 @@ void GameSlot::setState( SlotState state, UnicodeString name, UnsignedInt IP )
 		case SLOT_BRUTAL_AI:
 			m_name = TheGameText->fetch("GUI:HardAI");
 			break;
+		case SLOT_MOD_BRUTAL_AI:
+			m_name = TheGameText->fetch("GUI:BrutalAI");
+			break;
+		case SLOT_MOD_ABSURD_AI:
+			m_name = TheGameText->fetch("GUI:AbsurdAI");
+			break;
+		case SLOT_MOD_INHUMANE_AI:
+			m_name = TheGameText->fetch("GUI:InhumaneAI");
+			break;
 		case SLOT_CLOSED:
 		default:
 			m_name = TheGameText->fetch("GUI:Closed");
@@ -249,12 +258,12 @@ Bool GameSlot::isHuman( void ) const
 
 Bool GameSlot::isOccupied( void ) const
 {
-	return m_state == SLOT_PLAYER || m_state == SLOT_EASY_AI || m_state == SLOT_MED_AI || m_state == SLOT_BRUTAL_AI;
+	return m_state == SLOT_PLAYER || m_state == SLOT_EASY_AI || m_state == SLOT_MED_AI || m_state == SLOT_BRUTAL_AI || m_state == SLOT_MOD_BRUTAL_AI || m_state == SLOT_MOD_ABSURD_AI || m_state == SLOT_MOD_INHUMANE_AI;
 }
 
 Bool GameSlot::isAI( void ) const
 {
-	return m_state == SLOT_EASY_AI || m_state == SLOT_MED_AI || m_state == SLOT_BRUTAL_AI;
+	return m_state == SLOT_EASY_AI || m_state == SLOT_MED_AI || m_state == SLOT_BRUTAL_AI || m_state == SLOT_MOD_BRUTAL_AI || m_state == SLOT_MOD_ABSURD_AI || m_state == SLOT_MOD_INHUMANE_AI;
 }
 
 Bool GameSlot::isPlayer( AsciiString userName ) const
@@ -1347,6 +1356,21 @@ Bool ParseAsciiStringToGameInfo(GameInfo *game, AsciiString options)
 								{
 									newSlot[i].setState(SLOT_BRUTAL_AI);
 									//DEBUG_LOG(("ParseAsciiStringToGameInfo - Brutal AI"));
+								}
+								case 'B':
+								{
+									newSlot[i].setState(SLOT_MOD_BRUTAL_AI);
+									//DEBUG_LOG(("ParseAsciiStringToGameInfo - ACTUAL Brutal AI"));
+								}
+								case 'A':
+								{
+									newSlot[i].setState(SLOT_MOD_ABSURD_AI);
+									//DEBUG_LOG(("ParseAsciiStringToGameInfo - Absurd AI"));
+								}
+								case 'I':
+								{
+									newSlot[i].setState(SLOT_MOD_INHUMANE_AI);
+									//DEBUG_LOG(("ParseAsciiStringToGameInfo - Inhumane AI"));
 								}
 								break;
 								default:

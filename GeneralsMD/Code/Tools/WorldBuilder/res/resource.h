@@ -299,6 +299,11 @@
 #define IDC_LIST                        1136
 #define IDC_NORMAL                      1137
 #define IDC_HARD                        1138
+
+#define IDC_BRUTAL                      1400
+#define IDC_ABSURD                      1401
+#define IDC_INHUMANE                    1402
+
 #define IDC_NEW                         1139
 #define IDC_COPY                        1140
 #define IDC_EDIT_COMMENT                1141

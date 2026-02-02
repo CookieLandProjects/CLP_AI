@@ -1201,6 +1201,9 @@ void InitWOLGameGadgets( void )
 			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:EasyAI"),GameSpyColor[GSCOLOR_PLAYER_NORMAL]);
 			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:MediumAI"),GameSpyColor[GSCOLOR_PLAYER_NORMAL]);
 			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:HardAI"),GameSpyColor[GSCOLOR_PLAYER_NORMAL]);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i], TheGameText->fetch("GUI:BrutalAI"), GameSpyColor[GSCOLOR_PLAYER_NORMAL]);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i], TheGameText->fetch("GUI:AbsurdAI"), GameSpyColor[GSCOLOR_PLAYER_NORMAL]);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i], TheGameText->fetch("GUI:InhumaneAI"), GameSpyColor[GSCOLOR_PLAYER_NORMAL]);
 			GadgetComboBoxSetSelectedPos(comboBoxPlayer[i],0);
 		}
 

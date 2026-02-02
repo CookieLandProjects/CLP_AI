@@ -606,7 +606,6 @@ public:
 
 			SKIRMISH_FIRE_SPECIAL_POWER_AT_MOST_COST_ECONOMY,///< The player fires their special power at the highest cost area, computed with heavy focus on secondary eco.
 
-			/*TODO*/SET_GATHERERS,																///< Set the amount of gatherers for each supply center.
 			/*TODO*/SWITCH_BUILDLIST_ID,													///< The player switches to BuildList ID <int> for its main base.
 			/*TODO*/SWITCH_BUILDLIST_ID_AT_SPOT,									///< The player switches to BuildList ID <int> at a specified spot.
 			/*TODO*/SELL_BUILDING_IN_CAPTURE_PROCESS_PERCENTAGE,	///< Make an AI player sell off a building that is being captured with a % chance.
@@ -690,6 +689,9 @@ protected:	// Note - If you add any member vars, you must take them into account
 	Bool				m_easy;					///< Applies to easy campaign.
 	Bool				m_normal;				///< Applies to normal campaign.
 	Bool				m_hard;					///< Applies to Hard campaign.
+	Bool				m_brutal;					
+	Bool				m_absurd;				
+	Bool				m_inhumane;			
 
 	OrCondition *m_condition;		///< First in a list of ORed clauses.
 	ScriptAction *m_action;			///< First in a list of actions executed if the conditions are true.
@@ -722,6 +724,9 @@ public:
 	void setEasy(Bool easy) { m_easy = easy;}
 	void setNormal(Bool normal) { m_normal = normal;}
 	void setHard(Bool hard) { m_hard = hard;}
+	void setBrutal(Bool brutal) { m_brutal = brutal; }
+	void setAbsurd(Bool absurd) { m_absurd = absurd; }
+	void setInhumane(Bool inhumane) { m_inhumane = inhumane; }
 	void setSubroutine(Bool subr) { m_isSubroutine = subr;}
 	void setNextScript(Script *pScr) {m_nextScript = pScr;}
 	void setOrCondition(OrCondition *pCond) {m_condition = pCond;}
@@ -750,6 +755,9 @@ public:
 	Bool isEasy(void) const { return m_easy;}
 	Bool isNormal(void) const { return m_normal;}
 	Bool isHard(void) const { return m_hard;}
+	Bool isBrutal(void) const { return m_brutal; }
+	Bool isAbsurd(void) const { return m_absurd; }
+	Bool isInhumane(void) const { return m_inhumane; }
 	Bool isSubroutine(void) const { return m_isSubroutine;}
 	Script *getNext(void) const {return m_nextScript;}
 	OrCondition *getOrCondition(void) const {return m_condition;}
@@ -1072,7 +1080,6 @@ public:
 		PLAYER_LOST_TYPE_AREA,									// True if the player has lost an object of <type> in <area>
 		TEAM_SIGHTED_RELATION_TYPE,							// True if a team has sighted a <relation> unit of <type>
 		/*TODO*/RELATION_UNDER_ATTACK,									// True if a(n) <relation> player is under attack.
-
 
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------

@@ -418,6 +418,15 @@ GlobalData* GlobalData::m_theOriginal = nullptr;
 	{ "AISoloPlayerHealthBonus_Normal",				INI::parsePercentToReal,			nullptr,			offsetof( GlobalData, m_soloPlayerHealthBonusForDifficulty[PLAYER_COMPUTER][DIFFICULTY_NORMAL] ) },
 	{ "AISoloPlayerHealthBonus_Hard",				INI::parsePercentToReal,			nullptr,			offsetof( GlobalData, m_soloPlayerHealthBonusForDifficulty[PLAYER_COMPUTER][DIFFICULTY_HARD] ) },
 
+
+	{ "HumanSoloPlayerHealthBonus_Brutal",					INI::parsePercentToReal,			nullptr,			offsetof(GlobalData, m_soloPlayerHealthBonusForDifficulty[PLAYER_HUMAN][DIFFICULTY_BRUTAL]) },
+	{ "HumanSoloPlayerHealthBonus_Absurd",				INI::parsePercentToReal,			nullptr,			offsetof(GlobalData, m_soloPlayerHealthBonusForDifficulty[PLAYER_HUMAN][DIFFICULTY_ABSURD]) },
+	{ "HumanSoloPlayerHealthBonus_Inhumane",				INI::parsePercentToReal,			nullptr,			offsetof(GlobalData, m_soloPlayerHealthBonusForDifficulty[PLAYER_HUMAN][DIFFICULTY_INHUMANE]) },
+
+	{ "AISoloPlayerHealthBonus_Brutal",					INI::parsePercentToReal,			nullptr,			offsetof(GlobalData, m_soloPlayerHealthBonusForDifficulty[PLAYER_COMPUTER][DIFFICULTY_BRUTAL]) },
+	{ "AISoloPlayerHealthBonus_Absurd",				INI::parsePercentToReal,			nullptr,			offsetof(GlobalData, m_soloPlayerHealthBonusForDifficulty[PLAYER_COMPUTER][DIFFICULTY_ABSURD]) },
+	{ "AISoloPlayerHealthBonus_Inhumane",				INI::parsePercentToReal,			nullptr,			offsetof(GlobalData, m_soloPlayerHealthBonusForDifficulty[PLAYER_COMPUTER][DIFFICULTY_INHUMANE]) },
+
 	{ "WeaponBonus",								WeaponBonusSet::parseWeaponBonusSetPtr,	nullptr,	offsetof( GlobalData, m_weaponBonusSet ) },
 
 	{ "DefaultStructureRubbleHeight",	INI::parseReal,			nullptr,			offsetof( GlobalData, m_defaultStructureRubbleHeight ) },

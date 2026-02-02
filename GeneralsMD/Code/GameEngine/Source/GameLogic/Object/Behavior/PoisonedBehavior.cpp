@@ -245,7 +245,15 @@ void PoisonedBehavior::xfer( Xfer *xfer )
 
 	if (version >= 3)
 	{
-		xfer->xferObjectID(&m_poisonSource);
+		if (m_poisonSource != INVALID_ID)
+		{
+			xfer->xferObjectID(&m_poisonSource);
+		}
+		else
+		{
+			ObjectID dummy = INVALID_ID;
+			xfer->xferObjectID(&dummy);
+		}
 	}
 }
 

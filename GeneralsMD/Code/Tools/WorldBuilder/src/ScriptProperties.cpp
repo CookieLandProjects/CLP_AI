@@ -59,6 +59,9 @@ BEGIN_MESSAGE_MAP(ScriptProperties, CPropertyPage)
 	ON_BN_CLICKED(IDC_EASY, OnEasy)
 	ON_BN_CLICKED(IDC_HARD, OnHard)
 	ON_BN_CLICKED(IDC_NORMAL, OnNormal)
+	ON_BN_CLICKED(IDC_BRUTAL, OnBrutal)
+	ON_BN_CLICKED(IDC_ABSURD, OnAbsurd)
+	ON_BN_CLICKED(IDC_INHUMANE, OnInhumane)
 	ON_BN_CLICKED(IDC_SCRIPT_SUBROUTINE, OnScriptSubroutine)
 	ON_BN_CLICKED(IDC_EVERY_FRAME, OnEveryFrame)
 	ON_BN_CLICKED(IDC_EVERY_SECOND, OnEverySecond)
@@ -103,6 +106,19 @@ void ScriptProperties::enableControls()
 	pButton = (CButton*)GetDlgItem(IDC_HARD);
 	pButton->SetCheck(m_script->isHard() ? 1:0);
 	//pButton->EnableWindow(!isSubroutine);
+
+
+
+	pButton = (CButton*)GetDlgItem(IDC_BRUTAL);
+	pButton->SetCheck(m_script->isBrutal() ? 1 : 0);
+
+	pButton = (CButton*)GetDlgItem(IDC_ABSURD);
+	pButton->SetCheck(m_script->isAbsurd() ? 1 : 0);
+
+	pButton = (CButton*)GetDlgItem(IDC_INHUMANE);
+	pButton->SetCheck(m_script->isInhumane() ? 1 : 0);
+
+
 
 	m_updating = true;
 	Int delay = m_script->getDelayEvalSeconds();
@@ -161,6 +177,24 @@ void ScriptProperties::OnNormal()
 {
 	CButton *pButton = (CButton*)GetDlgItem(IDC_NORMAL);
 	m_script->setNormal(pButton->GetCheck()==1);
+}
+
+void ScriptProperties::OnBrutal()
+{
+	CButton* pButton = (CButton*)GetDlgItem(IDC_BRUTAL);
+	m_script->setBrutal(pButton->GetCheck() == 1);
+}
+
+void ScriptProperties::OnAbsurd()
+{
+	CButton* pButton = (CButton*)GetDlgItem(IDC_ABSURD);
+	m_script->setAbsurd(pButton->GetCheck() == 1);
+}
+
+void ScriptProperties::OnInhumane()
+{
+	CButton* pButton = (CButton*)GetDlgItem(IDC_INHUMANE);
+	m_script->setInhumane(pButton->GetCheck() == 1);
 }
 
 void ScriptProperties::OnScriptSubroutine()

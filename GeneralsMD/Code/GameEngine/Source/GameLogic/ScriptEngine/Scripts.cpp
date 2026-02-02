@@ -902,6 +902,9 @@ m_isOneShot(true),
 m_easy(true),
 m_normal(true),
 m_hard(true),
+m_brutal(true),
+m_absurd(true),
+m_inhumane(true),
 m_delayEvaluationSeconds(0),
 m_conditionTime(0),
 m_conditionExecutedCount(0),
@@ -993,6 +996,9 @@ Script *Script::duplicate(void) const
 	pNew->m_easy = m_easy;
 	pNew->m_normal = m_normal;
 	pNew->m_hard = m_hard;
+	pNew->m_brutal = m_brutal;
+	pNew->m_absurd = m_absurd;
+	pNew->m_inhumane = m_inhumane;
 	pNew->m_delayEvaluationSeconds = m_delayEvaluationSeconds;
 
 	if (m_condition) {
@@ -1029,6 +1035,9 @@ Script *Script::duplicateAndQualify(const AsciiString& qualifier,
 	pNew->m_easy = m_easy;
 	pNew->m_normal = m_normal;
 	pNew->m_hard = m_hard;
+	pNew->m_brutal = m_brutal;
+	pNew->m_absurd = m_absurd;
+	pNew->m_inhumane = m_inhumane;
 	pNew->m_delayEvaluationSeconds = m_delayEvaluationSeconds;
 
 	if (m_condition) {
@@ -1062,6 +1071,9 @@ void Script::updateFrom(Script *pSrc)
 	this->m_easy = pSrc->m_easy;
 	this->m_normal = pSrc->m_normal;
 	this->m_hard = pSrc->m_hard;
+	this->m_brutal = pSrc->m_brutal;
+	this->m_absurd = pSrc->m_absurd;
+	this->m_inhumane = pSrc->m_inhumane;
 
 	deleteInstance(this->m_condition);
 	this->m_condition = pSrc->m_condition;
@@ -1213,6 +1225,9 @@ void Script::WriteScriptDataChunk(DataChunkOutput &chunkWriter, Script *pScript)
 			chunkWriter.writeByte(pScript->m_easy);
 			chunkWriter.writeByte(pScript->m_normal);
 			chunkWriter.writeByte(pScript->m_hard);
+			chunkWriter.writeByte(pScript->m_brutal);
+			chunkWriter.writeByte(pScript->m_absurd);
+			chunkWriter.writeByte(pScript->m_inhumane);
 			chunkWriter.writeByte(pScript->m_isSubroutine);
 			chunkWriter.writeInt(pScript->m_delayEvaluationSeconds);
 			if (pScript->m_condition) OrCondition::WriteOrConditionDataChunk(chunkWriter, pScript->m_condition);
@@ -1243,6 +1258,9 @@ Script *Script::ParseScript(DataChunkInput &file, unsigned short version)
 	pScript->m_easy = file.readByte();
 	pScript->m_normal = file.readByte();
 	pScript->m_hard = file.readByte();
+	pScript->m_brutal = file.readByte();
+	pScript->m_absurd = file.readByte();
+	pScript->m_inhumane = file.readByte();
 	pScript->m_isSubroutine = file.readByte();
 	if (version>=K_SCRIPT_DATA_VERSION_2) {
 		pScript->m_delayEvaluationSeconds = file.readInt();

@@ -7223,8 +7223,7 @@ void ScriptActions::doTeamUseCommandButtonAbilityOnTeam(const AsciiString& teamN
 	if (!pTeam) {
 		return;
 	}
-
-Team* tTeam = TheScriptEngine->getTeamNamed(targetTeam);
+	Team* tTeam = TheScriptEngine->getTeamNamed(targetTeam);
 	if (!tTeam) {
 		return;
 	}
@@ -7233,7 +7232,7 @@ Team* tTeam = TheScriptEngine->getTeamNamed(targetTeam);
 #if RETAIL_COMPATIBLE_AIGROUP
 	pTeam->getTeamAsAIGroup(theGroup);
 #else
-	team->getTeamAsAIGroup(theGroup.Peek());
+	pTeam->getTeamAsAIGroup(theGroup.Peek());
 #endif
 
 	const CommandButton* commandButton = TheControlBar->findCommandButton(ability);
@@ -7253,22 +7252,16 @@ Team* tTeam = TheScriptEngine->getTeamNamed(targetTeam);
 		return;
 	}
 
-	PartitionFilterAcceptOnTeam f1(tTeam);
-	PartitionFilterValidCommandButtonTarget f2(srcObj, commandButton, true, CMD_FROM_SCRIPT);
-	PartitionFilterSameMapStatus filterMapStatus(srcObj);
-
-	Coord3D pos;
-	theGroup->getCenter(&pos);
-
-	PartitionFilter* filters[] = { &f1, &f2, &filterMapStatus, nullptr };
-	Object* obj = ThePartitionManager->getClosestObject(&pos, REALLY_FAR, FROM_CENTER_2D, filters);
-	if (!obj) {
-		DEBUG_LOG(("\n\n\n\n\n\n\n\n\nNOT FOUND\n\n\n\n\n\n\n\n\n"));  return;
+	Object* theTarget = TheScriptEngine->getTeamNamed(targetTeam)->getFirstItemIn_TeamMemberList();
+	if (!theTarget) {
+		return;
 	}
-	DEBUG_LOG(("\n\n\n\n\n\n\n\n\nObject found: %s\n\n\n\n\n\n\n\n", obj->getTemplate()->getName()));
-	// already been checked for validity
-	theGroup->groupDoCommandButtonAtObject(commandButton, obj, CMD_FROM_SCRIPT);
+
+	if (commandButton->isValidToUseOn(srcObj, theTarget, nullptr, CMD_FROM_SCRIPT)) {
+		theGroup->groupDoCommandButtonAtObject(commandButton, theTarget, CMD_FROM_SCRIPT);
+	}
 }
+
 
 //-------------------------------------------------------------------------------------------------
 void ScriptActions::doPlayerMergeKindOf(const AsciiString& playerName, Int kindOf, const AsciiString& teamName)

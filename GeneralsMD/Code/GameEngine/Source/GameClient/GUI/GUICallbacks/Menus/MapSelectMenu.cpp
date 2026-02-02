@@ -144,6 +144,32 @@ void SetDifficultyRadioButton( void )
 				break;
 			}
 
+			case DIFFICULTY_BRUTAL:
+			{
+				NameKeyType radioButtonBrutalAIID = TheNameKeyGenerator->nameToKey("MapSelectMenu.wnd:RadioButtonBrutalAI");
+				GameWindow* radioButtonBrutalAI = TheWindowManager->winGetWindowFromId(parent, radioButtonBrutalAIID);
+				GadgetRadioSetSelection(radioButtonBrutalAI, FALSE);
+				s_AIDiff = DIFFICULTY_BRUTAL;
+				break;
+			}
+
+			case DIFFICULTY_ABSURD:
+			{
+				NameKeyType radioButtonAbsurdAIID = TheNameKeyGenerator->nameToKey("MapSelectMenu.wnd:RadioButtonAbsurdAI");
+				GameWindow* radioButtonAbsurdAI = TheWindowManager->winGetWindowFromId(parent, radioButtonAbsurdAIID);
+				GadgetRadioSetSelection(radioButtonAbsurdAI, FALSE);
+				s_AIDiff = DIFFICULTY_ABSURD;
+				break;
+			}
+			case DIFFICULTY_INHUMANE:
+			{
+				NameKeyType radioButtonInhumaneAIID = TheNameKeyGenerator->nameToKey("MapSelectMenu.wnd:RadioButtonInhumaneAI");
+				GameWindow* radioButtonInhumaneAI = TheWindowManager->winGetWindowFromId(parent, radioButtonInhumaneAIID);
+				GadgetRadioSetSelection(radioButtonInhumaneAI, FALSE);
+				s_AIDiff = DIFFICULTY_INHUMANE;
+				break;
+			}
+
 		default:
 			{
 				DEBUG_CRASH(("unrecognized difficulty level in the script engine"));
@@ -312,6 +338,9 @@ WindowMsgHandledType MapSelectMenuSystem( GameWindow *window, UnsignedInt msg,
 	static NameKeyType radioButtonEasyAI = NAMEKEY_INVALID;
 	static NameKeyType radioButtonMediumAI = NAMEKEY_INVALID;
 	static NameKeyType radioButtonHardAI = NAMEKEY_INVALID;
+	static NameKeyType radioButtonBrutalAI = NAMEKEY_INVALID;
+	static NameKeyType radioButtonAbsurdAI = NAMEKEY_INVALID;
+	static NameKeyType radioButtonInhumaneAI = NAMEKEY_INVALID;
 	switch( msg )
 	{
 
@@ -326,6 +355,9 @@ WindowMsgHandledType MapSelectMenuSystem( GameWindow *window, UnsignedInt msg,
 			radioButtonEasyAI = TheNameKeyGenerator->nameToKey( "MapSelectMenu.wnd:RadioButtonEasyAI" );
 			radioButtonMediumAI = TheNameKeyGenerator->nameToKey( "MapSelectMenu.wnd:RadioButtonMediumAI" );
 			radioButtonHardAI = TheNameKeyGenerator->nameToKey( "MapSelectMenu.wnd:RadioButtonHardAI" );
+			radioButtonBrutalAI = TheNameKeyGenerator->nameToKey("MapSelectMenu.wnd:RadioButtonBrutalAI");
+			radioButtonAbsurdAI = TheNameKeyGenerator->nameToKey("MapSelectMenu.wnd:RadioButtonAbsurdAI");
+			radioButtonInhumaneAI = TheNameKeyGenerator->nameToKey("MapSelectMenu.wnd:RadioButtonInhumaneAI");
 			break;
 
 		}
@@ -434,6 +466,18 @@ WindowMsgHandledType MapSelectMenuSystem( GameWindow *window, UnsignedInt msg,
 			else if( controlID == radioButtonHardAI)
 			{
 				s_AIDiff = DIFFICULTY_HARD;
+			}
+			else if (controlID == radioButtonBrutalAI)
+			{
+				s_AIDiff = DIFFICULTY_BRUTAL;
+			}
+			else if (controlID == radioButtonAbsurdAI)
+			{
+				s_AIDiff = DIFFICULTY_ABSURD;
+			}
+			else if (controlID == radioButtonInhumaneAI)
+			{
+				s_AIDiff = DIFFICULTY_INHUMANE;
 			}
 			break;
 

@@ -337,6 +337,18 @@ static void gameTooltip(GameWindow *window,
 				tooltip.concat(L'\n');
 				tooltip.concat(TheGameText->fetch("GUI:HardAI"));
 				break;
+			case SLOT_MOD_BRUTAL_AI:
+				tooltip.concat(L'\n');
+				tooltip.concat(TheGameText->fetch("GUI:BrutalAI"));
+				break;
+			case SLOT_MOD_ABSURD_AI:
+				tooltip.concat(L'\n');
+				tooltip.concat(TheGameText->fetch("GUI:AbsurdAI"));
+				break;
+			case SLOT_MOD_INHUMANE_AI:
+				tooltip.concat(L'\n');
+				tooltip.concat(TheGameText->fetch("GUI:InhumaneAI"));
+				break;
 			}
 		}
 	}

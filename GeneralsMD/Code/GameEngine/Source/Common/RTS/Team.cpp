@@ -1164,6 +1164,24 @@ Bool TeamPrototype::evaluateProductionCondition(void)
 					return false;
 				}
 				break;
+				case DIFFICULTY_BRUTAL:
+				if (!pScript->isBrutal()) {
+					m_productionConditionAlwaysFalse = true;
+					return false;
+				}
+				break;
+			case DIFFICULTY_ABSURD:
+				if (!pScript->isAbsurd()) {
+					m_productionConditionAlwaysFalse = true;
+					return false;
+				}
+				break;
+			case DIFFICULTY_INHUMANE:
+				if (!pScript->isInhumane()) {
+					m_productionConditionAlwaysFalse = true;
+					return false;
+				}
+				break;
 		}
 
 		// Make a copy of the script locally, just for paranoia's sake.  We can't be sure

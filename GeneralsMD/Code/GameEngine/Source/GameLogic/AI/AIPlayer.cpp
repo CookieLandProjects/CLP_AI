@@ -205,6 +205,15 @@ void AIPlayer::checkForSupplyCenter( BuildListInfo *info, Object *bldg )
 				if (difficulty == DIFFICULTY_HARD) {
 					desiredGatherers = resInfo->m_hard;
 				}
+				if (difficulty == DIFFICULTY_BRUTAL) {
+					desiredGatherers = resInfo->m_brutal;
+				}
+				if (difficulty == DIFFICULTY_ABSURD) {
+					desiredGatherers = resInfo->m_absurd;
+				}
+				if (difficulty == DIFFICULTY_INHUMANE) {
+					desiredGatherers = resInfo->m_inhumane;
+				}
 			}
 			resInfo = resInfo->m_next;
 		}
@@ -4095,7 +4104,7 @@ Int AIPlayer::getPlayerSuperweaponValueEconomy(Coord3D* center, Int playerNdx, R
 						else
 							value = value / 10; // Superweapons cannot be killed by any superweapon, so we don't want to target them as highly. jba.
 					}
-					if (pObj->isKindOf(KINDOF_CASH_GENERATOR))
+					if (pObj->isKindOf(KINDOF_FS_BLACK_MARKET) || pObj->isKindOf(KINDOF_FS_SUPPLY_DROPZONE) || pObj->isKindOf(KINDOF_MONEY_HACKER))
 					{
 							value = value * 10.0f; // Definitely prefer secondary eco
 					}

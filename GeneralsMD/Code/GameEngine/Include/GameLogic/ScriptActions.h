@@ -410,7 +410,7 @@ protected:
 	void doUnitMoveAwayFromRelation(const AsciiString& unitName, Real feet, Int relationType);
 
 	void doTeamUseCommandButtonAbilityOnType(const AsciiString& teamName, const AsciiString& ability, const AsciiString& objectType);
-	/*TODO*/void doTeamUseCommandButtonAbilityOnTeam(const AsciiString& teamName, const AsciiString& ability, const AsciiString& targetTeam);
+	void doTeamUseCommandButtonAbilityOnTeam(const AsciiString& teamName, const AsciiString& ability, const AsciiString& targetTeam);
 
 	void doPlayerMergeKindOf(const AsciiString& playerName, Int kindOf, const AsciiString& teamName);
 	void doTeamMergeKindOf(const AsciiString& srcName, Int kindOf, const AsciiString& destName);

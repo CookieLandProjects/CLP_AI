@@ -1138,7 +1138,16 @@ void InitSkirmishGameGadgets( void )
       GadgetComboBoxSetItemData(comboBoxPlayer[i], 3, (void *)SLOT_MED_AI);
 			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:HardAI"),white);
       GadgetComboBoxSetItemData(comboBoxPlayer[i], 4, (void *)SLOT_BRUTAL_AI);
+
+			GadgetComboBoxAddEntry(comboBoxPlayer[i], TheGameText->fetch("GUI:BrutalAI"), white);
+			GadgetComboBoxSetItemData(comboBoxPlayer[i], 5, (void*)SLOT_MOD_BRUTAL_AI);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i], TheGameText->fetch("GUI:AbsurdAI"), white);
+			GadgetComboBoxSetItemData(comboBoxPlayer[i], 6, (void*)SLOT_MOD_ABSURD_AI);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i], TheGameText->fetch("GUI:InhumaneAI"), white);
+			GadgetComboBoxSetItemData(comboBoxPlayer[i], 7, (void*)SLOT_MOD_INHUMANE_AI);
+
 			GadgetComboBoxSetSelectedPos(comboBoxPlayer[i],0);
+
 
 		}
 

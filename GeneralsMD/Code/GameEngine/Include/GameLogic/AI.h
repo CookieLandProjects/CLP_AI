@@ -100,7 +100,7 @@ class AISideInfo : public MemoryPoolObject
 {
 	MEMORY_POOL_GLUE_WITH_USERLOOKUP_CREATE(AISideInfo, "AISideInfo")
 public:
-	AISideInfo( void ) : m_easy(0), m_normal(1), m_hard(2), m_next(nullptr)
+	AISideInfo( void ) : m_easy(0), m_normal(1), m_hard(2), m_brutal(3), m_absurd(4), m_inhumane(5), m_next(nullptr)
 	{
 		m_side.clear();
 		m_baseDefenseStructure1.clear();
@@ -110,6 +110,9 @@ public:
 	Int					m_easy;						///< Number of gatherers to use in easy, normal & hard
 	Int					m_normal;
 	Int					m_hard;
+	Int					m_brutal;
+	Int					m_absurd;
+	Int					m_inhumane;
 	TSkillSet		m_skillSet1;
 	TSkillSet		m_skillSet2;
 	TSkillSet		m_skillSet3;

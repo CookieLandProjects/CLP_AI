@@ -7797,6 +7797,9 @@ void ScriptEngine::executeScript( Script *pScript )
 		case DIFFICULTY_EASY : if (!pScript->isEasy()) return;  break;
 		case DIFFICULTY_NORMAL : if (!pScript->isNormal()) return;  break;
 		case DIFFICULTY_HARD : if (!pScript->isHard()) return;  break;
+		case DIFFICULTY_BRUTAL: if (!pScript->isBrutal()) return;  break;
+		case DIFFICULTY_ABSURD: if (!pScript->isAbsurd()) return;  break;
+		case DIFFICULTY_INHUMANE: if (!pScript->isInhumane()) return;  break;
 	}
 	// If we are doing periodic evaluation, check the frame.
 	if (TheGameLogic->getFrame()<pScript->getFrameToEvaluate()) {

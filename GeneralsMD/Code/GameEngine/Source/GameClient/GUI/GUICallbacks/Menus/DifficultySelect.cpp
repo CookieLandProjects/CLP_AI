@@ -74,9 +74,16 @@ static GameWindow *   buttonCancel       = nullptr;
 static NameKeyType    radioButtonEasyAIID      = NAMEKEY_INVALID;
 static NameKeyType    radioButtonMediumAIID      = NAMEKEY_INVALID;
 static NameKeyType    radioButtonHardAIID      = NAMEKEY_INVALID;
+static NameKeyType    radioButtonBrutalAIID = NAMEKEY_INVALID;
+static NameKeyType    radioButtonAbsurdAIID = NAMEKEY_INVALID;
+static NameKeyType    radioButtonInhumaneAIID = NAMEKEY_INVALID;
 static GameWindow *   radioButtonEasyAI       = nullptr;
 static GameWindow *   radioButtonMediumAI       = nullptr;
 static GameWindow *   radioButtonHardAI       = nullptr;
+static GameWindow*		radioButtonBrutalAI = nullptr;
+static GameWindow*		radioButtonAbsurdAI = nullptr;
+static GameWindow*		radioButtonInhumaneAI = nullptr;
+
 
 void setupGameStart(AsciiString mapName, GameDifficulty diff);
 //-----------------------------------------------------------------------------
@@ -111,7 +118,24 @@ static void SetDifficultyRadioButton( void )
 				s_AIDiff = DIFFICULTY_HARD;
 				break;
 			}
-
+			case DIFFICULTY_BRUTAL:
+			{
+				GadgetRadioSetSelection(radioButtonBrutalAI, FALSE);
+				s_AIDiff = DIFFICULTY_BRUTAL;
+				break;
+			}
+			case DIFFICULTY_ABSURD:
+			{
+				GadgetRadioSetSelection(radioButtonAbsurdAI, FALSE);
+				s_AIDiff = DIFFICULTY_ABSURD;
+				break;
+			}
+			case DIFFICULTY_INHUMANE:
+			{
+				GadgetRadioSetSelection(radioButtonInhumaneAI, FALSE);
+				s_AIDiff = DIFFICULTY_INHUMANE;
+				break;
+			}
 		default:
 			{
 				DEBUG_CRASH(("unrecognized difficulty level in the script engine"));
@@ -138,6 +162,12 @@ void DifficultySelectInit( WindowLayout *layout, void *userData )
 	radioButtonMediumAI = TheWindowManager->winGetWindowFromId( parent, radioButtonMediumAIID );
 	radioButtonHardAIID = TheNameKeyGenerator->nameToKey( "DifficultySelect.wnd:RadioButtonHard" );
 	radioButtonHardAI = TheWindowManager->winGetWindowFromId( parent, radioButtonHardAIID );
+	radioButtonBrutalAIID = TheNameKeyGenerator->nameToKey("DifficultySelect.wnd:RadioButtonBrutal");
+	radioButtonBrutalAI = TheWindowManager->winGetWindowFromId(parent, radioButtonBrutalAIID);
+	radioButtonAbsurdAIID = TheNameKeyGenerator->nameToKey("DifficultySelect.wnd:RadioButtonAbsurd");
+	radioButtonAbsurdAI = TheWindowManager->winGetWindowFromId(parent, radioButtonAbsurdAIID);
+	radioButtonInhumaneAIID = TheNameKeyGenerator->nameToKey("DifficultySelect.wnd:RadioButtonInhumane");
+	radioButtonInhumaneAI = TheWindowManager->winGetWindowFromId(parent, radioButtonInhumaneAIID);
 
 	s_AIDiff = DIFFICULTY_NORMAL;
 	SetDifficultyRadioButton();
@@ -289,6 +319,18 @@ WindowMsgHandledType DifficultySelectSystem( GameWindow *window, UnsignedInt msg
 			else if ( controlID == radioButtonHardAIID )
 			{
 				s_AIDiff = DIFFICULTY_HARD;
+			}
+			else if (controlID == radioButtonBrutalAIID)
+			{
+				s_AIDiff = DIFFICULTY_BRUTAL;
+			}
+			else if (controlID == radioButtonAbsurdAIID)
+			{
+				s_AIDiff = DIFFICULTY_ABSURD;
+			}
+			else if (controlID == radioButtonInhumaneAIID)
+			{
+				s_AIDiff = DIFFICULTY_INHUMANE;
 			}
 
 			break;

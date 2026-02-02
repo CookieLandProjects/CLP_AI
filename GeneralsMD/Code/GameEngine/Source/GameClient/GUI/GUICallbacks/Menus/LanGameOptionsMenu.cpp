@@ -731,6 +731,9 @@ void InitLanGameGadgets( void )
 			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:EasyAI"),white);
 			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:MediumAI"),white);
 			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:HardAI"),white);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:BrutalAI"), white);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:AbsurdAI"), white);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:InhumaneAI"), white);
 			GadgetComboBoxSetSelectedPos(comboBoxPlayer[i],0);
 		}
 		/*

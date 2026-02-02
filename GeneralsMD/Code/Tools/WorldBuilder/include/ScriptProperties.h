@@ -70,6 +70,9 @@ protected:
 	afx_msg void OnEasy();
 	afx_msg void OnHard();
 	afx_msg void OnNormal();
+	afx_msg void OnBrutal();
+	afx_msg void OnAbsurd();
+	afx_msg void OnInhumane();
 	afx_msg void OnScriptSubroutine();
 	afx_msg void OnEveryFrame();
 	afx_msg void OnEverySecond();

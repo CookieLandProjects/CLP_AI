@@ -5973,7 +5973,7 @@ Object *AIAttackSquadState::chooseVictim(void)
 	if (cmdSource == CMD_FROM_PLAYER)
 	{
 		// if a player did this, we want to always give them the Seek and obliterate method.
-		difficulty = DIFFICULTY_HARD;
+		difficulty >= DIFFICULTY_HARD;
 	}
 
 	if (TheScriptEngine->getChooseVictimAlwaysUsesNormal())
@@ -6012,6 +6012,42 @@ Object *AIAttackSquadState::chooseVictim(void)
 		}
 
 		case DIFFICULTY_HARD:
+		{
+			// everyone picks the same unit
+			VecObjectPtr objects = victimSquad->getLiveObjects();
+			if (!objects.empty())
+			{
+				return objects[0];
+			}
+
+			return nullptr;
+			break;
+		}
+		case DIFFICULTY_BRUTAL:
+		{
+			// everyone picks the same unit
+			VecObjectPtr objects = victimSquad->getLiveObjects();
+			if (!objects.empty())
+			{
+				return objects[0];
+			}
+
+			return nullptr;
+			break;
+		}
+		case DIFFICULTY_ABSURD:
+		{
+			// everyone picks the same unit
+			VecObjectPtr objects = victimSquad->getLiveObjects();
+			if (!objects.empty())
+			{
+				return objects[0];
+			}
+
+			return nullptr;
+			break;
+		}
+		case DIFFICULTY_INHUMANE:
 		{
 			// everyone picks the same unit
 			VecObjectPtr objects = victimSquad->getLiveObjects();
