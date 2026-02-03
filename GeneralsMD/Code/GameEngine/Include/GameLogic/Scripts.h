@@ -583,7 +583,7 @@ public:
 			TEAM_MEET_AT_KINDOF,													///< Set a team to meet at the center point of all units with <kindOf>.
 			TEAM_MEET_AT_TYPE,														///< Set a team to meet at the center point of all units with <objectType>.
 			TEAM_USE_COMMAND_BUTTON_ABILITY_WITH_TYPE,		///< Set all units with an object type in a team to use a command button ability.
-			/*TODO*/TEAM_USE_COMMAND_BUTTON_ABILITY_ON_TEAM,			///< Set a team to use a command button ability on another team.
+			TEAM_USE_COMMAND_BUTTON_ABILITY_ON_TEAM,			///< Set a team to use a command button ability on another team.
 			TEAM_MERGE_KINDOF,														///< A team merges all units with <kindOf> into another team.
 			TEAM_MERGE_TYPE,															///< A team merges all units with <objectType> into another team.
 			TEAM_DISBAND_KINDOF,													///< A team disbands all units with <kindOf>.

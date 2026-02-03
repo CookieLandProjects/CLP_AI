@@ -144,7 +144,6 @@ enum { K_SCRIPT_LIST_DATA_VERSION_1 = 1,
 			K_SCRIPT_CONDITION_VERSION_3 = 3,
 			K_SCRIPT_CONDITION_VERSION_4 = 4,
 			K_SCRIPTS_DATA_VERSION_1,
-			K_SCRIPT_GROUP_DATA_VERSION_3 = 3,
 			K_SCRIPT_DATA_VERSION_3 = 3,
 			end_of_the_enumeration
 };
@@ -858,7 +857,7 @@ void ScriptGroup::WriteGroupDataChunk(DataChunkOutput &chunkWriter, ScriptGroup 
 
 	/**********SCRIPT GROUP DATA ***********************/
 	while (pGroup) {
-		chunkWriter.openDataChunk("ScriptGroup", K_SCRIPT_GROUP_DATA_VERSION_3);
+		chunkWriter.openDataChunk("ScriptGroup", K_SCRIPT_GROUP_DATA_VERSION_2);
 			chunkWriter.writeAsciiString(pGroup->m_groupName);
 			chunkWriter.writeByte(pGroup->m_isGroupActive);
 			chunkWriter.writeByte(pGroup->m_isGroupSubroutine);
@@ -883,7 +882,7 @@ Bool ScriptGroup::ParseGroupDataChunk(DataChunkInput &file, DataChunkInfo *info,
 
 	pGroup->m_groupName = file.readAsciiString();
 	pGroup->m_isGroupActive = file.readByte();
-	if (info->version == K_SCRIPT_GROUP_DATA_VERSION_2) {
+	if (info->version >= K_SCRIPT_GROUP_DATA_VERSION_2) {
 		pGroup->m_isGroupSubroutine= file.readByte();
 	}
 	pList->addGroup(pGroup, AT_END);
@@ -1227,9 +1226,11 @@ void Script::WriteScriptDataChunk(DataChunkOutput &chunkWriter, Script *pScript)
 			chunkWriter.writeByte(pScript->m_easy);
 			chunkWriter.writeByte(pScript->m_normal);
 			chunkWriter.writeByte(pScript->m_hard);
+
 			chunkWriter.writeByte(pScript->m_brutal);					// NEW
 			chunkWriter.writeByte(pScript->m_absurd);					// NEW
 			chunkWriter.writeByte(pScript->m_inhumane);				// NEW
+
 			chunkWriter.writeByte(pScript->m_isSubroutine);
 			chunkWriter.writeInt(pScript->m_delayEvaluationSeconds);
 			if (pScript->m_condition) OrCondition::WriteOrConditionDataChunk(chunkWriter, pScript->m_condition);
@@ -1271,7 +1272,7 @@ Script *Script::ParseScript(DataChunkInput &file, unsigned short version)
 		pScript->m_inhumane = file.readByte();
 	}
 	else {
-		// Default: old maps shouldn't run scripts on new difficulties                                        
+		// Default: old maps with old scripts shouldn't run scripts on new difficulties
 		pScript->m_brutal = false;
 		pScript->m_absurd = false;
 		pScript->m_inhumane = false;
@@ -1282,9 +1283,9 @@ Script *Script::ParseScript(DataChunkInput &file, unsigned short version)
 	//-------------------------------------------------------------------------------------------------
 
 	pScript->m_isSubroutine = file.readByte();
-	if (version>=K_SCRIPT_DATA_VERSION_2) {
-		pScript->m_delayEvaluationSeconds = file.readInt();
-	}
+
+	pScript->m_delayEvaluationSeconds = file.readInt();
+
 	file.registerParser( "OrCondition", "Script", OrCondition::ParseOrConditionDataChunk );
 	file.registerParser( "ScriptAction",  "Script", ScriptAction::ParseActionDataChunk );
 	file.registerParser( "ScriptActionFalse",  "Script", ScriptAction::ParseActionFalseDataChunk );
