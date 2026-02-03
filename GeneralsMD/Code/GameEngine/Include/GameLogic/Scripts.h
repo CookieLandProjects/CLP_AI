@@ -556,8 +556,8 @@ public:
 			DECREMENT_KD_RATIO_DEATHS,										///< Subtracts the deaths of a KD ratio by <Real> credits.
 			
 			AI_PLAYER_BUILDS_UNNAMED,                     ///< Tell the ai to produce a new unnamed unit.
-			AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED,	///< AI player builds a structure near an object type rotated <Real> degrees.
-			AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED,///< AI player builds a structure near a kindOf rotated <Real> degrees.
+			AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED,		///< AI player builds a structure near an object type rotated <Real> degrees.
+			AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED,	///< AI player builds a structure near a kindOf rotated <Real> degrees.
 			AI_PLAYER_BUILD_TYPE_NEAREST_TEAM_ROTATED,		///< AI player builds a structure near a team rotated <Real> degrees.
 			AI_PLAYER_BUILD_TYPE_NEAREST_SUPPLY_ROTATED,	///< AI player builds a structure near a supply source rotaded <Real> degrees.
 			/*TODO*/AI_PLAYER_BUILD_TYPE_AT_BACKDOOR,							///< AI player builds a structure at the back door path.

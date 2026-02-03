@@ -144,6 +144,8 @@ enum { K_SCRIPT_LIST_DATA_VERSION_1 = 1,
 			K_SCRIPT_CONDITION_VERSION_3 = 3,
 			K_SCRIPT_CONDITION_VERSION_4 = 4,
 			K_SCRIPTS_DATA_VERSION_1,
+			K_SCRIPT_GROUP_DATA_VERSION_3 = 3,
+			K_SCRIPT_DATA_VERSION_3 = 3,
 			end_of_the_enumeration
 };
 
@@ -856,7 +858,7 @@ void ScriptGroup::WriteGroupDataChunk(DataChunkOutput &chunkWriter, ScriptGroup 
 
 	/**********SCRIPT GROUP DATA ***********************/
 	while (pGroup) {
-		chunkWriter.openDataChunk("ScriptGroup", K_SCRIPT_GROUP_DATA_VERSION_2);
+		chunkWriter.openDataChunk("ScriptGroup", K_SCRIPT_GROUP_DATA_VERSION_3);
 			chunkWriter.writeAsciiString(pGroup->m_groupName);
 			chunkWriter.writeByte(pGroup->m_isGroupActive);
 			chunkWriter.writeByte(pGroup->m_isGroupSubroutine);
@@ -1214,7 +1216,7 @@ void Script::WriteScriptDataChunk(DataChunkOutput &chunkWriter, Script *pScript)
 {
 	/**********SCRIPT  DATA ***********************/
 	while (pScript) {
-		chunkWriter.openDataChunk("Script", K_SCRIPT_DATA_VERSION_2);
+		chunkWriter.openDataChunk("Script", K_SCRIPT_DATA_VERSION_3);
 			chunkWriter.writeAsciiString(pScript->m_scriptName);
 			chunkWriter.writeAsciiString(pScript->m_comment);
 			chunkWriter.writeAsciiString(pScript->m_conditionComment);
@@ -1225,9 +1227,9 @@ void Script::WriteScriptDataChunk(DataChunkOutput &chunkWriter, Script *pScript)
 			chunkWriter.writeByte(pScript->m_easy);
 			chunkWriter.writeByte(pScript->m_normal);
 			chunkWriter.writeByte(pScript->m_hard);
-			chunkWriter.writeByte(pScript->m_brutal);
-			chunkWriter.writeByte(pScript->m_absurd);
-			chunkWriter.writeByte(pScript->m_inhumane);
+			chunkWriter.writeByte(pScript->m_brutal);					// NEW
+			chunkWriter.writeByte(pScript->m_absurd);					// NEW
+			chunkWriter.writeByte(pScript->m_inhumane);				// NEW
 			chunkWriter.writeByte(pScript->m_isSubroutine);
 			chunkWriter.writeInt(pScript->m_delayEvaluationSeconds);
 			if (pScript->m_condition) OrCondition::WriteOrConditionDataChunk(chunkWriter, pScript->m_condition);
@@ -1258,9 +1260,27 @@ Script *Script::ParseScript(DataChunkInput &file, unsigned short version)
 	pScript->m_easy = file.readByte();
 	pScript->m_normal = file.readByte();
 	pScript->m_hard = file.readByte();
-	pScript->m_brutal = file.readByte();
-	pScript->m_absurd = file.readByte();
-	pScript->m_inhumane = file.readByte();
+
+	//-------------------------------------------------------------------------------------------------
+	//------------------------------------ @CLP_AI PARSING ADDITON ------------------------------------
+	//-------------------------------------------------------------------------------------------------
+
+	if (version >= K_SCRIPT_DATA_VERSION_3) {
+		pScript->m_brutal = file.readByte();
+		pScript->m_absurd = file.readByte();
+		pScript->m_inhumane = file.readByte();
+	}
+	else {
+		// Default: old maps shouldn't run scripts on new difficulties                                        
+		pScript->m_brutal = false;
+		pScript->m_absurd = false;
+		pScript->m_inhumane = false;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	//---------------------------------- @CLP_AI PARSING ADDITON END ----------------------------------
+	//-------------------------------------------------------------------------------------------------
+
 	pScript->m_isSubroutine = file.readByte();
 	if (version>=K_SCRIPT_DATA_VERSION_2) {
 		pScript->m_delayEvaluationSeconds = file.readInt();

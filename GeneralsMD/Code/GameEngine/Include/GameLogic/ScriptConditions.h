@@ -182,7 +182,7 @@ protected:
 	Bool evaluateMissionAttempts(Parameter* pPlayerParm, Parameter* pComparisonParm, Parameter* pAttemptsParm);
 
 	//-------------------------------------------------------------------------------------------------
-	//-------------------------------  OUR SCRIPT CONDITION ADDITIONS  --------------------------------
+	//------------------------------ @CLP_AI SCRIPT CONDITION ADDITIONS -------------------------------
 	//-------------------------------------------------------------------------------------------------
 
 	Bool evaluatePlayerRelation(const AsciiString& playerSrcName, Int relationType, const AsciiString& playerDstName);
@@ -196,8 +196,9 @@ protected:
 	Bool evaluateTeamSightedRelationType(Parameter* pTeam, Int relationType, Parameter* pObjectType);
 	Bool evaluateSkirmishAnyRelationFaction(Parameter* pPlayerParm, Int relationType, Parameter* pFactionParm);
 	Bool evaluateMapSize(Parameter* pComparisonParm, Int pMapSize);
+
 	//-------------------------------------------------------------------------------------------------
-	//------------------------------ OUR SCRIPT CONDITION ADDITIONS END -------------------------------
+	//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 	//-------------------------------------------------------------------------------------------------
 
 };

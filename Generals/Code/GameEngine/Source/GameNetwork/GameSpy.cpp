@@ -857,13 +857,13 @@ void GOAPlayersCallback(PEER peer, PEERBool playing, char * outbuf,
 			name = "CB";
 			break;
 		case SLOT_MOD_BRUTAL_AI:
-			name = "CMB";
+			name = "CC";
 			break;
 		case SLOT_MOD_ABSURD_AI:
-			name = "CMA";
+			name = "CA";
 			break;
 		case SLOT_MOD_INHUMANE_AI:
-			name = "CMI";
+			name = "CI";
 			break;
 		case SLOT_PLAYER:
 			{

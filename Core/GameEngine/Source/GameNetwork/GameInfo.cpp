@@ -1357,16 +1357,19 @@ Bool ParseAsciiStringToGameInfo(GameInfo *game, AsciiString options)
 									newSlot[i].setState(SLOT_BRUTAL_AI);
 									//DEBUG_LOG(("ParseAsciiStringToGameInfo - Brutal AI"));
 								}
-								case 'B':
+								break;
+								case 'C':
 								{
 									newSlot[i].setState(SLOT_MOD_BRUTAL_AI);
 									//DEBUG_LOG(("ParseAsciiStringToGameInfo - ACTUAL Brutal AI"));
 								}
+								break;
 								case 'A':
 								{
 									newSlot[i].setState(SLOT_MOD_ABSURD_AI);
 									//DEBUG_LOG(("ParseAsciiStringToGameInfo - Absurd AI"));
 								}
+								break;
 								case 'I':
 								{
 									newSlot[i].setState(SLOT_MOD_INHUMANE_AI);
