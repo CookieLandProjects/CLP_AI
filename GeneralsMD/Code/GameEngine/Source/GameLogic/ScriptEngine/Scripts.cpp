@@ -635,7 +635,9 @@ m_firstScript(nullptr),
 m_hasWarnings(false),
 m_isGroupActive(true),
 m_isGroupSubroutine(false),
-m_nextGroup(nullptr)
+m_nextGroup(nullptr),
+m_firstSubGroup(nullptr),
+m_groupId(ScriptList::getNextID())
 {
 	m_groupName.format("Script Group %d", ScriptList::getNextID());
 }
@@ -650,17 +652,39 @@ ScriptGroup::~ScriptGroup(void)
 	deleteInstance(m_firstScript);
 	m_firstScript = nullptr;
 
-	if (m_nextGroup) {
-		// Delete all the subsequent groups in our list.
-		ScriptGroup *cur = m_nextGroup;
-		ScriptGroup *next;
-		while (cur) {
-			next = cur->getNext();
-			cur->setNextGroup(nullptr); // prevents recursion.
-			deleteInstance(cur);
-			cur = next;
-		}
+	//if (m_nextGroup) {
+	//	// Delete all the subsequent groups in our list.
+	//	ScriptGroup *cur = m_nextGroup;
+	//	ScriptGroup *next;
+	//	while (cur) {
+	//		next = cur->getNext();
+	//		cur->setNextGroup(nullptr); // prevents recursion.
+	//		deleteInstance(cur);
+	//		cur = next;
+	//	}
+	//}
+		if (m_nextGroup) {
+			ScriptGroup * cur = m_nextGroup;
+			ScriptGroup * next;
+			while (cur) {
+				next = cur->getNext();
+				cur->setNextGroup(nullptr);
+				deleteInstance(cur);
+				cur = next;
+			}
 	}
+  // delete child subgroups
+		if (m_firstSubGroup) {
+			ScriptGroup * cur = m_firstSubGroup;
+			ScriptGroup * next;
+			while (cur) {
+				next = cur->getFirstSubGroup();
+				cur->setFirstSubGroup(nullptr);
+				deleteInstance(cur);
+				cur = next;
+			}
+			m_firstSubGroup = nullptr;
+		}
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -758,6 +782,22 @@ ScriptGroup *ScriptGroup::duplicate(void) const
 	pNew->m_isGroupActive = this->m_isGroupActive;
 	pNew->m_isGroupSubroutine = this->m_isGroupSubroutine;
 	pNew->m_nextGroup = nullptr;
+  // duplicate subgroups
+		if (this->m_firstSubGroup) {
+			ScriptGroup * srcSub = this->m_firstSubGroup;
+			ScriptGroup * dstSub = nullptr;
+			while (srcSub) {
+				ScriptGroup * tmp = srcSub->duplicate();
+				if (dstSub)
+					dstSub->setNextGroup(tmp);
+				else
+					pNew->m_firstSubGroup = tmp;
+				srcSub = srcSub->getNext();
+				dstSub = tmp;
+			}
+	}
+	// new copy gets new id :D
+		pNew->m_groupId = ScriptList::getNextID();
 
 	return pNew;
 }
@@ -794,8 +834,175 @@ ScriptGroup *ScriptGroup::duplicateAndQualify(const AsciiString& qualifier,
 	pNew->m_isGroupActive = this->m_isGroupActive;
 	pNew->m_isGroupSubroutine = this->m_isGroupSubroutine;
 	pNew->m_nextGroup = nullptr;
+  // duplicate subgroups
+		if (this->m_firstSubGroup) {
+		ScriptGroup * srcSub = this->m_firstSubGroup;
+		ScriptGroup * dstSub = nullptr;
+		while (srcSub) {
+			ScriptGroup * tmp = srcSub->duplicateAndQualify(qualifier, playerTemplateName, newPlayerName);
+			if (dstSub)
+				dstSub->setNextGroup(tmp);
+			else
+			 pNew->m_firstSubGroup = tmp;
+			srcSub = srcSub->getNext();
+			dstSub = tmp;
+		}
+	}
 
 	return pNew;
+}
+
+//add a subgroup to this groups list of child groups
+void ScriptGroup::addSubGroup(ScriptGroup* pGrp, Int ndx)
+{
+	ScriptGroup* pPrev = nullptr;
+	ScriptGroup* pCur = m_firstSubGroup;
+	DEBUG_ASSERTCRASH(pGrp->getNext() == nullptr, ("Adding already linked group."));
+
+	while (ndx && pCur) {
+		pPrev = pCur;
+		pCur = pCur->getNext();
+		ndx--;
+	}
+
+	if (pPrev) {
+		pGrp->setNextGroup(pPrev->getNext());
+		pPrev->setNextGroup(pGrp);
+	}
+	else {
+		pGrp->setNextGroup(m_firstSubGroup);
+		m_firstSubGroup = pGrp;
+	}
+}
+
+//delete a subgroup from this groups list of child groups
+void ScriptGroup::deleteSubGroup(ScriptGroup* pGrp)
+{
+	ScriptGroup* pPrev = nullptr;
+	ScriptGroup* pCur = m_firstSubGroup;
+
+	while (pCur != pGrp) {
+		pPrev = pCur;
+		pCur = pCur->getNext();
+	}
+
+	DEBUG_ASSERTCRASH(pCur, ("Couldn't find subgroup."));
+	if (pCur == nullptr) return;
+
+	if (pPrev) {
+		pPrev->setNextGroup(pCur->getNext());
+	}
+	else {
+		m_firstSubGroup = pCur->getNext();
+	}
+
+	pCur->setNextGroup(nullptr);
+	deleteInstance(pCur);
+}
+
+
+bool ScriptGroup::removeChildRecursive(ScriptGroup* pGrp)
+{
+	ScriptGroup* pPrev = nullptr;
+	ScriptGroup* pCur = m_firstSubGroup;
+
+	while (pCur)
+	{
+		if (pCur == pGrp)
+		{
+			if (pPrev)
+				pPrev->setNextGroup(pCur->getNext());
+			else
+				m_firstSubGroup = pCur->getNext();
+			pCur->setNextGroup(nullptr);
+			deleteInstance(pCur);
+			return true;
+		}
+		if (pCur->removeChildRecursive(pGrp))
+			return true;
+
+		pPrev = pCur;
+		pCur = pCur->getNext();
+	}
+	return false;
+}
+
+//returns immediate parent, nullptr if not found.
+ScriptGroup* ScriptGroup::findParentOfChild(ScriptGroup* pGrp)
+{
+	ScriptGroup* cur = m_firstSubGroup;
+	while (cur)
+	{
+		if (cur == pGrp)
+			return this;
+		ScriptGroup* found = cur->findParentOfChild(pGrp);
+		if (found)
+			return found;
+		cur = cur->getNext();
+	}
+	return nullptr;
+}
+
+//remove a group wherever it is in the list
+bool ScriptList::removeGroupRecursive(ScriptGroup* pGrp)
+{
+	if (!pGrp) return false;
+
+	if (m_firstGroup == pGrp)
+	{
+		m_firstGroup = pGrp->getNext();
+		pGrp->setNextGroup(nullptr);
+		deleteInstance(pGrp);
+		return true;
+	}
+
+	ScriptGroup* prev = nullptr;
+	ScriptGroup* cur = m_firstGroup;
+	while (cur)
+	{
+		if (cur == pGrp)
+		{
+			if (prev)
+				prev->setNextGroup(cur->getNext());
+			else
+				m_firstGroup = cur->getNext();
+			cur->setNextGroup(nullptr);
+			deleteInstance(cur);
+			return true;
+		}
+		prev = cur;
+		cur = cur->getNext();
+	}
+
+	for (ScriptGroup* g = m_firstGroup; g; g = g->getNext())
+	{
+		if (g->removeChildRecursive(pGrp))
+			return true;
+	}
+
+	return false;
+}
+
+//find and return immediate parent group if pGrp is nested
+ScriptGroup* ScriptList::findParentOfGroup(ScriptGroup* pGrp)
+{
+	if (!pGrp) return nullptr;
+
+	// if top-level head is the group -> no parent
+	if (m_firstGroup == pGrp)
+		return nullptr;
+
+	ScriptGroup* cur = m_firstGroup;
+	while (cur)
+	{
+		if (cur->getNext() == pGrp)
+			return cur;
+		ScriptGroup* found = cur->findParentOfChild(pGrp);
+		if (found)
+			return found;
+		cur = cur->getNext();
+	}
+	return nullptr;
 }
 
 /**
@@ -861,6 +1068,10 @@ void ScriptGroup::WriteGroupDataChunk(DataChunkOutput &chunkWriter, ScriptGroup 
 			chunkWriter.writeByte(pGroup->m_isGroupActive);
 			chunkWriter.writeByte(pGroup->m_isGroupSubroutine);
 			if (pGroup->m_firstScript) Script::WriteScriptDataChunk(chunkWriter, pGroup->m_firstScript);
+			// write nested subgroups (if any)
+			if (pGroup->m_firstSubGroup) {
+				ScriptGroup::WriteGroupDataChunk(chunkWriter, pGroup->m_firstSubGroup);
+			}
 		chunkWriter.closeDataChunk();
 		pGroup = pGroup->getNext();
 	}
@@ -874,18 +1085,59 @@ void ScriptGroup::WriteGroupDataChunk(DataChunkOutput &chunkWriter, ScriptGroup 
 *	Input: DataChunkInput
 *
 */
-Bool ScriptGroup::ParseGroupDataChunk(DataChunkInput &file, DataChunkInfo *info, void *userData)
+Bool ScriptGroup::ParseGroupDataChunk(DataChunkInput& file, DataChunkInfo* info, void* userData)
 {
-	ScriptList *pList = (ScriptList *)userData;
-	ScriptGroup *pGroup = newInstance(ScriptGroup);
+	ScriptGroup* pGroup = newInstance(ScriptGroup);
 
 	pGroup->m_groupName = file.readAsciiString();
 	pGroup->m_isGroupActive = file.readByte();
 	if (info->version == K_SCRIPT_GROUP_DATA_VERSION_2) {
-		pGroup->m_isGroupSubroutine= file.readByte();
+		pGroup->m_isGroupSubroutine = file.readByte();
 	}
-	pList->addGroup(pGroup, AT_END);
-	file.registerParser( "Script", info->label, Script::ParseScriptFromGroupDataChunk );
+
+	ScriptList* pList = nullptr;
+	ScriptGroup* pParent = nullptr;
+
+	if (userData) {
+		Snapshot* snap = reinterpret_cast<Snapshot*>(userData);
+		if (snap) {
+			pList = dynamic_cast<ScriptList*>(snap);
+			pParent = dynamic_cast<ScriptGroup*>(snap);
+		}
+	}
+
+	if (!pList && !pParent) {
+		if (file.m_currentObject)
+		{
+			pParent = static_cast<ScriptGroup*>(file.m_currentObject);
+			if (!pParent)
+				pList = static_cast<ScriptList*>(file.m_currentObject);
+			if (pParent)
+				DEBUG_LOG(("ParseGroupDataChunk: using file.m_currentObject as ScriptGroup parent"));
+			else if (pList)
+				DEBUG_LOG(("ParseGroupDataChunk: using file.m_currentObject as ScriptList parent"));
+		}
+	}
+
+	// Attach to detected parent
+	if (pList) {
+		pList->addGroup(pGroup, AT_END);
+		DEBUG_LOG(("ParseGroupDataChunk: Added top-level group '%s' to ScriptList", pGroup->m_groupName.str()));
+	}
+	else if (pParent) {
+		pParent->addSubGroup(pGroup, AT_END);
+		DEBUG_LOG(("ParseGroupDataChunk: Added subgroup '%s' under parent '%s'", pGroup->m_groupName.str(), pParent->getName().str()));
+	}
+	else {
+		ScriptList* pList2 = static_cast<ScriptList*>(userData);
+		pList2->addGroup(pGroup, AT_END);
+		DEBUG_LOG(("ParseGroupDataChunk: Fallback - added group '%s' as top-level", pGroup->m_groupName.str()));
+	}
+
+	// Register parsers for nested scripts and nested groups under this group
+	file.registerParser("Script", info->label, Script::ParseScriptFromGroupDataChunk);
+	file.registerParser("ScriptGroup", info->label, ScriptGroup::ParseGroupDataChunk);
+
 	return file.parse(pGroup);
 
 }

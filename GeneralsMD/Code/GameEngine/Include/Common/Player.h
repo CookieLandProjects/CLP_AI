@@ -240,6 +240,8 @@ public:
 	Energy *getEnergy() { return &m_energy; }
 	const Energy *getEnergy() const { return &m_energy; }
 
+	AIPlayer* getAi() { return m_ai; }
+	const AIPlayer* getAi() const { return m_ai; }
 	// adds a power bonus to this player because of energy upgrade at his power plants
 	void addPowerBonus(Object *obj) { m_energy.addPowerBonus(obj); }
 	void removePowerBonus(Object *obj) { m_energy.removePowerBonus(obj); }
@@ -536,6 +538,7 @@ public:
 
 	void setBuildList(BuildListInfo *pBuildList);			///< sets the build list.
 	BuildListInfo *getBuildList( void ) { return m_pBuildList; }		///< returns the build list. (build list might be modified by the solo AI)
+	void addToBuildListTransfered(Object* obj);
 	void addToBuildList(Object *obj);			///< Adds this to the build list.	 Used for factories placed instead of in build list.
 	void addToPriorityBuildList(AsciiString templateName, Coord3D *pos, Real angle);			///< Adds this to the build list.	 Used for factories placed instead of in build list.
 

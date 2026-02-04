@@ -209,6 +209,7 @@ public:
 
 	/// Calculates the closest construction zone location based on a template.
 	Bool calcClosestConstructionZoneLocation( const ThingTemplate *constructTemplate, Coord3D *location );
+	void onCapture(Object* obj);
 
 protected:
 

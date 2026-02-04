@@ -517,6 +517,7 @@ void SidesList::prepareForMP_or_Skirmish(void)
 		}
 	}
 	if (!gotScripts) {
+		// Add a check here if AI version is retail compatible, if not, load different .scb files.
 		AsciiString path = "data\\Scripts\\SkirmishScripts.scb";
 		DEBUG_LOG(("Skirmish map using standard scripts"));
 		m_skirmishTeamrec.clear();

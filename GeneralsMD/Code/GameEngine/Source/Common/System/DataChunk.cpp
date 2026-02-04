@@ -668,7 +668,7 @@ Bool DataChunkInput::parse( void *userData )
 					info.parentLabel = parentLabel;
 					info.version = ver;
 					info.dataSize = getChunkDataSize();
-
+					
 					if (parser->parser( *this, &info, userData ) == false)
 						return false;
 					break;

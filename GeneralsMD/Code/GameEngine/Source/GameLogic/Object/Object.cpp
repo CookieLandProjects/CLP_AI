@@ -59,6 +59,8 @@
 
 #include "GameLogic/AI.h"
 #include "GameLogic/AIPathfind.h"
+#include "GameLogic/AIPlayer.h"
+#include "GameLogic/AISkirmishPlayer.h"
 #include "GameLogic/ExperienceTracker.h"
 #include "GameLogic/FiringTracker.h"
 #include "GameLogic/GameLogic.h"
@@ -902,6 +904,16 @@ void Object::setOrRestoreTeam( Team* team, Bool restoring )
 						ai->setAttackInfo(info);
 					}
 				}
+			}
+		}
+		if (!restoring && this->isKindOf(KINDOF_STRUCTURE))
+		{
+			Player* newOwner = m_team->getControllingPlayer();
+			AIPlayer* ai = newOwner->getAi();
+			if (newOwner && newOwner->isSkirmishAIPlayer())
+			{
+				newOwner->addToBuildListTransfered(this);
+				ai->onCapture(this);
 			}
 		}
 		// emit message announcing object's new alliance
@@ -4552,16 +4564,25 @@ void Object::removeUpgrade( const UpgradeTemplate *upgradeT )
 //-------------------------------------------------------------------------------------------------
 void Object::onCapture( Player *oldOwner, Player *newOwner )
 {
+	if (oldOwner == newOwner)
+	{
+		return;
+	}
 	// Everybody dhills when they captured so they don't keep doing something the new player might not want him to be doing
-	if( getAIUpdateInterface()  &&  (oldOwner != newOwner) )
+	if (getAIUpdateInterface() && (oldOwner != newOwner))
 		getAIUpdateInterface()->aiIdle(CMD_FROM_AI);
 
 	// this gets the new owner some points
+	DEBUG_LOG((
+		"Captured object: id=%d template=%s",
+		this->getID(),
+		this->getTemplate()->getName()
+		));
 	newOwner->getScoreKeeper()->addObjectCaptured(this);
 
 	// rip through the behavior modules and call the onCapture for any modules that care
-	for( BehaviorModule **module = m_behaviors; *module; ++module )
-		(*module)->onCapture( oldOwner, newOwner );
+	for (BehaviorModule** module = m_behaviors; *module; ++module)
+		(*module)->onCapture(oldOwner, newOwner);
 
 	//
 	// We have to undo our look for the old team and redo it for the new.
@@ -4578,10 +4599,34 @@ void Object::onCapture( Player *oldOwner, Player *newOwner )
 	// mark the command bar to redraw
 	TheControlBar->markUIDirty();
 
-	if (oldOwner!=newOwner && newOwner->isSkirmishAIPlayer()) {
-		// The skirmish ai doesn't know what to do with captured faction buildings except sell them.
-		if (isFactionStructure()) {
-			TheBuildAssistant->sellObject( this );
+	// Notify the Dozer that it is mine now >:(
+	if (newOwner && newOwner->isSkirmishAIPlayer())
+	{
+		AIPlayer* ai = newOwner->getAi();
+		if (ai)
+		{
+			DEBUG_LOG(("Notifying AI via getAi() for capture of obj %d (ai ptr=%p)", getID(), ai));
+			ai->onCapture(this);
+		}
+		else
+		{
+			DEBUG_LOG(("isSkirmishAIPlayer() true but getAi() == nullptr – incomplete AI setup"));
+		}
+	}
+
+	// CL 17/01/2026
+	// Don't auto-sell captured faction structures.  Instead, AI players will "recognize" and use them.
+	if (oldOwner != newOwner)
+	{
+		// If the new owner is an AI, add useful captured structures
+		// to its build list so the AI can consider them as usable production buildings.
+		if (newOwner && newOwner->isSkirmishAIPlayer()) {
+			// If this object has a production interface,
+			// add it to the new owner's build list so the AI can use it as a factory.
+			ProductionUpdateInterface* pui = getProductionUpdateInterface();
+			if (pui) {
+				newOwner->addToBuildList(this);
+			}
 		}
 	}
 

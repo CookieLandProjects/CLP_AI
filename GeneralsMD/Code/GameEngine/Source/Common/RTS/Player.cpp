@@ -640,6 +640,31 @@ void Player::setBuildList(BuildListInfo *pBuildList)
 }
 
 //=============================================================================
+void Player::addToBuildListTransfered(Object* obj)
+{
+	if (!obj || !obj->getTemplate())
+		return;
+	//DEBUG_LOG((
+	//	"[BUILDLIST] Added transferred building: "
+	//	"PlayerIndex=%d ObjectID=%d Template=%s Pos=(%.1f, %.1f, %.1f)",
+	//	getPlayerIndex(),
+	//	obj->getID(),
+	//	obj->getTemplate()->getName().str(),
+	//	obj->getPosition()->x,
+	//	obj->getPosition()->y,
+	//	obj->getPosition()->z
+	//	));
+	BuildListInfo* newInfo = newInstance(BuildListInfo);
+	newInfo->setObjectID(obj->getID());
+	newInfo->setTemplateName(obj->getTemplate()->getName());
+	newInfo->setLocation(*obj->getPosition());
+	newInfo->setAngle(obj->getOrientation());
+	newInfo->setNumRebuilds(5);
+	newInfo->setNextBuildList(m_pBuildList);
+	m_pBuildList = newInfo;
+}
+
+//=============================================================================
 void Player::addToBuildList(Object *obj)
 {
 	BuildListInfo *newInfo = newInstance( BuildListInfo );

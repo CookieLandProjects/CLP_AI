@@ -113,10 +113,12 @@ protected:
 
 protected:
 	Script			*m_firstScript;
+	ScriptGroup* m_firstSubGroup;
 	AsciiString m_groupName;
 	Bool				m_isGroupActive;
 	Bool				m_isGroupSubroutine;
 	ScriptGroup	*m_nextGroup;
+	Int         m_groupId;
 	Bool				m_hasWarnings; ///< Runtime flag used by the editor only.
 
 public:
@@ -134,6 +136,7 @@ public:
 	void setSubroutine(Bool subr) { m_isGroupSubroutine = subr;}
 	void setWarnings(Bool warnings) { m_hasWarnings = warnings;}
 	void setNextGroup(ScriptGroup *pGr) {m_nextGroup = pGr;}
+	void setFirstSubGroup(ScriptGroup* pGr) { m_firstSubGroup = pGr; }
 
 	AsciiString getName(void) const { return m_groupName;}
 	Bool isActive(void) const { return m_isGroupActive;}
@@ -141,9 +144,18 @@ public:
 	Bool hasWarnings(void) const { return m_hasWarnings;}
 	ScriptGroup *getNext(void) const {return m_nextGroup;};
 	Script *getScript(void) {return m_firstScript;};
+	const Script* getScript(void) const { return m_firstScript; };
+	ScriptGroup * getFirstSubGroup(void) const { return m_firstSubGroup; }
+	Int getGroupId(void) const { return m_groupId; }
 
 	void addScript(Script *pScr, Int ndx);
 	void deleteScript(Script *pScr);
+
+	void addSubGroup(ScriptGroup* pGrp, Int ndx);
+	void deleteSubGroup(ScriptGroup * pGrp);
+
+	bool removeChildRecursive(ScriptGroup* pGrp);
+	ScriptGroup* findParentOfChild(ScriptGroup* pGrp);
 
 	static void WriteGroupDataChunk(DataChunkOutput &chunkWriter, ScriptGroup *pGroup);
 	static Bool ParseGroupDataChunk(DataChunkInput &file, DataChunkInfo *info, void *userData);
@@ -1111,6 +1123,8 @@ public:
 public:
 	ScriptGroup *getScriptGroup(void) {return m_firstGroup;};
 	Script *getScript(void) {return m_firstScript;};
+	const ScriptGroup* getScriptGroup(void) const { return m_firstGroup; };
+	const Script* getScript(void) const { return m_firstScript; };
 	void WriteScriptListDataChunk(DataChunkOutput &chunkWriter);
 	static Bool ParseScriptListDataChunk(DataChunkInput &file, DataChunkInfo *info, void *userData);
 
@@ -1128,6 +1142,9 @@ public:
 	static Bool ParseScriptsDataChunk(DataChunkInput &file, DataChunkInfo *info, void *userData);
 	/// Writes sides (including build list info.)
 	static void WriteScriptsDataChunk(DataChunkOutput &chunkWriter, ScriptList *scriptLists[], Int numLists);
+
+	bool removeGroupRecursive(ScriptGroup* pGrp);
+	ScriptGroup* findParentOfGroup(ScriptGroup* pGrp);
 
 	/// Returns array of script list pointers.  This can only be called once after scripts
 	/// are read, and the caller is responsible for deleting the scripts.

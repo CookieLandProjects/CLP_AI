@@ -375,9 +375,9 @@ void AIPlayer::queueSupplyTruck( void )
 					}
 				}
 			}
-			if (totalHarvesters >= desiredGatherers*3) {
-				continue; // we got lotsa gatherers.
-			}
+			//if (totalHarvesters >= desiredGatherers*3) {
+			//	continue; // we got lotsa gatherers.
+			//}
 			Bool canBuildUnits = m_player->getCanBuildUnits();
 			// If we need a supply truck thingy, turn on unit building for a moment.
 			m_player->setCanBuildUnits(true);
@@ -1041,6 +1041,34 @@ Bool AIPlayer::isLocationSafe(const Coord3D *pos, const ThingTemplate *tthing )
 
 }
 
+void AIPlayer::onCapture(Object* obj)
+{
+	if (!obj)
+	{
+		return;
+	}
+
+	if (this == nullptr)
+	{
+		return;
+	}
+
+	if (obj->isKindOf(KINDOF_DOZER));
+		{
+			if (m_dozerQueuedForRepair)
+			{
+				m_repairDozer = obj->getID();
+				m_dozerQueuedForRepair = false;
+			}
+			else
+			{
+				m_buildDelay = 0;
+				m_structureTimer = 1;
+			}
+		}
+
+	//obj->clearStatus(UNMANNED)
+}
 
 // ------------------------------------------------------------------------------------------------
 /** Invoked when a unit I am training comes into existence */
@@ -2187,31 +2215,77 @@ void AIPlayer::buildSpecificBuildingNearestTeam( const AsciiString &thingName, c
 // ------------------------------------------------------------------------------------------------
 /** Find a supply center we haven't built a supply depot near yet. */
 // ------------------------------------------------------------------------------------------------
-Object *AIPlayer::findSupplyCenter(Int minimumCash)
+Object* AIPlayer::findSupplyCenter(Int minimumCash)
 {
-	Object *bestSupplyWarehouse = nullptr;
+	Object* bestSupplyWarehouse = nullptr;
 	Real bestDistSqr = 0;
-	Object *obj;
+	Object* obj;
 	Coord3D enemyCenter;
 	enemyCenter.zero();
 	Region2D bounds;
-	Player *enemy = getAiEnemy();
+	Player* enemy = getAiEnemy();
 	if (enemy) {
 		getPlayerStructureBounds(&bounds, enemy->getPlayerIndex());
-		enemyCenter.set( (bounds.lo.x+bounds.hi.x)*0.5f, (bounds.lo.y+bounds.hi.y)*0.5f, 0);
+		enemyCenter.set((bounds.lo.x + bounds.hi.x) * 0.5f, (bounds.lo.y + bounds.hi.y) * 0.5f, 0);
 	}
 
 	do {
-		for( obj = TheGameLogic->getFirstObject(); obj; obj = obj->getNextObject() )
+		for (obj = TheGameLogic->getFirstObject(); obj; obj = obj->getNextObject())
 		{
 			if (!obj->isKindOf(KINDOF_STRUCTURE)) continue;
 			if (!obj->isKindOf(KINDOF_SUPPLY_SOURCE)) continue;
 			static const NameKeyType key_warehouseUpdate = NAMEKEY("SupplyWarehouseDockUpdate");
-			SupplyWarehouseDockUpdate *warehouseModule = (SupplyWarehouseDockUpdate*)obj->findUpdateModule( key_warehouseUpdate );
-			if( warehouseModule )	{
-				Int availableCash = warehouseModule->getBoxesStored()*TheGlobalData->m_baseValuePerSupplyBox;
-				if (availableCash<minimumCash) continue;
-				if( m_player->getRelationship(obj->getTeam()) == ENEMIES ) {
+			SupplyWarehouseDockUpdate* warehouseModule = (SupplyWarehouseDockUpdate*)obj->findUpdateModule(key_warehouseUpdate);
+			if (warehouseModule) {
+				Int availableCash = warehouseModule->getBoxesStored() * TheGlobalData->m_baseValuePerSupplyBox;
+				if (availableCash < minimumCash) continue;
+				if (m_player->getRelationship(obj->getTeam()) == ENEMIES) {
+					continue;
+				}
+
+				// CL 17/01/2026
+				// Skip supply sources that are already being harvested by any player.
+				// Only consider a harvester "using" this source if it either:
+				// has this source as its preferred dock
+				// OR
+				// is currently ferrying aka forced into wanting AND is close to this source
+				Bool beingHarvested = false;
+				// radius to consider a harvester "near" this supply source
+				Real nearbyRadius = SUPPLY_CENTER_CLOSE_DIST + obj->getGeometryInfo().getBoundingCircleRadius() + 5 * PATHFIND_CELL_SIZE_F;
+				Real nearbyRadiusSqr = nearbyRadius * nearbyRadius;
+				for (Object* other = TheGameLogic->getFirstObject(); other; other = other->getNextObject())
+				{
+					if (!other->isKindOf(KINDOF_HARVESTER)) continue;
+					if (!other->getAI()) continue;
+					SupplyTruckAIInterface* stAI = other->getAI()->getSupplyTruckAIInterface();
+					if (!stAI) continue;
+
+					ObjectID prefDock = stAI->getPreferredDockID();
+					// If this harvester explicitly prefers this dock, its using it.
+					if (prefDock == obj->getID())
+					{
+						beingHarvested = true;
+						break;
+					}
+
+					// If harvester is ferrying supplies (or forced into wanting) then
+					// only treat it as using this source if it is physically near the source.
+					if (stAI->isCurrentlyFerryingSupplies() || stAI->isForcedIntoWantingState())
+					{
+						const Coord3D* otherPos = other->getPosition();
+						const Coord3D* srcPos = obj->getPosition();
+						Real dx = otherPos->x - srcPos->x;
+						Real dy = otherPos->y - srcPos->y;
+						if (dx * dx + dy * dy <= nearbyRadiusSqr)
+						{
+							beingHarvested = true;
+							break;
+						}
+					}
+				}
+				if (beingHarvested)
+				{
+					// Someone is already using this nearby supply source, skip it.
 					continue;
 				}
 
@@ -2224,9 +2298,9 @@ Object *AIPlayer::findSupplyCenter(Int minimumCash)
 				PartitionFilterOnMap filterMapStatus;
 
 
-				PartitionFilter *filters[] = { &f1, &f2, &filterMapStatus, nullptr };
+				PartitionFilter* filters[] = { &f1, &f2, &filterMapStatus, nullptr };
 
-				Object *supplyCenter = ThePartitionManager->getClosestObject(&center, radius, FROM_BOUNDINGSPHERE_2D, filters);
+				Object* supplyCenter = ThePartitionManager->getClosestObject(&center, radius, FROM_BOUNDINGSPHERE_2D, filters);
 				if (supplyCenter) {
 					// We already have a supply center.
 					continue;
@@ -2235,21 +2309,22 @@ Object *AIPlayer::findSupplyCenter(Int minimumCash)
 				Real dx, dy;
 				dx = obj->getPosition()->x - m_baseCenter.x;
 				dy = obj->getPosition()->y - m_baseCenter.y;
-				Real distSqr = dx*dx + dy*dy;
+				Real distSqr = dx * dx + dy * dy;
 				if (enemy) {
 					// make sure this isn't closer to our enemy than us.
 					dx = obj->getPosition()->x - enemyCenter.x;
 					dy = obj->getPosition()->y - enemyCenter.y;
-					if (distSqr*0.4>(dx*dx+dy*dy)*0.6f) {
+					if (distSqr * 0.4 > (dx * dx + dy * dy) * 0.6f) {
 						// closer than 60/40 to enemy than to us, probably not a good candidate for expansion.
 						continue;
 					}
 				}
 
-				if (bestSupplyWarehouse==nullptr) {
+				if (bestSupplyWarehouse == nullptr) {
 					bestSupplyWarehouse = obj;
 					bestDistSqr = distSqr;
-				} else if (bestDistSqr>distSqr) {
+				}
+				else if (bestDistSqr > distSqr) {
 					bestSupplyWarehouse = obj;
 					bestDistSqr = distSqr;
 				}
@@ -2257,7 +2332,7 @@ Object *AIPlayer::findSupplyCenter(Int minimumCash)
 		}
 		if (bestSupplyWarehouse) break;
 		minimumCash /= 2;
- 	} while (minimumCash > 100);
+	} while (minimumCash > 100);
 
 	return bestSupplyWarehouse;
 }
