@@ -2066,8 +2066,18 @@ static AsciiString formatScriptLabel(Script *pScr) {
 		fmt.concat("N ");
 	}
 	if (pScr->isHard()) {
-		fmt.concat("H]");
-	} else {
+		fmt.concat("H ");
+	}
+	if (pScr->isBrutal()) {
+		fmt.concat("B ");
+	}
+	if (pScr->isAbsurd()) {
+		fmt.concat("A ");
+	}
+	if (pScr->isInhumane()) {
+		fmt.concat("I]");
+	}
+	else {
 		fmt.concat("]");
 	}
 	fmt.concat(pScr->getName().str());

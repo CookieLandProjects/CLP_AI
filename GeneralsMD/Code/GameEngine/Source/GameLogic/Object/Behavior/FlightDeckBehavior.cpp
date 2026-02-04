@@ -679,11 +679,11 @@ Bool FlightDeckBehavior::reserveRunway(ObjectID id, Bool forLanding)
 	}
 
 	RunwayInfo& info = m_runways[runway];
-	if( info.m_inUseByForTakeoff == id && !forLanding || info.m_inUseByForLanding == id && forLanding )
+	if( (info.m_inUseByForTakeoff == id && !forLanding) || (info.m_inUseByForLanding == id && forLanding) )
 	{
 		return true;
 	}
-	else if( info.m_inUseByForTakeoff == INVALID_ID && !forLanding || info.m_inUseByForLanding == INVALID_ID && forLanding )
+	else if( (info.m_inUseByForTakeoff == INVALID_ID && !forLanding) || (info.m_inUseByForLanding == INVALID_ID && forLanding) )
 	{
 		if( forLanding )
 		{
@@ -771,7 +771,7 @@ const std::vector<Coord3D>* FlightDeckBehavior::getCreationLocations( ObjectID i
 //-------------------------------------------------------------------------------------------------
 Bool FlightDeckBehavior::isAbleToGiveUpParkingSpace( Object *jet )
 {
-	//If we're airborne or non-existant, someone else can have my spot if they need it.
+	//If we're airborne or non-existent, someone else can have my spot if they need it.
 	if( !jet || jet->isAirborneTarget() )
 	{
 		return TRUE;

@@ -205,6 +205,15 @@ void AIPlayer::checkForSupplyCenter( BuildListInfo *info, Object *bldg )
 				if (difficulty == DIFFICULTY_HARD) {
 					desiredGatherers = resInfo->m_hard;
 				}
+				if (difficulty == DIFFICULTY_BRUTAL) {
+					desiredGatherers = resInfo->m_brutal;
+				}
+				if (difficulty == DIFFICULTY_ABSURD) {
+					desiredGatherers = resInfo->m_absurd;
+				}
+				if (difficulty == DIFFICULTY_INHUMANE) {
+					desiredGatherers = resInfo->m_inhumane;
+				}
 			}
 			resInfo = resInfo->m_next;
 		}
@@ -1887,8 +1896,15 @@ void AIPlayer::buildUpgrade(const AsciiString &upgrade)
 // ------------------------------------------------------------------------------------------------
 void AIPlayer::buildBySupplies(Int minimumCash, const AsciiString& thingName)
 {
-	Object *bestSupplyWarehouse = findSupplyCenter(minimumCash);
 	const ThingTemplate* tTemplate = TheThingFactory->findTemplate(thingName);
+	if (!tTemplate)
+	{
+		DEBUG_CRASH(("Template %s should exist; check ini and script files.", thingName.str()));
+		return;
+	}
+
+	Object *bestSupplyWarehouse = findSupplyCenter(minimumCash);
+
 	if (!tTemplate->isKindOf(KINDOF_CASH_GENERATOR)) {
 		// Build by the current warehouse.
 		Object *curWarehouse = TheGameLogic->findObjectByID(m_curWarehouseID);
@@ -1898,7 +1914,7 @@ void AIPlayer::buildBySupplies(Int minimumCash, const AsciiString& thingName)
 	}
 
 
-	if (bestSupplyWarehouse && tTemplate) {
+	if (bestSupplyWarehouse) {
 		Coord3D location;
 		location = *bestSupplyWarehouse->getPosition();
 		// offset back towards the base.
@@ -2365,7 +2381,7 @@ void AIPlayer::repairStructure(ObjectID structure)
 	Object *structureObj = TheGameLogic->findObjectByID(structure);
 	if (structureObj==nullptr) return;
 	if (structureObj->getBodyModule()==nullptr) return;
-	// If the structure is not noticably damaged, don't bother.
+	// If the structure is not noticeably damaged, don't bother.
 	BodyDamageType structureState = structureObj->getBodyModule()->getDamageState();
 	if (structureState==BODY_PRISTINE) {
 		return;
@@ -3938,3 +3954,579 @@ void AIPlayer::getPlayerStructureBounds( Region2D *bounds, Int playerNdx, Bool c
 		*bounds = objBounds;
 	}
 }
+
+//-------------------------------------------------------------------------------------------------
+//---------------------------------- @CLP_AI AIPLAYER ADDITIONS -----------------------------------
+//-------------------------------------------------------------------------------------------------
+Bool AIPlayer::computeSuperweaponTargetEconomy(const SpecialPowerTemplate* power, Coord3D* retPos, Int playerNdx, Real weaponRadius)
+{
+
+	Bool success = FALSE;
+
+	Region2D bounds;
+	getPlayerStructureBounds(&bounds, playerNdx);
+
+	if (bounds.hi.x == 0
+		&& bounds.lo.x == 0
+		&& bounds.hi.y == 0
+		&& bounds.lo.y == 0
+		)
+	{
+		Region3D bounds3D;
+		// Degenerate bounds because he has no buildings.  Don't give up, scan the whole map for the leftovers.
+		TheTerrainLogic->getExtent(&bounds3D);
+		bounds.hi.x = bounds3D.hi.x;
+		bounds.lo.x = bounds3D.lo.x;
+		bounds.hi.y = bounds3D.hi.y;
+		bounds.lo.y = bounds3D.lo.y;
+	}
+
+	if (weaponRadius < 1.0f) {
+		weaponRadius = 1.0f; // sanity to avoid divide by 0.
+	}
+
+	Int xCount, yCount;
+	bounds.lo.x += weaponRadius;
+	bounds.hi.x -= weaponRadius;
+	if (bounds.hi.x < bounds.lo.x) {
+		bounds.hi.x = bounds.lo.x = (bounds.hi.x + bounds.lo.x) / 2.0f;
+	}
+	if (bounds.hi.y < bounds.lo.y) {
+		bounds.hi.y = bounds.lo.y = (bounds.hi.y + bounds.lo.y) / 2.0f;
+	}
+
+	xCount = REAL_TO_INT_CEIL(bounds.width() / weaponRadius) + 1;
+	yCount = REAL_TO_INT_CEIL(bounds.height() / weaponRadius) + 1;
+
+	if (xCount > 10) xCount = 10;
+	if (yCount > 10) yCount = 10;
+
+	Int cash = -1;
+	Coord3D pos;
+	Coord3D bestPos;
+	Int x, y, xDelta, yDelta, xIndex, yIndex, xStart, yStart;
+
+	Bool targetMilitaryUnits = TRUE;
+	if (power->getSpecialPowerType() == SPECIAL_SNEAK_ATTACK)
+	{
+		//Military units will have a negative effect on where to drop the special power.
+		//We want to target rich areas that are poorly defended or undefended.
+		targetMilitaryUnits = FALSE;
+	}
+
+	//Randomize which way we iterate the grid. We don't always want to start in the bottom left corner incase
+	//of a bad calculation, it'll would always end up there.
+	switch (GameLogicRandomValue(1, 4))
+	{
+	case 1:
+		//x min to max, y min to max
+		xDelta = 1, yDelta = 1;
+		xStart = 0, yStart = 0;
+		break;
+	case 2:
+		//x max to min, y min to max
+		xDelta = -1, yDelta = 1;
+		xStart = xCount, yStart = 0;
+		break;
+	case 3:
+		//x min to max, y max to min
+		xDelta = 1, yDelta = -1;
+		xStart = 0, yStart = yCount;
+		break;
+	case 4:
+	default:
+		//x max to min, y max to min
+		xDelta = -1, yDelta = -1;
+		xStart = xCount, yStart = yCount;
+		break;
+	}
+
+	//Calculate the generally best position
+	xIndex = xStart;
+	for (x = 0; x < xCount; x++, xIndex += xDelta)
+	{
+		yIndex = yStart;
+		for (y = 0; y < yCount; y++, yIndex += yDelta)
+		{
+			pos.x = bounds.lo.x + (bounds.width() * xIndex) / xCount;
+			pos.y = bounds.lo.y + (bounds.height() * yIndex) / yCount;
+			pos.z = 0;
+			Int curCash = getPlayerSuperweaponValueEconomy(&pos, playerNdx, 2 * weaponRadius, targetMilitaryUnits);
+			if (curCash > cash)
+			{
+				cash = curCash;
+				bestPos = pos;
+				success = true;
+			}
+		}
+	}
+
+	if (!success)
+		return false;
+
+	//Fine tune that position by looking at a even smaller radius.
+	Coord3D veryBestPos;
+	xCount = 11;
+	yCount = 11;
+	cash = -1;
+	Int count = 0;
+	for (x = 0; x < xCount; x++)
+	{
+		for (y = 0; y < yCount; y++)
+		{
+			pos.x = bestPos.x + (x - 5) * (weaponRadius / 10);
+			pos.y = bestPos.y + (x - 5) * (weaponRadius / 10);
+			pos.z = 0;
+			Int curCash = getPlayerSuperweaponValueEconomy(&pos, playerNdx, weaponRadius, targetMilitaryUnits);
+			if (curCash > cash)
+			{
+				cash = curCash;
+				veryBestPos = pos;
+				count = 1;
+			}
+			else if (curCash == cash)
+			{
+				veryBestPos.x += pos.x;
+				veryBestPos.y += pos.y;
+				count++;
+			}
+		}
+	}
+	if (count > 1) {
+		veryBestPos.x /= count;
+		veryBestPos.y /= count;
+	}
+	veryBestPos.z = TheTerrainLogic->getGroundHeight(veryBestPos.x, veryBestPos.y);
+	*retPos = veryBestPos;
+
+	success = (cash > -1);
+
+
+	return success;
+
+
+}
+
+//-------------------------------------------------------------------------------------------------
+Int AIPlayer::getPlayerSuperweaponValueEconomy(Coord3D* center, Int playerNdx, Real radius, Bool includeMilitaryUnits)
+{
+	if (radius < 4 * PATHFIND_CELL_SIZE_F)
+	{
+		radius = 4 * PATHFIND_CELL_SIZE_F;
+	}
+	Player::PlayerTeamList::const_iterator it;
+	Real cash = 0;
+	Real radSqr = sqr(radius);
+
+	Player* pPlayer = ThePlayerList->getNthPlayer(playerNdx);
+	if (pPlayer == nullptr)
+		return 0;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance())
+		{
+			Team* team = iter.cur();
+			if (!team) continue;
+			for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+			{
+				Object* pObj = iter.cur();
+				if (!pObj)
+					continue;
+
+				Bool applyNegValue = FALSE;
+				if (!includeMilitaryUnits)
+				{
+					if (pObj->isKindOf(KINDOF_FS_BASE_DEFENSE) || pObj->isKindOf(KINDOF_TECH_BASE_DEFENSE))
+					{
+						//Hostile structure
+						applyNegValue = TRUE;
+					}
+					else if (pObj->isKindOf(KINDOF_VEHICLE) || pObj->isKindOf(KINDOF_INFANTRY))
+					{
+						if (!pObj->isKindOf(KINDOF_DOZER) && !pObj->isKindOf(KINDOF_HARVESTER))
+						{
+							//Hostile unit.
+							applyNegValue = TRUE;
+						}
+					}
+				}
+				else if (pObj->isKindOf(KINDOF_AIRCRAFT))
+				{
+					if (pObj->isSignificantlyAboveTerrain())
+					{
+						continue; // Don't target flying aircraft.  OK if in the airstrip.
+					}
+				}
+				Coord3D pos = *pObj->getPosition();
+				Real dx = center->x - pos.x;
+				Real dy = center->y - pos.y;
+				if (dx * dx + dy * dy < radSqr)
+				{
+					Real dist = sqrt(dx * dx + dy * dy);
+					Real factor = 1.0f - (dist / (2 * radius)); // 1.0 in center, 0.5 on edges.
+					Real value = pObj->getTemplate()->calcCostToBuild(pPlayer);
+					if (pObj->isKindOf(KINDOF_COMMANDCENTER))
+					{
+						if (!includeMilitaryUnits)
+							value = value * 5.0f; //Command centers are prime targets for sneak attacks.
+						else
+							value = value / 10; // Command centers cannot be killed by any superweapon, so we don't want to target them as highly. jba.
+					}
+					if (pObj->isKindOf(KINDOF_FS_SUPERWEAPON))
+					{
+						if (!includeMilitaryUnits)
+							value = value * 5.0f; //Superweapons are prime targets for sneak attacks.
+						else
+							value = value / 10; // Superweapons cannot be killed by any superweapon, so we don't want to target them as highly. jba.
+					}
+					if (pObj->isKindOf(KINDOF_FS_BLACK_MARKET) || pObj->isKindOf(KINDOF_FS_SUPPLY_DROPZONE) || pObj->isKindOf(KINDOF_MONEY_HACKER))
+					{
+							value = value * 10.0f; // Definitely prefer secondary eco
+					}
+					if (applyNegValue)
+					{
+						cash -= factor * value * 5.0f; //Extremely undesired
+					}
+					else
+					{
+						cash += factor * value;
+					}
+				}
+			}
+		}
+	}
+	return cash;
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real bAngle)
+{
+	const ThingTemplate* tTemplate = TheThingFactory->findTemplate(thingName);
+
+	if (!tTemplate || !team)
+	{
+		//Assert will already happen in the failed findTemplate call.
+		return;
+	}
+
+	//From the team's location, find the most valid build location.
+	const Coord3D* location = team->getEstimateTeamPosition();
+	if (!location)
+	{
+		return;
+	}
+
+	// offset back towards the base.
+	Coord2D offset;
+	offset.x = location->x - m_baseCenter.x;
+	offset.y = location->y - m_baseCenter.y;
+	offset.normalize();
+
+	Real angle = (PI / 180.0f) * bAngle;
+
+	// validate the the position to build at is valid
+	Bool valid = false;
+	Coord3D newPos = *location;
+	if (TheBuildAssistant->isLocationLegalToBuild(location, tTemplate, angle, BuildAssistant::NO_OBJECT_OVERLAP, nullptr, m_player) != LBC_OK)
+	{
+		// Warn.
+		AsciiString bldgName = tTemplate->getName();
+		bldgName.concat(" - buildSpecificBuildingNearestTeam unable to place.  Attempting to adjust position.");
+		TheScriptEngine->AppendDebugMessage(bldgName, false);
+		// try to fix.
+		Real posOffset;
+		// Wiggle it a little :)
+		for (posOffset = 0; posOffset < 2 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2 * PATHFIND_CELL_SIZE_F)
+		{
+			Real offset = posOffset / 2;
+			Real xPos, yPos;
+			yPos = location->y - offset;
+			for (xPos = location->x - offset; xPos <= location->x + offset; xPos += PATHFIND_CELL_SIZE_F)
+			{
+				newPos.x = xPos;
+				newPos.y = yPos;
+				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::TERRAIN_RESTRICTIONS |
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					nullptr, m_player) == LBC_OK;
+				if (valid)
+					break;
+
+				newPos.y = yPos + posOffset;
+				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::TERRAIN_RESTRICTIONS |
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					nullptr, m_player) == LBC_OK;
+			}
+
+			if (valid)
+				break;
+
+			xPos = location->x - offset;
+			for (yPos = location->y - offset; yPos <= location->y + offset; yPos += PATHFIND_CELL_SIZE_F)
+			{
+				newPos.x = xPos;
+				newPos.y = yPos;
+				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::TERRAIN_RESTRICTIONS |
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					nullptr, m_player) == LBC_OK;
+				if (valid)
+					break;
+
+				newPos.x = xPos + posOffset;
+				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::TERRAIN_RESTRICTIONS |
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					nullptr, m_player) == LBC_OK;
+			}
+
+			if (valid)
+				break;
+		}
+	}
+	if (valid)
+	{
+		newPos.z = 0; // All build list locations are ground relative.
+		m_player->addToPriorityBuildList(thingName, &newPos, angle);
+	}
+
+	TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
+
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real bAngle)
+{
+	const ThingTemplate* tTemplate = TheThingFactory->findTemplate(thingName);
+	if (!tTemplate)
+	{
+		DEBUG_CRASH(("Template %s should exist; check ini and script files.", thingName.str()));
+		return;
+	}
+
+	Object* bestSupplyWarehouse = findSupplyCenter(minimumCash);
+
+	if (!tTemplate->isKindOf(KINDOF_CASH_GENERATOR)) {
+		// Build by the current warehouse.
+		Object* curWarehouse = TheGameLogic->findObjectByID(m_curWarehouseID);
+		if (curWarehouse) {
+			bestSupplyWarehouse = curWarehouse;
+		}
+	}
+
+
+	if (bestSupplyWarehouse) {
+		Coord3D location;
+		location = *bestSupplyWarehouse->getPosition();
+		// offset back towards the base.
+		Coord2D offset;
+		offset.x = location.x - m_baseCenter.x;
+		offset.y = location.y - m_baseCenter.y;
+		offset.normalize();
+		Real radius = 3 * PATHFIND_CELL_SIZE_F;
+		if (!tTemplate->isKindOf(KINDOF_CASH_GENERATOR)) {
+			// It's probably a defensive structure - build towards the enemy.
+			Region2D bounds;
+			Int enemyNdx = TheScriptEngine->getSkirmishEnemyPlayer()->getPlayerIndex();
+			getPlayerStructureBounds(&bounds, enemyNdx);
+			offset.x = location.x - (bounds.lo.x + bounds.hi.x) * 0.5f;
+			offset.y = location.y - (bounds.lo.y + bounds.hi.y) * 0.5f;
+			offset.normalize();
+			radius = bestSupplyWarehouse->getGeometryInfo().getBoundingCircleRadius();
+		}
+		location.x -= offset.x * radius;
+		location.y -= offset.y * radius;
+		Real angle = (PI / 180.0f) * bAngle;
+
+		// validate the the position to build at is valid
+		Bool valid = false;
+		Coord3D newPos = location;
+		if (TheBuildAssistant->isLocationLegalToBuild(&location, tTemplate, angle,
+			BuildAssistant::NO_OBJECT_OVERLAP,
+			nullptr, m_player) != LBC_OK) {
+			// Warn.
+			const Coord3D* warehouseLocation = bestSupplyWarehouse->getPosition();
+			AsciiString debugMessage;
+			debugMessage.format(" %s - buildBySupplies unable to place near dock at (%.2f,%.2f).  Attempting to adjust position.",
+				tTemplate->getName().str(),
+				warehouseLocation->x,
+				warehouseLocation->y
+			);
+			TheScriptEngine->AppendDebugMessage(debugMessage, false);
+			if (TheGlobalData->m_debugSupplyCenterPlacement)
+				DEBUG_LOG(("%s", debugMessage.str()));
+			// try to fix.
+			Real posOffset;
+			// Wiggle it a little :)
+			for (posOffset = 0; posOffset < 2 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2 * PATHFIND_CELL_SIZE_F) {
+				Real offset = posOffset / 2;
+				Real xPos, yPos;
+				yPos = location.y - offset;
+				for (xPos = location.x - offset; xPos <= location.x + offset; xPos += PATHFIND_CELL_SIZE_F) {
+					newPos.x = xPos;
+					newPos.y = yPos;
+					valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+						BuildAssistant::CLEAR_PATH |
+						BuildAssistant::TERRAIN_RESTRICTIONS |
+						BuildAssistant::NO_OBJECT_OVERLAP,
+						nullptr, m_player) == LBC_OK;
+					if (valid) break;
+					if (TheGlobalData->m_debugSupplyCenterPlacement)
+						DEBUG_LOG(("buildBySupplies -- Fail at (%.2f,%.2f)", newPos.x, newPos.y));
+					newPos.y = yPos + posOffset;
+					valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+						BuildAssistant::CLEAR_PATH |
+						BuildAssistant::TERRAIN_RESTRICTIONS |
+						BuildAssistant::NO_OBJECT_OVERLAP,
+						nullptr, m_player) == LBC_OK;
+					if (valid) break;
+					if (TheGlobalData->m_debugSupplyCenterPlacement)
+						DEBUG_LOG(("buildBySupplies -- Fail at (%.2f,%.2f)", newPos.x, newPos.y));
+				}
+				if (valid) break;
+				xPos = location.x - offset;
+				for (yPos = location.y - offset; yPos <= location.y + offset; yPos += PATHFIND_CELL_SIZE_F) {
+					newPos.x = xPos;
+					newPos.y = yPos;
+					valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+						BuildAssistant::CLEAR_PATH |
+						BuildAssistant::TERRAIN_RESTRICTIONS |
+						BuildAssistant::NO_OBJECT_OVERLAP,
+						nullptr, m_player) == LBC_OK;
+					if (valid) break;
+					if (TheGlobalData->m_debugSupplyCenterPlacement)
+						DEBUG_LOG(("buildBySupplies -- Fail at (%.2f,%.2f)", newPos.x, newPos.y));
+					newPos.x = xPos + posOffset;
+					valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+						BuildAssistant::CLEAR_PATH |
+						BuildAssistant::TERRAIN_RESTRICTIONS |
+						BuildAssistant::NO_OBJECT_OVERLAP,
+						nullptr, m_player) == LBC_OK;
+					if (valid) break;
+					if (TheGlobalData->m_debugSupplyCenterPlacement)
+						DEBUG_LOG(("buildBySupplies -- Fail at (%.2f,%.2f)", newPos.x, newPos.y));
+				}
+				if (valid) break;
+			}
+		}
+		if (valid)
+		{
+			if (TheGlobalData->m_debugSupplyCenterPlacement)
+				DEBUG_LOG(("buildAISupplyCenter -- SUCCESS at (%.2f,%.2f)", newPos.x, newPos.y));
+			location = newPos;
+		}
+		TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
+		location.z = 0; // All build list locations are ground relative.
+		m_player->addToPriorityBuildList(thingName, &location, angle);
+		m_curWarehouseID = bestSupplyWarehouse->getID();
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real bAngle)
+{
+	const ThingTemplate* tTemplate = TheThingFactory->findTemplate(thingName);
+
+	if (!tTemplate || !bestObj)
+	{
+		//Assert will already happen in the failed findTemplate call.
+		return;
+	}
+
+	//From the object's location, find the most valid build location.
+	const Coord3D* location = bestObj->getPosition();
+	if (!location)
+	{
+		return;
+	}
+
+	// offset back towards the base.
+	Coord2D offset;
+	offset.x = location->x - m_baseCenter.x;
+	offset.y = location->y - m_baseCenter.y;
+	offset.normalize();
+
+	Real angle = (PI / 180.0f) * bAngle;
+
+	// validate the the position to build at is valid
+	Bool valid = false;
+	Coord3D newPos = *location;
+	if (TheBuildAssistant->isLocationLegalToBuild(location, tTemplate, angle, BuildAssistant::NO_OBJECT_OVERLAP, nullptr, m_player) != LBC_OK)
+	{
+		// Warn.
+		AsciiString bldgName = tTemplate->getName();
+		bldgName.concat(" - buildSpecificBuildingNearestTeam unable to place.  Attempting to adjust position.");
+		TheScriptEngine->AppendDebugMessage(bldgName, false);
+		// try to fix.
+		Real posOffset;
+		// Wiggle it a little :)
+		for (posOffset = 0; posOffset < 2 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2 * PATHFIND_CELL_SIZE_F)
+		{
+			Real offset = posOffset / 2;
+			Real xPos, yPos;
+			yPos = location->y - offset;
+			for (xPos = location->x - offset; xPos <= location->x + offset; xPos += PATHFIND_CELL_SIZE_F)
+			{
+				newPos.x = xPos;
+				newPos.y = yPos;
+				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::TERRAIN_RESTRICTIONS |
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					nullptr, m_player) == LBC_OK;
+				if (valid)
+					break;
+
+				newPos.y = yPos + posOffset;
+				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::TERRAIN_RESTRICTIONS |
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					nullptr, m_player) == LBC_OK;
+			}
+
+			if (valid)
+				break;
+
+			xPos = location->x - offset;
+			for (yPos = location->y - offset; yPos <= location->y + offset; yPos += PATHFIND_CELL_SIZE_F)
+			{
+				newPos.x = xPos;
+				newPos.y = yPos;
+				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::TERRAIN_RESTRICTIONS |
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					nullptr, m_player) == LBC_OK;
+				if (valid)
+					break;
+
+				newPos.x = xPos + posOffset;
+				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::TERRAIN_RESTRICTIONS |
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					nullptr, m_player) == LBC_OK;
+			}
+
+			if (valid)
+				break;
+		}
+	}
+	if (valid)
+	{
+		newPos.z = 0; // All build list locations are ground relative.
+		m_player->addToPriorityBuildList(thingName, &newPos, angle);
+	}
+
+	TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
+}
+
+//-------------------------------------------------------------------------------------------------
+//-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------
+//-------------------------------------------------------------------------------------------------

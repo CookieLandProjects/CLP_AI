@@ -264,6 +264,13 @@ AsciiString EditParameter::getWarningText(Parameter *pParm, Bool isAction)
 				warningText.format("Counter/Timer '%s' does not exist.", uiString.str());
 			}
 			break;
+
+		case Parameter::KD_RATIO:
+			if (!isAction && !loadKDRatios(nullptr, uiString)) {
+				warningText.format("KD-Ratio '%s' does not exist.", uiString.str());
+			}
+			break;
+
 		case Parameter::INT:
 			break;
 		case Parameter::COLOR:
@@ -424,6 +431,7 @@ AsciiString EditParameter::getInfoText(Parameter *pParm)
 		case Parameter::KIND_OF_PARAM:
 		case Parameter::SIDE:
 		case Parameter::COUNTER:
+		case Parameter::KD_RATIO:
 		case Parameter::INT:
 		case Parameter::COLOR:
 		case Parameter::COORD3D:
@@ -538,6 +546,21 @@ Bool EditParameter::loadActionParameter(Script *pScr, Parameter::ParameterType t
 		}
 	}
 	return found;
+}
+
+void EditParameter::oldLoadActionParameter(Script* pScr, Parameter::ParameterType type, CComboBox* pCombo)
+{
+	ScriptAction* pAction;
+	for (pAction = pScr->getAction(); pAction; pAction = pAction->getNext()) {
+		Int i;
+		for (i = 0; i < pAction->getNumParameters(); i++) {
+			if (type == pAction->getParameter(i)->getParameterType()) {
+				if (CB_ERR == pCombo->FindStringExact(-1, pAction->getParameter(i)->getString().str())) {
+					pCombo->AddString(pAction->getParameter(i)->getString().str());
+				}
+			}
+		}
+	}
 }
 
 Bool EditParameter::loadAttackSetParameter(Script *pScr, CComboBox *pCombo, AsciiString match)
@@ -713,6 +736,58 @@ Bool EditParameter::loadCounters(CComboBox *pCombo, AsciiString match)
 		}
 	}
 	return found;
+}
+
+Bool EditParameter::loadKDRatios(CComboBox* pCombo, AsciiString match)
+{
+	Bool found = false;
+	if (pCombo) pCombo->ResetContent();
+	Int i;
+	SidesList* sidesListP = m_sidesListP;
+	if (sidesListP == nullptr) sidesListP = TheSidesList;
+	for (i = 0; i < sidesListP->getNumSides(); i++) {
+		ScriptList* pSL = sidesListP->getSideInfo(i)->getScriptList();
+		Script* pScr;
+		for (pScr = pSL->getScript(); pScr; pScr = pScr->getNext()) {
+			loadConditionParameter(pScr, Parameter::KD_RATIO, pCombo);
+			if (loadActionParameter(pScr, Parameter::KD_RATIO, pCombo, match)) {
+				found = true;
+			}
+		}
+		ScriptGroup* pGroup;
+		for (pGroup = pSL->getScriptGroup(); pGroup; pGroup = pGroup->getNext()) {
+			for (pScr = pGroup->getScript(); pScr; pScr = pScr->getNext()) {
+				loadConditionParameter(pScr, Parameter::KD_RATIO, pCombo);
+				if (loadActionParameter(pScr, Parameter::KD_RATIO, pCombo, match)) {
+					found = true;
+				}
+			}
+		}
+	}
+	return found;
+}
+
+void EditParameter::loadKDRatios(CComboBox* pCombo)
+{
+	pCombo->ResetContent();
+	Int i;
+	SidesList* sidesListP = m_sidesListP;
+	if (sidesListP == nullptr) sidesListP = TheSidesList;
+	for (i = 0; i < sidesListP->getNumSides(); i++) {
+		ScriptList* pSL = sidesListP->getSideInfo(i)->getScriptList();
+		Script* pScr;
+		for (pScr = pSL->getScript(); pScr; pScr = pScr->getNext()) {
+			loadConditionParameter(pScr, Parameter::KD_RATIO, pCombo);
+			oldLoadActionParameter(pScr, Parameter::KD_RATIO, pCombo);
+		}
+		ScriptGroup* pGroup;
+		for (pGroup = pSL->getScriptGroup(); pGroup; pGroup = pGroup->getNext()) {
+			for (pScr = pGroup->getScript(); pScr; pScr = pScr->getNext()) {
+				loadConditionParameter(pScr, Parameter::KD_RATIO, pCombo);
+				oldLoadActionParameter(pScr, Parameter::KD_RATIO, pCombo);
+			}
+		}
+	}
 }
 
 Bool EditParameter::loadAttackPrioritySets(CComboBox *pCombo, AsciiString match)
@@ -1818,6 +1893,11 @@ BOOL EditParameter::OnInitDialog()
 			showCombo = true;
 			loadCounters(pCombo);
 			break;
+		case Parameter::KD_RATIO:
+			captionText = "KD-Ratio named:";
+			showCombo = true;
+			loadKDRatios(pCombo);
+			break;
 		case Parameter::INT:
 			captionText = "Integer:";
 			editText.Format("%d", m_parameter->getInt());
@@ -2176,6 +2256,7 @@ void EditParameter::OnOK()
 		case Parameter::BRIDGE:
 		case Parameter::FLAG:
 		case Parameter::COUNTER:
+		case Parameter::KD_RATIO:
 		case Parameter::DIALOG:
 		case Parameter::MUSIC:
 		case Parameter::SPECIAL_POWER:

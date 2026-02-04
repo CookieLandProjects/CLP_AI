@@ -29,7 +29,6 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file in the GameEngine
-#define DEFINE_DAMAGE_NAMES
 #define DEFINE_DEATH_NAMES
 
 #include "Common/INI.h"
@@ -57,6 +56,7 @@
 #include "GameLogic/ExperienceTracker.h"
 #include "GameLogic/FPUControl.h"
 #include "GameLogic/ObjectCreationList.h"
+#include "GameLogic/ScriptEngine.h"
 #include "GameLogic/Weapon.h"
 
 
@@ -85,6 +85,7 @@ static const BlockParse theTypeTable[] =
 	{ "AudioSettings",			INI::parseAudioSettingsDefinition },
 	{ "Bridge",							INI::parseTerrainBridgeDefinition },
 	{ "Campaign",						INI::parseCampaignDefinition },
+ 	{ "ChallengeGenerals",				INI::parseChallengeModeDefinition },
 	{ "CommandButton",			INI::parseCommandButtonDefinition },
 	{ "CommandMap",					INI::parseMetaMapDefinition },
 	{ "CommandSet",					INI::parseCommandSetDefinition },
@@ -109,6 +110,7 @@ static const BlockParse theTypeTable[] =
 	{ "Mouse",							INI::parseMouseDefinition },
 	{ "MouseCursor",				INI::parseMouseCursorDefinition },
 	{ "MultiplayerColor",		INI::parseMultiplayerColorDefinition },
+  { "MultiplayerStartingMoneyChoice",		INI::parseMultiplayerStartingMoneyChoiceDefinition },
 	{ "OnlineChatColors",		INI::parseOnlineChatColorDefinition },
 	{ "MultiplayerSettings",INI::parseMultiplayerSettingsDefinition },
 	{ "MusicTrack",					INI::parseMusicTrackDefinition },
@@ -136,6 +138,8 @@ static const BlockParse theTypeTable[] =
 	{ "LODPreset",					INI::parseLODPreset },
 	{	"BenchProfile",				INI::parseBenchProfile },
 	{	"ReallyLowMHz",				parseReallyLowMHz },
+	{	"ScriptAction",				ScriptEngine::parseScriptAction },
+	{	"ScriptCondition",		ScriptEngine::parseScriptCondition },
 
 	{ nullptr,									nullptr },
 };
@@ -175,7 +179,9 @@ Bool INI::isValidINIFilename( const char *filename )
 INI::INI( void )
 {
 
-	m_file							= nullptr;
+	m_readBuffer = nullptr;
+	m_readBufferNext = 0;
+	m_readBufferUsed = 0;
 	m_filename					= "None";
 	m_loadType					= INI_LOAD_INVALID;
 	m_lineNum						= 0;
@@ -295,7 +301,7 @@ UnsignedInt INI::loadDirectory( AsciiString dirName, INILoadType loadType, Xfer 
 void INI::prepFile( AsciiString filename, INILoadType loadType )
 {
 	// if we have a file open already -- we can't do another one
-	if( m_file != nullptr )
+	if( m_readBuffer != nullptr )
 	{
 
 		DEBUG_CRASH(( "INI::load, cannot open file '%s', file already open", filename.str() ));
@@ -304,8 +310,8 @@ void INI::prepFile( AsciiString filename, INILoadType loadType )
 	}
 
 	// open the file
-	m_file = TheFileSystem->openFile(filename.str(), File::READ);
-	if( m_file == nullptr )
+	File* file = TheFileSystem->openFile(filename.str(), File::READ);
+	if( file == nullptr )
 	{
 
 		DEBUG_CRASH(( "INI::load, cannot open file '%s'", filename.str() ));
@@ -313,7 +319,9 @@ void INI::prepFile( AsciiString filename, INILoadType loadType )
 
 	}
 
-	m_file = m_file->convertToRAMFile();
+	m_readBufferNext = 0;
+	m_readBufferUsed = file->size();
+	m_readBuffer = file->readEntireAndClose();
 
 	// save our filename
 	m_filename = filename;
@@ -326,9 +334,12 @@ void INI::prepFile( AsciiString filename, INILoadType loadType )
 //-------------------------------------------------------------------------------------------------
 void INI::unPrepFile()
 {
-	// close the file
-	m_file->close();
-	m_file = nullptr;
+	// delete the buffer
+	delete[] m_readBuffer;
+	m_readBuffer = nullptr;
+	m_readBufferNext = 0;
+	m_readBufferUsed = 0;
+
 	m_filename = "None";
 	m_loadType = INI_LOAD_INVALID;
 	m_lineNum = 0;
@@ -448,89 +459,78 @@ UnsignedInt INI::load( AsciiString filename, INILoadType loadType, Xfer *pXfer )
 
 //-------------------------------------------------------------------------------------------------
 /** Read a line from the already open file.  Any comments will be removed and
-	* therefore ignored from any given line */
+	* therefore ignored from any given line
+	* 
+	* TheSuperHackers @performance xezon 18/01/2026 The file contents are now read directly from a
+	* full File Ram buffer into the INI Line Buffer without a third buffer in between.
+	*/
 //-------------------------------------------------------------------------------------------------
 void INI::readLine( void )
 {
-	Bool isComment = FALSE;
-
 	// sanity
-	DEBUG_ASSERTCRASH( m_file, ("readLine(), file pointer is null") );
+	DEBUG_ASSERTCRASH( m_readBuffer, ("readLine(), read buffer is null") );
 
-	// if we've reached end of file we'll just keep returning empty string in our buffer
-	if( m_endOfFile )
+	if (m_endOfFile)
 	{
-		m_buffer[ 0 ] = '\0';
+		*m_buffer = 0;
 	}
 	else
 	{
-		// read up till the newline character or until out of space
-		Int i = 0;
-		Bool done = FALSE;
-		while( !done )
+		// read up till the newline or semicolon character, or until out of space
+		char *p = m_buffer;
+		while (p != m_buffer+INI_MAX_CHARS_PER_LINE)
 		{
-
-			// read character
-			m_endOfFile = (m_file->read(m_buffer + i, 1) == 0);
-
-			// check for end of file
-			if( m_endOfFile )
+			// test end of read buffer
+			if (m_readBufferNext==m_readBufferUsed)
 			{
-
-				done = TRUE;
-				m_buffer[ i ] = '\0';
-
+				m_endOfFile = true;
+				*p = 0;
+				break;
 			}
 
+			// get next character
+			*p = m_readBuffer[m_readBufferNext++];
+
 			// check for new line
-			if( m_buffer[ i ] == '\n' )
-				done = TRUE;
+			if (*p == '\n')
+			{
+				*p = 0;
+				break;
+			}
 
-			DEBUG_ASSERTCRASH(m_buffer[ i ] != '\t', ("tab characters are not allowed in INI files (%s). please check your editor settings. Line Number %d",m_filename.str(), getLineNum()));
-
-			// make all whitespace characters actual spaces
-			if( isspace( m_buffer[ i ] ) )
-				m_buffer[ i ] = ' ';
+			DEBUG_ASSERTCRASH(*p != '\t', ("tab characters are not allowed in INI files (%s). please check your editor settings. Line Number %d", m_filename.str(), getLineNum()));
 
 			// if this is a semicolon, that represents the start of a comment
-			if( m_buffer[ i ] == ';' )
-				isComment = TRUE;
+			if (*p == ';')
+			{
+				*p = 0;
+			}
 
-			// if we've set the comment flag, just insert terminators in the place of each character read
-			if( isComment == TRUE )
-				m_buffer[ i ] = '\0';
+			// make whitespace characters actual spaces
+			else if (*p > 0 && *p < 32)
+			{
+				*p = ' ';
+			}
 
-			//
-			// when we've become done, as the last thing just set the current index position + 1
-			// to the string terminator
-			//
-			if( done == TRUE && i + 1 < INI_MAX_CHARS_PER_LINE )
-				m_buffer[ i + 1 ] = '\0';
-
-			// increase our buffer index, but watch out for the max
-			if( ++i == INI_MAX_CHARS_PER_LINE )
-				done = TRUE;
-
+			p++;
 		}
+
+		*p = 0;
 
 		// increase our line count
 		m_lineNum++;
 
 		// check for at the max
-		if( i == INI_MAX_CHARS_PER_LINE )
+		if ( p == m_buffer+INI_MAX_CHARS_PER_LINE )
 		{
-
-			DEBUG_ASSERTCRASH( 0, ("Buffer too small (%d) and was truncated, increase INI_MAX_CHARS_PER_LINE",
-														 INI_MAX_CHARS_PER_LINE) );
-
+			DEBUG_ASSERTCRASH( 0, ("Buffer too small (%d) and was truncated, increase INI_MAX_CHARS_PER_LINE", INI_MAX_CHARS_PER_LINE) );
 		}
 	}
 
 	if (s_xfer)
 	{
 		s_xfer->xferUser( m_buffer, sizeof( char ) * strlen( m_buffer ) );
-		//DEBUG_LOG(("Xfer val is now 0x%8.8X in %s, line %s", ((XferCRC *)s_xfer)->getCRC(),
-			//m_filename.str(), m_buffer));
+		//DEBUG_LOG(("Xfer val is now 0x%8.8X in %s, line %s", ((XferCRC *)s_xfer)->getCRC(), m_filename.str(), m_buffer));
 	}
 }
 
@@ -824,20 +824,27 @@ AsciiString INI::getNextAsciiString()
 		else
 		{
 			static char buff[INI_MAX_CHARS_PER_LINE];
-
+			buff[0] = 0;
 			if (strlen(token) > 1)
 			{
 				strlcpy(buff, &token[1], ARRAY_SIZE(buff));
 			}
 
-			token = getNextToken(getSepsQuote());
-
-			if (strlen(token) > 1 && token[1] != '\t')
-			{
-				strlcat(buff, " ", ARRAY_SIZE(buff));
+			token = getNextTokenOrNull(getSepsQuote());
+			if (token) {
+				if (strlen(token) > 1 && token[1] != '\t')
+				{
+					strlcat(buff, " ", ARRAY_SIZE(buff));
+				}
+				strlcat(buff, token, ARRAY_SIZE(buff));
+				result.set(buff);
+			} else {
+				Int len = strlen(buff);
+				if (len && buff[len-1] == '"') { // strip off trailing quote jba. [2/12/2003]
+					buff[len-1] = 0;
+				}
+				result.set(buff);
 			}
-			strlcat(buff, token, ARRAY_SIZE(buff));
-			result.set(buff);
 		}
 	}
 	return result;
@@ -1400,7 +1407,10 @@ void INI::parseSpecialPowerTemplate( INI* ini, void * /*instance*/, void *store,
 	}
 
 	const SpecialPowerTemplate *sPowerT = TheSpecialPowerStore->findSpecialPowerTemplate( AsciiString( token ) );
-	DEBUG_ASSERTCRASH( sPowerT || stricmp( token, "None" ) == 0, ("Specialpower %s not found!",token) );
+	if( !sPowerT && stricmp( token, "None" ) != 0 )
+	{
+		DEBUG_CRASH( ("[LINE: %d in '%s'] Specialpower %s not found!", ini->getLineNum(), ini->getFilename().str(), token) );
+	}
 
 	typedef const SpecialPowerTemplate* ConstSpecialPowerTemplatePtr;
 	ConstSpecialPowerTemplatePtr* theSpecialPowerTemplate = (ConstSpecialPowerTemplatePtr *)store;
@@ -1838,6 +1848,7 @@ void INI::parseSoundsList( INI* ini, void *instance, void *store, const void* /*
 void INI::parseDamageTypeFlags(INI* ini, void* /*instance*/, void* store, const void* /*userData*/)
 {
 	DamageTypeFlags flags = DAMAGE_TYPE_FLAGS_ALL;
+
 	for (const char* token = ini->getNextToken(); token; token = ini->getNextTokenOrNull())
 	{
 		if (stricmp(token, "ALL") == 0)
@@ -1852,13 +1863,13 @@ void INI::parseDamageTypeFlags(INI* ini, void* /*instance*/, void* store, const 
 		}
 		if (token[0] == '+')
 		{
-			DamageType dt = (DamageType)INI::scanIndexList(token+1, TheDamageNames);
+			DamageType dt = (DamageType)DamageTypeFlags::getSingleBitFromName(token+1);
 			flags = setDamageTypeFlag(flags, dt);
 			continue;
 		}
 		if (token[0] == '-')
 		{
-			DamageType dt = (DamageType)INI::scanIndexList(token+1, TheDamageNames);
+			DamageType dt = (DamageType)DamageTypeFlags::getSingleBitFromName(token+1);
 			flags = clearDamageTypeFlag(flags, dt);
 			continue;
 		}

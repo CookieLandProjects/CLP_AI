@@ -94,6 +94,7 @@ protected:
 	static AsciiString getCreatedUnitTemplateName(AsciiString unitName);
 
 	void loadCounters(CComboBox *pCombo);
+	void loadKDRatios(CComboBox* pCombo);
 	void loadConditionParameter(Script *pScr, Parameter::ParameterType type, CComboBox *pCombo);
 	void loadActionParameter(Script *pScr, Parameter::ParameterType type, 	CComboBox *pCombo);
 	void loadFlags(CComboBox *pCombo);

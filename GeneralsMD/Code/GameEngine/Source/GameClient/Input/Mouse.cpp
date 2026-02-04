@@ -672,7 +672,7 @@ void Mouse::update( void )
 void Mouse::createStreamMessages( void )
 {
 
-	// santiy
+	// sanity
 	if( TheMessageStream == nullptr )
 		return;  // no place to put messages
 
@@ -863,7 +863,7 @@ void Mouse::setCursorTooltip( UnicodeString tooltip, Int delay, const RGBColor *
 		m_lastTooltipWidth = width;
 	}
 
-	if (forceRecalc || !m_isTooltipEmpty && tooltip.compare(m_tooltipDisplayString->getText()))
+	if (forceRecalc || (!m_isTooltipEmpty && tooltip.compare(m_tooltipDisplayString->getText())))
 	{
 		m_tooltipDisplayString->setText(tooltip);
 		//DEBUG_LOG(("Tooltip: %ls", tooltip.str()));
@@ -1145,7 +1145,7 @@ void Mouse::drawTooltip( void )
 		return;
 	}
 
-	/// @todo: Still need to put in display logic so it puts the tool tips in a visable position on the edge of the screen
+	/// @todo: Still need to put in display logic so it puts the tool tips in a visible position on the edge of the screen
 	if( m_displayTooltip && TheDisplay && m_tooltipDisplayString && (m_tooltipDisplayString->getTextLength() > 0) && !m_isTooltipEmpty)
 	{
 		Int width, xPos;

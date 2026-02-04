@@ -155,6 +155,17 @@ public:
 
 	virtual Bool computeSuperweaponTarget(const SpecialPowerTemplate *power, Coord3D *pos, Int playerNdx, Real weaponRadius); ///< Calculates best pos for weapon given radius.
 
+//-------------------------------------------------------------------------------------------------
+//---------------------------------- @CLP_AI AIPLAYER ADDITIONS -----------------------------------
+//-------------------------------------------------------------------------------------------------
+
+	virtual Bool computeSuperweaponTargetEconomy(const SpecialPowerTemplate* power, Coord3D* pos, Int playerNdx, Real weaponRadius);
+
+//-------------------------------------------------------------------------------------------------
+//-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------
+//-------------------------------------------------------------------------------------------------
+
+
 public: // AIPlayer interface, may be overridden by AISkirmishPlayer.  jba.
 
 	virtual void update();											///< simulates the behavior of a player
@@ -210,6 +221,20 @@ public:
 	/// Calculates the closest construction zone location based on a template.
 	Bool calcClosestConstructionZoneLocation( const ThingTemplate *constructTemplate, Coord3D *location );
 	void onCapture(Object* obj);
+	virtual Bool startTraining(WorkOrder* order, Bool busyOK, AsciiString teamName);	///< find a production building that can handle the order, and start building
+
+	//-------------------------------------------------------------------------------------------------
+	//---------------------------------- @CLP_AI AIPLAYER ADDITIONS -----------------------------------
+	//-------------------------------------------------------------------------------------------------
+	void buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real bAngle);
+
+	void buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real bAngle);
+
+	void buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real bAngle);
+
+	//-------------------------------------------------------------------------------------------------
+	//-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------
+	//-------------------------------------------------------------------------------------------------
 
 protected:
 
@@ -227,11 +252,21 @@ protected:
 	virtual void queueDozer(void);
 	virtual Bool selectTeamToBuild( void );			///< determine the next team to build
 	virtual Bool selectTeamToReinforce( Int minPriority );			///< determine the next team to reinforce
-	virtual Bool startTraining( WorkOrder *order, Bool busyOK, AsciiString teamName);	///< find a production building that can handle the order, and start building
 	virtual Bool isAGoodIdeaToBuildTeam( TeamPrototype *proto );		///< return true if team should be built
 	virtual void processBaseBuilding( void );		///< do base-building behaviors
 	virtual void processTeamBuilding( void );		///< do team-building behaviors
  	static Int getPlayerSuperweaponValue( Coord3D *center, Int playerNdx, Real radius, Bool includeMilitaryUnits = TRUE );
+
+	//-------------------------------------------------------------------------------------------------
+	//---------------------------------- @CLP_AI AIPLAYER ADDITIONS -----------------------------------
+	//-------------------------------------------------------------------------------------------------
+
+	static Int getPlayerSuperweaponValueEconomy(Coord3D* center, Int playerNdx, Real radius, Bool includeMilitaryUnits = TRUE);
+
+	//-------------------------------------------------------------------------------------------------
+	//-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------
+	//-------------------------------------------------------------------------------------------------
+	
 // End of aiplayer interface.
 
 protected:

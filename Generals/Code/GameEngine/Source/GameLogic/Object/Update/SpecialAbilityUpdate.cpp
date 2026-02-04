@@ -104,7 +104,7 @@ that has every option will do the following in order:
 	2 -- UNPACK: If I need to unpack before I can prepare, then do so now (this uses the model
 			 condition unpack).
 	3 -- PREPARE: If I need to perform a task for a period of time before I can trigger my special
-			 ability, then do so now. A good example is aiming with a targetting laser for a few
+			 ability, then do so now. A good example is aiming with a targeting laser for a few
 			 seconds before firing your special weapon.
 	4 -- TRIGGER: Once preparation is complete, fire your special ability now.
 	5 -- PACK: If I need to pack after finishing my attack, do so now.
@@ -422,7 +422,7 @@ Bool SpecialAbilityUpdate::initiateIntentToDoSpecialPower( const SpecialPowerTem
 	//Determine whether we are triggering a command (rather than executing special at location or target)
 	m_noTargetCommand = !targetObj && !targetPos;
 
-	if( data->m_unpackTime == 0 || m_noTargetCommand && data->m_skipPackingWithNoTarget )
+	if( data->m_unpackTime == 0 || (m_noTargetCommand && data->m_skipPackingWithNoTarget) )
 	{
 		//Only unpack if we need to -- setting it to unpacked will skip step 2 in the update
 		m_packingState = STATE_UNPACKED;
@@ -499,7 +499,7 @@ void SpecialAbilityUpdate::onExit( Bool cleanup )
 	TheAudio->removeAudioEvent( m_prepSoundLoop.getPlayingHandle() );
 	endPreparation();
 
-	if( !data->m_specialObjectsPersistent || cleanup && !data->m_specialObjectsPersistWhenOwnerDies )
+	if( !data->m_specialObjectsPersistent || (cleanup && !data->m_specialObjectsPersistWhenOwnerDies) )
 	{
 		//Delete special objects that aren't considered persistent whenever we turn off
 		//leave the special ability update.
@@ -1146,7 +1146,7 @@ void SpecialAbilityUpdate::triggerAbilityEffect()
 	Object *object = getObject();
 
 	//Award experience to units for triggering the ability (optional and ini specified).
-	//NOTE: Be award of persistant abilities that call trigger over and over again!
+	//NOTE: Be aware of persistent abilities that call trigger over and over again!
 	if( data->m_awardXPForTriggering )
 	{
 		ExperienceTracker *xpTracker = object->getExperienceTracker();
@@ -1397,7 +1397,7 @@ void SpecialAbilityUpdate::triggerAbilityEffect()
 							update->detonate();
 							okToLoseStealth = FALSE;
 							//Note: while the objects are detonating, they will still exist in the game.
-							//Our update will be responsible for validating their existance and removing them..
+							//Our update will be responsible for validating their existence and removing them..
 							//in case either the enemy player cleans one up, or after it's gone.
 						}
 					}
@@ -1784,7 +1784,7 @@ void SpecialAbilityUpdate::endPreparation()
 
 	// Based on the special that we just finished preparing (either by failure or success),
 	// do we want to keep the "special objects" created? Some specials will -- others won't.
-	// Note that persistant specials will not call this until preparation is complete (not
+	// Note that persistent specials will not call this until preparation is complete (not
 	// recycling).
 	const SpecialAbilityUpdateModuleData* data = getSpecialAbilityUpdateModuleData();
 	const SpecialPowerTemplate *spTemplate = data->m_specialPowerTemplate;

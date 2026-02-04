@@ -1668,7 +1668,7 @@ StateReturnType AIInternalMoveToState::onEnter()
 	}
 
 	// Target to stop at the end of this path.
-	// This value will be overriden by the FollowWaypoint ai state.
+	// This value will be overridden by the FollowWaypoint ai state.
 	ai->setPathExtraDistance(0);
 	ai->setDesiredSpeed( FAST_AS_POSSIBLE );
 
@@ -2425,7 +2425,7 @@ Bool AIAttackApproachTargetState::computePath()
 	}
 
 	// force minimum time between recomputation
-	/// @todo Unify recomputation conditions & account for obj ID so everyone doesnt compute on the same frame (MSB)
+	/// @todo Unify recomputation conditions & account for obj ID so everyone doesn't compute on the same frame (MSB)
 	if (!forceRepath && TheGameLogic->getFrame() - m_approachTimestamp < MIN_RECOMPUTE_TIME)
 	{
 		//CRCDEBUG_LOG(("AIAttackApproachTargetState::computePath - bailing because of min time for object %d", getMachineOwner()->getID()));
@@ -2624,7 +2624,7 @@ StateReturnType AIAttackApproachTargetState::onEnter()
 			return STATE_SUCCESS;  // break out, and do the pursuit state.
 		}
 	} else {
-		// Attacking a position.  For a varitey of reasons, we need to destroy any existing path or we spin. jba. [8/25/2003]
+		// Attacking a position.  For a variety of reasons, we need to destroy any existing path or we spin. jba. [8/25/2003]
 		ai->destroyPath();
 	}
 	// If we have a turret, start aiming.
@@ -2802,7 +2802,7 @@ void AIAttackApproachTargetState::onExit( StateExitType status )
 		ai->ignoreObstacle(nullptr);
 
 		// Per JohnA, this state should not be calling ai->destroyPath, because we can have spastic users
-		// that click the target repeadedly. This will prevent the unit from stuttering for said spastic
+		// that click the target repeatedly. This will prevent the unit from stuttering for said spastic
 		// users.
 		// ai->destroyPath();
 		// urg. hacky. if we are a projectile, reset precise z-pos.
@@ -2860,7 +2860,7 @@ Bool AIAttackPursueTargetState::computePath()
 	}
 
 	// force minimum time between recomputation
-	/// @todo Unify recomputation conditions & account for obj ID so everyone doesnt compute on the same frame (MSB)
+	/// @todo Unify recomputation conditions & account for obj ID so everyone doesn't compute on the same frame (MSB)
 	if (!forceRepath && TheGameLogic->getFrame() - m_approachTimestamp < MIN_RECOMPUTE_TIME)
 	{
 		return true;
@@ -6023,6 +6023,42 @@ Object *AIAttackSquadState::chooseVictim(void)
 			return nullptr;
 			break;
 		}
+		case DIFFICULTY_BRUTAL:
+		{
+			// everyone picks the same unit
+			VecObjectPtr objects = victimSquad->getLiveObjects();
+			if (!objects.empty())
+			{
+				return objects[0];
+			}
+
+			return nullptr;
+			break;
+		}
+		case DIFFICULTY_ABSURD:
+		{
+			// everyone picks the same unit
+			VecObjectPtr objects = victimSquad->getLiveObjects();
+			if (!objects.empty())
+			{
+				return objects[0];
+			}
+
+			return nullptr;
+			break;
+		}
+		case DIFFICULTY_INHUMANE:
+		{
+			// everyone picks the same unit
+			VecObjectPtr objects = victimSquad->getLiveObjects();
+			if (!objects.empty())
+			{
+				return objects[0];
+			}
+
+			return nullptr;
+			break;
+		}
 	};
 
 	return nullptr;
@@ -6294,6 +6330,15 @@ void AIEnterState::onExit( StateExitType status )
 	}
 }
 
+static bool hasVerticalOverlap(const Object* a, const Object* b)
+{
+	const float aLower = a->getPosition()->z;
+	const float aUpper = aLower + a->getGeometryInfo().getMaxHeightAbovePosition();
+	const float bLower = b->getPosition()->z;
+	const float bUpper = bLower + b->getGeometryInfo().getMaxHeightAbovePosition();
+	return aUpper >= bLower && aLower <= bUpper;
+}
+
 //----------------------------------------------------------------------------------------------------------
 StateReturnType AIEnterState::update()
 {
@@ -6357,7 +6402,13 @@ StateReturnType AIEnterState::update()
 	StateReturnType code = AIInternalMoveToState::update();
 
 	// if it's airborne, wait for it to land
+#if RETAIL_COMPATIBLE_CRC
 	if (code == STATE_SUCCESS && goal->isAboveTerrain() && !obj->isAboveTerrain())
+#else
+	// TheSuperHackers @bugfix Stubbjax 05/11/2025 Check for vertical overlap when entering containers.
+	// This prevents levitating or airborne units from entering containers they are not actually touching.
+	if (code == STATE_SUCCESS && !hasVerticalOverlap(goal, obj))
+#endif
 	{
 		code = STATE_CONTINUE;
 	}
@@ -6481,7 +6532,7 @@ StateReturnType AIExitState::update()
 
 		goalExitInterface->exitObjectViaDoor(obj, exitDoor);
 		if( getMachine()->getCurrentStateID() != getID() )
-			return STATE_CONTINUE;// Not sucess, because exitViaDoor has changed us to FollowPath, and if we say Success, our machine will think FollowPath succeeded
+			return STATE_CONTINUE;// Not success, because exitViaDoor has changed us to FollowPath, and if we say Success, our machine will think FollowPath succeeded
 		else
 			return STATE_SUCCESS;
 	}

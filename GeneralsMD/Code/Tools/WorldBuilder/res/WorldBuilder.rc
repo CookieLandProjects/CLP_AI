@@ -1039,23 +1039,29 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,11,69,108,10
     CONTROL         "Easy",IDC_EASY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
                     157,41,31,10
-    CONTROL         "Normal",IDC_NORMAL,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,157,56,38,10
+    CONTROL         "Normal",IDC_NORMAL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    157,56,38,10
     CONTROL         "Hard",IDC_HARD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
                     157,71,31,10
+    CONTROL         "Brutal", IDC_BRUTAL, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,
+                    197, 41, 31, 10
+    CONTROL         "Absurd", IDC_ABSURD, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,
+                    197, 56, 40, 10
+    CONTROL         "Inhumane", IDC_INHUMANE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP,
+                    197, 71, 46, 10
     EDITTEXT        IDC_SCRIPT_COMMENT,7,100,320,98,ES_MULTILINE | 
                     WS_VSCROLL
     LTEXT           "Script Name:",IDC_STATIC,7,12,43,8
-    GROUPBOX        "Active in:",IDC_STATIC,151,30,58,54
+    GROUPBOX        "Active in:",IDC_STATIC,151,30,98,54
     GROUPBOX        "Script Comment:",IDC_STATIC,4,90,327,112
     GROUPBOX        "Script Flags:",IDC_STATIC,7,30,140,54
-    GROUPBOX        "Evaluate script:",IDC_STATIC,219,30,99,54
+    GROUPBOX        "Evaluate script:",IDC_STATIC,269,30,99,54
     CONTROL         "Every Frame",IDC_EVERY_FRAME,"Button",
-                    BS_AUTORADIOBUTTON,227,43,80,10
-    CONTROL         "Every",IDC_EVERY_SECOND,"Button",BS_AUTORADIOBUTTON,228,
+                    BS_AUTORADIOBUTTON,277,43,80,10
+    CONTROL         "Every",IDC_EVERY_SECOND,"Button",BS_AUTORADIOBUTTON,278,
                     60,31,8
-    EDITTEXT        IDC_SECONDS_EDIT,262,59,19,12,ES_AUTOHSCROLL
-    LTEXT           "seconds.",IDC_STATIC,283,60,30,8
+    EDITTEXT        IDC_SECONDS_EDIT,312,59,19,12,ES_AUTOHSCROLL
+    LTEXT           "seconds.",IDC_STATIC,333,60,30,8
 END
 
 IDD_ScriptCondition DIALOG DISCARDABLE  0, 0, 311, 450

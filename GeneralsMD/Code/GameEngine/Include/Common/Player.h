@@ -312,8 +312,8 @@ public:
 	Bool hasPrereqsForScience(ScienceType t) const;
 
 	Bool hasUpgradeComplete( const UpgradeTemplate *upgradeTemplate ) const;		///< does player have totally done and produced upgrade
-	Bool hasUpgradeComplete( UpgradeMaskType testMask ) const;		///< does player have totally done and produced upgrade
-	UpgradeMaskType getCompletedUpgradeMask() const { return m_upgradesCompleted; }	///< get list of upgrades that are completed
+	Bool hasUpgradeComplete( const UpgradeMaskType& testMask ) const;		///< does player have totally done and produced upgrade
+	const UpgradeMaskType& getCompletedUpgradeMask() const { return m_upgradesCompleted; }	///< get list of upgrades that are completed
 	Bool hasUpgradeInProduction( const UpgradeTemplate *upgradeTemplate );		///< does player have this upgrade in progress right now
 	Upgrade *addUpgrade( const UpgradeTemplate *upgradeTemplate,
 											 UpgradeStatusType status );		///< add upgrade, or update existing upgrade status
@@ -444,6 +444,18 @@ public:
 	void guardSupplyCenter( Team *team, Int minSupplies );
 
 	virtual Bool computeSuperweaponTarget(const SpecialPowerTemplate *power, Coord3D *pos, Int playerNdx, Real weaponRadius); ///< Calculates best pos for weapon given radius.
+
+	//-------------------------------------------------------------------------------------------------
+	//----------------------------------- @CLP_AI PLAYER ADDITIONS ------------------------------------
+	//-------------------------------------------------------------------------------------------------
+
+	virtual Bool computeSuperweaponTargetEconomy(const SpecialPowerTemplate* power, Coord3D* retPos, Int playerNdx, Real weaponRadius);
+	void buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real angle);
+	void buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real angle);
+	void buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real angle);
+	//-------------------------------------------------------------------------------------------------
+	//--------------------------------- @CLP_AI PLAYER ADDITIONS END ----------------------------------
+	//-------------------------------------------------------------------------------------------------
 
 	/// Get the enemy an ai player is currently focused on.  NOTE - Can be nullptr.
 	Player  *getCurrentEnemy( void );
@@ -831,4 +843,7 @@ private:
 
 	Bool									m_isPlayerDead;
 	Bool									m_logicalRetaliationModeEnabled;
+
+	public:
+		AIPlayer* getAIPlayer() { return m_ai; }
 };

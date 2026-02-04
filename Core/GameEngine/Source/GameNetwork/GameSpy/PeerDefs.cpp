@@ -239,6 +239,15 @@ void GameSpyInfo::setGameOptions( void )
 				case SLOT_BRUTAL_AI:
 					playerName = "CH";
 					break;
+				case SLOT_MOD_BRUTAL_AI:
+					playerName = "CB";
+					break;
+				case SLOT_MOD_ABSURD_AI:
+					playerName = "CA";
+					break;
+				case SLOT_MOD_INHUMANE_AI:
+					playerName = "CI";
+					break;
 				}
 				req.gameOptsPlayerNames[i] = playerName.str(); // name is unused - we go off of the profileID
 				req.gameOptions.wins[req.gameOptions.numObservers+req.gameOptions.numPlayers] = 0;

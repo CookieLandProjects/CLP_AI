@@ -294,6 +294,14 @@ void PlayerRelationMap::loadPostProcess( void )
 
 }
 
+// ------------------------------------------------------------------------------------------------
+/** Load post process */
+// ------------------------------------------------------------------------------------------------
+void Player::loadPostProcess(void)
+{
+
+}
+
 //=============================================================================
 Player::Player( Int playerIndex )
 {
@@ -1645,7 +1653,7 @@ void Player::preTeamDestroy( const Team *team )
 }
 
 //-------------------------------------------------------------------------------------------------
-/// a structuer was just created, but is under construction
+/// a structure was just created, but is under construction
 //-------------------------------------------------------------------------------------------------
 void Player::onStructureCreated( Object *builder, Object *structure )
 {
@@ -3021,7 +3029,7 @@ Upgrade *Player::findUpgrade( const UpgradeTemplate *upgradeTemplate )
 //=================================================================================================
 Bool Player::hasUpgradeComplete( const UpgradeTemplate *upgradeTemplate ) const
 {
-	UpgradeMaskType testMask = upgradeTemplate->getUpgradeMask();
+	const UpgradeMaskType& testMask = upgradeTemplate->getUpgradeMask();
 	return hasUpgradeComplete( testMask );
 }
 
@@ -3030,7 +3038,7 @@ Bool Player::hasUpgradeComplete( const UpgradeTemplate *upgradeTemplate ) const
 	Does the player have this completed upgrade.  This form is exposed so Objects can do quick lookups.
 */
 //=================================================================================================
-Bool Player::hasUpgradeComplete( UpgradeMaskType testMask ) const
+Bool Player::hasUpgradeComplete( const UpgradeMaskType& testMask ) const
 {
 	return m_upgradesCompleted.testForAll( testMask );
 }
@@ -3040,7 +3048,7 @@ Bool Player::hasUpgradeComplete( UpgradeMaskType testMask ) const
 //=================================================================================================
 Bool Player::hasUpgradeInProduction( const UpgradeTemplate *upgradeTemplate )
 {
-	UpgradeMaskType testMask = upgradeTemplate->getUpgradeMask();
+	const UpgradeMaskType& testMask = upgradeTemplate->getUpgradeMask();
 	return m_upgradesInProgress.testForAll( testMask );
 }
 
@@ -3071,7 +3079,7 @@ Upgrade *Player::addUpgrade( const UpgradeTemplate *upgradeTemplate, UpgradeStat
 	u->setStatus( status );
 
 	// Update our Bitmasks
-	UpgradeMaskType newMask = upgradeTemplate->getUpgradeMask();
+	const UpgradeMaskType& newMask = upgradeTemplate->getUpgradeMask();
 	if( status == UPGRADE_STATUS_IN_PRODUCTION )
 	{
 		m_upgradesInProgress.set( newMask );
@@ -3142,7 +3150,7 @@ void Player::removeUpgrade( const UpgradeTemplate *upgradeTemplate )
 			m_upgradeList = upgrade->friend_getNext();
 
 		// Clear this upgrade's bits from our mind
-		UpgradeMaskType oldMask = upgradeTemplate->getUpgradeMask();
+		const UpgradeMaskType& oldMask = upgradeTemplate->getUpgradeMask();
 		m_upgradesInProgress.clear( oldMask );
 		m_upgradesCompleted.clear( oldMask );
 
@@ -3172,7 +3180,7 @@ Bool Player::okToPlayRadarEdgeSound( void )
 }
 
 //-------------------------------------------------------------------------------------------------
-/** The parameter object has just aquired a radar */
+/** The parameter object has just acquired a radar */
 //-------------------------------------------------------------------------------------------------
 void Player::addRadar( Bool disableProof )
 {
@@ -3398,12 +3406,18 @@ void Player::friend_applyDifficultyBonusesForObject(Object* obj, Bool apply) con
 			{
 				WEAPONBONUSCONDITION_SOLO_HUMAN_EASY,
 				WEAPONBONUSCONDITION_SOLO_HUMAN_NORMAL,
-				WEAPONBONUSCONDITION_SOLO_HUMAN_HARD
+				WEAPONBONUSCONDITION_SOLO_HUMAN_HARD,
+				WEAPONBONUSCONDITION_SOLO_HUMAN_BRUTAL,
+				WEAPONBONUSCONDITION_SOLO_HUMAN_ABSURD,
+				WEAPONBONUSCONDITION_SOLO_HUMAN_INHUMANE
 			},
 			{
 				WEAPONBONUSCONDITION_SOLO_AI_EASY,
 				WEAPONBONUSCONDITION_SOLO_AI_NORMAL,
-				WEAPONBONUSCONDITION_SOLO_AI_HARD
+				WEAPONBONUSCONDITION_SOLO_AI_HARD,
+				WEAPONBONUSCONDITION_SOLO_AI_BRUTAL,
+				WEAPONBONUSCONDITION_SOLO_AI_ABSURD,
+				WEAPONBONUSCONDITION_SOLO_AI_INHUMANE
 			}
 		};
 		if (apply)
@@ -4555,12 +4569,47 @@ void Player::xfer( Xfer *xfer )
 		m_unitsShouldHunt = FALSE;
 
 }
+//-------------------------------------------------------------------------------------------------
+//----------------------------------- @CLP_AI PLAYER ADDITIONS ------------------------------------
+//-------------------------------------------------------------------------------------------------
 
-// ------------------------------------------------------------------------------------------------
-/** Load post process */
-// ------------------------------------------------------------------------------------------------
-void Player::loadPostProcess( void )
+Bool Player::computeSuperweaponTargetEconomy(const SpecialPowerTemplate* power, Coord3D* retPos, Int playerNdx, Real weaponRadius)
 {
+	if (m_ai) {
+		return m_ai->computeSuperweaponTargetEconomy(power, retPos, playerNdx, weaponRadius);
+	}
 
+	return FALSE;
 }
 
+//-------------------------------------------------------------------------------------------------
+void Player::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real angle)
+{
+	if (m_ai)
+	{
+		m_ai->buildBySuppliesAngle(minimumCash, thingName, angle);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void Player::buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real angle)
+{
+	if (m_ai)
+	{
+		m_ai->buildSpecificBuildingNearestTeamAngle(thingName, team, angle);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void Player::buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real angle)
+{
+	if (m_ai)
+	{
+		m_ai->buildSpecificBuildingNearestObjectAngle(thingName, bestObj, angle);
+	}
+}
+
+
+//-------------------------------------------------------------------------------------------------
+//--------------------------------- @CLP_AI PLAYER ADDITIONS END ----------------------------------
+//-------------------------------------------------------------------------------------------------

@@ -344,7 +344,7 @@ static CanAttackResult canObjectForceAttack( Object *obj, const Object *victim, 
 				  }
 			  }
 		  }
-      else // oh dear me. The wierd case of a garrisoncontainer being a KINDOF_SPAWNS_ARE_THE_WEAPONS... the AmericaBuildingFirebase
+      else // oh dear me. The weird case of a garrisoncontainer being a KINDOF_SPAWNS_ARE_THE_WEAPONS... the AmericaBuildingFirebase
       {
         ContainModuleInterface *contain = obj->getContain();
         if ( contain )
@@ -388,7 +388,7 @@ static CanAttackResult canObjectForceAttack( Object *obj, const Object *victim, 
         else
         {
     			result = obj->getAbleToUseWeaponAgainstTarget( ATTACK_NEW_TARGET, nullptr, pos, CMD_FROM_PLAYER );
-          if( result != ATTACKRESULT_POSSIBLE ) // oh dear me. The wierd case of a garrisoncontainer being a KINDOF_SPAWNS_ARE_THE_WEAPONS... the AmericaBuildingFirebase
+          if( result != ATTACKRESULT_POSSIBLE ) // oh dear me. The weird case of a garrisoncontainer being a KINDOF_SPAWNS_ARE_THE_WEAPONS... the AmericaBuildingFirebase
           {
             ContainModuleInterface *contain = obj->getContain();
             if ( contain )
@@ -850,7 +850,7 @@ void pickAndPlayUnitVoiceResponse( const DrawableList *list, GameMessage::Type m
 
 		// This seems really hacky, and MarkL admits that it is. However, we do this so that we
 		// can "randomly" pick a different sound the next time, if we have 3 or more sounds. - jkmcd
-		((AudioEventRTS*)soundToPlayPtr)->setPlayingAudioIndex( soundToPlay.getPlayingAudioIndex() );
+		soundToPlayPtr->setPlayingAudioIndex( soundToPlay.getPlayingAudioIndex() );
 
 		if( objectWithSound->testStatus( OBJECT_STATUS_IS_CARBOMB ) )
 		{
@@ -1576,8 +1576,8 @@ GameMessage::Type CommandTranslator::evaluateContextCommand( Drawable *draw,
 	//Added: shrubberies are the exception for interactions...
 	//Removed: GS Took out ObjectStatusUnselectable, since that status only prevents selection, not everything
 	if( obj == nullptr ||
-			obj->getStatusBits().test( OBJECT_STATUS_MASKED ) &&
-			!obj->isKindOf(KINDOF_SHRUBBERY) && !obj->isKindOf(KINDOF_FORCEATTACKABLE) )
+			( obj->getStatusBits().test( OBJECT_STATUS_MASKED ) &&
+			!obj->isKindOf(KINDOF_SHRUBBERY) && !obj->isKindOf(KINDOF_FORCEATTACKABLE) ) )
 	{
 		//Nulling out the draw and obj pointer will force the remainder of this code to evaluate
 		//a position interaction.
@@ -1654,7 +1654,7 @@ GameMessage::Type CommandTranslator::evaluateContextCommand( Drawable *draw,
 		{
 			if( obj && obj->isKindOf( KINDOF_SHRUBBERY ) && !BitIsSet( command->getOptions(), ALLOW_SHRUBBERY_TARGET ) )
 			{
-				//If our object is a shrubbery, and we don't allow targetting it... then null it out.
+				//If our object is a shrubbery, and we don't allow targeting it... then null it out.
 				//Nulling out the draw and obj pointer will force the remainder of this code to evaluate
 				//a position interaction.
 				draw = nullptr;
@@ -1663,7 +1663,7 @@ GameMessage::Type CommandTranslator::evaluateContextCommand( Drawable *draw,
 
 			if( obj && obj->isKindOf( KINDOF_MINE ) && !BitIsSet( command->getOptions(), ALLOW_MINE_TARGET ) )
 			{
-				//If our object is a mine, and we don't allow targetting it... then null it out.
+				//If our object is a mine, and we don't allow targeting it... then null it out.
 				//Nulling out the draw and obj pointer will force the remainder of this code to evaluate
 				//a position interaction.
 				draw = nullptr;
@@ -3195,7 +3195,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 			if (TheGameLogic->isInMultiplayerGame() && !TheGameLogic->isInReplayGame())
 			{
 				Player *localPlayer = ThePlayerList->getLocalPlayer();
-				if (localPlayer && localPlayer->isPlayerActive() || !TheGlobalData->m_netMinPlayers)
+				if ((localPlayer && localPlayer->isPlayerActive()) || !TheGlobalData->m_netMinPlayers)
 				{
 					ToggleInGameChat();
 					SetInGameChatType( INGAME_CHAT_ALLIES );

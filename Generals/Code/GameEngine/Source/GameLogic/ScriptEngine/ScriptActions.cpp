@@ -2744,7 +2744,7 @@ void ScriptActions::doSpeechPlay(const AsciiString& speechName, Bool allowOverla
 	AudioEventRTS speech(speechName);
 	speech.setIsLogicalAudio(true);
 	speech.setPlayerIndex(ThePlayerList->getLocalPlayer()->getPlayerIndex());
-	speech.setUninterruptable(!allowOverlap);
+	speech.setUninterruptible(!allowOverlap);
 	TheAudio->addAudioEvent(&speech);
 }
 
@@ -3299,8 +3299,7 @@ void ScriptActions::doTeamGarrisonSpecificBuilding(const AsciiString& teamName, 
 	}
 	PlayerMaskType player = theBuilding->getContain()->getPlayerWhoEntered();
 
-	if (!(theBuilding->isKindOf(KINDOF_STRUCTURE) &&
-		(player == 0) || (player == theTeam->getControllingPlayer()->getPlayerMask()))) {
+	if (!theBuilding->isKindOf(KINDOF_STRUCTURE) || (player != 0 && player != theTeam->getControllingPlayer()->getPlayerMask())) {
 		return;
 	}
 
@@ -3446,10 +3445,10 @@ void ScriptActions::doUnitGarrisonSpecificBuilding(const AsciiString& unitName, 
 	}
 	PlayerMaskType player = theBuilding->getContain()->getPlayerWhoEntered();
 
-	if (!(theBuilding->isKindOf(KINDOF_STRUCTURE) &&
-		(player == 0) || (player == theUnit->getControllingPlayer()->getPlayerMask()))) {
+	if (!theBuilding->isKindOf(KINDOF_STRUCTURE) || (player != 0 && player != theUnit->getControllingPlayer()->getPlayerMask())) {
 		return;
 	}
+
 	AIUpdateInterface *ai = theUnit->getAIUpdateInterface();
 	if (!ai) {
 		return;

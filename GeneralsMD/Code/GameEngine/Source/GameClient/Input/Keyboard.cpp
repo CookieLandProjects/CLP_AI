@@ -714,7 +714,7 @@ Keyboard::~Keyboard( void )
 }
 
 //-------------------------------------------------------------------------------------------------
-/** Initialzie the keyboard */
+/** Initialize the keyboard */
 //-------------------------------------------------------------------------------------------------
 void Keyboard::init( void )
 {
@@ -959,7 +959,7 @@ WideChar Keyboard::translateKey( WideChar keyCode )
 				return( m_keyNames[ ubKeyCode ].shifted2 );
 			}
 
-			if( isShift() || getCapsState() && iswalpha( m_keyNames[ ubKeyCode ].stdKey ) )
+			if( isShift() || ( getCapsState() && iswalpha( m_keyNames[ ubKeyCode ].stdKey ) ) )
 			{
 				return( m_keyNames[ ubKeyCode ].shifted );
 			}

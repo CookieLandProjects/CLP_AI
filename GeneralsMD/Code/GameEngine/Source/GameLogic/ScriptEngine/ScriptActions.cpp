@@ -562,7 +562,7 @@ void ScriptActions::doCreateReinforcements(const AsciiString& team, const AsciiS
 		dp = (DeliverPayloadAIUpdate*)transport->findUpdateModule(key_DeliverPayloadAIUpdate);
 	}
 
-	//Our tranport has a deliverPayload update module. This means it'll do airborned drops.
+	//Our transport has a deliverPayload update module. This means it'll do airborned drops.
 
 	const ThingTemplate* putInContainerTemplate  = nullptr;
 	if( dp )
@@ -1044,7 +1044,7 @@ void ScriptActions::doCreateObject(const AsciiString& objectName, const AsciiStr
 void ScriptActions::doAttack(const AsciiString& attackerName, const AsciiString& victimName)
 {
 	Team *attackingTeam = TheScriptEngine->getTeamNamed( attackerName );
-	// The team is the team based on the name, and the calling team (if any) and the team that
+	// The team is the team based on the name, and the
 	// triggered the condition.  jba. :)
 	const Team *victimTeam = TheScriptEngine->getTeamNamed( victimName );
 
@@ -2052,7 +2052,7 @@ void ScriptActions::doNamedHunt(const AsciiString& unitName)
 	}
 
 	aiUpdate->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
-	aiUpdate->aiHunt( CMD_FROM_SCRIPT );
+	aiUpdate->aiHunt(CMD_FROM_SCRIPT);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -2825,7 +2825,7 @@ void ScriptActions::doSpeechPlay(const AsciiString& speechName, Bool allowOverla
 	AudioEventRTS speech(speechName);
 	speech.setIsLogicalAudio(true);
 	speech.setPlayerIndex(ThePlayerList->getLocalPlayer()->getPlayerIndex());
-	speech.setUninterruptable(!allowOverlap);
+	speech.setUninterruptible(!allowOverlap);
 	TheAudio->addAudioEvent(&speech);
 
 
@@ -2838,7 +2838,7 @@ void ScriptActions::doSpeechPlay(const AsciiString& speechName, Bool allowOverla
 	UnicodeString subtitle = TheGameText->fetch(subtitleLabel, &found);
 	if( found && !subtitle.isEmpty() && subtitle.getCharAt(0) != '*')
 	{
-		// Foreign versions can specify region specifc subtitle strings if they want.
+		// Foreign versions can specify region specific subtitle strings if they want.
 		// English will have strings with / for easy translation, but they don't want to display.
 		TheInGameUI->militarySubtitle( subtitleLabel, SUBTITLE_DURATION );
 	}
@@ -3395,8 +3395,7 @@ void ScriptActions::doTeamGarrisonSpecificBuilding(const AsciiString& teamName, 
 	}
 	PlayerMaskType player = theBuilding->getContain()->getPlayerWhoEntered();
 
-	if (!(theBuilding->isKindOf(KINDOF_STRUCTURE) &&
-		(player == 0) || (player == theTeam->getControllingPlayer()->getPlayerMask()))) {
+	if (!theBuilding->isKindOf(KINDOF_STRUCTURE) || (player != 0 && player != theTeam->getControllingPlayer()->getPlayerMask())) {
 		return;
 	}
 
@@ -3561,10 +3560,10 @@ void ScriptActions::doUnitGarrisonSpecificBuilding(const AsciiString& unitName, 
 	}
 	PlayerMaskType player = theBuilding->getContain()->getPlayerWhoEntered();
 
-	if (!(theBuilding->isKindOf(KINDOF_STRUCTURE) &&
-		(player == 0) || (player == theUnit->getControllingPlayer()->getPlayerMask()))) {
+	if (!theBuilding->isKindOf(KINDOF_STRUCTURE) || (player != 0 && player != theUnit->getControllingPlayer()->getPlayerMask())) {
 		return;
 	}
+
 	AIUpdateInterface *ai = theUnit->getAIUpdateInterface();
 	if (!ai) {
 		return;
@@ -6535,6 +6534,2058 @@ void ScriptActions::doNamedSetTrainHeld( const AsciiString &locoName, const Bool
 }
 
 
+
+
+
+//-------------------------------------------------------------------------------------------------
+//------------------------------- @CLP_AI SCRIPT ACTION ADDITIONS  --------------------------------
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerSurrender(const AsciiString& playerName)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	for (int i = 2; i < ThePlayerList->getPlayerCount() - 1; i++)
+	{
+		if (ThePlayerList->getNthPlayer(i)->getRelationship(pPlayer->getDefaultTeam()) == ALLIES)
+		{
+			ThePlayerList->getNthPlayer(i)->transferAssetsFromThat(pPlayer);
+			break;
+		}
+	}
+	pPlayer->killPlayer();
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerBuildUnit(const AsciiString& unitName, const AsciiString& playerName)
+{
+	Player* player = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!player)
+	{
+		return;
+	}
+
+	const ThingTemplate* unitTemplate = TheThingFactory->findTemplate(unitName);
+	if (!unitTemplate)
+	{
+		return;
+	}
+
+	if (!unitTemplate->isKindOf(KINDOF_INFANTRY) &&
+		!unitTemplate->isKindOf(KINDOF_VEHICLE) &&
+		!unitTemplate->isKindOf(KINDOF_AIRCRAFT))
+	{
+		return;
+	}
+
+	AIPlayer* aiPlayer = player->getAIPlayer();
+	if (!aiPlayer)
+	{
+		return;
+	}
+
+	WorkOrder* order = newInstance(WorkOrder);
+	order->m_thing = unitTemplate;
+	order->m_factoryID = INVALID_ID;
+	order->m_numRequired = 1;
+	order->m_numCompleted = 0;
+	order->m_required = true;
+	order->m_isResourceGatherer = false;
+	order->m_next = nullptr;
+
+	Bool success = aiPlayer->startTraining(order, TRUE, AsciiString("ScriptBuildUnit"));
+
+	if (success)
+	{
+		DEBUG_LOG(("SUCCESS: Queued 1 of %s in factory ID %d\n",
+			unitName.str(), order->m_factoryID));
+	}
+	else
+	{
+		DEBUG_LOG(("FAILED: startTraining() returned FALSE for '%s'\n", unitName.str()));
+		deleteInstance(order);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMoveRelative(const AsciiString& teamName, Coord3D* coords)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam) return;
+
+	AIGroupPtr theGroup = TheAI->createGroup();
+	if (!theGroup) {
+		return;
+	}
+
+#if RETAIL_COMPATIBLE_AIGROUP
+	pTeam->getTeamAsAIGroup(theGroup);
+#else
+	pTeam->getTeamAsAIGroup(theGroup.Peek());
+#endif
+	Int count = 0;
+	Coord3D pos;
+	pos.x = pos.y = pos.z = 0;
+
+	// Get the center point for the team
+	for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		Coord3D objPos = *obj->getPosition();
+		pos.x += objPos.x;
+		pos.y += objPos.y;
+		pos.z += objPos.z; // Not actually used by getClosestWaypointOnPath, but hey, might as well be correct.
+		count++;
+	}
+	if (count == 0) return; // empty team.
+	pos.x /= count;
+	pos.y /= count;
+	pos.z /= count;
+
+	Coord3D newPos;
+	newPos.x = pos.x + coords->x;
+	newPos.y = pos.y + coords->y;
+	newPos.z = pos.z;
+	Coord3D* pNewPos = &newPos;
+
+	theGroup->groupMoveToPosition(pNewPos, false, CMD_FROM_SCRIPT);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doUnitMoveRelative(const AsciiString& unitName, Coord3D* coords)
+{
+
+	Object* pUnit = TheScriptEngine->getUnitNamed(unitName);
+	if (!pUnit) { return; }
+
+	AIUpdateInterface* ai = pUnit->getAIUpdateInterface();
+	if (!ai) {  return; }
+
+	Coord3D pos = *pUnit->getPosition();
+	Coord3D newPos;
+
+	newPos.x = pos.x + coords->x;
+	newPos.y = pos.y + coords->y;
+	newPos.z = pos.z;
+	Coord3D* pNewPos = &newPos;
+
+	ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+	ai->aiMoveToPosition(pNewPos, CMD_FROM_SCRIPT);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMoveNearestBelongingToPlayer(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& playerName)
+{
+	Player* tPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!tPlayer) return;
+
+	Team* team = TheScriptEngine->getTeamNamed(teamName);
+	if (!team) return;
+
+	//Get the first object (to use in the partition filter checks).
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj) return;
+
+	Coord3D teamPos = *team->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	Object* bestObj = nullptr;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		//Find the closest specified template.
+		PartitionFilterThing thingsToAccept(templ, true);
+		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, nullptr };
+		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+
+		if (!bestObj)return;
+	}
+	else
+	{
+		//Find the closest object within the object template list.
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			Real closestDist;
+			Real dist;
+			for (size_t typeIndex = 0; typeIndex < objectTypes->getListSize(); typeIndex++)
+			{
+				AsciiString thisTypeName = objectTypes->getNthInList(typeIndex);
+				const ThingTemplate* thisType = TheThingFactory->findTemplate(thisTypeName);
+				if (thisType)
+				{
+					PartitionFilterThing thingToAccept(thisType, true);
+					PartitionFilter* filters[] = { &thingToAccept, &filterMapStatus, nullptr };
+
+					Object* obj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters, &dist);
+					if (obj)
+					{
+						if (obj->getControllingPlayer() == tPlayer)
+						{
+							if (!bestObj || dist < closestDist)
+							{
+								bestObj = obj;
+								closestDist = dist;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) return;
+
+		AIUpdateInterface* ai = obj->getAI();
+		if (!ai) return;
+
+		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+		ai->aiMoveToObject(bestObj, CMD_FROM_SCRIPT);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doUnitMoveNearestBelongingToPlayer(const AsciiString& unitName, const AsciiString& objectType, const AsciiString& playerName)
+{
+	Player* tPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!tPlayer) return;
+
+	Object* obj = TheScriptEngine->getUnitNamed(unitName);
+	if (!obj) return;
+
+	AIUpdateInterface* ai = obj->getAIUpdateInterface();
+	if (!ai) return;
+
+	Object* bestObj = nullptr;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		PartitionFilterThing thingsToAccept(templ, true);
+		PartitionFilterSameMapStatus filterMapStatus(obj);
+
+		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, nullptr };
+
+		bestObj = ThePartitionManager->getClosestObject(obj->getPosition(), REALLY_FAR, FROM_CENTER_2D, filters);
+		if (!bestObj)
+		{
+			return;
+		}
+	}
+	else
+	{
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			PartitionFilterSameMapStatus filterMapStatus(obj);
+
+			Coord3D pos = *obj->getPosition();
+			Real closestDist;
+			Real dist;
+
+			for (size_t typeIndex = 0; typeIndex < objectTypes->getListSize(); typeIndex++)
+			{
+				AsciiString thisTypeName = objectTypes->getNthInList(typeIndex);
+				const ThingTemplate* thisType = TheThingFactory->findTemplate(thisTypeName);
+				if (thisType)
+				{
+					PartitionFilterThing f2(thisType, true);
+					PartitionFilter* filters[] = { &f2, &filterMapStatus, nullptr };
+
+					Object* obj = ThePartitionManager->getClosestObject(&pos, REALLY_FAR, FROM_CENTER_2D, filters, &dist);
+					if (obj)
+					{
+						if (obj->getControllingPlayer() == tPlayer)
+						{
+							if (!bestObj || dist < closestDist)
+							{
+								bestObj = obj;
+								closestDist = dist;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+	ai->aiMoveToObject(bestObj, CMD_FROM_SCRIPT);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMoveAwayFromRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType)
+{
+	Team* team = TheScriptEngine->getTeamNamed(teamName);
+	if (!team)
+	{
+		return;
+	}
+
+	//Get the first object (to use in the partition filter checks).
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj)
+	{
+		return;
+	}
+	
+	Coord3D teamPos = *team->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), relationType, true);
+	Object* bestObj = nullptr;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		//Find the closest specified template.
+		PartitionFilterThing thingsToAccept(templ, true);
+		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterAffiliation, nullptr };
+		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+		if (!bestObj)
+		{
+			return;
+		}
+	}
+	else
+	{
+		//Find the closest object within the object template list.
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			Real closestDist;
+			Real dist;
+			for (size_t typeIndex = 0; typeIndex < objectTypes->getListSize(); typeIndex++)
+			{
+				AsciiString thisTypeName = objectTypes->getNthInList(typeIndex);
+				const ThingTemplate* thisType = TheThingFactory->findTemplate(thisTypeName);
+				if (thisType)
+				{
+					PartitionFilterThing thingToAccept(thisType, true);
+					PartitionFilter* filters[] = { &thingToAccept, &filterMapStatus, &filterAffiliation, nullptr };
+
+					Object* obj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters, &dist);
+					if (obj)
+					{
+						if (!bestObj || dist < closestDist)
+						{
+							bestObj = obj;
+							closestDist = dist;
+						}
+					}
+				}
+			}
+		}
+	}
+	if (!bestObj) return;
+	//Calculate the flee vector
+	Coord3D threatPos = *bestObj->getPosition();
+	Coord3D fleeVec;
+	fleeVec.x = teamPos.x - threatPos.x;
+	fleeVec.y = teamPos.y - threatPos.y;
+	fleeVec.z = 0.0f;
+
+	fleeVec.normalize();
+	fleeVec.x *= feet;
+	fleeVec.y *= feet;
+
+	Coord3D targetPos;
+	targetPos.x = teamPos.x + fleeVec.x;
+	targetPos.y = teamPos.y + fleeVec.y;
+	targetPos.z = teamPos.z;
+
+	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj)
+		{
+			return;
+		}
+		AIUpdateInterface* ai = obj->getAI();
+		if (!ai)
+		{
+			return;
+		}
+		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+		ai->aiMoveToPosition(&targetPos, CMD_FROM_SCRIPT);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doUnitMoveAwayFromRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType)
+{
+	Object* obj = TheScriptEngine->getUnitNamed(unitName);
+	if (!obj) return;
+
+	AIUpdateInterface* ai = obj->getAIUpdateInterface();
+	if (!ai) return;
+
+	Coord3D objPos = *obj->getPosition();
+	PartitionFilterSameMapStatus filterMapStatus(obj);
+	PartitionFilterPlayerAffiliation filterAffiliation(obj->getControllingPlayer(), relationType, true);
+
+	Object* bestObj = nullptr;
+	Real closestDist = FLT_MAX;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		PartitionFilterThing f1(templ, true);
+		PartitionFilter* filters[] = { &f1, &filterMapStatus, &filterAffiliation, nullptr };
+
+		bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
+		if (!bestObj) return;
+	}
+	else
+	{
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			for (size_t i = 0; i < objectTypes->getListSize(); i++)
+			{
+				AsciiString thisTypeName = objectTypes->getNthInList(i);
+				const ThingTemplate* thisType = TheThingFactory->findTemplate(thisTypeName);
+				if (!thisType) continue;
+
+				PartitionFilterThing f2(thisType, true);
+				PartitionFilter* filters[] = { &f2, &filterMapStatus, &filterAffiliation, nullptr };
+
+				Real dist;
+				Object* candidate = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters, &dist);
+				if (candidate)
+				{
+					if (!bestObj || dist < closestDist)
+					{
+						bestObj = candidate;
+						closestDist = dist;
+					}
+				}
+			}
+		}
+	}
+
+	if (!bestObj) return;
+
+	//Calculate the flee vector.
+	Coord3D threatPos = *bestObj->getPosition();
+	Coord3D fleeVec;
+	fleeVec.x = objPos.x - threatPos.x;
+	fleeVec.y = objPos.y - threatPos.y;
+	fleeVec.z = 0.0f;
+
+	Real len = sqrt(fleeVec.x * fleeVec.x + fleeVec.y * fleeVec.y);
+	if (len <= 0.0f) return;
+
+	fleeVec.x /= len;
+	fleeVec.y /= len;
+	fleeVec.x *= feet;
+	fleeVec.y *= feet;
+
+	Coord3D targetPos;
+	targetPos.x = objPos.x + fleeVec.x;
+	targetPos.y = objPos.y + fleeVec.y;
+	targetPos.z = objPos.z;
+
+	ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+	ai->aiMoveToPosition(&targetPos, CMD_FROM_SCRIPT);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMeet(const AsciiString& teamName)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam) return;
+
+	AIGroupPtr theGroup = TheAI->createGroup();
+	if (!theGroup) {
+		return;
+	}
+
+#if RETAIL_COMPATIBLE_AIGROUP
+	pTeam->getTeamAsAIGroup(theGroup);
+#else
+	pTeam->getTeamAsAIGroup(theGroup.Peek());
+#endif
+	Int count = 0;
+	Coord3D pos;
+	pos.x = pos.y = pos.z = 0;
+
+	// Get the center point for the team
+	for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) continue;
+
+		Coord3D objPos = *obj->getPosition();
+		pos.x += objPos.x;
+		pos.y += objPos.y;
+		pos.z += objPos.z;
+		count++;
+	}
+	if (count == 0) return; // empty team.
+	pos.x /= count;
+	pos.y /= count;
+	pos.z /= count;
+
+	theGroup->groupMoveToPosition(&pos, false, CMD_FROM_SCRIPT);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMeetKindOf(const AsciiString& teamName, Int kindOf)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam) return;
+
+	AIGroupPtr theGroup = TheAI->createGroup();
+	if (!theGroup) {
+		return;
+	}
+
+	KindOfType pKindOf = (KindOfType)kindOf;
+
+#if RETAIL_COMPATIBLE_AIGROUP
+	pTeam->getTeamAsAIGroup(theGroup);
+#else
+	pTeam->getTeamAsAIGroup(theGroup.Peek());
+#endif
+	Int count = 0;
+	Coord3D pos;
+	pos.x = pos.y = pos.z = 0;
+
+	// Get the center point for the kindOfs
+	for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) continue;
+
+		if (obj->isKindOf(pKindOf)) {
+			Coord3D objPos = *obj->getPosition();
+			pos.x += objPos.x;
+			pos.y += objPos.y;
+			pos.z += objPos.z;
+			count++;
+		}
+	}
+	if (count == 0) return; // no matching kindOfs.
+	pos.x /= count;
+	pos.y /= count;
+	pos.z /= count;
+
+	theGroup->groupMoveToPosition(&pos, false, CMD_FROM_SCRIPT);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMeetType(const AsciiString& teamName, const AsciiString& objectType)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam) return;
+
+	AIGroupPtr theGroup = TheAI->createGroup();
+	if (!theGroup) {
+		return;
+	}
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+
+	ObjectTypes* objectTypes = nullptr;
+	if (!templ) {
+		objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (!objectTypes) return;
+	}
+
+#if RETAIL_COMPATIBLE_AIGROUP
+	pTeam->getTeamAsAIGroup(theGroup);
+#else
+	pTeam->getTeamAsAIGroup(theGroup.Peek());
+#endif
+	Int count = 0;
+	Coord3D pos;
+	pos.x = pos.y = pos.z = 0;
+
+	// Get the center point for the objectType
+	for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) continue;
+
+		const ThingTemplate* objTmpl = obj->getTemplate();
+		if (!objTmpl) continue;
+
+		Bool matches = false;
+		if (templ) {
+			matches = (objTmpl == templ);
+		}
+		else if (objectTypes) {
+			matches = objectTypes->isInSet(objTmpl->getName());
+		}
+
+		if (!matches)
+			continue;
+
+		Coord3D objPos = *obj->getPosition();
+		pos.x += objPos.x;
+		pos.y += objPos.y;
+		pos.z += objPos.z;
+		count++;
+	}
+	if (count == 0) return; // no matching objectTypes.
+	pos.x /= count;
+	pos.y /= count;
+	pos.z /= count;
+
+	theGroup->groupMoveToPosition(&pos, false, CMD_FROM_SCRIPT);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamUseCommandButtonAbilityOnType(const AsciiString& teamName, const AsciiString& ability, const AsciiString& objectType)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam) return;
+
+	const CommandButton* commandButton = TheControlBar->findCommandButton(ability);
+	if (!commandButton) return;
+
+	AIGroupPtr theGroup = TheAI->createGroup();
+	if (!theGroup) return;
+
+	// Resolve object type(s)
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+
+	ObjectTypes* objectTypes = nullptr;
+	if (!templ) {
+		objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (!objectTypes) return;
+	}
+
+	// Filter team members
+	for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList();
+		!iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) continue;
+
+		if (obj->isEffectivelyDead() || obj->isKindOf(KINDOF_INERT))
+			continue;
+
+		const ThingTemplate* objTmpl = obj->getTemplate();
+
+		Bool matches = false;
+		if (templ) {
+			matches = (objTmpl == templ);
+		}
+		else {
+			matches = objectTypes->isInSet(objTmpl->getName());
+		}
+
+		if (!matches)
+			continue;
+
+		theGroup->add(obj);
+	}
+
+	// One-shot execution
+	if (theGroup->getCount() > 0) {
+		theGroup->groupDoCommandButton(commandButton, CMD_FROM_SCRIPT);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamUseCommandButtonAbilityOnTeam(const AsciiString& teamName, const AsciiString& ability, const AsciiString& targetTeam)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam) {
+		return;
+	}
+	Team* tTeam = TheScriptEngine->getTeamNamed(targetTeam);
+	if (!tTeam) {
+		return;
+	}
+
+	AIGroupPtr theGroup = TheAI->createGroup();
+#if RETAIL_COMPATIBLE_AIGROUP
+	pTeam->getTeamAsAIGroup(theGroup);
+#else
+	pTeam->getTeamAsAIGroup(theGroup.Peek());
+#endif
+
+	const CommandButton* commandButton = TheControlBar->findCommandButton(ability);
+	if (!commandButton) {
+		return;
+	}
+
+	Object* srcObj = nullptr;
+	if (commandButton->getSpecialPowerTemplate()) {
+		srcObj = theGroup->getSpecialPowerSourceObject(commandButton->getSpecialPowerTemplate()->getID());
+	}
+	else {
+		srcObj = theGroup->getCommandButtonSourceObject(commandButton->getCommandType());
+	}
+
+	if (!srcObj) {
+		return;
+	}
+
+	Object* theTarget = TheScriptEngine->getTeamNamed(targetTeam)->getFirstItemIn_TeamMemberList();
+	if (!theTarget) {
+		return;
+	}
+
+	if (commandButton->isValidToUseOn(srcObj, theTarget, nullptr, CMD_FROM_SCRIPT)) {
+		theGroup->groupDoCommandButtonAtObject(commandButton, theTarget, CMD_FROM_SCRIPT);
+	}
+}
+
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerMergeKindOf(const AsciiString& playerName, Int kindOf, const AsciiString& teamName)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	KindOfType pKindOf = (KindOfType)kindOf;
+
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (pTeam == nullptr) {
+		pTeam = TheTeamFactory->findTeam(teamName);
+	}
+	if (!pTeam) return;
+
+	Player::PlayerTeamList::const_iterator it;
+
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			DLINK_ITERATOR<Object> iter2 = team->iterate_TeamMemberList();
+			Object* nextObj = iter2.cur();
+
+			while (!iter2.done()) {
+				Object* obj = nextObj;
+				if (!obj) {
+					break;
+				}
+				// IMPORTANT: setTeam() removes an object from TeamMemberList.
+				// Iterator MUST be advanced before calling setTeam().
+				// This mirrors original EA engine behavior. It's dirty I know.
+				nextObj = iter2.cur();
+				iter2.advance();
+				if (obj->isKindOf(pKindOf)) {
+					obj->setTeam(pTeam);
+					updateTeamAndPlayerStuff(obj, nullptr);
+				}
+			}
+			if (nextObj) {
+				if (nextObj->isKindOf(pKindOf)) {
+					nextObj->setTeam(pTeam);
+					updateTeamAndPlayerStuff(nextObj, nullptr);
+				}
+			}
+		}
+	}
+	pTeam->setActive();
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMergeKindOf(const AsciiString& srcName, Int kindOf, const AsciiString& destName)
+{
+	Team* srcTeam = TheScriptEngine->getTeamNamed(srcName);
+	if (!srcTeam) return;
+
+	KindOfType pKindOf = (KindOfType)kindOf;
+
+	Team* destTeam = TheScriptEngine->getTeamNamed(destName);
+	if (destTeam == nullptr) {
+		destTeam = TheTeamFactory->findTeam(destName);
+	}
+	if (!destTeam) return;
+
+	DLINK_ITERATOR<Object> iter = srcTeam->iterate_TeamMemberList();
+	Object* nextObj = iter.cur();
+
+	while (!iter.done()) {
+		Object* obj = nextObj;
+		if (!obj) {
+			break;
+		}
+		// IMPORTANT: setTeam() removes an object from TeamMemberList.
+		// Iterator MUST be advanced before calling setTeam().
+		// This mirrors original EA engine behavior. It's dirty I know.
+		nextObj = iter.cur();
+		iter.advance();
+		if (obj->isKindOf(pKindOf)) {
+			obj->setTeam(destTeam);
+			updateTeamAndPlayerStuff(obj, nullptr);
+		}
+	}
+	if (nextObj) {
+		if (nextObj->isKindOf(pKindOf)) {
+			nextObj->setTeam(destTeam);
+			updateTeamAndPlayerStuff(nextObj, nullptr);
+		}
+	}
+	destTeam->setActive();
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerMergeType(const AsciiString& playerName, const AsciiString& objectType, const AsciiString& teamName)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (pTeam == nullptr) {
+		pTeam = TheTeamFactory->findTeam(teamName);
+	}
+	if (!pTeam) return;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+
+	ObjectTypes* objectTypes = nullptr;
+	if (!templ) {
+		objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (!objectTypes) return;
+	}
+
+
+	Player::PlayerTeamList::const_iterator it;
+
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			DLINK_ITERATOR<Object> iter2 = team->iterate_TeamMemberList();
+			Object* nextObj = iter2.cur();
+
+			while (!iter2.done()) {
+				Object* obj = nextObj;
+				if (!obj) {
+					break;
+				}
+				// IMPORTANT: setTeam() removes an object from TeamMemberList.
+				// Iterator MUST be advanced before calling setTeam().
+				// This mirrors original EA engine behavior. It's dirty I know.
+				nextObj = iter2.cur();
+				iter2.advance();
+
+				const ThingTemplate* objTmpl = obj->getTemplate();
+				if (!objTmpl) continue;
+
+				Bool matches = false;
+				if (templ) {
+					matches = (objTmpl == templ);
+				}
+				else if (objectTypes) {
+					matches = objectTypes->isInSet(objTmpl->getName());
+				}
+				if (!matches)
+					continue;
+
+				obj->setTeam(pTeam);
+				updateTeamAndPlayerStuff(obj, nullptr);
+			}
+			if (nextObj) {
+				const ThingTemplate* objTmpl = nextObj->getTemplate();
+				if (!objTmpl) continue;
+
+				Bool matches = false;
+				if (templ) {
+					matches = (objTmpl == templ);
+				}
+				else if (objectTypes) {
+					matches = objectTypes->isInSet(objTmpl->getName());
+				}
+				if (!matches)
+					continue;
+
+				nextObj->setTeam(pTeam);
+				updateTeamAndPlayerStuff(nextObj, nullptr);
+			}
+		}
+	}
+	pTeam->setActive();
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMergeType(const AsciiString& srcName, const AsciiString& objectType, const AsciiString& destName)
+{
+	Team* srcTeam = TheScriptEngine->getTeamNamed(srcName);
+	if (!srcTeam) return;
+
+	Team* destTeam = TheScriptEngine->getTeamNamed(destName);
+	if (destTeam == nullptr) {
+		destTeam = TheTeamFactory->findTeam(destName);
+	}
+	if (!destTeam) return;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+
+	ObjectTypes* objectTypes = nullptr;
+	if (!templ) {
+		objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (!objectTypes) return;
+	}
+
+
+	DLINK_ITERATOR<Object> iter = srcTeam->iterate_TeamMemberList();
+	Object* nextObj = iter.cur();
+
+	while (!iter.done()) {
+		Object* obj = nextObj;
+		if (!obj) {
+			break;
+		}
+		// IMPORTANT: setTeam() removes an object from TeamMemberList.
+		// Iterator MUST be advanced before calling setTeam().
+		// This mirrors original EA engine behavior. It's dirty I know.
+		nextObj = iter.cur();
+		iter.advance();
+
+		const ThingTemplate* objTmpl = obj->getTemplate();
+		if (!objTmpl) continue;
+
+		Bool matches = false;
+		if (templ) {
+			matches = (objTmpl == templ);
+		}
+		else if (objectTypes) {
+			matches = objectTypes->isInSet(objTmpl->getName());
+		}
+		if (!matches)
+			continue;
+
+		obj->setTeam(destTeam);
+		updateTeamAndPlayerStuff(obj, nullptr);
+	}
+	if (nextObj) {
+		const ThingTemplate* objTmpl = nextObj->getTemplate();
+		if (!objTmpl) return;
+
+		Bool matches = false;
+		if (templ) {
+			matches = (objTmpl == templ);
+		}
+		else if (objectTypes) {
+			matches = objectTypes->isInSet(objTmpl->getName());
+		}
+	if (!matches)
+			return;
+
+		nextObj->setTeam(destTeam);
+		updateTeamAndPlayerStuff(nextObj, nullptr);
+	}
+	destTeam->setActive();
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerDisbandKindOf(const AsciiString& playerName, Int kindOf)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	KindOfType pKindOf = (KindOfType)kindOf;
+
+	Player::PlayerTeamList::const_iterator it;
+
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			DLINK_ITERATOR<Object> iter2 = team->iterate_TeamMemberList();
+			Object* nextObj = iter2.cur();
+
+			while (!iter2.done()) {
+				Object* obj = nextObj;
+				if (!obj) {
+					break;
+				}
+				// IMPORTANT: setTeam() removes an object from TeamMemberList.
+				// Iterator MUST be advanced before calling setTeam().
+				// This mirrors original EA engine behavior. It's dirty I know.
+				nextObj = iter2.cur();
+				iter2.advance();
+				if (obj->getTeam() != obj->getControllingPlayer()->getDefaultTeam()) {
+					if (obj->isKindOf(pKindOf)) {
+						obj->setTeam(pPlayer->getDefaultTeam());
+						updateTeamAndPlayerStuff(obj, nullptr);
+					}
+				}
+			}
+			if (nextObj) {
+				if (nextObj->getTeam() != nextObj->getControllingPlayer()->getDefaultTeam()) {
+					if (nextObj->isKindOf(pKindOf)) {
+						nextObj->setTeam(pPlayer->getDefaultTeam());
+						updateTeamAndPlayerStuff(nextObj, nullptr);
+					}
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamDisbandKindOf(const AsciiString& teamName, Int kindOf)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam) return;
+
+	KindOfType pKindOf = (KindOfType)kindOf;
+
+	DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList();
+	Object* nextObj = iter.cur();
+
+	while (!iter.done()) {
+		Object* obj = nextObj;
+		if (!obj) {
+			break;
+		}
+		// IMPORTANT: setTeam() removes an object from TeamMemberList.
+		// Iterator MUST be advanced before calling setTeam().
+		// This mirrors original EA engine behavior. It's dirty I know.
+		nextObj = iter.cur();
+		iter.advance();
+		if (obj->isKindOf(pKindOf)) {
+			obj->setTeam(pTeam->getControllingPlayer()->getDefaultTeam());
+			updateTeamAndPlayerStuff(obj, nullptr);
+		}
+	}
+	if (nextObj) {
+		if (nextObj->isKindOf(pKindOf)) {
+			nextObj->setTeam(pTeam->getControllingPlayer()->getDefaultTeam());
+			updateTeamAndPlayerStuff(nextObj, nullptr);
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerDisbandType(const AsciiString& playerName, const AsciiString& objectType)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+
+	ObjectTypes* objectTypes = nullptr;
+	if (!templ) {
+		objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (!objectTypes) return;
+	}
+
+	Player::PlayerTeamList::const_iterator it;
+
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			DLINK_ITERATOR<Object> iter2 = team->iterate_TeamMemberList();
+			Object* nextObj = iter2.cur();
+
+			while (!iter2.done()) {
+				Object* obj = nextObj;
+				if (!obj) {
+					break;
+				}
+				// IMPORTANT: setTeam() removes an object from TeamMemberList.
+				// Iterator MUST be advanced before calling setTeam().
+				// This mirrors original EA engine behavior. It's dirty I know.
+				nextObj = iter2.cur();
+				iter2.advance();
+				if (obj->getTeam() != obj->getControllingPlayer()->getDefaultTeam()) {
+					const ThingTemplate* objTmpl = obj->getTemplate();
+					if (!objTmpl) continue;
+
+					Bool matches = false;
+					if (templ) {
+						matches = (objTmpl == templ);
+					}
+					else if (objectTypes) {
+						matches = objectTypes->isInSet(objTmpl->getName());
+					}
+					if (!matches)
+						continue;
+
+					obj->setTeam(pPlayer->getDefaultTeam());
+					updateTeamAndPlayerStuff(obj, nullptr);
+				}
+			}
+			if (nextObj) {
+				if (nextObj->getTeam() != nextObj->getControllingPlayer()->getDefaultTeam()) {
+					const ThingTemplate* objTmpl = nextObj->getTemplate();
+					if (!objTmpl) continue;
+
+					Bool matches = false;
+					if (templ) {
+						matches = (objTmpl == templ);
+					}
+					else if (objectTypes) {
+						matches = objectTypes->isInSet(objTmpl->getName());
+					}
+					if (!matches)
+						continue;
+
+					nextObj->setTeam(pPlayer->getDefaultTeam());
+					updateTeamAndPlayerStuff(nextObj, nullptr);
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamDisbandType(const AsciiString& teamName, const AsciiString& objectType)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam) return;
+
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+
+	ObjectTypes* objectTypes = nullptr;
+	if (!templ) {
+		objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (!objectTypes) return;
+	}
+
+
+	DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList();
+	Object* nextObj = iter.cur();
+
+	while (!iter.done()) {
+		Object* obj = nextObj;
+		if (!obj) {
+			break;
+		}
+		// IMPORTANT: setTeam() removes an object from TeamMemberList.
+		// Iterator MUST be advanced before calling setTeam().
+		// This mirrors original EA engine behavior. It's dirty I know.
+		nextObj = iter.cur();
+		iter.advance();
+
+		const ThingTemplate* objTmpl = obj->getTemplate();
+		if (!objTmpl) continue;
+
+		Bool matches = false;
+		if (templ) {
+			matches = (objTmpl == templ);
+		}
+		else if (objectTypes) {
+			matches = objectTypes->isInSet(objTmpl->getName());
+		}
+		if (!matches)
+			continue;
+
+		obj->setTeam(pTeam->getControllingPlayer()->getDefaultTeam());
+		updateTeamAndPlayerStuff(obj, nullptr);
+	}
+	if (nextObj) {
+		const ThingTemplate* objTmpl = nextObj->getTemplate();
+		if (!objTmpl) return;
+
+		Bool matches = false;
+		if (templ) {
+			matches = (objTmpl == templ);
+		}
+		else if (objectTypes) {
+			matches = objectTypes->isInSet(objTmpl->getName());
+		}
+		if (!matches)
+			return;
+
+		nextObj->setTeam(pTeam->getControllingPlayer()->getDefaultTeam());
+		updateTeamAndPlayerStuff(nextObj, nullptr);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerTeamlessMerge(const AsciiString& playerName, const AsciiString& teamName)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (pTeam == nullptr) {
+		pTeam = TheTeamFactory->findTeam(teamName);
+	}
+	if (!pTeam) return;
+
+	DLINK_ITERATOR<Object> iter2 = pPlayer->getDefaultTeam()->iterate_TeamMemberList();
+	Object* nextObj = iter2.cur();
+
+	while (!iter2.done()) {
+		Object* obj = nextObj;
+		if (!obj) {
+			break;
+		}
+		// IMPORTANT: setTeam() removes an object from TeamMemberList.
+		// Iterator MUST be advanced before calling setTeam().
+		// This mirrors original EA engine behavior. It's dirty I know.
+		nextObj = iter2.cur();
+		iter2.advance();
+		if (obj->isKindOf(KINDOF_INFANTRY) || obj->isKindOf(KINDOF_VEHICLE) || obj->isKindOf(KINDOF_AIRCRAFT)) {
+			obj->setTeam(pTeam);
+			updateTeamAndPlayerStuff(obj, nullptr);
+		}
+	}
+	if (nextObj) {
+		if (nextObj->isKindOf(KINDOF_INFANTRY) || nextObj->isKindOf(KINDOF_VEHICLE) || nextObj->isKindOf(KINDOF_AIRCRAFT)) {
+			nextObj->setTeam(pTeam);
+			updateTeamAndPlayerStuff(nextObj, nullptr);
+		}
+	}
+	pTeam->setActive();
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerTeamlessMergeKindOf(const AsciiString& playerName, Int kindOf, const AsciiString& teamName)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	KindOfType pKindOf = (KindOfType)kindOf;
+
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (pTeam == nullptr) {
+		pTeam = TheTeamFactory->findTeam(teamName);
+	}
+	if (!pTeam) return;
+
+	DLINK_ITERATOR<Object> iter = pPlayer->getDefaultTeam()->iterate_TeamMemberList();
+	Object* nextObj = iter.cur();
+
+	while (!iter.done()) {
+		Object* obj = nextObj;
+		if (!obj) {
+			break;
+		}
+		// IMPORTANT: setTeam() removes an object from TeamMemberList.
+		// Iterator MUST be advanced before calling setTeam().
+		// This mirrors original EA engine behavior. It's dirty I know.
+		nextObj = iter.cur();
+		iter.advance();
+
+		if (obj->isKindOf(pKindOf)) {
+			obj->setTeam(pTeam);
+			updateTeamAndPlayerStuff(obj, nullptr);
+		}
+	}
+	if (nextObj) {
+		if (nextObj->isKindOf(pKindOf)) {
+			nextObj->setTeam(pTeam);
+			updateTeamAndPlayerStuff(nextObj, nullptr);
+		}
+	}
+	pTeam->setActive();
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerTeamlessMergeType(const AsciiString& playerName, const AsciiString& objectType, const AsciiString& teamName)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (pTeam == nullptr) {
+		pTeam = TheTeamFactory->findTeam(teamName);
+	}
+	if (!pTeam) return;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+
+	ObjectTypes* objectTypes = nullptr;
+	if (!templ) {
+		objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (!objectTypes) return;
+	}
+
+
+	DLINK_ITERATOR<Object> iter = pPlayer->getDefaultTeam()->iterate_TeamMemberList();
+	Object* nextObj = iter.cur();
+
+	while (!iter.done()) {
+		Object* obj = nextObj;
+		if (!obj) {
+			break;
+		}
+		// IMPORTANT: setTeam() removes an object from TeamMemberList.
+		// Iterator MUST be advanced before calling setTeam().
+		// This mirrors original EA engine behavior. It's dirty I know.
+		nextObj = iter.cur();
+		iter.advance();
+
+		const ThingTemplate* objTmpl = obj->getTemplate();
+		if (!objTmpl) continue;
+
+		Bool matches = false;
+		if (templ) {
+			matches = (objTmpl == templ);
+		}
+		else if (objectTypes) {
+			matches = objectTypes->isInSet(objTmpl->getName());
+		}
+		if (!matches)
+			continue;
+
+		obj->setTeam(pTeam);
+		updateTeamAndPlayerStuff(obj, nullptr);
+	}
+	if (nextObj) {
+		const ThingTemplate* objTmpl = nextObj->getTemplate();
+		if (!objTmpl) return;
+
+		Bool matches = false;
+		if (templ) {
+			matches = (objTmpl == templ);
+		}
+		else if (objectTypes) {
+			matches = objectTypes->isInSet(objTmpl->getName());
+		}
+		if (!matches)
+			return;
+
+		nextObj->setTeam(pTeam);
+		updateTeamAndPlayerStuff(nextObj, nullptr);
+	}
+	pTeam->setActive();
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerGarrisonMaxEach(const AsciiString& playerName, Int maxAmount)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) {
+		return;
+	}
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+
+		for (DLINK_ITERATOR<Team> pIter = (*it)->iterate_TeamInstanceList(); !pIter.done(); pIter.advance()) {
+			Team* theTeam = pIter.cur();
+			if (!theTeam) continue;
+
+			DLINK_ITERATOR<Object> diter = theTeam->iterate_TeamMemberList();
+			Object* leader = diter.cur();
+			if (!leader) {
+				continue;
+			}
+
+
+			PartitionFilter* filters[16];
+			Int count = 0;
+
+			PartitionFilterAcceptByKindOf f1(MAKE_KINDOF_MASK(KINDOF_FS_INTERNET_CENTER), KINDOFMASK_NONE);
+			PartitionFilterGarrisonableByPlayer f2(theTeam->getControllingPlayer(), true, CMD_FROM_SCRIPT);
+
+			if (leader->isKindOf(KINDOF_MONEY_HACKER))
+			{
+				//If the leader is a hacker, then look for an internet center instead of a normal building!
+				filters[count++] = &f1;
+			}
+			else
+			{
+				//If the leader ISN'T a hacker, then look for standard fare garrisonable buildings (internet centers won't show up)!
+				filters[count++] = &f2;
+			}
+
+			PartitionFilterSameMapStatus filterMapStatus(leader);
+			filters[count++] = &filterMapStatus;
+
+			filters[count++] = nullptr;
+
+			ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(leader, REALLY_FAR, FROM_CENTER_3D, filters, ITER_SORTED_NEAR_TO_FAR);
+			MemoryPoolObjectHolder hold(iter);
+
+
+			// here's what we do. Find out how many slots each building has open, and tell each unit individually to
+			// garrison a specific building. We won't use the partition solver because we've already done most of the work
+
+			for (Object* theBuilding = iter->first(); theBuilding; theBuilding = iter->next()) {
+				ContainModuleInterface* cmi = theBuilding->getContain();
+				if (!cmi) {
+					continue;
+				}
+
+				//Set a new maximum amount of available slots.
+				//If the max amount is bigger or equal to the slots available, just continue to fill normally
+				Int slotsAvailable;
+				if (cmi->getContainMax() - cmi->getContainCount() <= maxAmount)
+				{
+					slotsAvailable = cmi->getContainMax() - cmi->getContainCount();
+				}
+				else
+				{
+					slotsAvailable = cmi->getContainMax() - (cmi->getContainMax() - maxAmount);
+				}
+				for (int i = 0; i < slotsAvailable; ) {
+					Object* obj = diter.cur();
+					if (diter.done() || !obj) {
+						break;
+					}
+
+					AIUpdateInterface* ai = obj->getAIUpdateInterface();
+					if (ai && obj->isKindOf(KINDOF_INFANTRY) && !obj->isKindOf(KINDOF_NO_GARRISON)) {
+						ai->aiEnter(theBuilding, CMD_FROM_SCRIPT);
+						++i;
+					}
+					diter.advance();
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamGarrisonMaxEach(const AsciiString& teamName, Int maxAmount)
+{
+	Team* theTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!theTeam) {
+		return;
+	}
+
+	DLINK_ITERATOR<Object> diter = theTeam->iterate_TeamMemberList();
+	Object* leader = diter.cur();
+	if (!leader) {
+		return;
+	}
+
+
+	PartitionFilter* filters[16];
+	Int count = 0;
+
+	PartitionFilterAcceptByKindOf f1(MAKE_KINDOF_MASK(KINDOF_FS_INTERNET_CENTER), KINDOFMASK_NONE);
+	PartitionFilterGarrisonableByPlayer f2(theTeam->getControllingPlayer(), true, CMD_FROM_SCRIPT);
+
+	if (leader->isKindOf(KINDOF_MONEY_HACKER))
+	{
+		//If the leader is a hacker, then look for an internet center instead of a normal building!
+		filters[count++] = &f1;
+	}
+	else
+	{
+		//If the leader ISN'T a hacker, then look for standard fare garrisonable buildings (internet centers won't show up)!
+		filters[count++] = &f2;
+	}
+
+	PartitionFilterSameMapStatus filterMapStatus(leader);
+	filters[count++] = &filterMapStatus;
+
+	filters[count++] = nullptr;
+
+	ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(leader, REALLY_FAR, FROM_CENTER_3D, filters, ITER_SORTED_NEAR_TO_FAR);
+	MemoryPoolObjectHolder hold(iter);
+
+
+	// here's what we do. Find out how many slots each building has open, and tell each unit individually to
+	// garrison a specific building. We won't use the partition solver because we've already done most of the work
+
+	for (Object* theBuilding = iter->first(); theBuilding; theBuilding = iter->next()) {
+		ContainModuleInterface* cmi = theBuilding->getContain();
+		if (!cmi) {
+			continue;
+		}
+
+		//Set a new maximum amount of available slots.
+		//If the max amount is bigger or equal to the slots available, just continue to fill normally
+		Int slotsAvailable;
+		if (cmi->getContainMax() - cmi->getContainCount() <= maxAmount)
+		{
+			slotsAvailable = cmi->getContainMax() - cmi->getContainCount();
+		}
+		else
+		{
+			slotsAvailable = cmi->getContainMax() - (cmi->getContainMax() - maxAmount);
+		}
+		for (int i = 0; i < slotsAvailable; ) {
+			Object* obj = diter.cur();
+			if (diter.done() || !obj) {
+				return;
+			}
+
+			AIUpdateInterface* ai = obj->getAIUpdateInterface();
+			if (ai && obj->isKindOf(KINDOF_INFANTRY) && !obj->isKindOf(KINDOF_NO_GARRISON)) {
+				ai->aiEnter(theBuilding, CMD_FROM_SCRIPT);
+				++i;
+			}
+			diter.advance();
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerGarrisonEqually(const AsciiString& playerName, Int amount)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) {
+		return;
+	}
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> pIter = (*it)->iterate_TeamInstanceList(); !pIter.done(); pIter.advance()) {
+			Team* theTeam = pIter.cur();
+			if (!theTeam) continue;
+
+			DLINK_ITERATOR<Object> diter = theTeam->iterate_TeamMemberList();
+			Object* leader = diter.cur();
+			if (!leader) {
+				return;
+			}
+
+
+			PartitionFilter* filters[16];
+			Int count = 0;
+
+			PartitionFilterAcceptByKindOf f1(MAKE_KINDOF_MASK(KINDOF_FS_INTERNET_CENTER), KINDOFMASK_NONE);
+			PartitionFilterGarrisonableByPlayer f2(theTeam->getControllingPlayer(), true, CMD_FROM_SCRIPT);
+
+			if (leader->isKindOf(KINDOF_MONEY_HACKER))
+			{
+				//If the leader is a hacker, then look for an internet center instead of a normal building!
+				filters[count++] = &f1;
+			}
+			else
+			{
+				//If the leader ISN'T a hacker, then look for standard fare garrisonable buildings (internet centers won't show up)!
+				filters[count++] = &f2;
+			}
+
+			PartitionFilterSameMapStatus filterMapStatus(leader);
+			filters[count++] = &filterMapStatus;
+
+			filters[count++] = nullptr;
+
+			ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(leader, REALLY_FAR, FROM_CENTER_3D, filters, ITER_SORTED_NEAR_TO_FAR);
+			MemoryPoolObjectHolder hold(iter);
+
+			int teamSize = 0;
+			for (DLINK_ITERATOR<Object> iter = theTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
+			{
+				Object* obj = iter.cur();
+				if (!obj) break;
+				if (obj->isKindOf(KINDOF_INFANTRY)) teamSize++;
+			}
+
+			// here's what we do. Find out how many slots each building has open, and tell each unit individually to
+			// garrison a specific building. We won't use the partition solver because we've already done most of the work
+			int base = teamSize / amount;
+			int rest = teamSize % amount;
+			int buildingIndex = 0;
+
+			for (Object* theBuilding = iter->first();
+				theBuilding && teamSize > 0;
+				theBuilding = iter->next(), ++buildingIndex)
+			{
+				ContainModuleInterface* cmi = theBuilding->getContain();
+				if (!cmi) continue;
+
+				int target = base + (buildingIndex < rest ? 1 : 0);
+
+				int slotsFree = cmi->getContainMax() - cmi->getContainCount();
+				if (slotsFree <= 0) {
+					// building cannot take any more units, add to the rest
+					rest += target;
+					continue;
+				}
+
+				int slotsAvailable = std::min(slotsFree, target);
+
+				// in case less people are garrisoning than expected
+				if (slotsAvailable < target) {
+					rest += (target - slotsAvailable);
+				}
+
+				for (int i = 0; i < slotsAvailable && teamSize > 0; ) {
+					Object* obj = diter.cur();
+					if (diter.done() || !obj) return;
+
+					AIUpdateInterface* ai = obj->getAIUpdateInterface();
+					if (ai &&
+						obj->isKindOf(KINDOF_INFANTRY) &&
+						!obj->isKindOf(KINDOF_NO_GARRISON))
+					{
+						ai->aiEnter(theBuilding, CMD_FROM_SCRIPT);
+						++i;
+						--teamSize;
+					}
+					diter.advance();
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamGarrisonEqually(const AsciiString& teamName, Int amount)
+{
+	Team* theTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!theTeam) {
+		return;
+	}
+
+	DLINK_ITERATOR<Object> diter = theTeam->iterate_TeamMemberList();
+	Object* leader = diter.cur();
+	if (!leader) {
+		return;
+	}
+
+
+	PartitionFilter* filters[16];
+	Int count = 0;
+
+	PartitionFilterAcceptByKindOf f1(MAKE_KINDOF_MASK(KINDOF_FS_INTERNET_CENTER), KINDOFMASK_NONE);
+	PartitionFilterGarrisonableByPlayer f2(theTeam->getControllingPlayer(), true, CMD_FROM_SCRIPT);
+
+	if (leader->isKindOf(KINDOF_MONEY_HACKER))
+	{
+		//If the leader is a hacker, then look for an internet center instead of a normal building!
+		filters[count++] = &f1;
+	}
+	else
+	{
+		//If the leader ISN'T a hacker, then look for standard fare garrisonable buildings (internet centers won't show up)!
+		filters[count++] = &f2;
+	}
+
+	PartitionFilterSameMapStatus filterMapStatus(leader);
+	filters[count++] = &filterMapStatus;
+
+	filters[count++] = nullptr;
+
+	ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(leader, REALLY_FAR, FROM_CENTER_3D, filters, ITER_SORTED_NEAR_TO_FAR);
+	MemoryPoolObjectHolder hold(iter);
+
+	int teamSize = 0;
+	for (DLINK_ITERATOR<Object> iter = theTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) break;
+		if(obj->isKindOf(KINDOF_INFANTRY)) teamSize++;
+	}
+	DEBUG_LOG(("\n\n\nTEAM SIZE: %d\n\n\n", teamSize));
+	// here's what we do. Find out how many slots each building has open, and tell each unit individually to
+	// garrison a specific building. We won't use the partition solver because we've already done most of the work
+	int base = teamSize / amount;
+	int rest = teamSize % amount;
+	int buildingIndex = 0;
+
+	for (Object* theBuilding = iter->first();
+		theBuilding && teamSize > 0;
+		theBuilding = iter->next(), ++buildingIndex)
+	{
+		ContainModuleInterface* cmi = theBuilding->getContain();
+		if (!cmi) continue;
+
+		int target = base + (buildingIndex < rest ? 1 : 0);
+
+		int slotsFree = cmi->getContainMax() - cmi->getContainCount();
+		if (slotsFree <= 0) {
+			// building cannot take any more units, add to the rest
+			rest += target;
+			continue;
+		}
+
+		int slotsAvailable = std::min(slotsFree, target);
+
+		// in case less people are garrisoning than expected
+		if (slotsAvailable < target) {
+			rest += (target - slotsAvailable);
+		}
+
+		for (int i = 0; i < slotsAvailable && teamSize > 0; ) {
+			Object* obj = diter.cur();
+			if (diter.done() || !obj) return;
+
+			AIUpdateInterface* ai = obj->getAIUpdateInterface();
+			if (ai &&
+				obj->isKindOf(KINDOF_INFANTRY) &&
+				!obj->isKindOf(KINDOF_NO_GARRISON))
+			{
+				ai->aiEnter(theBuilding, CMD_FROM_SCRIPT);
+				++i;
+				--teamSize;
+			}
+			diter.advance();
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doSkirmishFireSpecialPowerAtMostCostEconomy(const AsciiString& player, const AsciiString& specialPower)
+{
+	Int enemyNdx;
+	Player* enemyPlayer = TheScriptEngine->getSkirmishEnemyPlayer();
+	if (enemyPlayer == nullptr) return;
+	enemyNdx = enemyPlayer->getPlayerIndex();
+
+	const SpecialPowerTemplate* power = TheSpecialPowerStore->findSpecialPowerTemplate(specialPower);
+	if (power == nullptr)
+		return;
+	Real radius = 50.0f;
+	if (power->getRadiusCursorRadius() > radius) {
+		radius = power->getRadiusCursorRadius();
+	}
+
+	Player::PlayerTeamList::const_iterator it;
+
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(player);
+	if (pPlayer == nullptr)
+		return;
+
+
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance())
+		{
+			Team* team = iter.cur();
+			if (!team)
+				continue;
+
+			for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+			{
+				Object* pObj = iter.cur();
+				if (!pObj)
+					continue;
+
+				SpecialPowerModuleInterface* mod = pObj->getSpecialPowerModule(power);
+				if (mod)
+				{
+					if (!mod->isReady())
+						continue;
+
+
+					Coord3D location;
+					Bool locationFound = FALSE;
+
+					locationFound = pPlayer->computeSuperweaponTargetEconomy(power, &location, enemyNdx, radius);
+
+					if (locationFound && power->getSpecialPowerType() == SPECIAL_SNEAK_ATTACK)
+					{
+						//We need to modify the location. We're already calculated the sweet spot, but we need to modify that
+						//position if we can't place it in the current location.
+						const ThingTemplate* sneakAttackTemplate = mod->getReferenceThingTemplate();
+						if (sneakAttackTemplate)
+						{
+							locationFound = pPlayer->calcClosestConstructionZoneLocation(sneakAttackTemplate, &location);
+						}
+					}
+
+					DEBUG_ASSERTCRASH(locationFound, ("ScriptActions::doSkirmishFireSpecialPowerAtMostCost() could not find a valid (costly) location."));
+
+					if (locationFound && location.lengthSqr() > 0.0f)
+					{
+						mod->doSpecialPowerAtLocation(&location, INVALID_ANGLE, COMMAND_FIRED_BY_SCRIPT);
+					}
+					break;
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doBuildSupplyCenterAngle(const AsciiString& player, const AsciiString& buildingType, Int cash, Real angle)
+{
+	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(player);
+	if (thePlayer) {
+		thePlayer->buildBySuppliesAngle(cash, buildingType, angle);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doBuildObjectNearestTeamAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& teamName, Real angle)
+{
+	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+
+	Team* theTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (thePlayer && theTeam)
+	{
+		thePlayer->buildSpecificBuildingNearestTeamAngle(buildingType, theTeam, angle);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doBuildObjectNearestTypeAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, Real angle)
+{
+	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!thePlayer) return;
+
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = thePlayer->getDefaultTeam()->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj)
+	{
+		return;
+	}
+
+	Coord3D teamPos = *thePlayer->getDefaultTeam()->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	Object* bestObj = nullptr;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		//Find the closest specified template.
+		PartitionFilterThing thingsToAccept(templ, true);
+		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, nullptr };
+		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+		if (!bestObj)
+		{
+			return;
+		}
+	}
+	else
+	{
+		//Find the closest object within the object template list.
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			Real closestDist;
+			Real dist;
+			for (size_t typeIndex = 0; typeIndex < objectTypes->getListSize(); typeIndex++)
+			{
+				AsciiString thisTypeName = objectTypes->getNthInList(typeIndex);
+				const ThingTemplate* thisType = TheThingFactory->findTemplate(thisTypeName);
+				if (thisType)
+				{
+					PartitionFilterThing thingToAccept(thisType, true);
+					PartitionFilter* filters[] = { &thingToAccept, &filterMapStatus, nullptr };
+
+					Object* obj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters, &dist);
+					if (obj)
+					{
+						if (!bestObj || dist < closestDist)
+						{
+							bestObj = obj;
+							closestDist = dist;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if (!bestObj) return;
+
+	thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doBuildObjectNearestKindOfAngle(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, Real angle)
+{
+	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!thePlayer) return;
+
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = thePlayer->getDefaultTeam()->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj)
+	{
+		return;
+	}
+
+	Coord3D teamPos = *thePlayer->getDefaultTeam()->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	Object* bestObj = nullptr;
+
+	KindOfType pKindOf = (KindOfType)kindOf;
+
+	PartitionFilterAcceptByKindOf theKindOf(pKindOf, TRUE);
+	PartitionFilter* filters[] = { &theKindOf, &filterMapStatus, nullptr };
+	bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	if (!bestObj)
+	{
+		return;
+	}
+
+	thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMoveAwayFromRelation(const AsciiString& teamName, Real feet, Int relationType)
+{
+	Team* team = TheScriptEngine->getTeamNamed(teamName);
+	if (!team)
+	{
+		return;
+	}
+
+	//Get the first object (to use in the partition filter checks).
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj)
+	{
+		return;
+	}
+
+	Coord3D teamPos = *team->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), relationType, true);
+	Object* bestObj = nullptr;
+
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
+	bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	if (!bestObj)
+	{
+		return;
+	}
+	
+	if (!bestObj) return;
+	//Calculate the flee vector
+	Coord3D threatPos = *bestObj->getPosition();
+	Coord3D fleeVec;
+	fleeVec.x = teamPos.x - threatPos.x;
+	fleeVec.y = teamPos.y - threatPos.y;
+	fleeVec.z = 0.0f;
+
+	fleeVec.normalize();
+	fleeVec.x *= feet;
+	fleeVec.y *= feet;
+
+	Coord3D targetPos;
+	targetPos.x = teamPos.x + fleeVec.x;
+	targetPos.y = teamPos.y + fleeVec.y;
+	targetPos.z = teamPos.z;
+
+	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj)
+		{
+			return;
+		}
+		AIUpdateInterface* ai = obj->getAI();
+		if (!ai)
+		{
+			return;
+		}
+		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+		ai->aiMoveToPosition(&targetPos, CMD_FROM_SCRIPT);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doUnitMoveAwayFromRelation(const AsciiString& unitName, Real feet, Int relationType)
+{
+	Object* obj = TheScriptEngine->getUnitNamed(unitName);
+	if (!obj) return;
+
+	AIUpdateInterface* ai = obj->getAIUpdateInterface();
+	if (!ai) return;
+
+	Coord3D objPos = *obj->getPosition();
+	PartitionFilterSameMapStatus filterMapStatus(obj);
+	PartitionFilterPlayerAffiliation filterAffiliation(obj->getControllingPlayer(), relationType, true);
+	Object* bestObj = nullptr;
+
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
+
+	bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	if (!bestObj) return;
+
+	//Calculate the flee vector.
+	Coord3D threatPos = *bestObj->getPosition();
+	Coord3D fleeVec;
+	fleeVec.x = objPos.x - threatPos.x;
+	fleeVec.y = objPos.y - threatPos.y;
+	fleeVec.z = 0.0f;
+
+	Real len = sqrt(fleeVec.x * fleeVec.x + fleeVec.y * fleeVec.y);
+	if (len <= 0.0f) return;
+
+	fleeVec.x /= len;
+	fleeVec.y /= len;
+	fleeVec.x *= feet;
+	fleeVec.y *= feet;
+
+	Coord3D targetPos;
+	targetPos.x = objPos.x + fleeVec.x;
+	targetPos.y = objPos.y + fleeVec.y;
+	targetPos.z = objPos.z;
+
+	ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+	ai->aiMoveToPosition(&targetPos, CMD_FROM_SCRIPT);
+}
+
+//-------------------------------------------------------------------------------------------------
+//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
+//-------------------------------------------------------------------------------------------------
+
+
+
+
+
 //-------------------------------------------------------------------------------------------------
 /** Execute an action */
 //-------------------------------------------------------------------------------------------------
@@ -7697,6 +9748,119 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 
 		case ScriptAction::DISABLE_OBJECT_SOUND:
 			doEnableObjectSound(pAction->getParameter(0)->getString(), false);
+			return;
+
+
+
+
+		case ScriptAction::PLAYER_SURRENDER:
+			doPlayerSurrender(pAction->getParameter(0)->getString());
+			return;
+		case ScriptAction::AI_PLAYER_BUILDS_UNNAMED:
+			doPlayerBuildUnit(pAction->getParameter(1)->getString(), pAction->getParameter(0)->getString());
+			return;
+		case ScriptAction::TEAM_MOVE_RELATIVE:
+			Coord3D posA;
+			pAction->getParameter(1)->getCoord3D(&posA);
+			doTeamMoveRelative(pAction->getParameter(0)->getString(), &posA);
+			return;
+		case ScriptAction::UNIT_MOVE_RELATIVE:
+			Coord3D posB;
+			pAction->getParameter(1)->getCoord3D(&posB);
+			doUnitMoveRelative(pAction->getParameter(0)->getString(), &posB);
+			return;
+		case ScriptAction::TEAM_MOVE_NEAREST_BELONGING_TO_PLAYER:
+			doTeamMoveNearestBelongingToPlayer(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::UNIT_MOVE_NEAREST_BELONGING_TO_PLAYER:
+			doUnitMoveNearestBelongingToPlayer(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::TEAM_MOVE_AWAY_FROM_RELATION_TYPE:
+			doTeamMoveAwayFromRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString());
+			return;
+		case ScriptAction::UNIT_MOVE_AWAY_FROM_RELATION_TYPE:
+			doUnitMoveAwayFromRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString());
+			return;
+		case ScriptAction::TEAM_MEET:
+			doTeamMeet(pAction->getParameter(0)->getString());
+			return;
+		case ScriptAction::TEAM_MEET_AT_KINDOF:
+			doTeamMeetKindOf(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+		case ScriptAction::TEAM_MEET_AT_TYPE:
+			doTeamMeetType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::TEAM_USE_COMMAND_BUTTON_ABILITY_WITH_TYPE:
+			doTeamUseCommandButtonAbilityOnType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::TEAM_USE_COMMAND_BUTTON_ABILITY_ON_TEAM:
+			doTeamUseCommandButtonAbilityOnTeam(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::PLAYER_MERGE_KINDOF:
+			doPlayerMergeKindOf(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::PLAYER_MERGE_TYPE:
+			doPlayerMergeType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::TEAM_MERGE_KINDOF:
+			doTeamMergeKindOf(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::TEAM_MERGE_TYPE:
+			doTeamMergeType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::PLAYER_DISBAND_TYPE:
+			doPlayerDisbandType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::PLAYER_DISBAND_KINDOF:
+			doPlayerDisbandKindOf(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+		case ScriptAction::TEAM_DISBAND_TYPE:
+			doTeamDisbandType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::TEAM_DISBAND_KINDOF:
+			doTeamDisbandKindOf(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+		case ScriptAction::CREATE_TEAM_FROM_TEAMLESS:
+			doPlayerTeamlessMerge(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::CREATE_TEAM_FROM_TEAMLESS_KINDOF:
+			doPlayerTeamlessMergeKindOf(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::CREATE_TEAM_FROM_TEAMLESS_TYPE:
+			doPlayerTeamlessMergeType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::PLAYER_GARRISON_BUILDINGS_WITH_MAX_NUMBER:
+			doPlayerGarrisonMaxEach(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+		case ScriptAction::TEAM_GARRISON_BUILDINGS_WITH_MAX_NUMBER:
+			doTeamGarrisonMaxEach(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+		case ScriptAction::PLAYER_GARRISON_NUMBER_BUILDINGS:
+			doPlayerGarrisonEqually(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+		case ScriptAction::TEAM_GARRISON_NUMBER_BUILDINGS:
+			doTeamGarrisonEqually(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+		case ScriptAction::SKIRMISH_FIRE_SPECIAL_POWER_AT_MOST_COST_ECONOMY:
+			doSkirmishFireSpecialPowerAtMostCostEconomy(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TEAM_ROTATED:
+			doBuildObjectNearestTeamAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getReal());
+			return;
+		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_SUPPLY_ROTATED:
+			doBuildSupplyCenterAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getReal());
+			return;
+		case ScriptAction::TEAM_MOVE_AWAY_FROM_RELATION:
+			doTeamMoveAwayFromRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt());
+			return;
+		case ScriptAction::UNIT_MOVE_AWAY_FROM_RELATION:
+			doUnitMoveAwayFromRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt());
+			return;
+		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED:
+			doBuildObjectNearestTypeAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getReal());
+			return;
+		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED:
+			doBuildObjectNearestKindOfAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getReal());
 			return;
 
 	}

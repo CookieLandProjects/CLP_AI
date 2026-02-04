@@ -178,10 +178,27 @@ protected:
 	Bool evaluateSkirmishSupplySourceSafe(Condition *pCondition, Parameter *pSkirmishPlayerParm, Parameter *pMinAmountOfSupplies );
 	Bool evaluateSkirmishSupplySourceAttacked(Parameter *pSkirmishPlayerParm );
 	Bool evaluateSkirmishStartPosition(Parameter *pSkirmishPlayerParm, Parameter *startNdx );
-
-
 	// Stubs
-	Bool evaluateMissionAttempts(Parameter *pPlayerParm, Parameter *pComparisonParm, Parameter *pAttemptsParm);
+	Bool evaluateMissionAttempts(Parameter* pPlayerParm, Parameter* pComparisonParm, Parameter* pAttemptsParm);
 
+	//-------------------------------------------------------------------------------------------------
+	//------------------------------ @CLP_AI SCRIPT CONDITION ADDITIONS -------------------------------
+	//-------------------------------------------------------------------------------------------------
+
+	Bool evaluatePlayerRelation(const AsciiString& playerSrcName, Int relationType, const AsciiString& playerDstName);
+  Bool evaluateEmptySpot(Parameter* pStartNdx);
+	Bool evaluateNeighbouringSpot(Parameter* pPlayerParm, Parameter* pStartNdx);
+	Bool evaluateNeighbouringSpotsEmpty(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pCount);
+	Bool evaluateStartingCash(Parameter* pComparisonParm, Int pAmount);
+	Bool evaluateClosestRelationUnitToMySpawn(Int relationType, Parameter* pPlayerParm, Parameter* pComparisonParm, Int pDist);
+	Bool evaluateNotHunted(Parameter* pPlayerParm);
+	Bool evaluatePlayerLostTypeInArea(Parameter* pPlayerParm, Parameter* pObjectType, Parameter* pArea);
+	Bool evaluateTeamSightedRelationType(Parameter* pTeam, Int relationType, Parameter* pObjectType);
+	Bool evaluateSkirmishAnyRelationFaction(Parameter* pPlayerParm, Int relationType, Parameter* pFactionParm);
+	Bool evaluateMapSize(Parameter* pComparisonParm, Int pMapSize);
+
+	//-------------------------------------------------------------------------------------------------
+	//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
+	//-------------------------------------------------------------------------------------------------
 
 };

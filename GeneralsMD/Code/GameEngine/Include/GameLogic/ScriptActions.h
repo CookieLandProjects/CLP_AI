@@ -386,5 +386,53 @@ protected:
 	void deleteAllUnmanned();
 	void doNamedSetTrainHeld( const AsciiString &locoName, const Bool set );
   void doEnableObjectSound(const AsciiString& objectName, Bool enable);
+	//-------------------------------------------------------------------------------------------------
+	//------------------------------- @CLP_AI SCRIPT ACTION ADDITIONS  --------------------------------
+	//-------------------------------------------------------------------------------------------------
 
+	void doPlayerSurrender(const AsciiString& playerName);
+	void doPlayerBuildUnit(const AsciiString& unitName, const AsciiString& playerName);
+	void doBuildObjectNearestTeamAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& teamName, Real angle);
+	void doBuildSupplyCenterAngle(const AsciiString& player, const AsciiString& buildingType, Int cash, Real angle);
+	void doBuildObjectNearestTypeAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, Real angle);
+	void doBuildObjectNearestKindOfAngle(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, Real angle);
+
+	void doTeamMoveRelative(const AsciiString& teamName, Coord3D* coords);
+	void doUnitMoveRelative(const AsciiString& unitName, Coord3D* coords);
+	void doTeamMoveNearestBelongingToPlayer(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& playerName);
+	void doUnitMoveNearestBelongingToPlayer(const AsciiString& unitName, const AsciiString& objectType, const AsciiString& playerName);
+	void doTeamMoveAwayFromRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType);
+	void doUnitMoveAwayFromRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType);
+	void doTeamMeet(const AsciiString& teamName);
+	void doTeamMeetKindOf(const AsciiString& teamName, Int kindOf);
+	void doTeamMeetType(const AsciiString& teamName, const AsciiString& objectType);
+	void doTeamMoveAwayFromRelation(const AsciiString& teamName, Real feet, Int relationType);
+	void doUnitMoveAwayFromRelation(const AsciiString& unitName, Real feet, Int relationType);
+
+	void doTeamUseCommandButtonAbilityOnType(const AsciiString& teamName, const AsciiString& ability, const AsciiString& objectType);
+	void doTeamUseCommandButtonAbilityOnTeam(const AsciiString& teamName, const AsciiString& ability, const AsciiString& targetTeam);
+
+	void doPlayerMergeKindOf(const AsciiString& playerName, Int kindOf, const AsciiString& teamName);
+	void doTeamMergeKindOf(const AsciiString& srcName, Int kindOf, const AsciiString& destName);
+	void doPlayerMergeType(const AsciiString& playerName, const AsciiString& objectType, const AsciiString& teamName);
+	void doTeamMergeType(const AsciiString& srcName, const AsciiString& objectType, const AsciiString& destName);
+	void doPlayerDisbandKindOf(const AsciiString& playerName, Int kindOf);
+	void doTeamDisbandKindOf(const AsciiString& teamName, Int kindOf);
+	void doPlayerDisbandType(const AsciiString& playerName, const AsciiString& objectType);
+	void doTeamDisbandType(const AsciiString& teamName, const AsciiString& objectType);
+	void doPlayerTeamlessMerge(const AsciiString& playerName, const AsciiString& teamName);
+	void doPlayerTeamlessMergeKindOf(const AsciiString& playerName, Int kindOf, const AsciiString& teamName);
+	void doPlayerTeamlessMergeType(const AsciiString& playerName, const AsciiString& objectType, const AsciiString& teamName);
+
+	void doPlayerGarrisonMaxEach(const AsciiString& playerName, Int maxAmount);
+	void doTeamGarrisonMaxEach(const AsciiString& teamName, Int maxAmount);
+	void doPlayerGarrisonEqually(const AsciiString& playerName, Int amount);
+	void doTeamGarrisonEqually(const AsciiString& teamName, Int amount);
+
+	void doSkirmishFireSpecialPowerAtMostCostEconomy(const AsciiString& player, const AsciiString& specialPower);
+
+
+	//-------------------------------------------------------------------------------------------------
+	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
+	//-------------------------------------------------------------------------------------------------
 };

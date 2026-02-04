@@ -1316,6 +1316,14 @@ void ChinookAIUpdate::aiDoCommand(const AICommandParms* parms)
 		{
 			const Real THRESH = 3.0f;
 			const Real THRESH_SQR = THRESH*THRESH;
+#if RETAIL_COMPATIBLE_CRC
+			const bool allowExit = true;
+#else
+			// TheSuperHackers @bugfix Stubbjax 04/11/2025 Passengers are no longer all dumped in a single frame.
+			const ContainModuleInterface* contain = getObject()->getContain();
+			const bool allowExit = contain && contain->hasObjectsWantingToEnterOrExit();
+#endif
+
 			if (calcDistSqr(*getObject()->getPosition(), parms->m_pos) > THRESH_SQR &&
 					m_flightStatus == CHINOOK_LANDED)
 			{
@@ -1326,7 +1334,7 @@ void ChinookAIUpdate::aiDoCommand(const AICommandParms* parms)
 				setMyState(TAKING_OFF, nullptr, nullptr, CMD_FROM_AI);
 				passItThru = false;
 			}
-			else
+			else if (allowExit)
 			{
 				// do this INSTEAD of the standard stuff
 				setMyState(
@@ -1463,7 +1471,7 @@ void ChinookAIUpdate::privateAttackObject( Object *victim, Int maxShotsToFire, C
 	if( contain != nullptr )
 	{
 		// As an extension of the normal attack, I may want to tell my passengers to attack
-		// too, but only if this is a direct command.  (As opposed to a passive aquire)
+		// too, but only if this is a direct command.  (As opposed to a passive acquire)
 		if( (cmdSource == CMD_FROM_PLAYER  ||  cmdSource == CMD_FROM_SCRIPT) )
 		{
       //if ( contain->isPassengerAllowedToFire() )//moved to below
@@ -1552,7 +1560,7 @@ void ChinookAIUpdate::privateForceAttackObject( Object *victim, Int maxShotsToFi
 	if( contain != nullptr )
 	{
 		// As an extension of the normal attack, I may want to tell my passengers to attack
-		// too, but only if this is a direct command.  (As opposed to a passive aquire)
+		// too, but only if this is a direct command.  (As opposed to a passive acquire)
 		if( (cmdSource == CMD_FROM_PLAYER  ||  cmdSource == CMD_FROM_SCRIPT) )
 		{
 //      if ( contain->isPassengerAllowedToFire() )
@@ -1629,7 +1637,7 @@ void ChinookAIUpdate::privateAttackPosition( const Coord3D *pos, Int maxShotsToF
 	if( contain != nullptr )
 	{
 		// As an extension of the normal attack, I may want to tell my passengers to attack
-		// too, but only if this is a direct command.  (As opposed to a passive aquire)
+		// too, but only if this is a direct command.  (As opposed to a passive acquire)
 		if( (cmdSource == CMD_FROM_PLAYER  ||  cmdSource == CMD_FROM_SCRIPT) )
 		{
 

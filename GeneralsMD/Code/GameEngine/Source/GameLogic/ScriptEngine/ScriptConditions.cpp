@@ -2718,6 +2718,473 @@ Bool ScriptConditions::evaluatePlayerLostObjectType(Parameter *pPlayerParm, Para
 	return (sumOfObjs < currentCount);
 }
 
+
+
+
+
+//-------------------------------------------------------------------------------------------------
+//------------------------------ @CLP_AI SCRIPT CONDITION ADDITIONS -------------------------------
+//-------------------------------------------------------------------------------------------------
+
+
+Bool ScriptConditions::evaluatePlayerRelation(const AsciiString& playerSrcName, Int relationType, const AsciiString& playerDstName)
+{
+	Player* pPlayerSrcName = TheScriptEngine->getPlayerFromAsciiString(playerSrcName);
+	Player* pPlayerDstName = TheScriptEngine->getPlayerFromAsciiString(playerDstName);
+
+  if (!pPlayerSrcName || !pPlayerDstName) {
+		return false;
+	}
+  //use the default team to get an indirect relationship between players
+	Team* pTeamDst = pPlayerDstName->getDefaultTeam();
+
+	return pPlayerSrcName->getRelationship(pTeamDst) == relationType;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateEmptySpot(Parameter* pStartNdx)
+{
+	Int ndx = pStartNdx->getInt() - 1;
+	if (ndx >= 0)
+	{
+		Int pPlayerCount = ThePlayerList->getPlayerCount();
+    //iterate through all players
+		// i=2 because player 0 is "neutral" & player 1 is "PlyrCivilian".
+		// playerCount-1 to skip any possible "observer" player at the end.
+		for (int i = 2; i < pPlayerCount - 1; i++)
+		{
+			Player* pPlayers = ThePlayerList->getNthPlayer(i);
+			if (pPlayers->getMpStartIndex() == ndx)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateNeighbouringSpot(Parameter* pPlayerParm, Parameter* pStartNdx)
+{
+  Player* player = playerFromParam(pPlayerParm);
+	if (!player || pStartNdx->getInt() < 1 || pStartNdx->getInt() == player->getMpStartIndex() + 1) { return false; }
+
+  //format the waypoint name for this player's start position
+	AsciiString pSpot;
+  pSpot.format("Player_%d_Start", player->getMpStartIndex() + 1);
+
+  Waypoint* pWay = TheTerrainLogic->getWaypointByName(pSpot);
+	if (!pWay) { return false; }
+
+	//iterate through all player start waypoints to find the closest one
+	Coord3D pCoords = *pWay->getLocation();
+	Real minDist = FLT_MAX;
+
+	for (Waypoint* iWay = TheTerrainLogic->getFirstWaypoint(); iWay; iWay = iWay->getNext())
+	{
+		const AsciiString& name = iWay->getName();
+		if (name.startsWith("Player_") && name.endsWith("_Start"))
+		{
+			if (iWay != pWay)
+			{
+				Coord3D cCoords = *iWay->getLocation();
+				Real dx = pCoords.x - cCoords.x;
+				Real dy = pCoords.y - cCoords.y;
+				Real dist = sqrtf(dx * dx + dy * dy);
+
+				if (dist < minDist) { minDist = dist; }
+			}
+		}
+	}
+  //if the closest distance still is FLT_MAX, then this is no skirmish map.
+	if (minDist == FLT_MAX) { return false; }
+
+	// consider neighbouring if within 1.5 times the closest distance.
+	minDist *= 1.5f;
+
+	//create a Waypoint for the start position to check against
+	AsciiString targetName;
+	targetName.format("Player_%d_Start", pStartNdx->getInt());
+	Waypoint* target = TheTerrainLogic->getWaypointByName(targetName);
+	if (!target) { return false; }
+
+	Coord3D tCoords = *target->getLocation();
+	Real cX = pCoords.x - tCoords.x;
+	Real cY = pCoords.y - tCoords.y;
+	Real targetDist = sqrtf(cX * cX + cY * cY);
+
+	return targetDist <= minDist;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateNeighbouringSpotsEmpty(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pCountParm)
+{
+  Player* player = playerFromParam(pPlayerParm);
+	Int playerCount = ThePlayerList->getPlayerCount();
+  if (!player || !playerCount) { return false; }
+
+	AsciiString pSpot;
+	pSpot.format("Player_%d_Start", player->getMpStartIndex() + 1);
+  Waypoint* pWay = TheTerrainLogic->getWaypointByName(pSpot);
+  if (!pWay) { return false; }
+
+
+  Coord3D pCoords = *pWay->getLocation();
+  Real minDist = FLT_MAX;
+	//iterate through all player start waypoints to find the closest one
+	for (Waypoint* iWay = TheTerrainLogic->getFirstWaypoint(); iWay; iWay = iWay->getNext())
+	{
+		const AsciiString& name = iWay->getName();
+		if (name.startsWith("Player_") && name.endsWith("_Start"))
+		{
+			if (iWay != pWay)
+			{
+				Coord3D cCoords = *iWay->getLocation();
+				Real dx = pCoords.x - cCoords.x;
+				Real dy = pCoords.y - cCoords.y;
+				Real dist = sqrtf(dx * dx + dy * dy);
+				if (dist < minDist)
+				{
+					minDist = dist;
+				}
+			}
+		}
+  }
+
+	std::vector<Waypoint*> neighbouringWaypoints;
+
+  // if the closest distance still is FLT_MAX, then this is no skirmish map.
+  if (minDist == FLT_MAX) { return false; }
+
+  // consider neighbouring if within 1.5 times the closest distance.
+  minDist *= 1.5f;
+
+  //find all neighbouring waypoints
+  for (Waypoint* iWay = TheTerrainLogic->getFirstWaypoint(); iWay; iWay = iWay->getNext())
+	{
+		const AsciiString& name = iWay->getName();
+		if (name.startsWith("Player_") && name.endsWith("_Start"))
+		{
+			if (iWay != pWay)
+			{
+				Coord3D cCoords = *iWay->getLocation();
+				Real dx = pCoords.x - cCoords.x;
+				Real dy = pCoords.y - cCoords.y;
+				Real dist = sqrtf(dx * dx + dy * dy);
+				if (dist <= minDist)
+				{
+					neighbouringWaypoints.push_back(iWay);
+				}
+			}
+		}
+  }
+
+  // Make sure that the newly found neighbouring starting points are *indeed* empty.
+	// i=2 because player 0 is "neutral" & player 1 is "PlyrCivilian".
+  // playerCount-1 to skip any possible "observer" player at the end.
+	for (int i = 2; i < playerCount - 1; i++) {
+		Int pIndex = ThePlayerList->getNthPlayer(i)->getMpStartIndex() + 1;
+		AsciiString tName;
+		tName.format("Player_%d_Start", pIndex);
+
+		for (int j = neighbouringWaypoints.size() - 1; j >= 0; j--) {
+			AsciiString sName = neighbouringWaypoints[j]->getName();
+			if (sName == tName) {
+				neighbouringWaypoints.erase(neighbouringWaypoints.begin() + j);
+			}
+		}
+	}
+
+  //compare the new size of the neighbouring EMPTY waypoints with the given count
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:			return neighbouringWaypoints.size() < pCountParm;
+	case Parameter::LESS_EQUAL:			return neighbouringWaypoints.size() <= pCountParm;
+	case Parameter::EQUAL:					return neighbouringWaypoints.size() == pCountParm;
+	case Parameter::GREATER_EQUAL:	return neighbouringWaypoints.size() >= pCountParm;
+	case Parameter::GREATER:				return neighbouringWaypoints.size() > pCountParm;
+	case Parameter::NOT_EQUAL:			return neighbouringWaypoints.size() != pCountParm;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateStartingCash(Parameter* pComparisonParm, Int pAmount)
+{
+	//ThePlayerList->getPlayerCount() - 1 = Last (Dummy) Player. Also receives the starting cash value
+	Player* player = ThePlayerList->getNthPlayer(ThePlayerList->getPlayerCount() - 1);
+  if (!player) { return false; }
+	Int startingCash = player->getMoney()->countMoney();
+
+	switch (pComparisonParm->getInt())
+	{
+    case Parameter::LESS_THAN:			return startingCash < pAmount;
+    case Parameter::LESS_EQUAL:			return startingCash <= pAmount;
+    case Parameter::EQUAL:					return startingCash == pAmount;
+    case Parameter::GREATER_EQUAL:	return startingCash >= pAmount;
+    case Parameter::GREATER:				return startingCash > pAmount;
+    case Parameter::NOT_EQUAL:			return startingCash != pAmount;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateClosestRelationUnitToMySpawn(Int relationType, Parameter* pPlayerParm, Parameter* pComparisonParm, Int pDist)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer) return false;
+
+	AsciiString pSpot;
+	pSpot.format("Player_%d_Start", pPlayer->getMpStartIndex() + 1);
+	Waypoint* pWay = TheTerrainLogic->getWaypointByName(pSpot);
+	if (!pWay) return false;
+
+	Real minDist = FLT_MAX;
+	Player::PlayerTeamList::const_iterator it;
+
+	for (int i = 2; i < ThePlayerList->getPlayerCount() - 1; i++){
+		if (ThePlayerList->getNthPlayer(i)->getRelationship(pPlayer->getDefaultTeam()) == relationType && ThePlayerList->getNthPlayer(i) != pPlayer) {
+			for (it = ThePlayerList->getNthPlayer(i)->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+			{
+				for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+					Team* team = iter.cur();
+					if (!team) continue;
+
+					for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
+						Object* pObj = iter.cur();
+						if (!pObj) continue;
+
+						Coord3D oCoords = *pObj->getPosition();
+						Real dx = pWay->getLocation()->x - oCoords.x;
+						Real dy = pWay->getLocation()->y - oCoords.y;
+						Real dist = sqrtf(dx * dx + dy * dy);
+
+						if (dist < minDist) { minDist = dist; }
+
+					}
+				}
+			}
+		}
+	}
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:			return minDist < pDist;
+	case Parameter::LESS_EQUAL:			return minDist <= pDist;
+	case Parameter::EQUAL:					return minDist = pDist;
+	case Parameter::GREATER_EQUAL:	return minDist >= pDist;
+	case Parameter::GREATER:				return minDist > pDist;
+	case Parameter::NOT_EQUAL:			return minDist != pDist;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateNotHunted(Parameter* pPlayerParm)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer) return false;
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
+				Object* pObj = iter.cur();
+				if (!pObj) continue;
+
+				const ThingTemplate* objTmpl = pObj->getTemplate();
+				if (!objTmpl) continue;
+
+				if (pObj->isKindOf(KINDOF_COMMANDCENTER) || pObj->isKindOf(KINDOF_DOZER)) return true; // GLA Workers are also Dozers!
+
+				const ThingTemplate* GLAStashTemplate = TheThingFactory->findTemplate("GLASupplyStash");
+				const ThingTemplate* ToxStashTemplate = TheThingFactory->findTemplate("Chem_GLASupplyStash");
+				const ThingTemplate* DemoStashTemplate = TheThingFactory->findTemplate("Demo_GLASupplyStash");
+				const ThingTemplate* SlthStashTemplate = TheThingFactory->findTemplate("Slth_GLASupplyStash");
+
+				if (objTmpl == GLAStashTemplate		||
+						objTmpl == ToxStashTemplate		||
+						objTmpl == DemoStashTemplate	||
+						objTmpl == SlthStashTemplate)
+					return true;
+			}
+		}
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluatePlayerLostTypeInArea(Parameter* pPlayerParm, Parameter* pObjectType, Parameter* pArea)
+{
+	// --- Trigger / Area ---
+	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(pArea->getString());
+	if (!pTrig) { return FALSE; }
+
+	// --- Player ---
+	Player* player = playerFromParam(pPlayerParm);
+	if (!player) { return FALSE;}
+
+	// --- ObjectTypes ---
+	ObjectTypesTemp objs;
+	objectTypesFromParam(pObjectType, objs.m_types);
+
+	// --- Prepare templates ---
+	std::vector<Int> counts;
+	std::vector<const ThingTemplate*> templates;
+
+	Int numTemplates = objs.m_types->prepForPlayerCounting(templates, counts);
+	if (numTemplates <= 0) { return FALSE; }
+
+	// --- Manual counting in AREA ---
+	// counts[] initializes already with 0
+	Player::PlayerTeamList::const_iterator it;
+	for (it = player->getPlayerTeams()->begin(); it != player->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> teamIter = (*it)->iterate_TeamInstanceList(); !teamIter.done(); teamIter.advance())
+		{
+			Team* team = teamIter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+			{
+				Object* pObj = objIter.cur();
+				if (!pObj) continue;
+
+				// Area-Check
+				if (!pObj->isInside(pTrig)) {
+					continue;
+				}
+
+				// Dead-Filter (identical to HasUnitTypeInArea)
+				if ((pObj->isEffectivelyDead() || pObj->isKindOf(KINDOF_INERT)) && !pObj->isKindOf(KINDOF_CRATE)) {
+					continue;
+				}
+
+				// Template-Match
+				const ThingTemplate* tmpl = pObj->getTemplate();
+				for (Int i = 0; i < numTemplates; ++i) {
+					if (tmpl == templates[i]) {
+						counts[i]++;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	// --- Sum ---
+	Int sumOfObjs = rts::sum(counts);
+
+	// --- ScriptEngine-State ---
+	// IMPORTANT: Area has to be in the key
+	AsciiString key;
+	key.format("%s_AREA_%s", pObjectType->getString(), pArea->getString());
+
+	Int currentCount = TheScriptEngine->getObjectCount(player->getPlayerIndex(), key);
+
+	if (sumOfObjs != currentCount) {
+		TheScriptEngine->setObjectCount(player->getPlayerIndex(), key, sumOfObjs);
+	}
+
+	// --- lost a unit? ---
+	return (sumOfObjs < currentCount);
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateTeamSightedRelationType(Parameter* pTeamParm, Int relationType, Parameter* pObjectType)
+{
+
+	Team* pTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
+	if (!pTeam) return false;
+
+	ObjectTypesTemp types;
+	objectTypesFromParam(pObjectType, types.m_types);
+
+	// and only stuff that is not dead
+	PartitionFilterAlive filterAlive;
+
+	// and only nonstealthed items.
+	PartitionFilterRejectByObjectStatus filterStealth(MAKE_OBJECT_STATUS_MASK(OBJECT_STATUS_STEALTHED),
+		MAKE_OBJECT_STATUS_MASK2(OBJECT_STATUS_DETECTED, OBJECT_STATUS_DISGUISED));
+
+
+	for (DLINK_ITERATOR<Object> teamIter = pTeam->iterate_TeamMemberList(); !teamIter.done(); teamIter.advance())
+	{
+		Object* obj = teamIter.cur();
+		
+		// and only on-map (or not)
+		PartitionFilterSameMapStatus filterMapStatus(obj);
+
+		PartitionFilter* filters[] = { &filterAlive, &filterStealth, &filterMapStatus, nullptr };
+
+		Real visionRange = obj->getVisionRange();
+		if (visionRange <= 0.0f) continue;
+
+		SimpleObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(obj, visionRange, FROM_CENTER_2D, filters);
+		MemoryPoolObjectHolder hold(iter);
+
+		for (Object* them = iter->first(); them; them = iter->next())
+		{
+			if (them == obj) continue;
+			if (them->getRelationship(obj) == relationType) {
+				if (types.m_types->isInSet(them->getTemplate()->getName()))
+					return true;
+			}
+		}
+	}
+	return false;
+}
+Bool ScriptConditions::evaluateSkirmishAnyRelationFaction(Parameter* pPlayerParm, Int relationType, Parameter* pFactionParm)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer)return false;
+
+	for (int i = 2; i < ThePlayerList->getPlayerCount() - 1; i++)
+	{
+		if (ThePlayerList->getNthPlayer(i)->getRelationship(pPlayer->getDefaultTeam()) == relationType && ThePlayerList->getNthPlayer(i) != pPlayer)
+		{
+			if (ThePlayerList->getNthPlayer(i)->getSide() == pFactionParm->getString())
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+Bool ScriptConditions::evaluateMapSize(Parameter* pComparisonParm, Int pMapSize)
+{
+	Int actualSize = 0;
+	for (int i = 1; i < MAX_PLAYER_COUNT; i++)
+	{
+		AsciiString pSpot;
+		pSpot.format("Player_%d_Start", i);
+		Waypoint* way = TheTerrainLogic->getWaypointByName(pSpot);
+		if (!way) break;
+		actualSize++;
+	}
+	switch (pComparisonParm->getInt()) {
+		case Parameter::LESS_THAN:			return actualSize < pMapSize;
+		case Parameter::LESS_EQUAL:			return actualSize <= pMapSize;
+		case Parameter::EQUAL:					return actualSize == pMapSize;
+		case Parameter::GREATER_EQUAL:	return actualSize >= pMapSize;
+		case Parameter::GREATER:				return actualSize > pMapSize;
+		case Parameter::NOT_EQUAL:			return actualSize != pMapSize;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
+//-------------------------------------------------------------------------------------------------
+
+
+
+
+
 //-------------------------------------------------------------------------------------------------
 /** Evaluate a condition */
 //-------------------------------------------------------------------------------------------------
@@ -2982,7 +3449,28 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 			return evaluatePlayerLostObjectType(pCondition->getParameter(0), pCondition->getParameter(1));
 
 
+
+		case Condition::RELATION_IS:
+			return evaluatePlayerRelation(pCondition->getParameter(0)->getString(), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2)->getString());
+		case Condition::SPOT_EMPTY:
+      return evaluateEmptySpot(pCondition->getParameter(0));
+    case Condition::SPOT_NEIGHBOURING:
+      return evaluateNeighbouringSpot(pCondition->getParameter(0), pCondition->getParameter(1));
+		case Condition::NEIGHBOURING_SPOTS_EMPTY:
+			return evaluateNeighbouringSpotsEmpty(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getInt());
+		case Condition::STARTING_CASH_COMPARE:
+      return evaluateStartingCash(pCondition->getParameter(0), pCondition->getParameter(1)->getInt());
+		case Condition::CLOSEST_ENEMY_DISTANCE:
+			return evaluateClosestRelationUnitToMySpawn(pCondition->getParameter(0)->getInt(), pCondition->getParameter(1), pCondition->getParameter(2), pCondition->getParameter(3)->getInt());
+		case Condition::PLAYER_NOT_HUNTED:
+			return evaluateNotHunted(pCondition->getParameter(0));
+		case Condition::PLAYER_LOST_TYPE_AREA:
+			return evaluatePlayerLostTypeInArea(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2));
+		case Condition::TEAM_SIGHTED_RELATION_TYPE:
+			return evaluateTeamSightedRelationType(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2));
+		case Condition::PLAYER_RELATION_FACTION:
+			return evaluateSkirmishAnyRelationFaction(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2));
+		case Condition::MAP_COMPARE_SIZE:
+			return evaluateMapSize(pCondition->getParameter(0), pCondition->getParameter(1)->getInt());
 	}
 }
-
-

@@ -1125,7 +1125,7 @@ Bool TeamPrototype::evaluateProductionCondition(void)
 		return false;
 	}
 	if (m_productionConditionScript) {
-		// If we are doing peridic evaluation, check the frame.
+		// If we are doing periodic evaluation, check the frame.
 		if (TheGameLogic->getFrame()<m_productionConditionScript->getFrameToEvaluate()) {
 			return false;
 		}
@@ -1160,6 +1160,24 @@ Bool TeamPrototype::evaluateProductionCondition(void)
 				break;
 			case DIFFICULTY_HARD:
 				if (!pScript->isHard()) {
+					m_productionConditionAlwaysFalse = true;
+					return false;
+				}
+				break;
+				case DIFFICULTY_BRUTAL:
+				if (!pScript->isBrutal()) {
+					m_productionConditionAlwaysFalse = true;
+					return false;
+				}
+				break;
+			case DIFFICULTY_ABSURD:
+				if (!pScript->isAbsurd()) {
+					m_productionConditionAlwaysFalse = true;
+					return false;
+				}
+				break;
+			case DIFFICULTY_INHUMANE:
+				if (!pScript->isInhumane()) {
 					m_productionConditionAlwaysFalse = true;
 					return false;
 				}
@@ -1391,6 +1409,7 @@ Player *Team::getControllingPlayer() const
 // ------------------------------------------------------------------------
 void Team::setControllingPlayer(Player *newController)
 {
+	Player* oldOwner = m_proto->getControllingPlayer();
 	// nullptr is not allowed, but is caught by TeamPrototype::setControllingPlayer()
 	m_proto->setControllingPlayer(newController);
 
@@ -1399,6 +1418,7 @@ void Team::setControllingPlayer(Player *newController)
 	// The Team doesn't change, it just starts to return a different answer when you ask for
 	// the controlling player.  I don't want to make the major change of onCapture on everyone,
 	// so I will do the minor fix for the specific bug, which is harmless even when misused.
+	// TheSuperHackers @fix xezon 07/12/2025 Now does onCapture on everyone.
 
 	// Tell all members to redo their looking status, as their Player has changed, but they don't know.
 	for (DLINK_ITERATOR<Object> iter = iterate_TeamMemberList(); !iter.done(); iter.advance())
@@ -1407,7 +1427,14 @@ void Team::setControllingPlayer(Player *newController)
 		if (!obj)
 			continue;
 
-		obj->handlePartitionCellMaintenance();
+		if constexpr (RETAIL_COMPATIBLE_CRC) // Not sure if necessary. But likely is.
+		{
+			obj->handlePartitionCellMaintenance();
+		}
+		else
+		{
+			obj->onCapture(oldOwner, newController);
+		}
 	}
 
 }

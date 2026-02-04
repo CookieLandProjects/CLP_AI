@@ -349,6 +349,26 @@ void AttackPriorityInfo::loadPostProcess( void )
 // ScriptEngine class
 
 //-------------------------------------------------------------------------------------------------
+/** Parse script action entry.  The InternalName has to match the action's internal name, and then it
+overrides the ui name and help text.  If no entry is present in the ini file, the default code
+initialized value in ScriptEngine::init() is used. jba*/
+//-------------------------------------------------------------------------------------------------
+void ScriptEngine::parseScriptAction( INI* ini )
+{
+}
+
+
+//-------------------------------------------------------------------------------------------------
+/** Parse script condition entry.  The InternalName has to match the condition's internal name, and then it
+overrides the ui name and help text.  If no entry is present in the ini file, the default code
+initialized value in ScriptEngine::init() is used. jba*/
+//-------------------------------------------------------------------------------------------------
+void ScriptEngine::parseScriptCondition( INI* ini )
+{
+}
+
+
+//-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
 ScriptEngine::ScriptEngine():
 m_numCounters(0),
@@ -7155,12 +7175,13 @@ void ScriptEngine::setSequentialTimer(Team *team, Int frameCount)
 void ScriptEngine::evaluateAndProgressAllSequentialScripts( void )
 {
 	VecSequentialScriptPtrIt it;
-	SequentialScript* lastScript = nullptr;
+	size_t currIndex = 0;
+	size_t prevIndex = ~0u;
 	Bool itAdvanced = false;
 
 	Int spinCount = 0;
 	for (it = m_sequentialScripts.begin(); it != m_sequentialScripts.end(); /* empty */) {
-		if ((*it) == lastScript) {
+		if (currIndex == prevIndex) {
 			++spinCount;
 		} else {
 			spinCount = 0;
@@ -7173,11 +7194,11 @@ void ScriptEngine::evaluateAndProgressAllSequentialScripts( void )
 					seqScript->m_scriptToExecuteSequentially->getName().str()));
 			}
 			++it;
+			++currIndex;
 			continue;
 		}
 
-		lastScript = (*it);
-
+		prevIndex = currIndex;
 		itAdvanced = false;
 
 		SequentialScript *seqScript = (*it);
@@ -7213,9 +7234,9 @@ void ScriptEngine::evaluateAndProgressAllSequentialScripts( void )
 #endif
 		}
 
-		if( ai || aigroup ) {
-			if (((ai && (ai->isIdle()) || (aigroup && aigroup->isIdle())) &&
-				seqScript->m_framesToWait < 1) || (seqScript->m_framesToWait == 0)) {
+		if (ai || aigroup) {
+			if (seqScript->m_framesToWait == 0 ||
+				(seqScript->m_framesToWait < 0 && ((ai && ai->isIdle()) || (aigroup && aigroup->isIdle())))) {
 
 				// We want to supress messages if we're repeatedly waiting for an event to occur, cause
 				// it KILLS our debug framerate.
@@ -7285,6 +7306,7 @@ void ScriptEngine::evaluateAndProgressAllSequentialScripts( void )
 					// Check to see if executing our action told us to wait. If so, skip to the next Sequential script
 					if (seqScript->m_dontAdvanceInstruction) {
 						++it;
+						++currIndex;
 						itAdvanced = true;
 						continue;
 					}
@@ -7338,6 +7360,7 @@ void ScriptEngine::evaluateAndProgressAllSequentialScripts( void )
 
 		if (!itAdvanced) {
 			++it;
+			++currIndex;
 		}
 	}
 	m_currentPlayer = nullptr;

@@ -856,6 +856,15 @@ void GOAPlayersCallback(PEER peer, PEERBool playing, char * outbuf,
 		case SLOT_BRUTAL_AI:
 			name = "CB";
 			break;
+		case SLOT_MOD_BRUTAL_AI:
+			name = "CC";
+			break;
+		case SLOT_MOD_ABSURD_AI:
+			name = "CA";
+			break;
+		case SLOT_MOD_INHUMANE_AI:
+			name = "CI";
+			break;
 		case SLOT_PLAYER:
 			{
 				AsciiString tmp;

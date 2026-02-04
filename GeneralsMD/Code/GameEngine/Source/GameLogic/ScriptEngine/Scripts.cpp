@@ -76,7 +76,7 @@ static ScriptGroup *s_mtGroup = nullptr;
 // These strings must be in the same order as they are in their definitions
 // (See SHELL_SCRIPT_HOOK_* )
 //
-static const char *const TheShellHookNames[]=
+const char *const TheShellHookNames[]=
 {
 	"ShellMainMenuCampaignPushed", //SHELL_SCRIPT_HOOK_MAIN_MENU_CAMPAIGN_SELECTED,
 	"ShellMainMenuCampaignHighlighted", //SHELL_SCRIPT_HOOK_MAIN_MENU_CAMPAIGN_HIGHLIGHTED,
@@ -144,6 +144,7 @@ enum { K_SCRIPT_LIST_DATA_VERSION_1 = 1,
 			K_SCRIPT_CONDITION_VERSION_3 = 3,
 			K_SCRIPT_CONDITION_VERSION_4 = 4,
 			K_SCRIPTS_DATA_VERSION_1,
+			K_SCRIPT_DATA_VERSION_3 = 3,
 			end_of_the_enumeration
 };
 
@@ -1091,7 +1092,7 @@ Bool ScriptGroup::ParseGroupDataChunk(DataChunkInput& file, DataChunkInfo* info,
 
 	pGroup->m_groupName = file.readAsciiString();
 	pGroup->m_isGroupActive = file.readByte();
-	if (info->version == K_SCRIPT_GROUP_DATA_VERSION_2) {
+	if (info->version >= K_SCRIPT_GROUP_DATA_VERSION_2) {
 		pGroup->m_isGroupSubroutine = file.readByte();
 	}
 
@@ -1154,6 +1155,9 @@ m_isOneShot(true),
 m_easy(true),
 m_normal(true),
 m_hard(true),
+m_brutal(true),
+m_absurd(true),
+m_inhumane(true),
 m_delayEvaluationSeconds(0),
 m_conditionTime(0),
 m_conditionExecutedCount(0),
@@ -1245,6 +1249,9 @@ Script *Script::duplicate(void) const
 	pNew->m_easy = m_easy;
 	pNew->m_normal = m_normal;
 	pNew->m_hard = m_hard;
+	pNew->m_brutal = m_brutal;
+	pNew->m_absurd = m_absurd;
+	pNew->m_inhumane = m_inhumane;
 	pNew->m_delayEvaluationSeconds = m_delayEvaluationSeconds;
 
 	if (m_condition) {
@@ -1281,6 +1288,9 @@ Script *Script::duplicateAndQualify(const AsciiString& qualifier,
 	pNew->m_easy = m_easy;
 	pNew->m_normal = m_normal;
 	pNew->m_hard = m_hard;
+	pNew->m_brutal = m_brutal;
+	pNew->m_absurd = m_absurd;
+	pNew->m_inhumane = m_inhumane;
 	pNew->m_delayEvaluationSeconds = m_delayEvaluationSeconds;
 
 	if (m_condition) {
@@ -1314,6 +1324,9 @@ void Script::updateFrom(Script *pSrc)
 	this->m_easy = pSrc->m_easy;
 	this->m_normal = pSrc->m_normal;
 	this->m_hard = pSrc->m_hard;
+	this->m_brutal = pSrc->m_brutal;
+	this->m_absurd = pSrc->m_absurd;
+	this->m_inhumane = pSrc->m_inhumane;
 
 	deleteInstance(this->m_condition);
 	this->m_condition = pSrc->m_condition;
@@ -1454,7 +1467,7 @@ void Script::WriteScriptDataChunk(DataChunkOutput &chunkWriter, Script *pScript)
 {
 	/**********SCRIPT  DATA ***********************/
 	while (pScript) {
-		chunkWriter.openDataChunk("Script", K_SCRIPT_DATA_VERSION_2);
+		chunkWriter.openDataChunk("Script", K_SCRIPT_DATA_VERSION_3);
 			chunkWriter.writeAsciiString(pScript->m_scriptName);
 			chunkWriter.writeAsciiString(pScript->m_comment);
 			chunkWriter.writeAsciiString(pScript->m_conditionComment);
@@ -1465,6 +1478,11 @@ void Script::WriteScriptDataChunk(DataChunkOutput &chunkWriter, Script *pScript)
 			chunkWriter.writeByte(pScript->m_easy);
 			chunkWriter.writeByte(pScript->m_normal);
 			chunkWriter.writeByte(pScript->m_hard);
+
+			chunkWriter.writeByte(pScript->m_brutal);					// NEW
+			chunkWriter.writeByte(pScript->m_absurd);					// NEW
+			chunkWriter.writeByte(pScript->m_inhumane);				// NEW
+
 			chunkWriter.writeByte(pScript->m_isSubroutine);
 			chunkWriter.writeInt(pScript->m_delayEvaluationSeconds);
 			if (pScript->m_condition) OrCondition::WriteOrConditionDataChunk(chunkWriter, pScript->m_condition);
@@ -1495,10 +1513,31 @@ Script *Script::ParseScript(DataChunkInput &file, unsigned short version)
 	pScript->m_easy = file.readByte();
 	pScript->m_normal = file.readByte();
 	pScript->m_hard = file.readByte();
-	pScript->m_isSubroutine = file.readByte();
-	if (version>=K_SCRIPT_DATA_VERSION_2) {
-		pScript->m_delayEvaluationSeconds = file.readInt();
+
+	//-------------------------------------------------------------------------------------------------
+	//------------------------------------ @CLP_AI PARSING ADDITON ------------------------------------
+	//-------------------------------------------------------------------------------------------------
+
+	if (version >= K_SCRIPT_DATA_VERSION_3) {
+		pScript->m_brutal = file.readByte();
+		pScript->m_absurd = file.readByte();
+		pScript->m_inhumane = file.readByte();
 	}
+	else {
+		// Default: old maps with old scripts shouldn't run scripts on new difficulties
+		pScript->m_brutal = false;
+		pScript->m_absurd = false;
+		pScript->m_inhumane = false;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	//---------------------------------- @CLP_AI PARSING ADDITON END ----------------------------------
+	//-------------------------------------------------------------------------------------------------
+
+	pScript->m_isSubroutine = file.readByte();
+
+	pScript->m_delayEvaluationSeconds = file.readInt();
+
 	file.registerParser( "OrCondition", "Script", OrCondition::ParseOrConditionDataChunk );
 	file.registerParser( "ScriptAction",  "Script", ScriptAction::ParseActionDataChunk );
 	file.registerParser( "ScriptActionFalse",  "Script", ScriptAction::ParseActionFalseDataChunk );
@@ -2059,6 +2098,17 @@ void Parameter::qualify(const AsciiString& qualifier,
 		case SCRIPT:
 		case COUNTER:
 		case FLAG:
+
+//-------------------------------------------------------------------------------------------------
+//---------------------------------- @CLP_AI SCRIPT ADDITIONS -------------------------------------
+//-------------------------------------------------------------------------------------------------
+
+		case KD_RATIO:
+
+//-------------------------------------------------------------------------------------------------
+//-------------------------------- @CLP_AI SCRIPT ADDITIONS END -----------------------------------
+//-------------------------------------------------------------------------------------------------
+
 		case SCRIPT_SUBROUTINE: m_string.concat(qualifier); break;
 		default: break;
 	}
@@ -2148,6 +2198,19 @@ AsciiString Parameter::getUiText(void) const
 		case COUNTER:
 			uiText.format("'%s'", uiString.str());
 			break;
+
+		//-------------------------------------------------------------------------------------------------
+		//---------------------------------- @CLP_AI SCRIPT ADDITIONS -------------------------------------
+		//-------------------------------------------------------------------------------------------------
+
+		case KD_RATIO:
+			uiText.format("'%s'", uiString.str());
+			break;
+
+		//-------------------------------------------------------------------------------------------------
+		//-------------------------------- @CLP_AI SCRIPT ADDITIONS END -----------------------------------
+		//-------------------------------------------------------------------------------------------------
+
 		case INT:
 			uiText.format(" %d ", m_int);
 			break;

@@ -1476,7 +1476,7 @@ Bool AIUpdateInterface::processCollision(PhysicsBehavior *physics, Object *other
 				{
 					//Kris: Patch 1.01 -- November 5, 2003
 					//Prevent busy units from being told to move out of the way!
-					if( other->testStatus( OBJECT_STATUS_IS_USING_ABILITY ) || other->getAI() && other->getAI()->isBusy() )
+					if( other->testStatus( OBJECT_STATUS_IS_USING_ABILITY ) || (other->getAI() && other->getAI()->isBusy()) )
 					{
 						return FALSE;
 					}
@@ -4378,7 +4378,7 @@ UnsignedInt AIUpdateInterface::getMoodMatrixActionAdjustment( MoodMatrixAction a
 {
 	// Angry Mob Members (but not Nexi) are never subject to moods. In particular,
 	// they must never, ever, ever convert a move into an attack move, or Bad Things
-	// will happend, since MobMemberSlavedUpdate expects a moveto to remain a moveto.
+	// will happen, since MobMemberSlavedUpdate expects a moveto to remain a moveto.
 	// Mark L sez that members do not, in fact, need any mood adjustment whatsoever,
 	// since the mood of the nexus wants to control all this anyway. Unfortunately, there
 	// is no KINDOF_MOB_MEMBER, and we don't want to add one at the eleventh hour...
