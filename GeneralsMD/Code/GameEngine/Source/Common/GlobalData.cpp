@@ -958,6 +958,7 @@ GlobalData::GlobalData()
 	m_renderFpsFontSize = 8;
 	m_systemTimeFontSize = 8;
 	m_gameTimeFontSize = 8;
+	m_playerInfoListFontSize = 8;
 
 	m_showMoneyPerMinute = FALSE;
 	m_allowMoneyPerMinuteForPlayer = FALSE;
@@ -1234,6 +1235,7 @@ void GlobalData::parseGameDataDefinition( INI* ini )
 	TheWritableGlobalData->m_renderFpsFontSize = optionPref.getRenderFpsFontSize();
 	TheWritableGlobalData->m_systemTimeFontSize = optionPref.getSystemTimeFontSize();
 	TheWritableGlobalData->m_gameTimeFontSize = optionPref.getGameTimeFontSize();
+	TheWritableGlobalData->m_playerInfoListFontSize = optionPref.getPlayerInfoListFontSize();
 	TheWritableGlobalData->m_showMoneyPerMinute = optionPref.getShowMoneyPerMinute();
 
 	Int val=optionPref.getGammaValue();
