@@ -4643,7 +4643,7 @@ void Object::onCapture( Player *oldOwner, Player *newOwner )
 		}
 		else
 		{
-			DEBUG_LOG(("isSkirmishAIPlayer() true but getAi() == nullptr – incomplete AI setup"));
+			DEBUG_LOG(("isSkirmishAIPlayer() true but getAi() == nullptr â€“ incomplete AI setup"));
 		}
 	}
 
