@@ -67,6 +67,12 @@ extern Bool LANbuttonPushed;
 extern void MapSelectorTooltip(GameWindow *window, WinInstanceData *instData,	UnsignedInt mouse);
 extern void gameAcceptTooltip(GameWindow *window, WinInstanceData *instData, UnsignedInt mouse);
 Color white = GameMakeColor( 255, 255, 255, 255 );
+Color easy = GameMakeColor(255, 210, 210, 255);
+Color medium = GameMakeColor(255, 170, 170, 255);
+Color hard = GameMakeColor(255, 130, 130, 255);
+Color brutal = GameMakeColor(255, 90, 90, 255);
+Color absurd = GameMakeColor(255, 50, 50, 255);
+Color inhumane = GameMakeColor(255, 10, 10, 255);
 static bool s_isIniting = FALSE;
 // window ids ------------------------------------------------------------------------------
 static NameKeyType parentLanGameOptionsID = NAMEKEY_INVALID;
@@ -728,12 +734,12 @@ void InitLanGameGadgets( void )
 		{
 			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:Open"),white);
 			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:Closed"),white);
-			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:EasyAI"),white);
-			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:MediumAI"),white);
-			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:HardAI"),white);
-			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:BrutalAI"), white);
-			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:AbsurdAI"), white);
-			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:InhumaneAI"), white);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:EasyAI"),easy);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:MediumAI"),medium);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:HardAI"),hard);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:BrutalAI"), brutal);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:AbsurdAI"), absurd);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:InhumaneAI"), inhumane);
 			GadgetComboBoxSetSelectedPos(comboBoxPlayer[i],0);
 		}
 		/*

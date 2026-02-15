@@ -1118,7 +1118,13 @@ void InitSkirmishGameGadgets( void )
 		  GadgetComboBoxReset(comboBoxPlayer[i]);
 		  //GadgetComboBoxGetEditBox(comboBoxPlayer[i])->winSetTooltipFunc(playerTooltip);
     }
-		Color white = GameMakeColor( 255, 255, 255, 255 );
+		Color white =			GameMakeColor( 255, 255, 255, 255 );
+		Color easy =			GameMakeColor(255, 210, 210, 255);
+		Color medium =		GameMakeColor(255, 170, 170, 255);
+    Color hard =			GameMakeColor(255, 130, 130, 255);
+		Color brutal =		GameMakeColor(255, 90, 90, 255);
+		Color absurd =		GameMakeColor(255, 50, 50, 255);
+    Color inhumane =	GameMakeColor(255, 10, 10, 255);
 
 		if( i == 0 )
 		{
@@ -1132,18 +1138,18 @@ void InitSkirmishGameGadgets( void )
       GadgetComboBoxSetItemData(comboBoxPlayer[i], 0, (void *)SLOT_OPEN);
 			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:Closed"),white);  // leave this first
       GadgetComboBoxSetItemData(comboBoxPlayer[i], 1, (void *)SLOT_CLOSED);
-			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:EasyAI"),white);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:EasyAI"),easy);
       GadgetComboBoxSetItemData(comboBoxPlayer[i], 2, (void *)SLOT_EASY_AI);
-			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:MediumAI"),white);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:MediumAI"),medium);
       GadgetComboBoxSetItemData(comboBoxPlayer[i], 3, (void *)SLOT_MED_AI);
-			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:HardAI"),white);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i],TheGameText->fetch("GUI:HardAI"),hard);
       GadgetComboBoxSetItemData(comboBoxPlayer[i], 4, (void *)SLOT_BRUTAL_AI);
 
-			GadgetComboBoxAddEntry(comboBoxPlayer[i], TheGameText->fetch("GUI:BrutalAI"), white);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i], TheGameText->fetch("GUI:BrutalAI"), brutal);
 			GadgetComboBoxSetItemData(comboBoxPlayer[i], 5, (void*)SLOT_MOD_BRUTAL_AI);
-			GadgetComboBoxAddEntry(comboBoxPlayer[i], TheGameText->fetch("GUI:AbsurdAI"), white);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i], TheGameText->fetch("GUI:AbsurdAI"), absurd);
 			GadgetComboBoxSetItemData(comboBoxPlayer[i], 6, (void*)SLOT_MOD_ABSURD_AI);
-			GadgetComboBoxAddEntry(comboBoxPlayer[i], TheGameText->fetch("GUI:InhumaneAI"), white);
+			GadgetComboBoxAddEntry(comboBoxPlayer[i], TheGameText->fetch("GUI:InhumaneAI"), inhumane);
 			GadgetComboBoxSetItemData(comboBoxPlayer[i], 7, (void*)SLOT_MOD_INHUMANE_AI);
 
 			GadgetComboBoxSetSelectedPos(comboBoxPlayer[i],0);

@@ -448,7 +448,9 @@ public:
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------------- @CLP_AI PLAYER ADDITIONS ------------------------------------
 	//-------------------------------------------------------------------------------------------------
-
+	std::vector<const ThingTemplate*> m_lastFrameKills;
+	std::vector<const ThingTemplate*> m_lastFrameDeaths;
+	Bool m_lostUnitThisFrame;
 	virtual Bool computeSuperweaponTargetEconomy(const SpecialPowerTemplate* power, Coord3D* retPos, Int playerNdx, Real weaponRadius);
 	void buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real angle);
 	void buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real angle);

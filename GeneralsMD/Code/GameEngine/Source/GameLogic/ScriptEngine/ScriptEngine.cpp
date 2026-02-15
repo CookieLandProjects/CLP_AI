@@ -5288,10 +5288,11 @@ void ScriptEngine::init( void )
 	curTemplate->m_parameters[0] = Parameter::KD_RATIO;
 	curTemplate->m_parameters[1] = Parameter::COMPARISON;
 	curTemplate->m_parameters[2] = Parameter::REAL;
-	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_numUiStrings = 4;
 	curTemplate->m_uiStrings[0] = "KD-Ratio ";
 	curTemplate->m_uiStrings[1] = " IS ";
-	curTemplate->m_uiStrings[2] = " \nNOTE: Due to the way floats are stored, EQUALS does not really work.";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = "\n\nNOTE: Due to the way floats are stored, EQUALS does not really work.";
 
 	curTemplate = &m_actionTemplates[ScriptAction::INCREMENT_KD_RATIO_KILLS];
 	curTemplate->m_internalName = "INCREMENT_KD_RATIO_KILLS";
@@ -5458,7 +5459,7 @@ void ScriptEngine::init( void )
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_AWAY_FROM_RELATION_TYPE];
 	curTemplate->m_internalName = "TEAM_MOVE_AWAY_FROM_RELATION_TYPE";
-	curTemplate->m_uiName = "Team/Move/Move team away from the nearest friendly|neutral|enemy object type.";
+	curTemplate->m_uiName = "Team/Move/Distance/Move team away from the nearest friendly|neutral|enemy object type.";
 	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::REAL;
@@ -5472,7 +5473,7 @@ void ScriptEngine::init( void )
 
 	curTemplate = &m_actionTemplates[ScriptAction::UNIT_MOVE_AWAY_FROM_RELATION_TYPE];
 	curTemplate->m_internalName = "UNIT_MOVE_AWAY_FROM_RELATION_TYPE";
-	curTemplate->m_uiName = "Unit/Move/Move unit away from the nearest friendly|neutral|enemy object type.";
+	curTemplate->m_uiName = "Unit/Move/Distance/Move unit away from the nearest friendly|neutral|enemy object type.";
 	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::UNIT;
 	curTemplate->m_parameters[1] = Parameter::REAL;
@@ -5486,7 +5487,7 @@ void ScriptEngine::init( void )
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_AWAY_FROM_RELATION];
 	curTemplate->m_internalName = "TEAM_MOVE_AWAY_FROM_RELATION";
-	curTemplate->m_uiName = "Team/Move/Move team away from the nearest friendly|neutral|enemy unit.";
+	curTemplate->m_uiName = "Team/Move/Distance/Move team away from the nearest friendly|neutral|enemy unit.";
 	curTemplate->m_numParameters = 3;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::REAL;
@@ -5499,7 +5500,7 @@ void ScriptEngine::init( void )
 
 	curTemplate = &m_actionTemplates[ScriptAction::UNIT_MOVE_AWAY_FROM_RELATION];
 	curTemplate->m_internalName = "UNIT_MOVE_AWAY_FROM_RELATION";
-	curTemplate->m_uiName = "Unit/Move/Move unit away from the nearest friendly|neutral|enemy unit.";
+	curTemplate->m_uiName = "Unit/Move/Distance/Move unit away from the nearest friendly|neutral|enemy unit.";
 	curTemplate->m_numParameters = 3;
 	curTemplate->m_parameters[0] = Parameter::UNIT;
 	curTemplate->m_parameters[1] = Parameter::REAL;
@@ -5543,7 +5544,7 @@ void ScriptEngine::init( void )
 
 	curTemplate = &m_conditionTemplates[Condition::CLOSEST_ENEMY_DISTANCE];
 	curTemplate->m_internalName = "CLOSEST_ENEMY_DISTANCE";
-	curTemplate->m_uiName = "Player/Closest enemy unit to Player";
+	curTemplate->m_uiName = "Player/Closest unit with a relation to Player";
 	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::RELATION;
 	curTemplate->m_parameters[1] = Parameter::SIDE;
@@ -5556,14 +5557,14 @@ void ScriptEngine::init( void )
 	curTemplate->m_uiStrings[3] = " ";
 	curTemplate->m_uiStrings[4] = " feet away.";
 
-	curTemplate = &m_conditionTemplates[Condition::PLAYER_NOT_HUNTED];
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_HUNTED];
 	curTemplate->m_internalName = "PLAYER_HUNTED";
-	curTemplate->m_uiName = "Player/Owns/Player is NOT hunted.";
+	curTemplate->m_uiName = "Player/Owns/Player is hunted.";
 	curTemplate->m_numParameters = 1;
 	curTemplate->m_parameters[0] = Parameter::SIDE;
 	curTemplate->m_numUiStrings = 2;
-	curTemplate->m_uiStrings[0] = "Player ";
-	curTemplate->m_uiStrings[1] = " still owns construction units & has capabilities to produce them.";
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " does not own construction units & has no capabilities to produce them.";
 
 
 	curTemplate = &m_conditionTemplates[Condition::PLAYER_LOST_TYPE_AREA];
@@ -5870,16 +5871,186 @@ void ScriptEngine::init( void )
 	curTemplate->m_numParameters = 2;
 	curTemplate->m_parameters[0] = Parameter::COMPARISON;
 	curTemplate->m_parameters[1] = Parameter::INT;
-	curTemplate->m_numUiStrings = 2;
-	curTemplate->m_uiStrings[0] = "The map size is ";
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "The map has ";
 	curTemplate->m_uiStrings[1] = " ";
+  curTemplate->m_uiStrings[2] = " starting points.";
 
+	curTemplate = &m_conditionTemplates[Condition::MAP_ACTIVE_PLAYERS];
+	curTemplate->m_internalName = "MAP_ACTIVE_PLAYERS";
+	curTemplate->m_uiName = "Skirmish/Number of active players is compared to a value.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::COMPARISON;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "There are currently ";
+	curTemplate->m_uiStrings[1] = " ";
+	curTemplate->m_uiStrings[2] = " active players.";
 
+	curTemplate = &m_conditionTemplates[Condition::MAP_EMPTY_SPOTS];
+	curTemplate->m_internalName = "MAP_EMPTY_SPOTS";
+	curTemplate->m_uiName = "Skirmish/Spot/Number of empty spots is compared to a value.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::COMPARISON;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "There are currently ";
+	curTemplate->m_uiStrings[1] = " ";
+	curTemplate->m_uiStrings[2] = " empty spots.";
 
+	curTemplate = &m_conditionTemplates[Condition::NEIGHBOURING_SPOTS_RELATION];
+	curTemplate->m_internalName = "NEIGHBOURING_SPOTS_RELATION";
+	curTemplate->m_uiName = "Skirmish/Spot/Check if N number of neighbouring spots are of a relation.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::INT;
+	curTemplate->m_parameters[3] = Parameter::RELATION;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = "Player ";
+	curTemplate->m_uiStrings[1] = " has ";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = " ";
+	curTemplate->m_uiStrings[4] = " neighbouring spots.";
+
+	curTemplate = &m_conditionTemplates[Condition::COMPARE_COUNTERS];
+	curTemplate->m_internalName = "COMPARE_COUNTERS";
+	curTemplate->m_uiName = "Scripting/Counter compared to another counter.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::COUNTER;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::COUNTER;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "Counter ";
+	curTemplate->m_uiStrings[1] = " IS ";
+	curTemplate->m_uiStrings[2] = " Counter ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_TOWARDS_RELATION];
+	curTemplate->m_internalName = "TEAM_MOVE_TOWARDS_RELATION";
+	curTemplate->m_uiName = "Team/Move/Distance/Move team towards the nearest friendly|neutral|enemy unit.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will move ";
+	curTemplate->m_uiStrings[2] = " feet towards the nearest ";
+	curTemplate->m_uiStrings[3] = " unit.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::UNIT_MOVE_TOWARDS_RELATION];
+	curTemplate->m_internalName = "UNIT_MOVE_TOWARDS_RELATION";
+	curTemplate->m_uiName = "Unit/Move/Distance/Move unit towards the nearest friendly|neutral|enemy unit.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::UNIT;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will move ";
+	curTemplate->m_uiStrings[2] = " feet towards the nearest ";
+	curTemplate->m_uiStrings[3] = " unit.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_TOWARDS_RELATION_TYPE];
+	curTemplate->m_internalName = "TEAM_MOVE_TOWARDS_RELATION_TYPE";
+	curTemplate->m_uiName = "Team/Move/Distance/Move team towards the nearest friendly|neutral|enemy object type.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will move ";
+	curTemplate->m_uiStrings[2] = " feet towards the nearest ";
+	curTemplate->m_uiStrings[3] = " unit of type ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::UNIT_MOVE_TOWARDS_RELATION_TYPE];
+	curTemplate->m_internalName = "UNIT_MOVE_TOWARDS_RELATION_TYPE";
+	curTemplate->m_uiName = "Unit/Move/Distance/Move unit towards the nearest friendly|neutral|enemy object type.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::UNIT;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will move ";
+	curTemplate->m_uiStrings[2] = " feet towards the nearest ";
+	curTemplate->m_uiStrings[3] = " unit of type ";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_DESTROYED_ENEMY_TYPE];
+	curTemplate->m_internalName = "PLAYER_DESTROYED_ENEMY_TYPE";
+	curTemplate->m_uiName = "Player/Destroyed/Player destroyed an enemy object of type.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " destroyed an enemy object of type ";
+	curTemplate->m_uiStrings[2] = " \n\n NOTE: Cannot be an ObjectTypeList! ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::COPY_COUNTER];
+	curTemplate->m_internalName = "COPY_COUNTER";
+	curTemplate->m_uiName = "Scripting - Counters/Copy a counter onto another counter.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::COUNTER;
+	curTemplate->m_parameters[1] = Parameter::COUNTER;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = "Copy counter ";
+	curTemplate->m_uiStrings[1] = " onto counter ";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_LOST_UNIT];
+	curTemplate->m_internalName = "PLAYER_DESTROYED_ENEMY_TYPE";
+	curTemplate->m_uiName = "Player/Destroyed/Player lost a unit.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " lost a unit. ";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_DESTROYED_ENEMY_UNIT];
+	curTemplate->m_internalName = "PLAYER_DESTROYED_ENEMY_UNIT";
+	curTemplate->m_uiName = "Player/Destroyed/Player destroyed a unit.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " destroyed a unit. ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::UPDATE_KD_RATIO_KILLS_BUILDCOST];
+	curTemplate->m_internalName = "UPDATE_KD_RATIO_KILLS_BUILDCOST";
+	curTemplate->m_uiName = "Scripting - KD-Ratio/Update KD-Ratio kills by build cost.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::KD_RATIO;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = "Update ";
+	curTemplate->m_uiStrings[1] = "'s kills by build cost.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::UPDATE_KD_RATIO_DEATHS_BUILDCOST];
+	curTemplate->m_internalName = "UPDATE_KD_RATIO_DEATHS_BUILDCOST";
+	curTemplate->m_uiName = "Scripting - KD-Ratio/Update KD-Ratio deaths by build cost.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::KD_RATIO;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = "Update ";
+	curTemplate->m_uiStrings[1] = "'s deaths by build cost.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::COPY_KD_RATIO_ONTO_COUNTERS];
+	curTemplate->m_internalName = "COPY_KD_RATIO_ONTO_COUNTERS";
+	curTemplate->m_uiName = "Scripting - KD-Ratio/Copy KD-Ratio kills & deaths onto two counters";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::KD_RATIO;
+	curTemplate->m_parameters[1] = Parameter::COUNTER;
+	curTemplate->m_parameters[2] = Parameter::COUNTER;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "Copy KD-Ratio ";
+	curTemplate->m_uiStrings[1] = "'s kills onto ";
+	curTemplate->m_uiStrings[2] = " and deaths onto ";
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
 	//-------------------------------------------------------------------------------------------------
-
+	
 
 	Int i;
 	for (i=0; i<Condition::NUM_ITEMS; i++) {
@@ -6287,19 +6458,27 @@ void ScriptEngine::update( void )
 		for (int k = 1; k < m_numFlags; ++k) {
 			_adjustVariable(m_flags[k].name.str(), m_flags[k].value);
 		}
-	
-//-------------------------------------------------------------------------------------------------
-//------------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS ---------------------------------
-//-------------------------------------------------------------------------------------------------
-
-		for (int l = 1; l < m_numKDRatios; ++l) {
-			_adjustVariable(m_KDRatios[l].name.str(), m_KDRatios[l].valueKills, m_KDRatios[l].valueDeaths);
-		}
-
-//-------------------------------------------------------------------------------------------------
-//----------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS END -------------------------------
-//-------------------------------------------------------------------------------------------------
 	}
+		//-------------------------------------------------------------------------------------------------
+		//------------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS ---------------------------------
+		//-------------------------------------------------------------------------------------------------
+
+	for (int l = 1; l < m_numKDRatios; ++l) {
+		_adjustVariable(m_KDRatios[l].name.str(), m_KDRatios[l].valueKills, m_KDRatios[l].valueDeaths);
+	}
+
+	for (int i = 0; i < ThePlayerList->getPlayerCount(); ++i)
+	{
+		Player* p = ThePlayerList->getNthPlayer(i);
+		p->m_lastFrameKills.clear();
+		p->m_lastFrameDeaths.clear();
+		p->m_lostUnitThisFrame = FALSE;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	//----------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS END -------------------------------
+	//-------------------------------------------------------------------------------------------------
+	
 #ifdef RTS_DEBUG
 	if (TheGameLogic->getFrame()==0) {
 		for (i=0; i<m_numAttackInfo; i++) {
@@ -6852,7 +7031,7 @@ const TCounter *ScriptEngine::getCounter(const AsciiString& counterName)
 
 
 //-------------------------------------------------------------------------------------------------
-//------------------------------- @CLP_AI SCRIPT ACTION ADDITIONS ---------------------------------
+//----------------------------------- @CLP_AI SCRIPT ADDITIONS ------------------------------------
 //-------------------------------------------------------------------------------------------------
 
 Real ScriptEngine::allocateKDRatio(const AsciiString& name)
@@ -6886,8 +7065,51 @@ const TKDRatio* ScriptEngine::getKDRatio(const AsciiString& counterName)
 	}
 	return nullptr;
 }
+
 //-------------------------------------------------------------------------------------------------
-//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
+Bool ScriptEngine::evaluateTwoCounters(Condition* pCondition)
+{
+	Int counterNdxA = pCondition->getParameter(0)->getInt();
+	if (counterNdxA == 0) {
+		counterNdxA = allocateCounter(pCondition->getParameter(0)->getString());
+		pCondition->getParameter(0)->friend_setInt(counterNdxA);
+	}
+
+	Int counterNdxB = pCondition->getParameter(2)->getInt();
+	if (counterNdxB == 0) {
+		counterNdxB = allocateCounter(pCondition->getParameter(2)->getString());
+		pCondition->getParameter(2)->friend_setInt(counterNdxB);
+	}
+
+	switch (pCondition->getParameter(1)->getInt()) {
+	case Parameter::LESS_THAN: return m_counters[counterNdxA].value < m_counters[counterNdxB].value;
+	case Parameter::LESS_EQUAL: return m_counters[counterNdxA].value <= m_counters[counterNdxB].value;
+	case Parameter::EQUAL: return m_counters[counterNdxA].value == m_counters[counterNdxB].value;
+	case Parameter::GREATER_EQUAL: return m_counters[counterNdxA].value >= m_counters[counterNdxB].value;
+	case Parameter::GREATER: return m_counters[counterNdxA].value > m_counters[counterNdxB].value;
+	case Parameter::NOT_EQUAL: return m_counters[counterNdxA].value != m_counters[counterNdxB].value;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptEngine::copyCounter(ScriptAction* pAction)
+{
+	Int counterNdxA = pAction->getParameter(0)->getInt();
+	if (counterNdxA == 0) {
+		counterNdxA = allocateCounter(pAction->getParameter(0)->getString());
+		pAction->getParameter(0)->friend_setInt(counterNdxA);
+	}
+	Int counterNdxB = pAction->getParameter(1)->getInt();
+	if (counterNdxB == 0) {
+		counterNdxB = allocateCounter(pAction->getParameter(1)->getString());
+		pAction->getParameter(1)->friend_setInt(counterNdxB);
+	}
+	m_counters[counterNdxB].value = m_counters[counterNdxA].value;
+}
+
+//-------------------------------------------------------------------------------------------------
+//--------------------------------- @CLP_AI SCRIPT ADDITIONS END ----------------------------------
 //-------------------------------------------------------------------------------------------------
 
 void ScriptEngine::createNamedMapReveal(const AsciiString& revealName, const AsciiString& waypointName, Real radiusToReveal, const AsciiString& playerName)
@@ -7127,12 +7349,12 @@ Bool ScriptEngine::evaluateKDRatio(Condition* pCondition)
 	}
 	Int value = pCondition->getParameter(2)->getReal();
 	switch (pCondition->getParameter(1)->getInt()) {
-	case Parameter::LESS_THAN: return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths < value;
-	case Parameter::LESS_EQUAL: return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths <= value;
-	case Parameter::EQUAL: return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths == value;
-	case Parameter::GREATER_EQUAL: return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths >= value;
-	case Parameter::GREATER: return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths > value;
-	case Parameter::NOT_EQUAL: return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths != value;
+	case Parameter::LESS_THAN:			return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths < value;
+	case Parameter::LESS_EQUAL:			return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths <= value;
+	case Parameter::EQUAL:					return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths == value;
+	case Parameter::GREATER_EQUAL:	return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths >= value;
+	case Parameter::GREATER:				return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths > value;
+	case Parameter::NOT_EQUAL:			return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths != value;
 	}
 	return false;
 }
@@ -7142,7 +7364,7 @@ void ScriptEngine::setKDRatio(ScriptAction* pAction)
 {
 	Int counterNdx = pAction->getParameter(0)->getInt();
 	if (counterNdx == 0) {
-		counterNdx = allocateCounter(pAction->getParameter(0)->getString());
+		counterNdx = allocateKDRatio(pAction->getParameter(0)->getString());
 		pAction->getParameter(0)->friend_setInt(counterNdx);
 	}
 	Real valueKills = pAction->getParameter(1)->getReal();
@@ -7197,6 +7419,90 @@ void ScriptEngine::subKDRatioDeaths(ScriptAction* pAction)
 		pAction->getParameter(1)->friend_setInt(counterNdx);
 	}
 	m_KDRatios[counterNdx].valueKills -= valueDeaths;
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptEngine::updateKDRatioKills(ScriptAction* pAction)
+{
+	Int counterNdx = pAction->getParameter(0)->getInt();
+
+	if (counterNdx == 0) {
+		counterNdx = allocateKDRatio(pAction->getParameter(0)->getString());
+		pAction->getParameter(0)->friend_setInt(counterNdx);
+	}
+
+	Player* player = m_currentPlayer;
+	if (!player)
+		return;
+
+	Real totalCost = 0.0f;
+
+	for (const ThingTemplate* tt : player->m_lastFrameKills)
+	{
+		if (!tt)
+			continue;
+		DEBUG_LOG(("\n\n\nREADING KILLS\n\n\n"));
+		if((Real)tt->friend_getBuildCost() > 0)
+		{
+			totalCost += (Real)tt->friend_getBuildCost();
+		}
+	}
+
+	m_KDRatios[counterNdx].valueKills += totalCost;
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptEngine::updateKDRatioDeaths(ScriptAction* pAction)
+{
+	Int counterNdx = pAction->getParameter(0)->getInt();
+
+	if (counterNdx == 0) {
+		counterNdx = allocateKDRatio(pAction->getParameter(0)->getString());
+		pAction->getParameter(0)->friend_setInt(counterNdx);
+	}
+
+	Player* player = m_currentPlayer;
+	if (!player)
+		return;
+
+	Real totalCost = 0.0f;
+
+	for (const ThingTemplate* tt : player->m_lastFrameDeaths)
+	{
+		if (!tt)
+			continue;
+		DEBUG_LOG(("\n\n\nREADING DEATHS\n\n\n"));
+		if ((Real)tt->friend_getBuildCost() > 0)
+		{
+			totalCost += (Real)tt->friend_getBuildCost();
+		}
+	}
+
+	m_KDRatios[counterNdx].valueDeaths += totalCost;
+}
+
+void ScriptEngine::copyKDRatioOntoCounters(ScriptAction* pAction)
+{
+	Int counterNdxA = pAction->getParameter(0)->getInt();
+	if (counterNdxA == 0) {
+		counterNdxA = allocateKDRatio(pAction->getParameter(0)->getString());
+		pAction->getParameter(0)->friend_setInt(counterNdxA);
+	}
+
+	Int counterNdxB = pAction->getParameter(1)->getInt();
+	if (counterNdxB == 0) {
+		counterNdxB = allocateCounter(pAction->getParameter(1)->getString());
+		pAction->getParameter(1)->friend_setInt(counterNdxB);
+	}
+
+	Int counterNdxC = pAction->getParameter(2)->getInt();
+	if (counterNdxC == 0) {
+		counterNdxC = allocateCounter(pAction->getParameter(2)->getString());
+		pAction->getParameter(2)->friend_setInt(counterNdxC);
+	}
+
+	m_counters[counterNdxB].value = m_KDRatios[counterNdxA].valueKills;
+	m_counters[counterNdxC].value = m_KDRatios[counterNdxA].valueDeaths;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -7903,6 +8209,7 @@ Bool ScriptEngine::evaluateCondition( Condition *pCondition )
 		case Condition::FLAG: return evaluateFlag(pCondition);
 		case Condition::TIMER_EXPIRED: return evaluateTimer(pCondition);
 		case Condition::KD_RATIO: return evaluateKDRatio(pCondition);
+		case Condition::COMPARE_COUNTERS: return evaluateTwoCounters(pCondition);
 	}
 }
 
@@ -8494,11 +8801,15 @@ void ScriptEngine::executeActions( ScriptAction *pActionHead )
 
 
 			case ScriptAction::SET_COUNTER_RANDOM: setCounterRandom(pCurAction, true); break;
+			case ScriptAction::COPY_COUNTER: copyCounter(pCurAction); break;
 			case ScriptAction::SET_KD_RATIO: setKDRatio(pCurAction); break;
 			case ScriptAction::INCREMENT_KD_RATIO_KILLS: addKDRatioKills(pCurAction); break;
 			case ScriptAction::INCREMENT_KD_RATIO_DEATHS: addKDRatioKills(pCurAction); break;
 			case ScriptAction::DECREMENT_KD_RATIO_KILLS: subKDRatioKills(pCurAction); break;
 			case ScriptAction::DECREMENT_KD_RATIO_DEATHS: subKDRatioKills(pCurAction); break;
+			case ScriptAction::UPDATE_KD_RATIO_KILLS_BUILDCOST: updateKDRatioKills(pCurAction); break;
+			case ScriptAction::UPDATE_KD_RATIO_DEATHS_BUILDCOST: updateKDRatioDeaths(pCurAction); break;
+			case ScriptAction::COPY_KD_RATIO_ONTO_COUNTERS: copyKDRatioOntoCounters(pCurAction); break;
 
 			// Fade operations.
 			case ScriptAction::CAMERA_FADE_ADD :

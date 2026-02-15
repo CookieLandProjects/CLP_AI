@@ -971,8 +971,14 @@ AsciiString GameInfoToAsciiString( const GameInfo *game )
 				c = 'E';
 			else if (slot->getState() == SLOT_MED_AI)
 				c = 'M';
-			else
+			else if (slot->getState() == SLOT_BRUTAL_AI)
 				c = 'H';
+      else if (slot->getState() == SLOT_MOD_BRUTAL_AI)
+				c = 'B';
+			else if (slot->getState() == SLOT_MOD_ABSURD_AI)
+				c = 'A';
+			else if (slot->getState() == SLOT_MOD_INHUMANE_AI)
+        c = 'I';
 			str.format("C%c,%d,%d,%d,%d:", c,
 				slot->getColor(), slot->getPlayerTemplate(),
 				slot->getStartPos(), slot->getTeamNumber());
@@ -1358,7 +1364,7 @@ Bool ParseAsciiStringToGameInfo(GameInfo *game, AsciiString options)
 									//DEBUG_LOG(("ParseAsciiStringToGameInfo - Brutal AI"));
 								}
 								break;
-								case 'C':
+								case 'B':
 								{
 									newSlot[i].setState(SLOT_MOD_BRUTAL_AI);
 									//DEBUG_LOG(("ParseAsciiStringToGameInfo - ACTUAL Brutal AI"));

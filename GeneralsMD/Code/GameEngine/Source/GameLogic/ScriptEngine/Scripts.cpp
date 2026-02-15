@@ -136,6 +136,7 @@ enum { K_SCRIPT_LIST_DATA_VERSION_1 = 1,
 			K_SCRIPT_GROUP_DATA_VERSION_2 = 2,
 			K_SCRIPT_DATA_VERSION_1 = 1,
 			K_SCRIPT_DATA_VERSION_2 = 2,
+			K_SCRIPT_DATA_VERSION_3 = 3,
 			K_SCRIPT_OR_CONDITION_DATA_VERSION_1=1,
 			K_SCRIPT_ACTION_VERSION_1 = 1,
 			K_SCRIPT_ACTION_VERSION_2 = 2,
@@ -143,8 +144,7 @@ enum { K_SCRIPT_LIST_DATA_VERSION_1 = 1,
 			K_SCRIPT_CONDITION_VERSION_2 = 2,
 			K_SCRIPT_CONDITION_VERSION_3 = 3,
 			K_SCRIPT_CONDITION_VERSION_4 = 4,
-			K_SCRIPTS_DATA_VERSION_1,
-			K_SCRIPT_DATA_VERSION_3 = 3,
+			K_SCRIPTS_DATA_VERSION_1 = 1,
 			end_of_the_enumeration
 };
 
@@ -1139,7 +1139,7 @@ Bool ScriptGroup::ParseGroupDataChunk(DataChunkInput& file, DataChunkInfo* info,
 	file.registerParser("Script", info->label, Script::ParseScriptFromGroupDataChunk);
 	file.registerParser("ScriptGroup", info->label, ScriptGroup::ParseGroupDataChunk);
 
-	return file.parse(pGroup);
+		return file.parse(pGroup);
 
 }
 

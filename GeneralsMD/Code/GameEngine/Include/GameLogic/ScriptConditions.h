@@ -189,13 +189,19 @@ protected:
   Bool evaluateEmptySpot(Parameter* pStartNdx);
 	Bool evaluateNeighbouringSpot(Parameter* pPlayerParm, Parameter* pStartNdx);
 	Bool evaluateNeighbouringSpotsEmpty(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pCount);
+  Bool evaluateNeighbouringSpotsRelation(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pCount, Int relationType);
 	Bool evaluateStartingCash(Parameter* pComparisonParm, Int pAmount);
 	Bool evaluateClosestRelationUnitToMySpawn(Int relationType, Parameter* pPlayerParm, Parameter* pComparisonParm, Int pDist);
-	Bool evaluateNotHunted(Parameter* pPlayerParm);
+	Bool evaluateHunted(Parameter* pPlayerParm);
 	Bool evaluatePlayerLostTypeInArea(Parameter* pPlayerParm, Parameter* pObjectType, Parameter* pArea);
+	Bool evaluatePlayerLostUnit(Parameter* pPlayerParm);
 	Bool evaluateTeamSightedRelationType(Parameter* pTeam, Int relationType, Parameter* pObjectType);
 	Bool evaluateSkirmishAnyRelationFaction(Parameter* pPlayerParm, Int relationType, Parameter* pFactionParm);
 	Bool evaluateMapSize(Parameter* pComparisonParm, Int pMapSize);
+	Bool evaluateActivePlayerCount(Parameter* pComparisonParm, Int pPlayerCount);
+	Bool evaluateEmptySpotCount(Parameter* pComparisonParm, Int pEmptySpotCount);
+	Bool evaluatePlayerDestroyedEnemyType(Parameter* pPlayerParm, Parameter* pObjectType);
+	Bool evaluatePlayerDestroyedEnemyUnit(Parameter* pPlayerParm);
 
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------

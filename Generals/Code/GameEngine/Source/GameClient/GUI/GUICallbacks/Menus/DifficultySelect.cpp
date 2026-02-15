@@ -77,6 +77,9 @@ static NameKeyType    radioButtonHardAIID      = NAMEKEY_INVALID;
 static GameWindow *   radioButtonEasyAI       = nullptr;
 static GameWindow *   radioButtonMediumAI       = nullptr;
 static GameWindow *   radioButtonHardAI       = nullptr;
+static GameWindow *		radioButtonBrutalAI = nullptr;
+static GameWindow *		radioButtonAbsurdAI = nullptr;
+static GameWindow *		radioButtonInhumaneAI = nullptr;
 
 void setupGameStart(AsciiString mapName, GameDifficulty diff);
 //-----------------------------------------------------------------------------

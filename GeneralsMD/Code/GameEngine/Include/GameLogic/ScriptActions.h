@@ -402,12 +402,16 @@ protected:
 	void doTeamMoveNearestBelongingToPlayer(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& playerName);
 	void doUnitMoveNearestBelongingToPlayer(const AsciiString& unitName, const AsciiString& objectType, const AsciiString& playerName);
 	void doTeamMoveAwayFromRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType);
+	void doTeamMoveTowardsRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType);
 	void doUnitMoveAwayFromRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType);
+	void doUnitMoveTowardsRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType);
 	void doTeamMeet(const AsciiString& teamName);
 	void doTeamMeetKindOf(const AsciiString& teamName, Int kindOf);
 	void doTeamMeetType(const AsciiString& teamName, const AsciiString& objectType);
 	void doTeamMoveAwayFromRelation(const AsciiString& teamName, Real feet, Int relationType);
+	void doTeamMoveTowardsRelation(const AsciiString& teamName, Real feet, Int relationType);
 	void doUnitMoveAwayFromRelation(const AsciiString& unitName, Real feet, Int relationType);
+	void doUnitMoveTowardsRelation(const AsciiString& unitName, Real feet, Int relationType);
 
 	void doTeamUseCommandButtonAbilityOnType(const AsciiString& teamName, const AsciiString& ability, const AsciiString& objectType);
 	void doTeamUseCommandButtonAbilityOnTeam(const AsciiString& teamName, const AsciiString& ability, const AsciiString& targetTeam);

@@ -432,6 +432,10 @@ protected:
 //-------------------------------------------------------------------------------------------------
 
 	void setCounterRandom(ScriptAction* pAction, Bool random);
+	Bool evaluateTwoCounters(Condition* pCondition);
+	void copyCounter(ScriptAction* pAction);
+
+
 	void setKDRatio(ScriptAction* pAction);
 	Real allocateKDRatio(const AsciiString& name);
 	const TKDRatio* getKDRatio(const AsciiString& counterName);
@@ -440,6 +444,10 @@ protected:
 	void addKDRatioDeaths(ScriptAction* pAction);
 	void subKDRatioKills(ScriptAction* pAction);
 	void subKDRatioDeaths(ScriptAction* pAction);
+	void updateKDRatioKills(ScriptAction* pAction);
+	void updateKDRatioDeaths(ScriptAction* pAction);
+	void copyKDRatioOntoCounters(ScriptAction* pAction);
+
 
 //-------------------------------------------------------------------------------------------------
 //------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------

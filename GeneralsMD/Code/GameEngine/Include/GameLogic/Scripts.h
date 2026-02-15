@@ -561,11 +561,15 @@ public:
 		//------------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS --------------------------------
 		//-------------------------------------------------------------------------------------------------
 			SET_COUNTER_RANDOM,														///< Set a counter to a random value between x and y.
+			COPY_COUNTER,																	///< Copy counter A onto B. If B doesn't yet exist, create a counter.
 			SET_KD_RATIO,																	///< Set a real number variable as a KD ratio to x kills and y deaths.
 			INCREMENT_KD_RATIO_KILLS,											///< Adds the kills of a KD ratio by <Real> credits.
 			INCREMENT_KD_RATIO_DEATHS,										///< Adds the deaths of a KD ration by <Real> credits.
 			DECREMENT_KD_RATIO_KILLS,											///< Subtracts the kills of a KD ratio by <Real> credits.
 			DECREMENT_KD_RATIO_DEATHS,										///< Subtracts the deaths of a KD ratio by <Real> credits.
+			UPDATE_KD_RATIO_KILLS_BUILDCOST,							///< Updates the kills of a KD ratio by the build cost of whatever is in m_lastFrameKills.
+			UPDATE_KD_RATIO_DEATHS_BUILDCOST,							///< Updates the deaths of a KD ratio by the build cost of whatever is in m_lastFrameKills.
+			COPY_KD_RATIO_ONTO_COUNTERS,									///< Copies a KD-Ratio's kills to counter A and deaths to Counter B.
 			
 			AI_PLAYER_BUILDS_UNNAMED,                     ///< Tell the ai to produce a new unnamed unit.
 			AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED,		///< AI player builds a structure near an object type rotated <Real> degrees.
@@ -591,6 +595,8 @@ public:
 			TEAM_MOVE_NEAREST_BELONGING_TO_PLAYER,				///< Set a team to move towards the nearest object type belonging to a player.
 			TEAM_MOVE_AWAY_FROM_RELATION,									///< A team moves <Real> feet into the opposite direction of a <relation> unit.
 			TEAM_MOVE_AWAY_FROM_RELATION_TYPE,						///< A team moves <Real> feet into the opposite direction of a <relation> <objectType>.
+			TEAM_MOVE_TOWARDS_RELATION,										///< A team moves <Real> feet towards a <relation> unit.
+			TEAM_MOVE_TOWARDS_RELATION_TYPE,							///< A team moves <Real> feet towards a <relation> <objectType>.
 			TEAM_MEET,																		///< Set a team to meet at their center point.
 			TEAM_MEET_AT_KINDOF,													///< Set a team to meet at the center point of all units with <kindOf>.
 			TEAM_MEET_AT_TYPE,														///< Set a team to meet at the center point of all units with <objectType>.
@@ -609,6 +615,8 @@ public:
 			UNIT_MOVE_NEAREST_BELONGING_TO_PLAYER,				///< Set a unit to move towards the nearest object type belonging to a player.
 			UNIT_MOVE_AWAY_FROM_RELATION,									///< A unit moves <Real> feet into the opposite direction of a <relation> unit.
 			UNIT_MOVE_AWAY_FROM_RELATION_TYPE,						///< A unit moves <Real> feet into the opposite direction of a <relation> <objectType>.
+			UNIT_MOVE_TOWARDS_RELATION,										///< A unit moves <Real> feet towards a <relation> unit.
+      UNIT_MOVE_TOWARDS_RELATION_TYPE,							///< A unit moves <Real> feet towards a <relation> <objectType>.
 			/*TODO*/UNIT_USE_PRIMARY_WEAPON,											///< A unit starts using their primary weapon.
 			/*TODO*/UNIT_USE_SECONDARY_WEAPON,										///< A unit starts using their secondary weapon.
 
@@ -1078,19 +1086,28 @@ public:
 		//------------------------------ @CLP_AI SCRIPT CONDITION ADDITIONS -------------------------------
 		//-------------------------------------------------------------------------------------------------
 		KD_RATIO,																// True if the KD Ratio is <comparison> a value
+    COMPARE_COUNTERS,												// True if Counter A is <comparison> Counter B.
 
 		PLAYER_RELATION_FACTION,								// True if one or more of the player's <relation> co-players are a faction.
     RELATION_IS,														// True if the relation between two players is as specified.
     SPOT_EMPTY,															// True if a specified spot is empty.
     SPOT_NEIGHBOURING,											// True if the index of a specified spot is neighbouring the player.
     NEIGHBOURING_SPOTS_EMPTY,								// True if <comparison> amount of neighbouring spots are empty.
+    NEIGHBOURING_SPOTS_RELATION,						// True if <comparison> amount of neighbouring spots have a relation of <relation>.
 		MAP_COMPARE_SIZE,												// True if there are <comparison> starting points in the map.
+    MAP_ACTIVE_PLAYERS,											// True if there are <comparison> active layers in the map.
+    MAP_EMPTY_SPOTS,												// True if there are <comparison> empty starting points in the map.
 
     STARTING_CASH_COMPARE,								  // True if the player's starting cash is <comparison> <Int>.
 		CLOSEST_ENEMY_DISTANCE,									// True if the enemy's closest unit is <comparison> feet away.
-		PLAYER_NOT_HUNTED,											// True if the player has construction units || command center || supply stash.
+		PLAYER_HUNTED,													// True if the player has construction units || command center || supply stash.
 		PLAYER_LOST_TYPE_AREA,									// True if the player has lost an object of <type> in <area>
+		PLAYER_LOST_UNIT,												// True if the player has lost a unit.
 		TEAM_SIGHTED_RELATION_TYPE,							// True if a team has sighted a <relation> unit of <type>
+
+		PLAYER_DESTROYED_ENEMY_TYPE,						// True if a player has destroyed an enemy unit of <type>
+		PLAYER_DESTROYED_ENEMY_UNIT,						// True if a player has destroyed an enemy unit.
+
 		/*TODO*/RELATION_UNDER_ATTACK,									// True if a(n) <relation> player is under attack.
 
 		//-------------------------------------------------------------------------------------------------

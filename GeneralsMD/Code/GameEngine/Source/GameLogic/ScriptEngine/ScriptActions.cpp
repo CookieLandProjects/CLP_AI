@@ -6939,6 +6939,116 @@ void ScriptActions::doTeamMoveAwayFromRelationType(const AsciiString& teamName, 
 }
 
 //-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMoveTowardsRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType)
+{
+	Team* team = TheScriptEngine->getTeamNamed(teamName);
+	if (!team)
+	{
+		return;
+	}
+
+	//Get the first object (to use in the partition filter checks).
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj)
+	{
+		return;
+	}
+
+	Coord3D teamPos = *team->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), relationType, true);
+	Object* bestObj = nullptr;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		//Find the closest specified template.
+		PartitionFilterThing thingsToAccept(templ, true);
+		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterAffiliation, nullptr };
+		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+		if (!bestObj)
+		{
+			return;
+		}
+	}
+	else
+	{
+		//Find the closest object within the object template list.
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			Real closestDist;
+			Real dist;
+			for (size_t typeIndex = 0; typeIndex < objectTypes->getListSize(); typeIndex++)
+			{
+				AsciiString thisTypeName = objectTypes->getNthInList(typeIndex);
+				const ThingTemplate* thisType = TheThingFactory->findTemplate(thisTypeName);
+				if (thisType)
+				{
+					PartitionFilterThing thingToAccept(thisType, true);
+					PartitionFilter* filters[] = { &thingToAccept, &filterMapStatus, &filterAffiliation, nullptr };
+
+					Object* obj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters, &dist);
+					if (obj)
+					{
+						if (!bestObj || dist < closestDist)
+						{
+							bestObj = obj;
+							closestDist = dist;
+						}
+					}
+				}
+			}
+		}
+	}
+	if (!bestObj) return;
+	//Calculate the flee vector
+	Coord3D threatPos = *bestObj->getPosition();
+	Coord3D fleeVec;
+	fleeVec.x = threatPos.x - teamPos.x;
+	fleeVec.y = threatPos.y - teamPos.y;
+	fleeVec.z = 0.0f;
+
+	fleeVec.normalize();
+	fleeVec.x *= feet;
+	fleeVec.y *= feet;
+
+	Coord3D targetPos;
+	targetPos.x = teamPos.x + fleeVec.x;
+	targetPos.y = teamPos.y + fleeVec.y;
+	targetPos.z = teamPos.z;
+
+	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj)
+		{
+			return;
+		}
+		AIUpdateInterface* ai = obj->getAI();
+		if (!ai)
+		{
+			return;
+		}
+		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+		ai->aiMoveToPosition(&targetPos, CMD_FROM_SCRIPT);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
 void ScriptActions::doUnitMoveAwayFromRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType)
 {
 	Object* obj = TheScriptEngine->getUnitNamed(unitName);
@@ -6998,6 +7108,85 @@ void ScriptActions::doUnitMoveAwayFromRelationType(const AsciiString& unitName, 
 	Coord3D fleeVec;
 	fleeVec.x = objPos.x - threatPos.x;
 	fleeVec.y = objPos.y - threatPos.y;
+	fleeVec.z = 0.0f;
+
+	Real len = sqrt(fleeVec.x * fleeVec.x + fleeVec.y * fleeVec.y);
+	if (len <= 0.0f) return;
+
+	fleeVec.x /= len;
+	fleeVec.y /= len;
+	fleeVec.x *= feet;
+	fleeVec.y *= feet;
+
+	Coord3D targetPos;
+	targetPos.x = objPos.x + fleeVec.x;
+	targetPos.y = objPos.y + fleeVec.y;
+	targetPos.z = objPos.z;
+
+	ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+	ai->aiMoveToPosition(&targetPos, CMD_FROM_SCRIPT);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doUnitMoveTowardsRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType)
+{
+	Object* obj = TheScriptEngine->getUnitNamed(unitName);
+	if (!obj) return;
+
+	AIUpdateInterface* ai = obj->getAIUpdateInterface();
+	if (!ai) return;
+
+	Coord3D objPos = *obj->getPosition();
+	PartitionFilterSameMapStatus filterMapStatus(obj);
+	PartitionFilterPlayerAffiliation filterAffiliation(obj->getControllingPlayer(), relationType, true);
+
+	Object* bestObj = nullptr;
+	Real closestDist = FLT_MAX;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		PartitionFilterThing f1(templ, true);
+		PartitionFilter* filters[] = { &f1, &filterMapStatus, &filterAffiliation, nullptr };
+
+		bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
+		if (!bestObj) return;
+	}
+	else
+	{
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			for (size_t i = 0; i < objectTypes->getListSize(); i++)
+			{
+				AsciiString thisTypeName = objectTypes->getNthInList(i);
+				const ThingTemplate* thisType = TheThingFactory->findTemplate(thisTypeName);
+				if (!thisType) continue;
+
+				PartitionFilterThing f2(thisType, true);
+				PartitionFilter* filters[] = { &f2, &filterMapStatus, &filterAffiliation, nullptr };
+
+				Real dist;
+				Object* candidate = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters, &dist);
+				if (candidate)
+				{
+					if (!bestObj || dist < closestDist)
+					{
+						bestObj = candidate;
+						closestDist = dist;
+					}
+				}
+			}
+		}
+	}
+
+	if (!bestObj) return;
+
+	//Calculate the flee vector.
+	Coord3D threatPos = *bestObj->getPosition();
+	Coord3D fleeVec;
+	fleeVec.x = threatPos.x - objPos.x;
+	fleeVec.y = threatPos.y - objPos.y;
 	fleeVec.z = 0.0f;
 
 	Real len = sqrt(fleeVec.x * fleeVec.x + fleeVec.y * fleeVec.y);
@@ -8536,6 +8725,81 @@ void ScriptActions::doTeamMoveAwayFromRelation(const AsciiString& teamName, Real
 }
 
 //-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMoveTowardsRelation(const AsciiString& teamName, Real feet, Int relationType)
+{
+	Team* team = TheScriptEngine->getTeamNamed(teamName);
+	if (!team)
+	{
+		return;
+	}
+
+	//Get the first object (to use in the partition filter checks).
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj)
+	{
+		return;
+	}
+
+	Coord3D teamPos = *team->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), relationType, true);
+	Object* bestObj = nullptr;
+
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
+	bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	if (!bestObj)
+	{
+		return;
+	}
+
+	if (!bestObj) return;
+	//Calculate the flee vector
+	Coord3D threatPos = *bestObj->getPosition();
+	Coord3D fleeVec;
+	fleeVec.x = threatPos.x - teamPos.x;
+	fleeVec.y = threatPos.y - teamPos.y;
+	fleeVec.z = 0.0f;
+
+	fleeVec.normalize();
+	fleeVec.x *= feet;
+	fleeVec.y *= feet;
+
+	Coord3D targetPos;
+	targetPos.x = teamPos.x + fleeVec.x;
+	targetPos.y = teamPos.y + fleeVec.y;
+	targetPos.z = teamPos.z;
+
+	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj)
+		{
+			return;
+		}
+		AIUpdateInterface* ai = obj->getAI();
+		if (!ai)
+		{
+			return;
+		}
+		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+		ai->aiMoveToPosition(&targetPos, CMD_FROM_SCRIPT);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
 void ScriptActions::doUnitMoveAwayFromRelation(const AsciiString& unitName, Real feet, Int relationType)
 {
 	Object* obj = TheScriptEngine->getUnitNamed(unitName);
@@ -8559,6 +8823,49 @@ void ScriptActions::doUnitMoveAwayFromRelation(const AsciiString& unitName, Real
 	Coord3D fleeVec;
 	fleeVec.x = objPos.x - threatPos.x;
 	fleeVec.y = objPos.y - threatPos.y;
+	fleeVec.z = 0.0f;
+
+	Real len = sqrt(fleeVec.x * fleeVec.x + fleeVec.y * fleeVec.y);
+	if (len <= 0.0f) return;
+
+	fleeVec.x /= len;
+	fleeVec.y /= len;
+	fleeVec.x *= feet;
+	fleeVec.y *= feet;
+
+	Coord3D targetPos;
+	targetPos.x = objPos.x + fleeVec.x;
+	targetPos.y = objPos.y + fleeVec.y;
+	targetPos.z = objPos.z;
+
+	ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+	ai->aiMoveToPosition(&targetPos, CMD_FROM_SCRIPT);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doUnitMoveTowardsRelation(const AsciiString& unitName, Real feet, Int relationType)
+{
+	Object* obj = TheScriptEngine->getUnitNamed(unitName);
+	if (!obj) return;
+
+	AIUpdateInterface* ai = obj->getAIUpdateInterface();
+	if (!ai) return;
+
+	Coord3D objPos = *obj->getPosition();
+	PartitionFilterSameMapStatus filterMapStatus(obj);
+	PartitionFilterPlayerAffiliation filterAffiliation(obj->getControllingPlayer(), relationType, true);
+	Object* bestObj = nullptr;
+
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
+
+	bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	if (!bestObj) return;
+
+	//Calculate the flee vector.
+	Coord3D threatPos = *bestObj->getPosition();
+	Coord3D fleeVec;
+	fleeVec.x = threatPos.x - objPos.x;
+	fleeVec.y = threatPos.y - objPos.y;
 	fleeVec.z = 0.0f;
 
 	Real len = sqrt(fleeVec.x * fleeVec.x + fleeVec.y * fleeVec.y);
@@ -9862,6 +10169,17 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED:
 			doBuildObjectNearestKindOfAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getReal());
 			return;
-
+		case ScriptAction::TEAM_MOVE_TOWARDS_RELATION:
+			doTeamMoveTowardsRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt());
+			return;
+		case ScriptAction::TEAM_MOVE_TOWARDS_RELATION_TYPE:
+			doTeamMoveTowardsRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString());
+			return;
+		case ScriptAction::UNIT_MOVE_TOWARDS_RELATION:
+			doUnitMoveTowardsRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt());
+			return;
+		case ScriptAction::UNIT_MOVE_TOWARDS_RELATION_TYPE:
+			doUnitMoveTowardsRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString());
+			return;
 	}
 }
