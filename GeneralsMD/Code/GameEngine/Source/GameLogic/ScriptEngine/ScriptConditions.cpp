@@ -2735,7 +2735,7 @@ Bool ScriptConditions::evaluatePlayerRelation(const AsciiString& playerSrcName, 
   if (!pPlayerSrcName || !pPlayerDstName) {
 		return false;
 	}
-  //use the default team to get an indirect relationship between players
+  //@-TanSo-: use the default team to get an indirect relationship between players
 	Team* pTeamDst = pPlayerDstName->getDefaultTeam();
 
 	return pPlayerSrcName->getRelationship(pTeamDst) == relationType;
@@ -2748,7 +2748,7 @@ Bool ScriptConditions::evaluateEmptySpot(Parameter* pStartNdx)
 	if (ndx >= 0)
 	{
 		Int pPlayerCount = ThePlayerList->getPlayerCount();
-    //iterate through all players
+    // @-TanSo-: iterate through all players
 		// i=2 because player 0 is "neutral" & player 1 is "PlyrCivilian".
 		// playerCount-1 to skip any possible "observer" player at the end.
 		for (int i = 2; i < pPlayerCount - 1; i++)
@@ -2797,13 +2797,13 @@ Bool ScriptConditions::evaluateNeighbouringSpot(Parameter* pPlayerParm, Paramete
 			}
 		}
 	}
-  //if the closest distance still is FLT_MAX, then this is no skirmish map.
+  //@-TanSo-: if the closest distance still is FLT_MAX, then this is no skirmish map.
 	if (minDist == FLT_MAX) { return false; }
 
-	// consider neighbouring if within 1.5 times the closest distance.
+	//@-TanSo-: consider neighbouring if within 1.5 times the closest distance.
 	minDist *= 1.5f;
 
-	//create a Waypoint for the start position to check against
+	//@-TanSo-: create a Waypoint for the start position to check against
 	AsciiString targetName;
 	targetName.format("Player_%d_Start", pStartNdx->getInt());
 	Waypoint* target = TheTerrainLogic->getWaypointByName(targetName);
@@ -2854,13 +2854,13 @@ Bool ScriptConditions::evaluateNeighbouringSpotsEmpty(Parameter* pPlayerParm, Pa
 
 	std::vector<Waypoint*> neighbouringWaypoints;
 
-  // if the closest distance still is FLT_MAX, then this is no skirmish map.
+  //@-TanSo-: if the closest distance still is FLT_MAX, then this is no skirmish map.
   if (minDist == FLT_MAX) { return false; }
 
-  // consider neighbouring if within 1.5 times the closest distance.
+  //@-TanSo-: consider neighbouring if within 1.5 times the closest distance.
   minDist *= 1.5f;
 
-  //find all neighbouring waypoints
+  //@-TanSo-: find all neighbouring waypoints
   for (Waypoint* iWay = TheTerrainLogic->getFirstWaypoint(); iWay; iWay = iWay->getNext())
 	{
 		const AsciiString& name = iWay->getName();
@@ -2880,7 +2880,7 @@ Bool ScriptConditions::evaluateNeighbouringSpotsEmpty(Parameter* pPlayerParm, Pa
 		}
   }
 
-  // Make sure that the newly found neighbouring starting points are *indeed* empty.
+  // @-TanSo-: Make sure that the newly found neighbouring starting points are *indeed* empty.
 	// i=2 because player 0 is "neutral" & player 1 is "PlyrCivilian".
   // playerCount-1 to skip any possible "observer" player at the end.
 	for (int i = 2; i < playerCount - 1; i++) {
@@ -2896,7 +2896,7 @@ Bool ScriptConditions::evaluateNeighbouringSpotsEmpty(Parameter* pPlayerParm, Pa
 		}
 	}
 
-  //compare the new size of the neighbouring EMPTY waypoints with the given count
+  //@-TanSo-: compare the new size of the neighbouring EMPTY waypoints with the given count
 	switch (pComparisonParm->getInt())
 	{
 	case Parameter::LESS_THAN:			return neighbouringWaypoints.size() < pCountParm;
@@ -2925,7 +2925,7 @@ Bool ScriptConditions::evaluateNeighbouringSpotsRelation(Parameter* pPlayerParm,
 
 	Coord3D pCoords = *pWay->getLocation();
 	Real minDist = FLT_MAX;
-	//iterate through all player start waypoints to find the closest one
+	//@-TanSo-: iterate through all player start waypoints to find the closest one
 	for (Waypoint* iWay = TheTerrainLogic->getFirstWaypoint(); iWay; iWay = iWay->getNext())
 	{
 		const AsciiString& name = iWay->getName();
@@ -2953,7 +2953,7 @@ Bool ScriptConditions::evaluateNeighbouringSpotsRelation(Parameter* pPlayerParm,
 		if (!other) continue;
 
 		Int startIndex = other->getMpStartIndex();
-		if (startIndex < 0) continue; // leerer Spot automatisch raus
+		if (startIndex < 0) continue;
 
 		AsciiString name;
 		name.format("Player_%d_Start", startIndex + 1);
@@ -2989,7 +2989,7 @@ Bool ScriptConditions::evaluateNeighbouringSpotsRelation(Parameter* pPlayerParm,
 //-------------------------------------------------------------------------------------------------
 Bool ScriptConditions::evaluateStartingCash(Parameter* pComparisonParm, Int pAmount)
 {
-	//ThePlayerList->getPlayerCount() - 1 = Last (Dummy) Player. Also receives the starting cash value
+	//@-TanSo-: ThePlayerList->getPlayerCount() - 1 = Last (Dummy) Player. Also receives the starting cash value
 	Player* player = ThePlayerList->getNthPlayer(ThePlayerList->getPlayerCount() - 1);
   if (!player) { return false; }
 	Int startingCash = player->getMoney()->countMoney();
@@ -3007,7 +3007,7 @@ Bool ScriptConditions::evaluateStartingCash(Parameter* pComparisonParm, Int pAmo
 }
 
 //-------------------------------------------------------------------------------------------------
-Bool ScriptConditions::evaluateClosestRelationUnitToMySpawn(Int relationType, Parameter* pPlayerParm, Parameter* pComparisonParm, Int pDist)
+Bool ScriptConditions::evaluateClosestRelationUnitToMySpawn(Int relationType, Parameter* pPlayerParm, Parameter* pComparisonParm, Real pDist)
 {
 	Player* pPlayer = playerFromParam(pPlayerParm);
 	if (!pPlayer) return false;
@@ -3159,7 +3159,7 @@ Bool ScriptConditions::evaluatePlayerLostTypeInArea(Parameter* pPlayerParm, Para
 	Int sumOfObjs = rts::sum(counts);
 
 	// --- ScriptEngine-State ---
-	// IMPORTANT: Area has to be in the key
+	//IMPORTANT: Area has to be in the key
 	AsciiString key;
 	key.format("%s_AREA_%s", pObjectType->getString(), pArea->getString());
 
@@ -3349,6 +3349,160 @@ Bool ScriptConditions::evaluatePlayerLostUnit(Parameter* pPlayerParm)
 	if (!player) return false;
 
 	return player->m_lostUnitThisFrame;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluatePointControlled(Player* player, const Coord3D& point, Real radius)
+{
+	for (Player::PlayerTeamList::const_iterator it = player->getPlayerTeams()->begin();
+		it != player->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> teamIter = (*it)->iterate_TeamInstanceList();
+			!teamIter.done(); teamIter.advance())
+		{
+			Team* team = teamIter.cur();
+			if (!team)
+				continue;
+
+			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList();
+				!objIter.done(); objIter.advance())
+			{
+				Object* obj = objIter.cur();
+
+				if (!obj)
+					continue;
+
+				if (obj->isEffectivelyDead())
+					continue;
+
+				if (!(obj->isKindOf(KINDOF_STRUCTURE) || obj->isKindOf(KINDOF_VEHICLE) || obj->isKindOf(KINDOF_INFANTRY)))
+					continue;
+
+				Real dx = obj->getPosition()->x - point.x;
+				Real dy = obj->getPosition()->y - point.y;
+
+				Real distSq = dx * dx + dy * dy;
+
+				if (distSq <= radius * radius)
+					return true;
+			}
+		}
+	}
+	return false;
+}
+
+Bool ScriptConditions::evaluateMapControl(Parameter* pPlayerParm, Parameter* pComparisonParm, Real pValue)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer) return false;
+
+	const Real gridSize = 200.0f;
+	const Real controlRadius = 300.0f;
+
+	Int controlled = 0;
+	Int total = 0;
+
+  Region3D mapExtent;
+  TheTerrainLogic->getExtent(&mapExtent);
+
+	Coord3D mapMin = mapExtent.lo;
+	Coord3D mapMax = mapExtent.hi;
+
+	for (Real x = mapMin.x; x < mapMax.x; x += gridSize)
+	{
+		for (Real y = mapMin.y; y < mapMax.y; y += gridSize)
+		{
+			total++;
+
+			Coord3D point;
+			point.x = x;
+			point.y = y;
+			point.z = 0;
+
+			if (evaluatePointControlled(pPlayer, point, controlRadius))
+				controlled++;
+		}
+	}
+
+	if (total == 0) return false;
+
+	Real value = pValue / 100.0f;
+
+	switch (pComparisonParm->getInt()) {
+	case Parameter::LESS_THAN:			return (Real)controlled / (Real)total < value;
+	case Parameter::LESS_EQUAL:			return (Real)controlled / (Real)total <= value;
+	case Parameter::EQUAL:					return (Real)controlled / (Real)total == value;
+	case Parameter::GREATER_EQUAL:	return (Real)controlled / (Real)total >= value;
+	case Parameter::GREATER:				return (Real)controlled / (Real)total > value;
+	case Parameter::NOT_EQUAL:			return (Real)controlled / (Real)total != value;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateRelationMapControl(Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Real pValue)
+{
+	Player* thePlayer = playerFromParam(pPlayerParm);
+	if (!thePlayer) return false;
+
+	const Real gridSize = 200.0f;
+	const Real controlRadius = 300.0f;
+
+	Int controlled = 0;
+	Int total = 0;
+
+	Region3D mapExtent;
+	TheTerrainLogic->getExtent(&mapExtent);
+
+	for (Real x = mapExtent.lo.x; x < mapExtent.hi.x; x += gridSize)
+	{
+		for (Real y = mapExtent.lo.y; y < mapExtent.hi.y; y += gridSize)
+		{
+			total++;
+
+			Coord3D point;
+			point.x = x;
+			point.y = y;
+			point.z = 0;
+
+			bool pointControlled = false;
+
+			for (int i = 2; i < ThePlayerList->getPlayerCount() - 1; i++)
+			{
+				Player* pPlayer = ThePlayerList->getNthPlayer(i);
+				if (!pPlayer)
+					continue;
+
+				if (pPlayer == thePlayer && relationType != 2) //@-TanSo-: if friendly players are being asked for, include me!
+					continue;
+
+				if (pPlayer->getRelationship(thePlayer->getDefaultTeam()) != relationType)
+					continue;
+
+				if (evaluatePointControlled(pPlayer, point, controlRadius))
+				{
+					pointControlled = true;
+					break;
+				}
+			}
+
+			if (pointControlled)
+				controlled++;
+		}
+	}
+	if (total == 0) return false;
+
+	Real value = pValue / 100.f;
+	DEBUG_LOG(("\n\n\ntotal points: %d\ntotal controlled: %d\nTotal control: %f\n\n\n", total, controlled, (Real)controlled / (Real)total));
+	switch (pComparisonParm->getInt()) {
+	case Parameter::LESS_THAN:			return (Real)controlled / (Real)total < value;
+	case Parameter::LESS_EQUAL:			return (Real)controlled / (Real)total <= value;
+	case Parameter::EQUAL:					return (Real)controlled / (Real)total == value;
+	case Parameter::GREATER_EQUAL:	return (Real)controlled / (Real)total >= value;
+	case Parameter::GREATER:				return (Real)controlled / (Real)total > value;
+	case Parameter::NOT_EQUAL:			return (Real)controlled / (Real)total != value;
+	}
+	return false;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -3637,7 +3791,7 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 		case Condition::STARTING_CASH_COMPARE:
       return evaluateStartingCash(pCondition->getParameter(0), pCondition->getParameter(1)->getInt());
 		case Condition::CLOSEST_ENEMY_DISTANCE:
-			return evaluateClosestRelationUnitToMySpawn(pCondition->getParameter(0)->getInt(), pCondition->getParameter(1), pCondition->getParameter(2), pCondition->getParameter(3)->getInt());
+			return evaluateClosestRelationUnitToMySpawn(pCondition->getParameter(0)->getInt(), pCondition->getParameter(1), pCondition->getParameter(2), pCondition->getParameter(3)->getReal());
 		case Condition::PLAYER_HUNTED:
 			return evaluateHunted(pCondition->getParameter(0));
 		case Condition::PLAYER_LOST_TYPE_AREA:
@@ -3658,5 +3812,9 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 			return evaluatePlayerDestroyedEnemyUnit(pCondition->getParameter(0));
 		case Condition::PLAYER_LOST_UNIT:
 			return evaluatePlayerLostUnit(pCondition->getParameter(0));
+		case Condition::PLAYER_MAPCONTROL:
+			return evaluateMapControl(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getReal());
+		case Condition::PLAYER_RELATION_MAPCONTROL:
+			return evaluateRelationMapControl(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2), pCondition->getParameter(3)->getReal());
 	}
 }

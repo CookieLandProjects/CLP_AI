@@ -191,7 +191,7 @@ protected:
 	Bool evaluateNeighbouringSpotsEmpty(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pCount);
   Bool evaluateNeighbouringSpotsRelation(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pCount, Int relationType);
 	Bool evaluateStartingCash(Parameter* pComparisonParm, Int pAmount);
-	Bool evaluateClosestRelationUnitToMySpawn(Int relationType, Parameter* pPlayerParm, Parameter* pComparisonParm, Int pDist);
+	Bool evaluateClosestRelationUnitToMySpawn(Int relationType, Parameter* pPlayerParm, Parameter* pComparisonParm, Real pDist);
 	Bool evaluateHunted(Parameter* pPlayerParm);
 	Bool evaluatePlayerLostTypeInArea(Parameter* pPlayerParm, Parameter* pObjectType, Parameter* pArea);
 	Bool evaluatePlayerLostUnit(Parameter* pPlayerParm);
@@ -202,6 +202,9 @@ protected:
 	Bool evaluateEmptySpotCount(Parameter* pComparisonParm, Int pEmptySpotCount);
 	Bool evaluatePlayerDestroyedEnemyType(Parameter* pPlayerParm, Parameter* pObjectType);
 	Bool evaluatePlayerDestroyedEnemyUnit(Parameter* pPlayerParm);
+	Bool evaluatePointControlled(Player* player, const Coord3D& point, Real radius);				//@-TanSo-: helper method for evaluate(Relation)MapControl.
+	Bool evaluateMapControl(Parameter* pPlayerParm, Parameter* pComparisonParm, Real value);
+	Bool evaluateRelationMapControl(Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Real value);
 
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------

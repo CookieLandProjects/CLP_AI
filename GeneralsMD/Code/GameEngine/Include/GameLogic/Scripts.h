@@ -1110,6 +1110,8 @@ public:
 
 		/*TODO*/RELATION_UNDER_ATTACK,									// True if a(n) <relation> player is under attack.
 
+		PLAYER_MAPCONTROL,											// True if a player's map control is <comparison> <Real>.
+		PLAYER_RELATION_MAPCONTROL,							// True if all <relation> player's map control is <comparison> <Real>.
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 		//-------------------------------------------------------------------------------------------------

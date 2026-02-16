@@ -5549,7 +5549,7 @@ void ScriptEngine::init( void )
 	curTemplate->m_parameters[0] = Parameter::RELATION;
 	curTemplate->m_parameters[1] = Parameter::SIDE;
 	curTemplate->m_parameters[2] = Parameter::COMPARISON;
-	curTemplate->m_parameters[3] = Parameter::INT;
+	curTemplate->m_parameters[3] = Parameter::REAL;
 	curTemplate->m_numUiStrings = 5;
 	curTemplate->m_uiStrings[0] = "The closest ";
 	curTemplate->m_uiStrings[1] = " unit to ";
@@ -6047,6 +6047,34 @@ void ScriptEngine::init( void )
 	curTemplate->m_uiStrings[0] = "Copy KD-Ratio ";
 	curTemplate->m_uiStrings[1] = "'s kills onto ";
 	curTemplate->m_uiStrings[2] = " and deaths onto ";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_MAPCONTROL];
+	curTemplate->m_internalName = "PLAYER_MAPCONTROL";
+	curTemplate->m_uiName = "Player/Owns/Map Control/Player currently has N% map control.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " currently controls ";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = "% of the map.";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_RELATION_MAPCONTROL];
+	curTemplate->m_internalName = "PLAYER_RELATION_MAPCONTROL";
+	curTemplate->m_uiName = "Player/Owns/Map Control/All of friendly|neutral|enemy co-players currently have N% map control.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::COMPARISON;
+	curTemplate->m_parameters[3] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = "All of ";
+	curTemplate->m_uiStrings[1] = " 's ";
+	curTemplate->m_uiStrings[2] = " co-players currently control ";
+	curTemplate->m_uiStrings[3] = " ";
+	curTemplate->m_uiStrings[4] = "% of the map (if FRIEND is selected, include this player).";
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
 	//-------------------------------------------------------------------------------------------------

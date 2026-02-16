@@ -6905,7 +6905,7 @@ void ScriptActions::doTeamMoveAwayFromRelationType(const AsciiString& teamName, 
 		}
 	}
 	if (!bestObj) return;
-	//Calculate the flee vector
+	//@-TanSo-: Calculate the flee vector
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
 	fleeVec.x = teamPos.x - threatPos.x;
@@ -7015,7 +7015,7 @@ void ScriptActions::doTeamMoveTowardsRelationType(const AsciiString& teamName, R
 		}
 	}
 	if (!bestObj) return;
-	//Calculate the flee vector
+	//@-TanSo-: Calculate the flee vector
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
 	fleeVec.x = threatPos.x - teamPos.x;
@@ -7103,7 +7103,7 @@ void ScriptActions::doUnitMoveAwayFromRelationType(const AsciiString& unitName, 
 
 	if (!bestObj) return;
 
-	//Calculate the flee vector.
+	//@-TanSo-: Calculate the flee vector.
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
 	fleeVec.x = objPos.x - threatPos.x;
@@ -7182,7 +7182,7 @@ void ScriptActions::doUnitMoveTowardsRelationType(const AsciiString& unitName, R
 
 	if (!bestObj) return;
 
-	//Calculate the flee vector.
+	//@-TanSo-: Calculate the flee vector.
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
 	fleeVec.x = threatPos.x - objPos.x;
@@ -7226,7 +7226,7 @@ void ScriptActions::doTeamMeet(const AsciiString& teamName)
 	Coord3D pos;
 	pos.x = pos.y = pos.z = 0;
 
-	// Get the center point for the team
+	//@-TanSo-: Get the center point for the team
 	for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object* obj = iter.cur();
@@ -7268,7 +7268,7 @@ void ScriptActions::doTeamMeetKindOf(const AsciiString& teamName, Int kindOf)
 	Coord3D pos;
 	pos.x = pos.y = pos.z = 0;
 
-	// Get the center point for the kindOfs
+	//@-TanSo-: Get the center point for the kindOfs
 	for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object* obj = iter.cur();
@@ -7318,7 +7318,7 @@ void ScriptActions::doTeamMeetType(const AsciiString& teamName, const AsciiStrin
 	Coord3D pos;
 	pos.x = pos.y = pos.z = 0;
 
-	// Get the center point for the objectType
+	//@-TanSo-: Get the center point for the objectType
 	for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object* obj = iter.cur();
@@ -7483,7 +7483,7 @@ void ScriptActions::doPlayerMergeKindOf(const AsciiString& playerName, Int kindO
 				if (!obj) {
 					break;
 				}
-				// IMPORTANT: setTeam() removes an object from TeamMemberList.
+				// @-TanSo-: IMPORTANT: setTeam() removes an object from TeamMemberList.
 				// Iterator MUST be advanced before calling setTeam().
 				// This mirrors original EA engine behavior. It's dirty I know.
 				nextObj = iter2.cur();
@@ -7526,7 +7526,7 @@ void ScriptActions::doTeamMergeKindOf(const AsciiString& srcName, Int kindOf, co
 		if (!obj) {
 			break;
 		}
-		// IMPORTANT: setTeam() removes an object from TeamMemberList.
+		// @-TanSo-: IMPORTANT: setTeam() removes an object from TeamMemberList.
 		// Iterator MUST be advanced before calling setTeam().
 		// This mirrors original EA engine behavior. It's dirty I know.
 		nextObj = iter.cur();
@@ -7582,7 +7582,7 @@ void ScriptActions::doPlayerMergeType(const AsciiString& playerName, const Ascii
 				if (!obj) {
 					break;
 				}
-				// IMPORTANT: setTeam() removes an object from TeamMemberList.
+				// @-TanSo-: IMPORTANT: setTeam() removes an object from TeamMemberList.
 				// Iterator MUST be advanced before calling setTeam().
 				// This mirrors original EA engine behavior. It's dirty I know.
 				nextObj = iter2.cur();
@@ -7655,7 +7655,7 @@ void ScriptActions::doTeamMergeType(const AsciiString& srcName, const AsciiStrin
 		if (!obj) {
 			break;
 		}
-		// IMPORTANT: setTeam() removes an object from TeamMemberList.
+		// @-TanSo-: IMPORTANT: setTeam() removes an object from TeamMemberList.
 		// Iterator MUST be advanced before calling setTeam().
 		// This mirrors original EA engine behavior. It's dirty I know.
 		nextObj = iter.cur();
@@ -7722,7 +7722,7 @@ void ScriptActions::doPlayerDisbandKindOf(const AsciiString& playerName, Int kin
 				if (!obj) {
 					break;
 				}
-				// IMPORTANT: setTeam() removes an object from TeamMemberList.
+				// @-TanSo-: IMPORTANT: setTeam() removes an object from TeamMemberList.
 				// Iterator MUST be advanced before calling setTeam().
 				// This mirrors original EA engine behavior. It's dirty I know.
 				nextObj = iter2.cur();
@@ -7762,7 +7762,7 @@ void ScriptActions::doTeamDisbandKindOf(const AsciiString& teamName, Int kindOf)
 		if (!obj) {
 			break;
 		}
-		// IMPORTANT: setTeam() removes an object from TeamMemberList.
+		// @-TanSo-: IMPORTANT: setTeam() removes an object from TeamMemberList.
 		// Iterator MUST be advanced before calling setTeam().
 		// This mirrors original EA engine behavior. It's dirty I know.
 		nextObj = iter.cur();
@@ -7810,7 +7810,7 @@ void ScriptActions::doPlayerDisbandType(const AsciiString& playerName, const Asc
 				if (!obj) {
 					break;
 				}
-				// IMPORTANT: setTeam() removes an object from TeamMemberList.
+				// @-TanSo-: IMPORTANT: setTeam() removes an object from TeamMemberList.
 				// Iterator MUST be advanced before calling setTeam().
 				// This mirrors original EA engine behavior. It's dirty I know.
 				nextObj = iter2.cur();
@@ -7880,7 +7880,7 @@ void ScriptActions::doTeamDisbandType(const AsciiString& teamName, const AsciiSt
 		if (!obj) {
 			break;
 		}
-		// IMPORTANT: setTeam() removes an object from TeamMemberList.
+		// @-TanSo-: IMPORTANT: setTeam() removes an object from TeamMemberList.
 		// Iterator MUST be advanced before calling setTeam().
 		// This mirrors original EA engine behavior. It's dirty I know.
 		nextObj = iter.cur();
@@ -7941,7 +7941,7 @@ void ScriptActions::doPlayerTeamlessMerge(const AsciiString& playerName, const A
 		if (!obj) {
 			break;
 		}
-		// IMPORTANT: setTeam() removes an object from TeamMemberList.
+		// @-TanSo-: IMPORTANT: setTeam() removes an object from TeamMemberList.
 		// Iterator MUST be advanced before calling setTeam().
 		// This mirrors original EA engine behavior. It's dirty I know.
 		nextObj = iter2.cur();
@@ -7982,7 +7982,7 @@ void ScriptActions::doPlayerTeamlessMergeKindOf(const AsciiString& playerName, I
 		if (!obj) {
 			break;
 		}
-		// IMPORTANT: setTeam() removes an object from TeamMemberList.
+		// @-TanSo-: IMPORTANT: setTeam() removes an object from TeamMemberList.
 		// Iterator MUST be advanced before calling setTeam().
 		// This mirrors original EA engine behavior. It's dirty I know.
 		nextObj = iter.cur();
@@ -8031,7 +8031,7 @@ void ScriptActions::doPlayerTeamlessMergeType(const AsciiString& playerName, con
 		if (!obj) {
 			break;
 		}
-		// IMPORTANT: setTeam() removes an object from TeamMemberList.
+		// @-TanSo-: IMPORTANT: setTeam() removes an object from TeamMemberList.
 		// Iterator MUST be advanced before calling setTeam().
 		// This mirrors original EA engine behavior. It's dirty I know.
 		nextObj = iter.cur();
@@ -8131,7 +8131,7 @@ void ScriptActions::doPlayerGarrisonMaxEach(const AsciiString& playerName, Int m
 					continue;
 				}
 
-				//Set a new maximum amount of available slots.
+				//@-TanSo-: Set a new maximum amount of available slots.
 				//If the max amount is bigger or equal to the slots available, just continue to fill normally
 				Int slotsAvailable;
 				if (cmi->getContainMax() - cmi->getContainCount() <= maxAmount)
@@ -8210,7 +8210,7 @@ void ScriptActions::doTeamGarrisonMaxEach(const AsciiString& teamName, Int maxAm
 			continue;
 		}
 
-		//Set a new maximum amount of available slots.
+		//@-TanSo-: Set a new maximum amount of available slots.
 		//If the max amount is bigger or equal to the slots available, just continue to fill normally
 		Int slotsAvailable;
 		if (cmi->getContainMax() - cmi->getContainCount() <= maxAmount)
@@ -8309,14 +8309,14 @@ void ScriptActions::doPlayerGarrisonEqually(const AsciiString& playerName, Int a
 
 				int slotsFree = cmi->getContainMax() - cmi->getContainCount();
 				if (slotsFree <= 0) {
-					// building cannot take any more units, add to the rest
+					// @-TanSo-: building cannot take any more units, add to the rest
 					rest += target;
 					continue;
 				}
 
 				int slotsAvailable = std::min(slotsFree, target);
 
-				// in case less people are garrisoning than expected
+				// @-TanSo-: in case less people are garrisoning than expected
 				if (slotsAvailable < target) {
 					rest += (target - slotsAvailable);
 				}
@@ -8406,14 +8406,14 @@ void ScriptActions::doTeamGarrisonEqually(const AsciiString& teamName, Int amoun
 
 		int slotsFree = cmi->getContainMax() - cmi->getContainCount();
 		if (slotsFree <= 0) {
-			// building cannot take any more units, add to the rest
+			// @-TanSo-: building cannot take any more units, add to the rest
 			rest += target;
 			continue;
 		}
 
 		int slotsAvailable = std::min(slotsFree, target);
 
-		// in case less people are garrisoning than expected
+		// @-TanSo-: in case less people are garrisoning than expected
 		if (slotsAvailable < target) {
 			rest += (target - slotsAvailable);
 		}
@@ -8691,7 +8691,7 @@ void ScriptActions::doTeamMoveAwayFromRelation(const AsciiString& teamName, Real
 	}
 	
 	if (!bestObj) return;
-	//Calculate the flee vector
+	//@-TanSo-: Calculate the flee vector
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
 	fleeVec.x = teamPos.x - threatPos.x;
@@ -8766,7 +8766,7 @@ void ScriptActions::doTeamMoveTowardsRelation(const AsciiString& teamName, Real 
 	}
 
 	if (!bestObj) return;
-	//Calculate the flee vector
+	//@-TanSo-: Calculate the flee vector
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
 	fleeVec.x = threatPos.x - teamPos.x;
@@ -8818,7 +8818,7 @@ void ScriptActions::doUnitMoveAwayFromRelation(const AsciiString& unitName, Real
 	bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
 	if (!bestObj) return;
 
-	//Calculate the flee vector.
+	//@-TanSo-: Calculate the flee vector.
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
 	fleeVec.x = objPos.x - threatPos.x;
@@ -8861,7 +8861,7 @@ void ScriptActions::doUnitMoveTowardsRelation(const AsciiString& unitName, Real 
 	bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
 	if (!bestObj) return;
 
-	//Calculate the flee vector.
+	//@-TanSo-: Calculate the flee vector.
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
 	fleeVec.x = threatPos.x - objPos.x;
