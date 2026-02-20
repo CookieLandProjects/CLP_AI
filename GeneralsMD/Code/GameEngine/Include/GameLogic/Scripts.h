@@ -597,7 +597,7 @@ public:
 			TEAM_MOVE_AWAY_FROM_RELATION_TYPE,						///< A team moves <Real> feet into the opposite direction of a <relation> <objectType>.
 			TEAM_MOVE_TOWARDS_RELATION,										///< A team moves <Real> feet towards a <relation> unit.
 			TEAM_MOVE_TOWARDS_RELATION_TYPE,							///< A team moves <Real> feet towards a <relation> <objectType>.
-			TEAM_MEET,																		///< Set a team to meet at their center point.
+			TEAM_MEET,																		///< Set a team to meet at its center point.
 			TEAM_MEET_AT_KINDOF,													///< Set a team to meet at the center point of all units with <kindOf>.
 			TEAM_MEET_AT_TYPE,														///< Set a team to meet at the center point of all units with <objectType>.
 			TEAM_USE_COMMAND_BUTTON_ABILITY_WITH_TYPE,		///< Set all units with an object type in a team to use a command button ability.
@@ -610,6 +610,9 @@ public:
 			/*TODO*/TEAM_USE_SECONDARY_WEAPON,										///< A team starts using their secondary weapon.
 			TEAM_GARRISON_BUILDINGS_WITH_MAX_NUMBER,			///< A team garrisons nearby buildings with <int> infrantry each.
 			TEAM_GARRISON_NUMBER_BUILDINGS,								///< A team equally garrisons <int> buildings with all available infantry.
+      TEAM_MOVE_TO_TEAM,														///< Set a team to move towards another team.
+      TEAM_MEET_TEAM,																///< Set a team to meet at the center point of another team.
+      TEAM_LOAD_EVENLY,															///< A team loads evenly into their transport units.
 
 			UNIT_MOVE_RELATIVE,														///< Set a unit to move relative to its own position.
 			UNIT_MOVE_NEAREST_BELONGING_TO_PLAYER,				///< Set a unit to move towards the nearest object type belonging to a player.
@@ -1085,7 +1088,7 @@ public:
 		//-------------------------------------------------------------------------------------------------
 		//------------------------------ @CLP_AI SCRIPT CONDITION ADDITIONS -------------------------------
 		//-------------------------------------------------------------------------------------------------
-		KD_RATIO,																// True if the KD Ratio is <comparison> a value
+		KD_RATIO,																// True if the KD Ratio is <comparison> a value.
     COMPARE_COUNTERS,												// True if Counter A is <comparison> Counter B.
 
 		PLAYER_RELATION_FACTION,								// True if one or more of the player's <relation> co-players are a faction.
@@ -1101,17 +1104,24 @@ public:
     STARTING_CASH_COMPARE,								  // True if the player's starting cash is <comparison> <Int>.
 		CLOSEST_ENEMY_DISTANCE,									// True if the enemy's closest unit is <comparison> feet away.
 		PLAYER_HUNTED,													// True if the player has construction units || command center || supply stash.
-		PLAYER_LOST_TYPE_AREA,									// True if the player has lost an object of <type> in <area>
+		PLAYER_LOST_TYPE_AREA,									// True if the player has lost an object of <type> in <area>.
 		PLAYER_LOST_UNIT,												// True if the player has lost a unit.
-		TEAM_SIGHTED_RELATION_TYPE,							// True if a team has sighted a <relation> unit of <type>
+		TEAM_SIGHTED_RELATION_TYPE,							// True if a team has sighted a <relation> unit of <type>.
+    TEAM_LOST_TYPE,													// True if a team has lost an object of <type>.
+    TEAM_LOST_UNIT,													// True if a team has lost a unit.
 
-		PLAYER_DESTROYED_ENEMY_TYPE,						// True if a player has destroyed an enemy unit of <type>
+		PLAYER_DESTROYED_ENEMY_TYPE,						// True if a player has destroyed an enemy unit of <type>.
 		PLAYER_DESTROYED_ENEMY_UNIT,						// True if a player has destroyed an enemy unit.
 
 		/*TODO*/RELATION_UNDER_ATTACK,									// True if a(n) <relation> player is under attack.
 
 		PLAYER_MAPCONTROL,											// True if a player's map control is <comparison> <Real>.
 		PLAYER_RELATION_MAPCONTROL,							// True if all <relation> player's map control is <comparison> <Real>.
+
+    PLAYER_SIGHTED_RELATION_TYPE,							// True if a player has sighted a <relation> unit of <type>.
+    RELATION_PLAYER_SIGHTED_RELATION_TYPE,		// True if a <relation> player has sighted a <relation> unit of <type>.
+    RELATION_PLAYER_VALUE_AREA, 							// True if the value of a <relation> player in an area is <comparison> <Int>.
+
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 		//-------------------------------------------------------------------------------------------------

@@ -5518,7 +5518,7 @@ void ScriptEngine::init( void )
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_numUiStrings = 2;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " meets at their center point.";
+	curTemplate->m_uiStrings[1] = " meets at its center point.";
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MEET_AT_KINDOF];
 	curTemplate->m_internalName = "TEAM_MEET_AT_KINDOF";
@@ -5528,7 +5528,7 @@ void ScriptEngine::init( void )
 	curTemplate->m_parameters[1] = Parameter::KIND_OF_PARAM;
 	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " meets at the center point of their units with kindOf ";
+	curTemplate->m_uiStrings[1] = " meets at the center point of its units with kindOf ";
 	curTemplate->m_uiStrings[2] = " .";
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MEET_AT_TYPE];
@@ -5539,7 +5539,7 @@ void ScriptEngine::init( void )
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
 	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " meets at the center point of their object type ";
+	curTemplate->m_uiStrings[1] = " meets at the center point of its object type ";
 	curTemplate->m_uiStrings[2] = " .";
 
 	curTemplate = &m_conditionTemplates[Condition::CLOSEST_ENEMY_DISTANCE];
@@ -6075,6 +6075,99 @@ void ScriptEngine::init( void )
 	curTemplate->m_uiStrings[2] = " co-players currently control ";
 	curTemplate->m_uiStrings[3] = " ";
 	curTemplate->m_uiStrings[4] = "% of the map (if FRIEND is selected, include this player).";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_LOST_TYPE];
+	curTemplate->m_internalName = "TEAM_LOST_TYPE";
+	curTemplate->m_uiName = "Team/Destroyed/Team lost an object of a specific type.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " lost an object of type ";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_LOST_UNIT];
+	curTemplate->m_internalName = "TEAM_LOST_UNIT";
+	curTemplate->m_uiName = "Team/Destroyed/Team lost a unit.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " lost a unit.";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_SIGHTED_RELATION_TYPE];
+	curTemplate->m_internalName = "PLAYER_SIGHTED_RELATION_TYPE";
+	curTemplate->m_uiName = "Player/Sighted/Player sighted a(n) friendly|neutral|enemy unit of type.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " has sighted a(n) ";
+	curTemplate->m_uiStrings[2] = " unit of type ";
+
+	curTemplate = &m_conditionTemplates[Condition::RELATION_PLAYER_SIGHTED_RELATION_TYPE];
+	curTemplate->m_internalName = "RELATION_PLAYER_SIGHTED_RELATION_TYPE";
+	curTemplate->m_uiName = "Player/Sighted/A(n) friendly|neutral|enemy player sighted a(n) friendly|neutral|enemy unit of type.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = " One of ";
+	curTemplate->m_uiStrings[1] = " 's ";
+	curTemplate->m_uiStrings[2] = " co-players has sighted a(n) ";
+	curTemplate->m_uiStrings[3] = " unit of type ";
+	curTemplate->m_uiStrings[4] = " (if FRIEND is selected, include this player). ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_TO_TEAM];
+	curTemplate->m_internalName = "TEAM_MOVE_TO_TEAM";
+	curTemplate->m_uiName = "Team/Move/A team moves to another team.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " moves to ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MEET_TEAM];
+	curTemplate->m_internalName = "TEAM_MEET_TEAM";
+	curTemplate->m_uiName = "Team/Move/Meet/Two teams meet and group together.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " and ";
+	curTemplate->m_uiStrings[2] = " meet at their center point.";
+
+	curTemplate = &m_conditionTemplates[Condition::RELATION_PLAYER_VALUE_AREA];
+	curTemplate->m_internalName = "RELATION_PLAYER_VALUE_AREA";
+	curTemplate->m_uiName = "Player/Area/All friendly|neutral|enemy players combined have a total value in an area.";
+	curTemplate->m_numParameters = 5;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::COMPARISON;
+	curTemplate->m_parameters[3] = Parameter::INT;
+	curTemplate->m_parameters[4] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = " All of ";
+	curTemplate->m_uiStrings[1] = " 's ";
+	curTemplate->m_uiStrings[2] = " co-players combined have ";
+	curTemplate->m_uiStrings[3] = " ";
+	curTemplate->m_uiStrings[4] = " worth of units in area ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_LOAD_EVENLY];
+	curTemplate->m_internalName = "TEAM_LOAD_EVENLY";
+	curTemplate->m_uiName = "Team/Transport/Transport -- automatically load evenly.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " loads into transports evenly.";
+
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
 	//-------------------------------------------------------------------------------------------------
@@ -6501,7 +6594,18 @@ void ScriptEngine::update( void )
 		p->m_lastFrameKills.clear();
 		p->m_lastFrameDeaths.clear();
 		p->m_lostUnitThisFrame = FALSE;
+
+		for (Player::PlayerTeamList::const_iterator it = p->getPlayerTeams()->begin(); it != p->getPlayerTeams()->end(); it++)
+		{
+			for (DLINK_ITERATOR<Team> teamIter = (*it)->iterate_TeamInstanceList(); !teamIter.done(); teamIter.advance())
+			{
+				Team* team = teamIter.cur();
+				team->m_lastFrameDeaths.clear();
+				team->m_lostUnitThisFrame = FALSE;
+			}
+		}
 	}
+
 
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS END -------------------------------

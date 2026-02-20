@@ -2977,7 +2977,6 @@ void Object::scoreTheKill( const Object *victim )
 	if (victimController)
 	{
 		victimController->getScoreKeeper()->addObjectLost(victim);
-		victimController->m_lostUnitThisFrame = TRUE;
 	}
 
 	Relationship r = getRelationship(victim);
@@ -3014,7 +3013,14 @@ void Object::scoreTheKill( const Object *victim )
 	// @-TanSo-: Add the kills and deaths to our vectors so we can check on them in scripts
 	controller->m_lastFrameKills.push_back(tt);
 	victimController->m_lastFrameDeaths.push_back(tt);
+	victimController->m_lostUnitThisFrame = TRUE;
 
+	Team* team = const_cast<Team*>(victim->getTeam());
+	if (team)
+	{
+		team->m_lastFrameDeaths.push_back(tt);
+		team->m_lostUnitThisFrame = TRUE;
+	}
 }
 
 //-------------------------------------------------------------------------------------------------

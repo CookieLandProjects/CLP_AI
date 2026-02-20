@@ -115,7 +115,7 @@ typedef struct {
 	AsciiString unitThingName;
 } TCreateUnitsInfo;
 
-enum { MAX_GENERIC_SCRIPTS = 16 };
+enum { MAX_GENERIC_SCRIPTS = 32 };
 
 // ------------------------------------------------------------------------
 /// This is the info for creating reinforcement and AI teams.
@@ -345,7 +345,16 @@ public:
 	Bool noneInside(PolygonTrigger *pTrigger, UnsignedInt whichToConsider) const;					///< No members are in the area.
 
 	Object * tryToRecruit(const ThingTemplate *, const Coord3D *teamHome, Real maxDist); ///< Try to recruit the closest unit of this thing type.  Return true if successful.
+	//-------------------------------------------------------------------------------------------------
+	//------------------------------------ @CLP_AI TEAM ADDITIONS -------------------------------------
+	//-------------------------------------------------------------------------------------------------
 
+	std::vector<const ThingTemplate*> m_lastFrameDeaths;
+	Bool m_lostUnitThisFrame;
+
+	//-------------------------------------------------------------------------------------------------
+	//---------------------------------- @CLP_AI TEAM ADDITIONS END -----------------------------------
+	//-------------------------------------------------------------------------------------------------
 	/**
 		return our relationship with the other team.
 		this is done as follows:

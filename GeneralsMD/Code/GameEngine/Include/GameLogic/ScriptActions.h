@@ -408,6 +408,8 @@ protected:
 	void doTeamMeet(const AsciiString& teamName);
 	void doTeamMeetKindOf(const AsciiString& teamName, Int kindOf);
 	void doTeamMeetType(const AsciiString& teamName, const AsciiString& objectType);
+	void doTeamMeetTeam(const AsciiString& teamNameA, const AsciiString& teamNameB);
+	void doTeamMoveToTeam(const AsciiString& teamNameA, const AsciiString& teamNameB);
 	void doTeamMoveAwayFromRelation(const AsciiString& teamName, Real feet, Int relationType);
 	void doTeamMoveTowardsRelation(const AsciiString& teamName, Real feet, Int relationType);
 	void doUnitMoveAwayFromRelation(const AsciiString& unitName, Real feet, Int relationType);
@@ -432,10 +434,11 @@ protected:
 	void doTeamGarrisonMaxEach(const AsciiString& teamName, Int maxAmount);
 	void doPlayerGarrisonEqually(const AsciiString& playerName, Int amount);
 	void doTeamGarrisonEqually(const AsciiString& teamName, Int amount);
+	void doTeamLoadAllTransportsEvenly(const AsciiString& teamName);
 
 	void doSkirmishFireSpecialPowerAtMostCostEconomy(const AsciiString& player, const AsciiString& specialPower);
 
-
+	// @-TanSo-: 42 additions
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 	//-------------------------------------------------------------------------------------------------

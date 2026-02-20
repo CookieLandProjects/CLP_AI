@@ -205,7 +205,13 @@ protected:
 	Bool evaluatePointControlled(Player* player, const Coord3D& point, Real radius);				//@-TanSo-: helper method for evaluate(Relation)MapControl.
 	Bool evaluateMapControl(Parameter* pPlayerParm, Parameter* pComparisonParm, Real value);
 	Bool evaluateRelationMapControl(Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Real value);
+	Bool evaluateTeamLostType(Parameter* pTeamParm, Parameter* objectType);
+	Bool evaluateTeamLostUnit(Parameter* pTeamParm);
+  Bool evaluatePlayerSightedRelationType(Parameter* pPlayerParm, Int relationType, Parameter* pObjectType);
+  Bool evaluateRelationPlayerSightedRelationType(Parameter* pPlayerParm, Int playerRelationType, Int relationType, Parameter* pObjecType);
+	Bool evaluateRelationPlayerValueArea(Condition* pCondition, Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Int value, Parameter* pTriggerParm);
 
+	// @-TanSo-: 24 additions, 1 helper method
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 	//-------------------------------------------------------------------------------------------------

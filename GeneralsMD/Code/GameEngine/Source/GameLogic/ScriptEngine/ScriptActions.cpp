@@ -7353,6 +7353,115 @@ void ScriptActions::doTeamMeetType(const AsciiString& teamName, const AsciiStrin
 }
 
 //-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMeetTeam(const AsciiString& teamNameA, const AsciiString& teamNameB)
+{
+	Team* pTeamA = TheScriptEngine->getTeamNamed(teamNameA);
+	if (!pTeamA) return;
+
+	Team* pTeamB = TheScriptEngine->getTeamNamed(teamNameB);
+	if (!pTeamB) return;
+
+	AIGroupPtr theGroupA = TheAI->createGroup();
+	if (!theGroupA) {
+		return;
+	}
+
+	AIGroupPtr theGroupB = TheAI->createGroup();
+	if (!theGroupB) {
+		return;
+	}
+
+#if RETAIL_COMPATIBLE_AIGROUP
+	pTeamA->getTeamAsAIGroup(theGroupA);
+	pTeamB->getTeamAsAIGroup(theGroupB);
+#else
+	pTeamA->getTeamAsAIGroup(theGroupA.Peek());
+	pTeamB->getTeamAsAIGroup(theGroupB.Peek());
+#endif
+
+	Int count = 0;
+	Coord3D pos;
+	pos.x = pos.y = pos.z = 0;
+
+	//@-TanSo-: Get the center point for each of the two teams and average them together
+	for (DLINK_ITERATOR<Object> iter = pTeamA->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) continue;
+
+		Coord3D objPos = *obj->getPosition();
+		pos.x += objPos.x;
+		pos.y += objPos.y;
+		pos.z += objPos.z;
+		count++;
+	}
+	for (DLINK_ITERATOR<Object> iter = pTeamB->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) continue;
+
+		Coord3D objPos = *obj->getPosition();
+		pos.x += objPos.x;
+		pos.y += objPos.y;
+		pos.z += objPos.z;
+		count++;
+	}
+
+	if (count == 0) return; // empty team.
+	pos.x /= count;
+	pos.y /= count;
+	pos.z /= count;
+
+	theGroupA->groupMoveToPosition(&pos, false, CMD_FROM_SCRIPT);
+	theGroupB->groupMoveToPosition(&pos, false, CMD_FROM_SCRIPT);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMoveToTeam(const AsciiString& teamNameA, const AsciiString& teamNameB)
+{
+	Team* pTeamA = TheScriptEngine->getTeamNamed(teamNameA);
+	if (!pTeamA) return;
+
+	Team* pTeamB = TheScriptEngine->getTeamNamed(teamNameB);
+	if (!pTeamB) return;
+
+	AIGroupPtr theGroupA = TheAI->createGroup();
+	if (!theGroupA) {
+		return;
+	}
+
+#if RETAIL_COMPATIBLE_AIGROUP
+	pTeamA->getTeamAsAIGroup(theGroupA);
+#else
+	pTeamA->getTeamAsAIGroup(theGroupA.Peek());
+#endif
+
+	Int count = 0;
+	Coord3D pos;
+	pos.x = pos.y = pos.z = 0;
+
+  //@-TanSo-: Get the center point of the team
+	for (DLINK_ITERATOR<Object> iter = pTeamB->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) continue;
+
+		Coord3D objPos = *obj->getPosition();
+		pos.x += objPos.x;
+		pos.y += objPos.y;
+		pos.z += objPos.z;
+		count++;
+	}
+
+	if (count == 0) return; // empty team.
+	pos.x /= count;
+	pos.y /= count;
+	pos.z /= count;
+
+	theGroupA->groupMoveToPosition(&pos, false, CMD_FROM_SCRIPT);
+}
+
+//-------------------------------------------------------------------------------------------------
 void ScriptActions::doTeamUseCommandButtonAbilityOnType(const AsciiString& teamName, const AsciiString& ability, const AsciiString& objectType)
 {
 	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
@@ -8886,6 +8995,68 @@ void ScriptActions::doUnitMoveTowardsRelation(const AsciiString& unitName, Real 
 }
 
 //-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamLoadAllTransportsEvenly(const AsciiString& teamName)
+{
+	Team* theTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!theTeam) return;
+
+	std::vector<Object*> transports;
+	std::vector<Object*> units;
+
+	// collect transports and units
+	for (DLINK_ITERATOR<Object> iter = theTeam->iterate_TeamMemberList();
+		!iter.done();
+		iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) continue;
+
+		if (obj->isKindOf(KINDOF_TRANSPORT))
+		{
+			ContainModuleInterface* cmi = obj->getContain();
+			if (cmi && cmi->getContainCount() < cmi->getContainMax())
+				transports.push_back(obj);
+		}
+		else if (obj->isKindOf(KINDOF_INFANTRY))
+		{
+			if (!obj->getContain())
+				units.push_back(obj);
+		}
+	}
+
+	if (transports.empty() || units.empty())
+		return;
+
+	// round robin assignment
+	size_t transportIndex = 0;
+
+	for (size_t i = 0; i < units.size(); ++i)
+	{
+		Object* unit = units[i];
+
+		// find next transport with free space
+		size_t attempts = 0;
+		while (attempts < transports.size())
+		{
+			Object* transport = transports[transportIndex];
+			ContainModuleInterface* cmi = transport->getContain();
+
+			if (cmi && cmi->getContainCount() < cmi->getContainMax())
+			{
+				AIUpdateInterface* ai = unit->getAIUpdateInterface();
+				if (ai)
+					ai->aiEnter(transport, CMD_FROM_SCRIPT);
+
+				transportIndex = (transportIndex + 1) % transports.size();
+				break;
+			}
+
+			transportIndex = (transportIndex + 1) % transports.size();
+			attempts++;
+		}
+	}
+}
+//-------------------------------------------------------------------------------------------------
 //----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 //-------------------------------------------------------------------------------------------------
 
@@ -10181,5 +10352,14 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 		case ScriptAction::UNIT_MOVE_TOWARDS_RELATION_TYPE:
 			doUnitMoveTowardsRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString());
 			return;
+		case ScriptAction::TEAM_MOVE_TO_TEAM:
+			doTeamMoveToTeam(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+      return;
+		case ScriptAction::TEAM_MEET_TEAM:
+			doTeamMeetTeam(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+      return;
+		case ScriptAction::TEAM_LOAD_EVENLY:
+			doTeamLoadAllTransportsEvenly(pAction->getParameter(0)->getString());
+      return;
 	}
 }

@@ -2120,7 +2120,7 @@ Bool ScriptConditions::evaluateSkirmishValueInArea(Condition *pCondition, Parame
 	}
 
 	Player::PlayerTeamList::const_iterator it;
-	Bool anyChanges = true; // @-TanSo-: Set to be always true for AI purposes, otherwise "sticky" behaviours occur and conditions wont be checked anymore.
+	Bool anyChanges = false;
 	if (pCondition->getCustomData() == 0) anyChanges = true;
 
 
@@ -3506,6 +3506,269 @@ Bool ScriptConditions::evaluateRelationMapControl(Parameter* pPlayerParm, Int re
 }
 
 //-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateTeamLostType(Parameter* pTeamParm, Parameter* objectType)
+{
+	Team* theTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
+	if (!theTeam)
+		return false;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType->getString(), FALSE);
+	if (templ)
+	{
+		for (const ThingTemplate* dead : theTeam->m_lastFrameDeaths)
+		{
+			if (dead == templ)
+				return true;
+		}
+	}
+	else
+	{
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType->getString());
+		if (!objectTypes)
+			return false;
+
+		for (size_t i = 0; i < objectTypes->getListSize(); i++)
+		{
+			const ThingTemplate* type =
+				TheThingFactory->findTemplate(objectTypes->getNthInList(i), FALSE);
+
+			if (!type)
+				continue;
+
+			for (const ThingTemplate* dead : theTeam->m_lastFrameDeaths)
+			{
+				if (dead == type)
+					return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateTeamLostUnit(Parameter* pTeamParm)
+{
+	Team* theTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
+	if (!theTeam)
+		return false;
+	return theTeam->m_lostUnitThisFrame;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluatePlayerSightedRelationType(Parameter* pPlayerParm, Int relationType, Parameter* pObjectType)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer) return false;
+
+	ObjectTypesTemp types;
+	objectTypesFromParam(pObjectType, types.m_types);
+
+	// and only stuff that is not dead
+	PartitionFilterAlive filterAlive;
+
+	// and only nonstealthed items.
+	PartitionFilterRejectByObjectStatus filterStealth(MAKE_OBJECT_STATUS_MASK(OBJECT_STATUS_STEALTHED),
+		MAKE_OBJECT_STATUS_MASK2(OBJECT_STATUS_DETECTED, OBJECT_STATUS_DISGUISED));
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* pTeam = iter.cur();
+			for (DLINK_ITERATOR<Object> teamIter = pTeam->iterate_TeamMemberList(); !teamIter.done(); teamIter.advance())
+			{
+				Object* obj = teamIter.cur();
+
+				// and only on-map (or not)
+				PartitionFilterSameMapStatus filterMapStatus(obj);
+
+				PartitionFilter* filters[] = { &filterAlive, &filterStealth, &filterMapStatus, nullptr };
+
+				Real visionRange = obj->getVisionRange();
+				if (visionRange <= 0.0f) continue;
+
+				SimpleObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(obj, visionRange, FROM_CENTER_2D, filters);
+				MemoryPoolObjectHolder hold(iter);
+
+				for (Object* them = iter->first(); them; them = iter->next())
+				{
+					if (them == obj) continue;
+					if (them->getRelationship(obj) == relationType) {
+						if (types.m_types->isInSet(them->getTemplate()->getName()))
+							return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateRelationPlayerSightedRelationType(Parameter* pPlayerParm, Int playerRelationType, Int relationType, Parameter* pObjectType)
+{
+  Player* thePlayer = playerFromParam(pPlayerParm);
+	if (!thePlayer) return false;
+
+	ObjectTypesTemp types;
+	objectTypesFromParam(pObjectType, types.m_types);
+
+	// and only stuff that is not dead
+	PartitionFilterAlive filterAlive;
+
+	// and only nonstealthed items.
+	PartitionFilterRejectByObjectStatus filterStealth(MAKE_OBJECT_STATUS_MASK(OBJECT_STATUS_STEALTHED),
+		MAKE_OBJECT_STATUS_MASK2(OBJECT_STATUS_DETECTED, OBJECT_STATUS_DISGUISED));
+
+	for(int i = 0; i < ThePlayerList->getPlayerCount(); i++)
+	{
+    Player* pPlayer = ThePlayerList->getNthPlayer(i);
+		if(!pPlayer)
+			continue;
+
+		if (pPlayer == thePlayer){
+			if (playerRelationType != 2) //@-TanSo-: if friendly players are being asked for, include me!
+				continue;
+		}
+		else{
+			if (thePlayer->getRelationship(pPlayer->getDefaultTeam()) != playerRelationType)
+				continue;
+		}
+
+		Player::PlayerTeamList::const_iterator it;
+		for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+		{
+			for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+				Team* pTeam = iter.cur();
+				for (DLINK_ITERATOR<Object> teamIter = pTeam->iterate_TeamMemberList(); !teamIter.done(); teamIter.advance())
+				{
+					Object* obj = teamIter.cur();
+
+					// and only on-map (or not)
+					PartitionFilterSameMapStatus filterMapStatus(obj);
+
+					PartitionFilter* filters[] = { &filterAlive, &filterStealth, &filterMapStatus, nullptr };
+
+					Real visionRange = obj->getVisionRange();
+					if (visionRange <= 0.0f) continue;
+
+					SimpleObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(obj, visionRange, FROM_CENTER_2D, filters);
+					MemoryPoolObjectHolder hold(iter);
+
+					for (Object* them = iter->first(); them; them = iter->next())
+					{
+						if (them == obj) continue;
+						if (them->getRelationship(obj) == relationType) {
+							if (types.m_types->isInSet(them->getTemplate()->getName()))
+								return true;
+						}
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateRelationPlayerValueArea(Condition* pCondition,Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Int value, Parameter* pTriggerParm)
+{
+	Player* sourcePlayer = playerFromParam(pPlayerParm);
+	if (!sourcePlayer) return false;
+
+	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(pTriggerParm->getString());
+	if (!pTrig) return false;
+
+	Bool anyChanges = false;
+
+	if (TheScriptEngine->getFrameObjectCountChanged() != pCondition->getCustomFrame())
+	{
+		anyChanges = true;
+	}
+
+	if (!anyChanges)
+	{
+		if (pCondition->getCustomData() == -1)
+			return false;
+
+		if (pCondition->getCustomData() == 1)
+			return true;
+	}
+
+	Int totalCost = 0;
+
+	// iterate ALL players
+	for (Int i = 0; i < ThePlayerList->getPlayerCount(); ++i)
+	{
+		Player* otherPlayer = ThePlayerList->getNthPlayer(i);
+
+		if (!otherPlayer)
+			continue;
+
+		if (otherPlayer == sourcePlayer)
+				continue;
+
+		if (sourcePlayer->getRelationship(otherPlayer->getDefaultTeam()) != relationType)
+				continue;
+
+		// iterate teams
+		Player::PlayerTeamList::const_iterator it;
+
+		for (it = otherPlayer->getPlayerTeams()->begin(); it != otherPlayer->getPlayerTeams()->end(); ++it)
+		{
+			for (DLINK_ITERATOR<Team> teamIter = (*it)->iterate_TeamInstanceList() ;!teamIter.done(); teamIter.advance())
+			{
+				Team* team = teamIter.cur();
+
+				if (!team)
+					continue;
+
+				for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+				{
+					Object* pObj = objIter.cur();
+
+					if (!pObj)
+						continue;
+
+					if (pObj->isKindOf(KINDOF_INERT))
+						continue;
+
+					if (!pObj->isInside(pTrig))
+						continue;
+
+					if (pObj->isEffectivelyDead())
+						continue;
+
+					const ThingTemplate* tt = pObj->getTemplate();
+
+					if (!tt)
+						continue;
+
+					totalCost += tt->friend_getBuildCost();
+				}
+			}
+		}
+	}
+
+	Bool comparison = false;
+
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:comparison = (totalCost < value);break;
+	case Parameter::LESS_EQUAL:comparison = (totalCost <= value);break;
+	case Parameter::EQUAL:comparison = (totalCost == value);break;
+	case Parameter::GREATER_EQUAL:comparison = (totalCost >= value);break;
+	case Parameter::GREATER:comparison = (totalCost > value);break;
+	case Parameter::NOT_EQUAL:comparison = (totalCost != value);break;
+	}
+	pCondition->setCustomData(comparison ? 1 : -1);
+	pCondition->setCustomFrame(TheScriptEngine->getFrameObjectCountChanged());
+
+	return comparison;
+}
+
+//-------------------------------------------------------------------------------------------------
 //---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 //-------------------------------------------------------------------------------------------------
 
@@ -3816,5 +4079,15 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 			return evaluateMapControl(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getReal());
 		case Condition::PLAYER_RELATION_MAPCONTROL:
 			return evaluateRelationMapControl(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2), pCondition->getParameter(3)->getReal());
+    case Condition::TEAM_LOST_TYPE:
+      return evaluateTeamLostType(pCondition->getParameter(0), pCondition->getParameter(1));
+		case Condition::TEAM_LOST_UNIT:
+			return evaluateTeamLostUnit(pCondition->getParameter(0));
+		case Condition::PLAYER_SIGHTED_RELATION_TYPE:
+      return evaluatePlayerSightedRelationType(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2));
+    case Condition::RELATION_PLAYER_SIGHTED_RELATION_TYPE:
+      return evaluateRelationPlayerSightedRelationType(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2)->getInt(), pCondition->getParameter(3));
+		case Condition::RELATION_PLAYER_VALUE_AREA:
+      return evaluateRelationPlayerValueArea(pCondition, pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2), pCondition->getParameter(3)->getInt(),pCondition->getParameter(4));
 	}
 }
