@@ -89,7 +89,7 @@ void setupGameStart(AsciiString mapName, GameDifficulty diff);
 //-----------------------------------------------------------------------------
 // PUBLIC FUNCTIONS ///////////////////////////////////////////////////////////
 //-----------------------------------------------------------------------------
-static void SetDifficultyRadioButton( void )
+static void SetDifficultyRadioButton()
 {
 	OptionPreferences pref;
 	if (!TheScriptEngine)

@@ -177,7 +177,7 @@ Int ScriptList::m_curId = 0;
  ScriptList::updateDefaults -  checks for empty script lists, and adds some default stuff
  so you don't get a totally blank screen in the editor.
 */
-void ScriptList::updateDefaults(void)
+void ScriptList::updateDefaults()
 {
 	Int i;
 	for (i=0; i<TheSidesList->getNumSides(); i++)
@@ -193,7 +193,7 @@ void ScriptList::updateDefaults(void)
 /**
   Deletes any script lists attached to sides.  Used for editor cleanup.
 */
-void ScriptList::reset(void)
+void ScriptList::reset()
 {
 	Int i;
 	if (TheSidesList == nullptr) return; /// @todo - move this code into sides list.
@@ -210,7 +210,7 @@ void ScriptList::reset(void)
 /**
   Ctor.
 */
-ScriptList::ScriptList(void) :
+ScriptList::ScriptList() :
 m_firstGroup(nullptr),
 m_firstScript(nullptr)
 {
@@ -220,7 +220,7 @@ m_firstScript(nullptr)
   Dtor.  Deletes any script lists or group lists.  Note that dtors for groups and script lists
 	delete the whole list, so don't need to traverse here.
 */
-ScriptList::~ScriptList(void)
+ScriptList::~ScriptList()
 {
 	deleteInstance(m_firstGroup);
 	m_firstGroup = nullptr;
@@ -315,7 +315,7 @@ void ScriptList::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void ScriptList::loadPostProcess( void )
+void ScriptList::loadPostProcess()
 {
 
 }
@@ -323,7 +323,7 @@ void ScriptList::loadPostProcess( void )
 /**
   ScriptList::duplicate - Creates a full, "deep" copy of scriptlist.
 */
-ScriptList *ScriptList::duplicate(void) const
+ScriptList *ScriptList::duplicate() const
 {
 	ScriptList *pNew = newInstance(ScriptList);
 
@@ -413,7 +413,7 @@ ScriptList *ScriptList::duplicateAndQualify(const AsciiString& qualifier,
 /**
   ScriptList::discard - Deletes a script list, but not any children.
 */
-void ScriptList::discard(void)
+void ScriptList::discard()
 {
 	m_firstGroup = nullptr;
 	m_firstScript = nullptr;
@@ -710,7 +710,7 @@ Bool ScriptList::ParseScriptListDataChunk(DataChunkInput &file, DataChunkInfo *i
 /**
   Ctor - gives it a default name.
 */
-ScriptGroup::ScriptGroup(void) :
+ScriptGroup::ScriptGroup() :
 m_firstScript(nullptr),
 m_hasWarnings(false),
 m_isGroupActive(true),
@@ -725,7 +725,7 @@ m_nextGroup(nullptr)
   Dtor - The script list deletes the rest of the list, but we have to loop & delete
 	sll the script groups in out list.
 */
-ScriptGroup::~ScriptGroup(void)
+ScriptGroup::~ScriptGroup()
 {
 	// Delete the first script.  m_firstScript deletes the entire list.
 	deleteInstance(m_firstScript);
@@ -804,7 +804,7 @@ void ScriptGroup::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void ScriptGroup::loadPostProcess( void )
+void ScriptGroup::loadPostProcess()
 {
 
 }
@@ -813,7 +813,7 @@ void ScriptGroup::loadPostProcess( void )
   ScriptGroup::duplicate - Creates a full, "deep" copy of ScriptGroup.
 	m_nextGroup is nullptr on the copy.
 */
-ScriptGroup *ScriptGroup::duplicate(void) const
+ScriptGroup *ScriptGroup::duplicate() const
 {
 	ScriptGroup *pNew = newInstance(ScriptGroup);
 
@@ -988,7 +988,7 @@ Bool ScriptGroup::ParseGroupDataChunk(DataChunkInput &file, DataChunkInfo *info,
 /**
   Ctor - initializes members.
 */
-Script::Script(void) :
+Script::Script() :
 m_isActive(true),
 m_isOneShot(true),
 m_easy(true),
@@ -1015,7 +1015,7 @@ m_curTime(0.0f)
   Dtor - The condition and action deletes the rest of the list, but we have to loop & delete
 	all the scripts in out list.
 */
-Script::~Script(void)
+Script::~Script()
 {
 	if (m_nextScript) {
 		Script *cur = m_nextScript;
@@ -1064,7 +1064,7 @@ void Script::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void Script::loadPostProcess( void )
+void Script::loadPostProcess()
 {
 
 }
@@ -1074,7 +1074,7 @@ void Script::loadPostProcess( void )
   list is duplicated as well.  Note - just the script, doesn't
 	duplicate a list of scripts.  m_nextScript is nullptr on the copy.
 */
-Script *Script::duplicate(void) const
+Script *Script::duplicate() const
 {
 	Script *pNew = newInstance(Script);
 
@@ -1252,7 +1252,7 @@ void Script::deleteFalseAction(ScriptAction *pAct)
 /**
   Script::getUiText - Creates the string to display in the scripts dialog box.
 */
-AsciiString Script::getUiText(void)
+AsciiString Script::getUiText()
 {
 	AsciiString uiText("*** IF ***\r\n");
 	OrCondition *pOr = m_condition;
@@ -1445,7 +1445,7 @@ OrCondition *Script::findPreviousOrCondition( OrCondition *curOr )
 //-------------------------------------------------------------------------------------------------
 // ******************************** class  OrCondition *********************************************
 //-------------------------------------------------------------------------------------------------
-OrCondition::~OrCondition(void)
+OrCondition::~OrCondition()
 {
 	deleteInstance(m_firstAnd);
 	m_firstAnd = nullptr;
@@ -1462,7 +1462,7 @@ OrCondition::~OrCondition(void)
 	}
 }
 
-OrCondition *OrCondition::duplicate(void) const
+OrCondition *OrCondition::duplicate() const
 {
 	OrCondition *pNew = newInstance(OrCondition);
 	if (m_firstAnd) {
@@ -1650,7 +1650,7 @@ void Condition::setConditionType(enum ConditionType type)
 	}
 }
 
-Condition *Condition::duplicate(void) const
+Condition *Condition::duplicate() const
 {
 	Condition *pNew = newInstance(Condition)(m_conditionType);
 	Int i;
@@ -1693,7 +1693,7 @@ Condition *Condition::duplicateAndQualify(const AsciiString& qualifier,
 	return pNew;
 }
 
-Condition::~Condition(void)
+Condition::~Condition()
 {
 	Int i;
 	for (i=0; i<m_numParms; i++) {
@@ -1720,7 +1720,7 @@ Int Condition::getUiStrings(AsciiString strings[MAX_PARMS])
 	return pTemplate->getUiStrings(strings);
 }
 
-AsciiString Condition::getUiText(void)
+AsciiString Condition::getUiText()
 {
 	AsciiString uiText;
 	AsciiString strings[MAX_PARMS];
@@ -2031,7 +2031,7 @@ void Parameter::qualify(const AsciiString& qualifier,
 	}
 }
 
-AsciiString Parameter::getUiText(void) const
+AsciiString Parameter::getUiText() const
 {
 	AsciiString uiText;
 	AsciiString uiString = m_string;
@@ -2494,7 +2494,7 @@ void ScriptAction::setActionType(enum ScriptActionType type)
 	}
 }
 
-ScriptAction *ScriptAction::duplicate(void) const
+ScriptAction *ScriptAction::duplicate() const
 {
 	ScriptAction *pNew = newInstance(ScriptAction)(m_actionType);
 	Int i;
@@ -2545,7 +2545,7 @@ ScriptAction *ScriptAction::duplicateAndQualify(const AsciiString& qualifier,
 	return pNew;
 }
 
-ScriptAction::~ScriptAction(void)
+ScriptAction::~ScriptAction()
 {
 	Int i;
 	for (i=0; i<m_numParms; i++) {
@@ -2572,7 +2572,7 @@ Int ScriptAction::getUiStrings(AsciiString strings[MAX_PARMS])
 	return pTemplate->getUiStrings(strings);
 }
 
-AsciiString ScriptAction::getUiText(void)
+AsciiString ScriptAction::getUiText()
 {
 	AsciiString uiText;
 	AsciiString strings[MAX_PARMS];
