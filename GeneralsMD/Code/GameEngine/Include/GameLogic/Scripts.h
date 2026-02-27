@@ -85,7 +85,7 @@ class DataChunkOutput;
 	#define MORE_COMPLEX_SKIRMISH_SCRIPTS
 #endif
 
-
+enum { AT_END = 0x00FFFFFF };
 // There is undoubtedly a more sophisticated way to do this, but for some reason my brain hurts.
 // The corresponding UnsignedInt values that we pass around are:
 // 1 means ground
@@ -113,14 +113,13 @@ protected:
 
 protected:
 	Script			*m_firstScript;
-	ScriptGroup* m_firstSubGroup;
 	AsciiString m_groupName;
 	Bool				m_isGroupActive;
 	Bool				m_isGroupSubroutine;
+	Int					m_parentIndex;
 	ScriptGroup	*m_nextGroup;
-	Int         m_groupId;
 	Bool				m_hasWarnings; ///< Runtime flag used by the editor only.
-
+	
 public:
 	ScriptGroup();
 	//~ScriptGroup();
@@ -136,7 +135,6 @@ public:
 	void setSubroutine(Bool subr) { m_isGroupSubroutine = subr;}
 	void setWarnings(Bool warnings) { m_hasWarnings = warnings;}
 	void setNextGroup(ScriptGroup *pGr) {m_nextGroup = pGr;}
-	void setFirstSubGroup(ScriptGroup* pGr) { m_firstSubGroup = pGr; }
 
 	AsciiString getName(void) const { return m_groupName;}
 	Bool isActive(void) const { return m_isGroupActive;}
@@ -144,18 +142,11 @@ public:
 	Bool hasWarnings(void) const { return m_hasWarnings;}
 	ScriptGroup *getNext(void) const {return m_nextGroup;};
 	Script *getScript(void) {return m_firstScript;};
-	const Script* getScript(void) const { return m_firstScript; };
-	ScriptGroup * getFirstSubGroup(void) const { return m_firstSubGroup; }
-	Int getGroupId(void) const { return m_groupId; }
+	Int getParentIndex(void) const {return m_parentIndex;};
+	void setParentIndex(Int idx) {m_parentIndex = idx;}
 
 	void addScript(Script *pScr, Int ndx);
 	void deleteScript(Script *pScr);
-
-	void addSubGroup(ScriptGroup* pGrp, Int ndx);
-	void deleteSubGroup(ScriptGroup * pGrp);
-
-	bool removeChildRecursive(ScriptGroup* pGrp);
-	ScriptGroup* findParentOfChild(ScriptGroup* pGrp);
 
 	static void WriteGroupDataChunk(DataChunkOutput &chunkWriter, ScriptGroup *pGroup);
 	static Bool ParseGroupDataChunk(DataChunkInput &file, DataChunkInfo *info, void *userData);
@@ -241,7 +232,7 @@ public:
 		CAMERA_MOD_SET_FINAL_PITCH,				///< Sets the final pitch for a camera movement
 		CAMERA_MOD_FREEZE_ANGLE,					///< Freeze camera angle during a camera movement.
 		CAMERA_MOD_SET_FINAL_SPEED_MULTIPLIER,///< Sets the final time multiplier for a camera movement.
-		CAMERA_MOD_SET_ROLLING_AVERAGE,		///< Sets the number of frames to average changes (angle, position) to smooth out a camera movement.
+		CAMERA_MOD_SET_ROLLING_AVERAGE,		///< Sets the number of frames to average changes (angle, positoin) to smooth out a camera movement.
 		CAMERA_MOD_FINAL_LOOK_TOWARD,			///< Sets the look toward point for the end of a camera movement.
 		CAMERA_MOD_LOOK_TOWARD,						///< Sets the look toward point during a camera movement.
 		TEAM_ATTACK_TEAM,									///< Tell team to attack other team
@@ -521,7 +512,7 @@ public:
 		COMMANDBAR_REMOVE_BUTTON_OBJECTTYPE,			///< Remove a button from a command bar for an objecttype
 		COMMANDBAR_ADD_BUTTON_OBJECTTYPE_SLOT,		///< Add a button to the command bar for an objecttype, in a specific slot
 		UNIT_SPAWN_NAMED_LOCATION_ORIENTATION,		///< Create a named unit at the specified location, altitude, and orientation
-		PLAYER_AFFECT_RECEIVING_EXPERIENCE,				///< Adjust whether or not a player is receiving experience for kills
+		PLAYER_AFFECT_RECEIVING_EXPERIENCE,				///< Adjust whether or not a player is receieving experience for kills
 		PLAYER_EXCLUDE_FROM_SCORE_SCREEN,					///< This player should be listed in the score screen.  Should only be used in campaign games.
 		TEAM_GUARD_SUPPLY_CENTER,									///< Have an ai team guard the nearest available supply center..
 		ENABLE_SCORING,														///< Turn on scoring of kills, units destroyed, etc.
@@ -736,9 +727,9 @@ public:
 	void setEasy(Bool easy) { m_easy = easy;}
 	void setNormal(Bool normal) { m_normal = normal;}
 	void setHard(Bool hard) { m_hard = hard;}
-	void setBrutal(Bool brutal) { m_brutal = brutal; }
-	void setAbsurd(Bool absurd) { m_absurd = absurd; }
-	void setInhumane(Bool inhumane) { m_inhumane = inhumane; }
+	void setBrutal(Bool brutal) { m_brutal = brutal;}
+	void setAbsurd(Bool absurd) { m_absurd = absurd;}
+	void setInhumane(Bool inhumane) { m_inhumane = inhumane;}
 	void setSubroutine(Bool subr) { m_isSubroutine = subr;}
 	void setNextScript(Script *pScr) {m_nextScript = pScr;}
 	void setOrCondition(OrCondition *pCond) {m_condition = pCond;}
@@ -767,9 +758,9 @@ public:
 	Bool isEasy(void) const { return m_easy;}
 	Bool isNormal(void) const { return m_normal;}
 	Bool isHard(void) const { return m_hard;}
-	Bool isBrutal(void) const { return m_brutal; }
-	Bool isAbsurd(void) const { return m_absurd; }
-	Bool isInhumane(void) const { return m_inhumane; }
+	Bool isBrutal(void) const { return m_brutal;}
+	Bool isAbsurd(void) const { return m_absurd;}
+	Bool isInhumane(void) const { return m_inhumane;}
 	Bool isSubroutine(void) const { return m_isSubroutine;}
 	Script *getNext(void) const {return m_nextScript;}
 	OrCondition *getOrCondition(void) const {return m_condition;}
@@ -950,7 +941,7 @@ extern const char* const TheObjectFlagsNames[];
 ConditionTemplates created in ScriptEngine::init.
 
 // SPECIAL NOTE ABOUT Skirmish Scripts: Please note that ALL Skirmish conditions should first pass a pSkirmishPlayerParm to
-// prevent the necessity of having to write additional scripts for other players / skirmish types later.
+// prevet the necessity of having to write additional scripts for other players / skirmish types later.
 */
 
 class Condition : public MemoryPoolObject  // This is the conditional class.
@@ -1237,8 +1228,6 @@ public:
 public:
 	ScriptGroup *getScriptGroup(void) {return m_firstGroup;};
 	Script *getScript(void) {return m_firstScript;};
-	const ScriptGroup* getScriptGroup(void) const { return m_firstGroup; };
-	const Script* getScript(void) const { return m_firstScript; };
 	void WriteScriptListDataChunk(DataChunkOutput &chunkWriter);
 	static Bool ParseScriptListDataChunk(DataChunkInput &file, DataChunkInfo *info, void *userData);
 
@@ -1256,9 +1245,6 @@ public:
 	static Bool ParseScriptsDataChunk(DataChunkInput &file, DataChunkInfo *info, void *userData);
 	/// Writes sides (including build list info.)
 	static void WriteScriptsDataChunk(DataChunkOutput &chunkWriter, ScriptList *scriptLists[], Int numLists);
-
-	bool removeGroupRecursive(ScriptGroup* pGrp);
-	ScriptGroup* findParentOfGroup(ScriptGroup* pGrp);
 
 	/// Returns array of script list pointers.  This can only be called once after scripts
 	/// are read, and the caller is responsible for deleting the scripts.

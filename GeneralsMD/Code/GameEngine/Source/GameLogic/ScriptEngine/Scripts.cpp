@@ -76,7 +76,7 @@ static ScriptGroup *s_mtGroup = nullptr;
 // These strings must be in the same order as they are in their definitions
 // (See SHELL_SCRIPT_HOOK_* )
 //
-const char *const TheShellHookNames[]=
+static const char *const TheShellHookNames[]=
 {
 	"ShellMainMenuCampaignPushed", //SHELL_SCRIPT_HOOK_MAIN_MENU_CAMPAIGN_SELECTED,
 	"ShellMainMenuCampaignHighlighted", //SHELL_SCRIPT_HOOK_MAIN_MENU_CAMPAIGN_HIGHLIGHTED,
@@ -134,17 +134,20 @@ const char *ShakeIntensities[] = { "Subtle", "Normal", "Strong", "Severe", "Cine
 enum { K_SCRIPT_LIST_DATA_VERSION_1 = 1,
 			K_SCRIPT_GROUP_DATA_VERSION_1 = 1,
 			K_SCRIPT_GROUP_DATA_VERSION_2 = 2,
+			K_SCRIPT_GROUP_DATA_VERSION_3 = 3,
 			K_SCRIPT_DATA_VERSION_1 = 1,
 			K_SCRIPT_DATA_VERSION_2 = 2,
+			K_SCRIPT_DATA_VERSION_3 = 3,
 			K_SCRIPT_OR_CONDITION_DATA_VERSION_1=1,
 			K_SCRIPT_ACTION_VERSION_1 = 1,
 			K_SCRIPT_ACTION_VERSION_2 = 2,
+			K_SCRIPT_ACTION_VERSION_3 = 3,
 			K_SCRIPT_CONDITION_VERSION_1 = 1,
 			K_SCRIPT_CONDITION_VERSION_2 = 2,
 			K_SCRIPT_CONDITION_VERSION_3 = 3,
 			K_SCRIPT_CONDITION_VERSION_4 = 4,
+			K_SCRIPT_CONDITION_VERSION_5 = 5,
 			K_SCRIPTS_DATA_VERSION_1,
-			K_SCRIPT_DATA_VERSION_3 = 3,
 			end_of_the_enumeration
 };
 
@@ -160,8 +163,6 @@ static Condition::ConditionType ParameterChangesVer2[] =
 	Condition::TEAM_EXITED_AREA_PARTIALLY,
 	(Condition::ConditionType) -1,
 };
-
-enum { AT_END = 0x00FFFFFF };
 
 //-------------------------------------------------------------------------------------------------
 // ******************************** class  ScriptList *********************************************
@@ -527,7 +528,7 @@ Bool ScriptList::ParseScriptsDataChunk(DataChunkInput &file, DataChunkInfo *info
 {
 	Int i;
 	file.registerParser( "ScriptList", info->label, ScriptList::ParseScriptListDataChunk );
-	DEBUG_ASSERTCRASH(s_numInReadList==0, ("Leftover scripts floating around."));
+	DEBUG_ASSERTCRASH(s_numInReadList==0, ("Leftover scripts floating arounf."));
 	for (i=0; i<s_numInReadList; i++) {
 		deleteInstance(s_readLists[i]);
 		s_readLists[i] = nullptr;
@@ -636,9 +637,8 @@ m_firstScript(nullptr),
 m_hasWarnings(false),
 m_isGroupActive(true),
 m_isGroupSubroutine(false),
-m_nextGroup(nullptr),
-m_firstSubGroup(nullptr),
-m_groupId(ScriptList::getNextID())
+m_parentIndex(-1),
+m_nextGroup(nullptr)
 {
 	m_groupName.format("Script Group %d", ScriptList::getNextID());
 }
@@ -653,39 +653,16 @@ ScriptGroup::~ScriptGroup(void)
 	deleteInstance(m_firstScript);
 	m_firstScript = nullptr;
 
-	//if (m_nextGroup) {
-	//	// Delete all the subsequent groups in our list.
-	//	ScriptGroup *cur = m_nextGroup;
-	//	ScriptGroup *next;
-	//	while (cur) {
-	//		next = cur->getNext();
-	//		cur->setNextGroup(nullptr); // prevents recursion.
-	//		deleteInstance(cur);
-	//		cur = next;
-	//	}
-	//}
-		if (m_nextGroup) {
-			ScriptGroup * cur = m_nextGroup;
-			ScriptGroup * next;
-			while (cur) {
-				next = cur->getNext();
-				cur->setNextGroup(nullptr);
-				deleteInstance(cur);
-				cur = next;
-			}
-	}
-  // delete child subgroups
-		if (m_firstSubGroup) {
-			ScriptGroup * cur = m_firstSubGroup;
-			ScriptGroup * next;
-			while (cur) {
-				next = cur->getFirstSubGroup();
-				cur->setFirstSubGroup(nullptr);
-				deleteInstance(cur);
-				cur = next;
-			}
-			m_firstSubGroup = nullptr;
+	if (m_nextGroup) {
+		ScriptGroup *cur = m_nextGroup;
+		ScriptGroup *next;
+		while (cur) {
+			next = cur->getNext();
+			cur->setNextGroup(nullptr);
+			deleteInstance(cur);
+			cur = next;
 		}
+	}
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -782,23 +759,8 @@ ScriptGroup *ScriptGroup::duplicate(void) const
 	pNew->m_groupName = this->m_groupName;
 	pNew->m_isGroupActive = this->m_isGroupActive;
 	pNew->m_isGroupSubroutine = this->m_isGroupSubroutine;
+	pNew->m_parentIndex = this->m_parentIndex;
 	pNew->m_nextGroup = nullptr;
-  // duplicate subgroups
-		if (this->m_firstSubGroup) {
-			ScriptGroup * srcSub = this->m_firstSubGroup;
-			ScriptGroup * dstSub = nullptr;
-			while (srcSub) {
-				ScriptGroup * tmp = srcSub->duplicate();
-				if (dstSub)
-					dstSub->setNextGroup(tmp);
-				else
-					pNew->m_firstSubGroup = tmp;
-				srcSub = srcSub->getNext();
-				dstSub = tmp;
-			}
-	}
-	// new copy gets new id :D
-		pNew->m_groupId = ScriptList::getNextID();
 
 	return pNew;
 }
@@ -834,176 +796,10 @@ ScriptGroup *ScriptGroup::duplicateAndQualify(const AsciiString& qualifier,
 	pNew->m_groupName.concat(qualifier);
 	pNew->m_isGroupActive = this->m_isGroupActive;
 	pNew->m_isGroupSubroutine = this->m_isGroupSubroutine;
+	pNew->m_parentIndex = this->m_parentIndex;
 	pNew->m_nextGroup = nullptr;
-  // duplicate subgroups
-		if (this->m_firstSubGroup) {
-		ScriptGroup * srcSub = this->m_firstSubGroup;
-		ScriptGroup * dstSub = nullptr;
-		while (srcSub) {
-			ScriptGroup * tmp = srcSub->duplicateAndQualify(qualifier, playerTemplateName, newPlayerName);
-			if (dstSub)
-				dstSub->setNextGroup(tmp);
-			else
-			 pNew->m_firstSubGroup = tmp;
-			srcSub = srcSub->getNext();
-			dstSub = tmp;
-		}
-	}
 
 	return pNew;
-}
-
-//add a subgroup to this groups list of child groups
-void ScriptGroup::addSubGroup(ScriptGroup* pGrp, Int ndx)
-{
-	ScriptGroup* pPrev = nullptr;
-	ScriptGroup* pCur = m_firstSubGroup;
-	DEBUG_ASSERTCRASH(pGrp->getNext() == nullptr, ("Adding already linked group."));
-
-	while (ndx && pCur) {
-		pPrev = pCur;
-		pCur = pCur->getNext();
-		ndx--;
-	}
-
-	if (pPrev) {
-		pGrp->setNextGroup(pPrev->getNext());
-		pPrev->setNextGroup(pGrp);
-	}
-	else {
-		pGrp->setNextGroup(m_firstSubGroup);
-		m_firstSubGroup = pGrp;
-	}
-}
-
-//delete a subgroup from this groups list of child groups
-void ScriptGroup::deleteSubGroup(ScriptGroup* pGrp)
-{
-	ScriptGroup* pPrev = nullptr;
-	ScriptGroup* pCur = m_firstSubGroup;
-
-	while (pCur != pGrp) {
-		pPrev = pCur;
-		pCur = pCur->getNext();
-	}
-
-	DEBUG_ASSERTCRASH(pCur, ("Couldn't find subgroup."));
-	if (pCur == nullptr) return;
-
-	if (pPrev) {
-		pPrev->setNextGroup(pCur->getNext());
-	}
-	else {
-		m_firstSubGroup = pCur->getNext();
-	}
-
-	pCur->setNextGroup(nullptr);
-	deleteInstance(pCur);
-}
-
-
-bool ScriptGroup::removeChildRecursive(ScriptGroup* pGrp)
-{
-	ScriptGroup* pPrev = nullptr;
-	ScriptGroup* pCur = m_firstSubGroup;
-
-	while (pCur)
-	{
-		if (pCur == pGrp)
-		{
-			if (pPrev)
-				pPrev->setNextGroup(pCur->getNext());
-			else
-				m_firstSubGroup = pCur->getNext();
-			pCur->setNextGroup(nullptr);
-			deleteInstance(pCur);
-			return true;
-		}
-		if (pCur->removeChildRecursive(pGrp))
-			return true;
-
-		pPrev = pCur;
-		pCur = pCur->getNext();
-	}
-	return false;
-}
-
-//returns immediate parent, nullptr if not found.
-ScriptGroup* ScriptGroup::findParentOfChild(ScriptGroup* pGrp)
-{
-	ScriptGroup* cur = m_firstSubGroup;
-	while (cur)
-	{
-		if (cur == pGrp)
-			return this;
-		ScriptGroup* found = cur->findParentOfChild(pGrp);
-		if (found)
-			return found;
-		cur = cur->getNext();
-	}
-	return nullptr;
-}
-
-//remove a group wherever it is in the list
-bool ScriptList::removeGroupRecursive(ScriptGroup* pGrp)
-{
-	if (!pGrp) return false;
-
-	if (m_firstGroup == pGrp)
-	{
-		m_firstGroup = pGrp->getNext();
-		pGrp->setNextGroup(nullptr);
-		deleteInstance(pGrp);
-		return true;
-	}
-
-	ScriptGroup* prev = nullptr;
-	ScriptGroup* cur = m_firstGroup;
-	while (cur)
-	{
-		if (cur == pGrp)
-		{
-			if (prev)
-				prev->setNextGroup(cur->getNext());
-			else
-				m_firstGroup = cur->getNext();
-			cur->setNextGroup(nullptr);
-			deleteInstance(cur);
-			return true;
-		}
-		prev = cur;
-		cur = cur->getNext();
-	}
-
-	for (ScriptGroup* g = m_firstGroup; g; g = g->getNext())
-	{
-		if (g->removeChildRecursive(pGrp))
-			return true;
-	}
-
-	return false;
-}
-
-//find and return immediate parent group if pGrp is nested
-ScriptGroup* ScriptList::findParentOfGroup(ScriptGroup* pGrp)
-{
-	if (!pGrp) return nullptr;
-
-	// if top-level head is the group -> no parent
-	if (m_firstGroup == pGrp)
-		return nullptr;
-
-	ScriptGroup* cur = m_firstGroup;
-	while (cur)
-	{
-		if (cur->getNext() == pGrp)
-			return cur;
-		ScriptGroup* found = cur->findParentOfChild(pGrp);
-		if (found)
-			return found;
-		cur = cur->getNext();
-	}
-	return nullptr;
 }
 
 /**
@@ -1064,15 +860,12 @@ void ScriptGroup::WriteGroupDataChunk(DataChunkOutput &chunkWriter, ScriptGroup 
 
 	/**********SCRIPT GROUP DATA ***********************/
 	while (pGroup) {
-		chunkWriter.openDataChunk("ScriptGroup", K_SCRIPT_GROUP_DATA_VERSION_2);
+		chunkWriter.openDataChunk("ScriptGroup", K_SCRIPT_GROUP_DATA_VERSION_3);
 			chunkWriter.writeAsciiString(pGroup->m_groupName);
 			chunkWriter.writeByte(pGroup->m_isGroupActive);
 			chunkWriter.writeByte(pGroup->m_isGroupSubroutine);
+			chunkWriter.writeInt(pGroup->m_parentIndex);
 			if (pGroup->m_firstScript) Script::WriteScriptDataChunk(chunkWriter, pGroup->m_firstScript);
-			// write nested subgroups (if any)
-			if (pGroup->m_firstSubGroup) {
-				ScriptGroup::WriteGroupDataChunk(chunkWriter, pGroup->m_firstSubGroup);
-			}
 		chunkWriter.closeDataChunk();
 		pGroup = pGroup->getNext();
 	}
@@ -1086,60 +879,28 @@ void ScriptGroup::WriteGroupDataChunk(DataChunkOutput &chunkWriter, ScriptGroup 
 *	Input: DataChunkInput
 *
 */
-Bool ScriptGroup::ParseGroupDataChunk(DataChunkInput& file, DataChunkInfo* info, void* userData)
+Bool ScriptGroup::ParseGroupDataChunk(DataChunkInput &file, DataChunkInfo *info, void *userData)
 {
-	ScriptGroup* pGroup = newInstance(ScriptGroup);
+    ScriptList *pList = (ScriptList *)userData;
+    ScriptGroup *pGroup = newInstance(ScriptGroup);
 
-	pGroup->m_groupName = file.readAsciiString();
-	pGroup->m_isGroupActive = file.readByte();
-	if (info->version >= K_SCRIPT_GROUP_DATA_VERSION_2) {
-		pGroup->m_isGroupSubroutine = file.readByte();
-	}
-
-	ScriptList* pList = nullptr;
-	ScriptGroup* pParent = nullptr;
-
-	if (userData) {
-		Snapshot* snap = reinterpret_cast<Snapshot*>(userData);
-		if (snap) {
-			pList = dynamic_cast<ScriptList*>(snap);
-			pParent = dynamic_cast<ScriptGroup*>(snap);
+		pGroup->m_groupName = file.readAsciiString();
+		pGroup->m_isGroupActive = file.readByte();
+		if (info->version >= K_SCRIPT_GROUP_DATA_VERSION_2) {
+			pGroup->m_isGroupSubroutine = file.readByte();
 		}
-	}
 
-	if (!pList && !pParent) {
-		if (file.m_currentObject)
+		if (info->version >= K_SCRIPT_GROUP_DATA_VERSION_3)
 		{
-			pParent = static_cast<ScriptGroup*>(file.m_currentObject);
-			if (!pParent)
-				pList = static_cast<ScriptList*>(file.m_currentObject);
-			if (pParent)
-				DEBUG_LOG(("ParseGroupDataChunk: using file.m_currentObject as ScriptGroup parent"));
-			else if (pList)
-				DEBUG_LOG(("ParseGroupDataChunk: using file.m_currentObject as ScriptList parent"));
+			pGroup->m_parentIndex = file.readInt();
 		}
-	}
-
-	// Attach to detected parent
-	if (pList) {
-		pList->addGroup(pGroup, AT_END);
-		DEBUG_LOG(("ParseGroupDataChunk: Added top-level group '%s' to ScriptList", pGroup->m_groupName.str()));
-	}
-	else if (pParent) {
-		pParent->addSubGroup(pGroup, AT_END);
-		DEBUG_LOG(("ParseGroupDataChunk: Added subgroup '%s' under parent '%s'", pGroup->m_groupName.str(), pParent->getName().str()));
-	}
-	else {
-		ScriptList* pList2 = static_cast<ScriptList*>(userData);
-		pList2->addGroup(pGroup, AT_END);
-		DEBUG_LOG(("ParseGroupDataChunk: Fallback - added group '%s' as top-level", pGroup->m_groupName.str()));
-	}
-
-	// Register parsers for nested scripts and nested groups under this group
-	file.registerParser("Script", info->label, Script::ParseScriptFromGroupDataChunk);
-	file.registerParser("ScriptGroup", info->label, ScriptGroup::ParseGroupDataChunk);
-
-	return file.parse(pGroup);
+		else
+		{
+			pGroup->m_parentIndex = -1;
+		}
+    pList->addGroup(pGroup, AT_END);
+    file.registerParser("Script", info->label, Script::ParseScriptFromGroupDataChunk);
+    return file.parse(pGroup);
 
 }
 
@@ -1535,9 +1296,7 @@ Script *Script::ParseScript(DataChunkInput &file, unsigned short version)
 	//-------------------------------------------------------------------------------------------------
 
 	pScript->m_isSubroutine = file.readByte();
-
 	pScript->m_delayEvaluationSeconds = file.readInt();
-
 	file.registerParser( "OrCondition", "Script", OrCondition::ParseOrConditionDataChunk );
 	file.registerParser( "ScriptAction",  "Script", ScriptAction::ParseActionDataChunk );
 	file.registerParser( "ScriptActionFalse",  "Script", ScriptAction::ParseActionFalseDataChunk );
@@ -1917,14 +1676,19 @@ void Condition::WriteConditionDataChunk(DataChunkOutput &chunkWriter, Condition	
 {
 	/**********Condition  DATA ***********************/
 	while (pCondition) {
-		chunkWriter.openDataChunk("Condition", K_SCRIPT_CONDITION_VERSION_4);
+		chunkWriter.openDataChunk("Condition", K_SCRIPT_CONDITION_VERSION_5);
 			chunkWriter.writeInt(pCondition->m_conditionType);
 			const ConditionTemplate* ct = TheScriptEngine->getConditionTemplate(pCondition->m_conditionType);
 			if (ct) {
-				chunkWriter.writeNameKey(ct->m_internalNameKey);
+				AsciiString name = TheNameKeyGenerator->keyToName(ct->m_internalNameKey);
+				std::string tmp = name.str();
+				for (size_t j = 0; j < tmp.size(); ++j) {
+					if (tmp[j] == '\\') tmp[j] = '/';
+				}
+				chunkWriter.writeAsciiString( AsciiString(tmp.c_str()) );
 			}	else {
 				DEBUG_CRASH(("Invalid condition."));
-				chunkWriter.writeNameKey(NAMEKEY("Bogus"));
+				chunkWriter.writeAsciiString(AsciiString("Bogus"));
 			}
 			chunkWriter.writeInt(pCondition->m_numParms);
 			Int i;
@@ -1948,14 +1712,101 @@ Bool Condition::ParseConditionDataChunk(DataChunkInput &file, DataChunkInfo *inf
 	OrCondition *pOr = (OrCondition *)userData;
 	pCondition->m_conditionType = (enum ConditionType)file.readInt();
 	const ConditionTemplate* ct = TheScriptEngine->getConditionTemplate(pCondition->m_conditionType);
-	if (info->version >= K_SCRIPT_CONDITION_VERSION_4) {
+
+	if (info->version >= K_SCRIPT_CONDITION_VERSION_5) {
+		AsciiString nameStr = file.readAsciiString();
+
+		std::string nameStd = nameStr.str();
+
+		auto normalize_slashes = [](std::string s) {
+			for (size_t j = 0; j < s.size(); ++j)
+				if (s[j] == '\\') s[j] = '/';
+			return s;
+		};
+
+		auto to_lower_std = [](const std::string &s) {
+			std::string out(s);
+			for (size_t j = 0; j < out.size(); ++j) out[j] = (char)tolower(out[j]);
+			return out;
+		};
+
+		auto ends_with_icase = [](const std::string &hay, const std::string &needle) {
+			if (needle.size() > hay.size()) return false;
+			size_t start = hay.size() - needle.size();
+			for (size_t k = 0; k < needle.size(); ++k) {
+				if (tolower(hay[start + k]) != tolower(needle[k])) return false;
+			}
+			return true;
+		};
+
+		std::string norm = normalize_slashes(nameStd);
+		NameKeyType key = TheNameKeyGenerator->nameToKey(AsciiString(norm.c_str()));
+
+		Bool match = false;
+		if (ct && ct->m_internalNameKey == key) {
+			match = TRUE;
+		}
+
+		if (!match) {
+			NameKeyType keyLower = TheNameKeyGenerator->nameToLowercaseKey(AsciiString(to_lower_std(norm).c_str()));
+			if (ct && ct->m_internalNameKey == keyLower) {
+				match = TRUE;
+				key = keyLower;
+			}
+		}
+
+		if (!match) {
+			std::string alt = norm;
+			for (size_t j = 0; j < alt.size(); ++j)
+				if (alt[j] == '/') alt[j] = '\\';
+			NameKeyType keyAlt = TheNameKeyGenerator->nameToKey(AsciiString(alt.c_str()));
+			if (ct && ct->m_internalNameKey == keyAlt) {
+				match = TRUE;
+				key = keyAlt;
+			}
+		}
+
+		if (!match) {
+			for (Int ii = 0; ii < Condition::NUM_ITEMS; ii++) {
+				const ConditionTemplate* cand = TheScriptEngine->getConditionTemplate(ii);
+				if (!cand) continue;
+				AsciiString candAs = TheNameKeyGenerator->keyToName(cand->m_internalNameKey);
+				std::string candStd = normalize_slashes(candAs.str());
+				if (ends_with_icase(candStd, norm) || ends_with_icase(candStd, nameStd)) {
+					match = true;
+					DEBUG_LOG(("Rematching script condition (suffix) %s -> %s", candAs.str(), nameStr.str()));
+					pCondition->m_conditionType = (enum ConditionType)ii;
+					key = cand->m_internalNameKey;
+					break;
+				}
+			}
+		}
+
+		if (!match) {
+			for (Int ii = 0; ii < Condition::NUM_ITEMS; ii++) {
+				ct = TheScriptEngine->getConditionTemplate(ii);
+				if (key == ct->m_internalNameKey) {
+					match = true;
+					DEBUG_LOG(("Rematching script condition %s", KEYNAME(key).str()));
+					pCondition->m_conditionType = (enum ConditionType)ii;
+					break;
+				}
+			}
+		}
+
+		if (!match) {
+			DEBUG_CRASH(("Invalid script condition.  Making it false. jba."));
+			pCondition->m_conditionType = CONDITION_FALSE;
+			pCondition->m_numParms = 0;
+		}
+	}
+	else if (info->version >= K_SCRIPT_CONDITION_VERSION_4) {
 		NameKeyType key = file.readNameKey();
 		Bool match = false;
 		if (ct && ct->m_internalNameKey == key) {
-			match = TRUE; // All good. jba. [3/20/2003]
+			match = TRUE;
 		}
 		if (!match) {
-			//  name and id don't match.  Find the name [3/20/2003]
 			Int i;
 			for (i=0; i<Condition::NUM_ITEMS; i++) {
 				ct = TheScriptEngine->getConditionTemplate(i);
@@ -1968,19 +1819,20 @@ Bool Condition::ParseConditionDataChunk(DataChunkInput &file, DataChunkInfo *inf
 			}
 		}
 		if (!match) {
-			// Invalid script [3/20/2003]
 			DEBUG_CRASH(("Invalid script condition.  Making it false. jba."));
 			pCondition->m_conditionType = CONDITION_FALSE;
 			pCondition->m_numParms = 0;
 		}
 	}
-	pCondition->m_numParms =file.readInt();
+
+	pCondition->m_numParms = file.readInt();
 	Int i;
 	for (i=0; i<pCondition->m_numParms; i++)
 	{
 		pCondition->m_parms[i] = Parameter::ReadParameter(file);
 	}
 
+	// Legacy healing
 	if (file.getChunkVersion() < K_SCRIPT_CONDITION_VERSION_2) {
 		for (int j = 0; ParameterChangesVer2[j] != -1; ++j) {
 			if (pCondition->m_conditionType == ParameterChangesVer2[j]) {
@@ -1989,7 +1841,6 @@ Bool Condition::ParseConditionDataChunk(DataChunkInput &file, DataChunkInfo *inf
 			}
 		}
 	}
-	// heal old files.
 	switch (pCondition->getConditionType())
 	{
 		case SKIRMISH_SPECIAL_POWER_READY:
@@ -2008,7 +1859,6 @@ Bool Condition::ParseConditionDataChunk(DataChunkInput &file, DataChunkInfo *inf
 	conT->m_firstMapUsed = TheGlobalData->m_mapName;
 #endif
 	if (ct->getNumParameters() != pCondition->getNumParameters()) {
-		// Invalid script [3/20/2003]
 		DEBUG_CRASH(("Invalid script condition.  Making it false. jba."));
 		pCondition->m_conditionType = ConditionType::CONDITION_FALSE;
 		pCondition->m_numParms = 0;
@@ -2098,17 +1948,6 @@ void Parameter::qualify(const AsciiString& qualifier,
 		case SCRIPT:
 		case COUNTER:
 		case FLAG:
-
-//-------------------------------------------------------------------------------------------------
-//---------------------------------- @CLP_AI SCRIPT ADDITIONS -------------------------------------
-//-------------------------------------------------------------------------------------------------
-
-		case KD_RATIO:
-
-//-------------------------------------------------------------------------------------------------
-//-------------------------------- @CLP_AI SCRIPT ADDITIONS END -----------------------------------
-//-------------------------------------------------------------------------------------------------
-
 		case SCRIPT_SUBROUTINE: m_string.concat(qualifier); break;
 		default: break;
 	}
@@ -2198,19 +2037,6 @@ AsciiString Parameter::getUiText(void) const
 		case COUNTER:
 			uiText.format("'%s'", uiString.str());
 			break;
-
-		//-------------------------------------------------------------------------------------------------
-		//---------------------------------- @CLP_AI SCRIPT ADDITIONS -------------------------------------
-		//-------------------------------------------------------------------------------------------------
-
-		case KD_RATIO:
-			uiText.format("'%s'", uiString.str());
-			break;
-
-		//-------------------------------------------------------------------------------------------------
-		//-------------------------------- @CLP_AI SCRIPT ADDITIONS END -----------------------------------
-		//-------------------------------------------------------------------------------------------------
-
 		case INT:
 			uiText.format(" %d ", m_int);
 			break;
@@ -2697,14 +2523,19 @@ void ScriptAction::WriteActionDataChunk(DataChunkOutput &chunkWriter, ScriptActi
 {
 	/**********ACTION  DATA ***********************/
 	while (pScriptAction) {
-		chunkWriter.openDataChunk("ScriptAction", K_SCRIPT_ACTION_VERSION_2);
+		chunkWriter.openDataChunk("ScriptAction", K_SCRIPT_ACTION_VERSION_3);
 			chunkWriter.writeInt(pScriptAction->m_actionType);
 			const ActionTemplate* at = TheScriptEngine->getActionTemplate(pScriptAction->m_actionType);
 			if (at) {
-				chunkWriter.writeNameKey(at->m_internalNameKey);
+				AsciiString name = TheNameKeyGenerator->keyToName(at->m_internalNameKey);
+				std::string tmp = name.str();
+				for (size_t j = 0; j < tmp.size(); ++j) {
+					if (tmp[j] == '\\') tmp[j] = '/';
+				}
+				chunkWriter.writeAsciiString( AsciiString(tmp.c_str()) );
 			}	else {
 				DEBUG_CRASH(("Invalid action."));
-				chunkWriter.writeNameKey(NAMEKEY("Bogus"));
+				chunkWriter.writeAsciiString(AsciiString("Bogus"));
 			}
 			chunkWriter.writeInt(pScriptAction->m_numParms);
 			Int i;
@@ -2725,21 +2556,108 @@ void ScriptAction::WriteActionDataChunk(DataChunkOutput &chunkWriter, ScriptActi
 */
 ScriptAction *ScriptAction::ParseAction(DataChunkInput &file, DataChunkInfo *info, void *userData)
 {
-	ScriptAction	*pScriptAction = newInstance(ScriptAction);
+	ScriptAction* pScriptAction = newInstance(ScriptAction);
 
 	pScriptAction->m_actionType = (enum ScriptActionType)file.readInt();
 
 	const ActionTemplate* at = TheScriptEngine->getActionTemplate(pScriptAction->m_actionType);
-	if (info->version >= K_SCRIPT_ACTION_VERSION_2) {
+
+	if (info->version >= K_SCRIPT_ACTION_VERSION_3) {
+		AsciiString nameStr = file.readAsciiString();
+
+		std::string nameStd = nameStr.str();
+
+		auto normalize_slashes_std = [](std::string s) {
+			for (size_t j = 0; j < s.size(); ++j)
+				if (s[j] == '\\') s[j] = '/';
+			return s;
+		};
+
+		auto to_lower_std = [](const std::string &s) {
+			std::string out(s);
+			for (size_t j = 0; j < out.size(); ++j) out[j] = (char)tolower(out[j]);
+			return out;
+		};
+
+		auto ends_with_icase = [](const std::string &hay, const std::string &needle) {
+			if (needle.size() > hay.size()) return false;
+			size_t start = hay.size() - needle.size();
+			for (size_t k = 0; k < needle.size(); ++k) {
+				if (tolower(hay[start + k]) != tolower(needle[k])) return false;
+			}
+			return true;
+		};
+
+		std::string norm = normalize_slashes_std(nameStd);
+		NameKeyType key = TheNameKeyGenerator->nameToKey(AsciiString(norm.c_str()));
+
+		Bool match = false;
+		if (at && at->m_internalNameKey == key) {
+			match = TRUE;
+		}
+
+		if (!match) {
+			NameKeyType keyLower = TheNameKeyGenerator->nameToLowercaseKey(AsciiString(to_lower_std(norm).c_str()));
+			if (at && at->m_internalNameKey == keyLower) {
+				match = TRUE;
+				key = keyLower;
+			}
+		}
+
+		if (!match) {
+			std::string alt = norm;
+			for (size_t j = 0; j < alt.size(); ++j)
+				if (alt[j] == '/') alt[j] = '\\';
+			NameKeyType keyAlt = TheNameKeyGenerator->nameToKey(AsciiString(alt.c_str()));
+			if (at && at->m_internalNameKey == keyAlt) {
+				match = TRUE;
+				key = keyAlt;
+			}
+		}
+
+		if (!match) {
+			for (Int ii = 0; ii < ScriptAction::NUM_ITEMS; ii++) {
+				const ActionTemplate* cand = TheScriptEngine->getActionTemplate(ii);
+				if (!cand) continue;
+				AsciiString candAs = TheNameKeyGenerator->keyToName(cand->m_internalNameKey);
+				std::string candStd = normalize_slashes_std(candAs.str());
+				if (ends_with_icase(candStd, norm) || ends_with_icase(candStd, nameStd)) {
+					match = true;
+					DEBUG_LOG(("Rematching script action (suffix) %s -> %s", candAs.str(), nameStr.str()));
+					pScriptAction->m_actionType = (enum ScriptActionType)ii;
+					key = cand->m_internalNameKey;
+					break;
+				}
+			}
+		}
+
+		if (!match) {
+			for (Int ii = 0; ii < ScriptAction::NUM_ITEMS; ii++) {
+				at = TheScriptEngine->getActionTemplate(ii);
+				if (key == at->m_internalNameKey) {
+					match = true;
+					DEBUG_LOG(("Rematching script action %s", KEYNAME(key).str()));
+					pScriptAction->m_actionType = (enum ScriptActionType)ii;
+					break;
+				}
+			}
+		}
+
+		if (!match) {
+			DEBUG_CRASH(("Invalid script action.  Making it noop. jba."));
+			pScriptAction->m_actionType = ScriptAction::NO_OP;
+			pScriptAction->m_numParms = 0;
+		}
+	}
+	else if (info->version >= K_SCRIPT_ACTION_VERSION_2) {
 		NameKeyType key = file.readNameKey();
 		Bool match = false;
 		if (at && at->m_internalNameKey == key) {
-			match = TRUE; // All good. jba. [3/20/2003]
+			match = TRUE;
 		}
 		if (!match) {
-			//  name and id don't match.  Find the name [3/20/2003]
 			Int i;
-			for (i=0; i<ScriptAction::NUM_ITEMS; i++) {
+			for (i = 0; i < ScriptAction::NUM_ITEMS; i++) {
 				at = TheScriptEngine->getActionTemplate(i);
 				if (key == at->m_internalNameKey) {
 					match = true;
@@ -2749,15 +2667,15 @@ ScriptAction *ScriptAction::ParseAction(DataChunkInput &file, DataChunkInfo *inf
 				}
 			}
 			if (!match) {
-				// Invalid script [3/20/2003]
 				DEBUG_CRASH(("Invalid script action.  Making it noop. jba."));
 				pScriptAction->m_actionType = ScriptAction::NO_OP;
 				pScriptAction->m_numParms = 0;
 			}
 		}
 	}
+
 #ifdef DEBUG_CRASHING
-	Script *pScript = (Script *)userData;
+	Script* pScript = (Script*)userData;
 	if (at && (at->getName().isEmpty() || (at->getName().compareNoCase("(placeholder)") == 0))) {
 		DEBUG_CRASH(("Invalid Script Action found in script '%s'", pScript->getName().str()));
 	}
@@ -2767,9 +2685,9 @@ ScriptAction *ScriptAction::ParseAction(DataChunkInput &file, DataChunkInfo *inf
 	at2->m_numTimesUsed++;
 	at2->m_firstMapUsed = TheGlobalData->m_mapName;
 #endif
-	pScriptAction->m_numParms =file.readInt();
+	pScriptAction->m_numParms = file.readInt();
 	Int i;
-	for (i=0; i<pScriptAction->m_numParms; i++)
+	for (i = 0; i < pScriptAction->m_numParms; i++)
 	{
 		pScriptAction->m_parms[i] = Parameter::ReadParameter(file);
 	}
@@ -2934,14 +2852,19 @@ void ScriptAction::WriteActionFalseDataChunk(DataChunkOutput &chunkWriter, Scrip
 {
 	/**********ACTION  DATA ***********************/
 	while (pScriptAction) {
-		chunkWriter.openDataChunk("ScriptActionFalse", K_SCRIPT_ACTION_VERSION_2);
+		chunkWriter.openDataChunk("ScriptActionFalse", K_SCRIPT_ACTION_VERSION_3);
 			chunkWriter.writeInt(pScriptAction->m_actionType);
 			const ActionTemplate* at = TheScriptEngine->getActionTemplate(pScriptAction->m_actionType);
 			if (at) {
-				chunkWriter.writeNameKey(at->m_internalNameKey);
+				AsciiString name = TheNameKeyGenerator->keyToName(at->m_internalNameKey);
+				std::string tmp = name.str();
+				for (size_t j = 0; j < tmp.size(); ++j) {
+					if (tmp[j] == '\\') tmp[j] = '/';
+				}
+				chunkWriter.writeAsciiString( AsciiString(tmp.c_str()) );
 			}	else {
 				DEBUG_CRASH(("Invalid action."));
-				chunkWriter.writeNameKey(NAMEKEY("Bogus"));
+				chunkWriter.writeAsciiString(AsciiString("Bogus"));
 			}
 			chunkWriter.writeInt(pScriptAction->m_numParms);
 			Int i;
