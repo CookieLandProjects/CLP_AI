@@ -45,8 +45,6 @@
 
 static const Int K_LOCAL_TEAMS_VERSION_1 = 1;
 
-enum { AT_END = 0x00FFFFFF };
-
 #define SCRIPT_DIALOG_SECTION "ScriptDialog"
 
 static const char* NEUTRAL_NAME_STR = "(neutral)";
@@ -88,7 +86,7 @@ static AsciiString formatScriptLabel(Script *pScr) {
 		fmt.concat("I]");
 	}
 	else {
-	fmt.concat("]");
+		fmt.concat("]");
 	}
 	fmt.concat(pScr->getName().str());
 	return fmt;
@@ -165,8 +163,15 @@ END_MESSAGE_MAP()
 ScriptDialog::ScriptDialog(CWnd* pParent /*=nullptr*/)
 	: CDialog(ScriptDialog::IDD, pParent)
 {
+	// Initialize explicitly to safe defaults
+	mTree = nullptr;
 	m_draggingTreeView = false;
 	m_autoUpdateWarnings = true;
+	m_firstReadObject = nullptr;
+	m_firstTrigger = nullptr;
+	m_waypointBase = 0;
+	m_maxWaypoint = 0;
+	// m_imageList default constructed (no handle)
 	//{{AFX_DATA_INIT(ScriptDialog)
 		// NOTE: the ClassWizard will add member initialization here
 	//}}AFX_DATA_INIT
@@ -174,8 +179,23 @@ ScriptDialog::ScriptDialog(CWnd* pParent /*=nullptr*/)
 
 ScriptDialog::~ScriptDialog()
 {
+	if (mTree) {
+		if (::IsWindow(mTree->m_hWnd)) {
+			mTree->SetImageList(nullptr, TVSIL_NORMAL);
+			mTree->SetImageList(nullptr, TVSIL_STATE);
+
+			mTree->DestroyWindow();
+		}
+		delete mTree;
+		mTree = nullptr;
+	}
+
+	if (m_imageList.GetSafeHandle() != nullptr) {
+		m_imageList.DeleteImageList();
+	}
+
 	EditParameter::setCurSidesList(nullptr);
-	m_staticThis=nullptr;
+	m_staticThis = nullptr;
 }
 
 
@@ -191,7 +211,6 @@ void ScriptDialog::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(ScriptDialog, CDialog)
 	//{{AFX_MSG_MAP(ScriptDialog)
 	ON_NOTIFY(TVN_SELCHANGED, IDC_SCRIPT_TREE, OnSelchangedScriptTree)
-	ON_NOTIFY(TVN_ITEMEXPANDING, IDC_SCRIPT_TREE, OnItemExpanding)
 	ON_BN_CLICKED(IDC_NEW_FOLDER, OnNewFolder)
 	ON_BN_CLICKED(IDC_NEW_SCRIPT, OnNewScript)
 	ON_BN_CLICKED(IDC_EDIT_SCRIPT, OnEditScript)
@@ -236,7 +255,7 @@ void ScriptDialog::OnSelchangedScriptTree(NMHDR* pNMHDR, LRESULT* pResult)
 	pWnd->EnableWindow(pScript!=nullptr || pGroup!=nullptr);
 
 	pWnd = GetDlgItem(IDC_COPY_SCRIPT);
-	pWnd->EnableWindow(pScript!=nullptr || pGroup!=nullptr);
+	pWnd->EnableWindow(pScript!=nullptr);
 
 	pWnd = GetDlgItem(IDC_DELETE);
 	pWnd->EnableWindow(m_curSelection.m_objType != ListType::PLAYER_TYPE);
@@ -256,189 +275,6 @@ void ScriptDialog::OnSelchangedScriptTree(NMHDR* pNMHDR, LRESULT* pResult)
 
 	*pResult = 0;
 }
-
-//recursive insertion of groups into the tree; stores groupId in the tree node param
-void ScriptDialog::addGroupRecursive(HTREEITEM hParent, Int playerIndex, ScriptGroup* pGroup)
-{
-	if (!pGroup) return;
-	CTreeCtrl* pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
-	TVINSERTSTRUCT ins;
-
-	for (ScriptGroup* cur = pGroup; cur; cur = cur->getNext())
-	{
-		if (cur->getName().isEmpty()) continue;
-		AsciiString fmt = formatScriptLabel(cur);
-
-		::memset(&ins, 0, sizeof(ins));
-		ListType lt;
-		lt.m_objType = ListType::GROUP_TYPE;
-		lt.m_playerIndex = playerIndex;
-		lt.m_groupIndex = cur->getGroupId();
-		ins.hParent = hParent;
-		ins.hInsertAfter = TVI_LAST;
-		ins.item.mask = TVIF_PARAM | TVIF_TEXT | TVIF_STATE;
-		ins.item.lParam = lt.ListToInt();
-		ins.item.pszText = (char*)fmt.str();
-		ins.item.cchTextMax = 0;
-		ins.item.state = INDEXTOSTATEIMAGEMASK(1);
-		if (cur->hasWarnings()) {
-			ins.item.state = INDEXTOSTATEIMAGEMASK(3);
-		}
-		ins.item.stateMask = TVIS_STATEIMAGEMASK;
-		HTREEITEM hItem = pTree->InsertItem(&ins);
-
-		//if this group has either scripts or subgroups, insert a single dummy child so the tree shows an expand arrow.
-		if (cur->getScript() || cur->getFirstSubGroup()) {
-			::memset(&ins, 0, sizeof(ins));
-			ListType ltDummy;
-			ltDummy.m_objType = ListType::BOGUS_TYPE;
-			ltDummy.m_playerIndex = playerIndex;
-			ins.hParent = hItem;
-			ins.hInsertAfter = TVI_LAST;
-			ins.item.mask = TVIF_PARAM | TVIF_TEXT;
-			ins.item.lParam = ltDummy.ListToInt();
-			ins.item.pszText = (char*)""; //empty placeholder
-			ins.item.cchTextMax = 0;
-			pTree->InsertItem(&ins);
-		}
-	}
-}
-
-//populate the real child items for a single group node (called on expand).
-void ScriptDialog::populateGroupTree(HTREEITEM hGroupItem, Int playerIndex, ScriptGroup* pGroup)
-{
-	if (!pGroup || !hGroupItem) return;
-	CTreeCtrl* pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
-	TVINSERTSTRUCT ins;
-
-	Script* pScr = pGroup->getScript();
-	if (pScr) {
-		Int scriptNdx = 0;
-		for (; pScr; scriptNdx++, pScr = pScr->getNext()) {
-			if (pScr->getName().isEmpty()) continue;
-			AsciiString fmt2 = formatScriptLabel(pScr);
-			::memset(&ins, 0, sizeof(ins));
-			ListType lt2;
-			lt2.m_objType = ListType::SCRIPT_IN_GROUP_TYPE;
-			lt2.m_playerIndex = playerIndex;
-			lt2.m_groupIndex = pGroup->getGroupId();
-			lt2.m_scriptIndex = scriptNdx;
-			ins.hParent = hGroupItem;
-			ins.hInsertAfter = TVI_LAST;
-			ins.item.mask = TVIF_PARAM | TVIF_TEXT | TVIF_STATE;
-			ins.item.state = INDEXTOSTATEIMAGEMASK(2);
-			if (pScr->hasWarnings()) {
-				ins.item.state = INDEXTOSTATEIMAGEMASK(4);
-			}
-			ins.item.stateMask = TVIS_STATEIMAGEMASK;
-			ins.item.lParam = lt2.ListToInt();
-			ins.item.pszText = (char*)fmt2.str();
-			ins.item.cchTextMax = 0;
-			pTree->InsertItem(&ins);
-		}
-	}
-
-	ScriptGroup* sub = pGroup->getFirstSubGroup();
-	for (ScriptGroup* cur = sub; cur; cur = cur->getNext()) {
-		if (cur->getName().isEmpty()) continue;
-		AsciiString fmt = formatScriptLabel(cur);
-		::memset(&ins, 0, sizeof(ins));
-		ListType lt;
-		lt.m_objType = ListType::GROUP_TYPE;
-		lt.m_playerIndex = playerIndex;
-		lt.m_groupIndex = cur->getGroupId();
-		ins.hParent = hGroupItem;
-		ins.hInsertAfter = TVI_LAST;
-		ins.item.mask = TVIF_PARAM | TVIF_TEXT | TVIF_STATE;
-		ins.item.lParam = lt.ListToInt();
-		ins.item.pszText = (char*)fmt.str();
-		ins.item.cchTextMax = 0;
-		ins.item.state = INDEXTOSTATEIMAGEMASK(1);
-		if (cur->hasWarnings()) {
-			ins.item.state = INDEXTOSTATEIMAGEMASK(3);
-		}
-		ins.item.stateMask = TVIS_STATEIMAGEMASK;
-		HTREEITEM hItem = pTree->InsertItem(&ins);
-
-		if (cur->getScript() || cur->getFirstSubGroup()) {
-			::memset(&ins, 0, sizeof(ins));
-			ListType ltDummy;
-			ltDummy.m_objType = ListType::BOGUS_TYPE;
-			ltDummy.m_playerIndex = playerIndex;
-			ins.hParent = hItem;
-			ins.hInsertAfter = TVI_LAST;
-			ins.item.mask = TVIF_PARAM | TVIF_TEXT;
-			ins.item.lParam = ltDummy.ListToInt();
-			ins.item.pszText = (char*)"";
-			ins.item.cchTextMax = 0;
-			pTree->InsertItem(&ins);
-		}
-	}
-}
-
-void ScriptDialog::OnItemExpanding(NMHDR* pNMHDR, LRESULT* pResult)
-{
-	NM_TREEVIEW* pNMTreeView = (NM_TREEVIEW*)pNMHDR;
-	CTreeCtrl* pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
-	HTREEITEM item = pNMTreeView->itemNew.hItem;
-
-	//only act on expanding (not collapsing)
-	if (pNMTreeView->action != TVE_EXPAND) {
-		*pResult = 0;
-		return;
-	}
-
-	if (!item) {
-		*pResult = 0;
-		return;
-	}
-
-	TVITEM tv;
-	::memset(&tv, 0, sizeof(tv));
-	tv.hItem = item;
-	tv.mask = TVIF_PARAM;
-	if (!pTree->GetItem(&tv)) {
-		*pResult = 0;
-		return;
-	}
-	ListType lt;
-	lt.IntToList(tv.lParam);
-	if (lt.m_objType != ListType::GROUP_TYPE) {
-		*pResult = 0;
-		return;
-	}
-
-	//check if first child is the dummy placeholder
-	HTREEITEM firstChild = pTree->GetChildItem(item);
-	if (!firstChild) {
-		*pResult = 0;
-		return;
-	}
-	::memset(&tv, 0, sizeof(tv));
-	tv.hItem = firstChild;
-	tv.mask = TVIF_PARAM;
-	pTree->GetItem(&tv);
-	ListType childLt;
-	childLt.IntToList(tv.lParam);
-
-	//if placeholder, remove it and populate real children
-	if (childLt.m_objType == ListType::BOGUS_TYPE) {
-		// delete placeholder child
-		pTree->DeleteItem(firstChild);
-
-		// find ScriptGroup in model by id and populate
-		ScriptList* pSL = m_sides.getSideInfo(lt.m_playerIndex)->getScriptList();
-		if (pSL) {
-			ScriptGroup* pGroup = findGroupById(pSL->getScriptGroup(), lt.m_groupIndex);
-			if (pGroup) {
-				populateGroupTree(item, lt.m_playerIndex, pGroup);
-			}
-		}
-	}
-
-	*pResult = 0;
-}
-
 
 /* The purpose of these two functions is to allow
 the inner class CSDTreeCtrl the ability to check
@@ -461,10 +297,15 @@ Script *ScriptDialog::getCurScript(void)
 			Script *pScr=nullptr;
 			if (m_curSelection.m_objType == ListType::SCRIPT_IN_PLAYER_TYPE) {
 				pScr = pSL->getScript();
-			}
-			else {
-				ScriptGroup *found = findGroupById(pSL->getScriptGroup(), m_curSelection.m_groupIndex);
-				if (found) pScr = found->getScript();
+			}	else {
+				Int groupNdx;
+				ScriptGroup *pGroup = pSL->getScriptGroup();
+				for (groupNdx = 0; pGroup; groupNdx++,pGroup=pGroup->getNext()) {
+					if (groupNdx == m_curSelection.m_groupIndex) {
+						pScr = pGroup->getScript();
+						break;
+					}
+				}
 			}
 			Int scriptNdx;
 			for (scriptNdx = 0; pScr; scriptNdx++,pScr=pScr->getNext()) {
@@ -476,34 +317,6 @@ Script *ScriptDialog::getCurScript(void)
 	}
 	return nullptr;
 }
-//Script *ScriptDialog::getCurScript(void)
-//{
-//	if (m_curSelection.m_objType == ListType::SCRIPT_IN_PLAYER_TYPE || m_curSelection.m_objType == ListType::SCRIPT_IN_GROUP_TYPE) {
-//		ScriptList *pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-//		if (pSL) {
-//			Script *pScr=nullptr;
-//			if (m_curSelection.m_objType == ListType::SCRIPT_IN_PLAYER_TYPE) {
-//				pScr = pSL->getScript();
-//			}	else {
-//				Int groupNdx;
-//				ScriptGroup *pGroup = pSL->getScriptGroup();
-//				for (groupNdx = 0; pGroup; groupNdx++,pGroup=pGroup->getNext()) {
-//					if (groupNdx == m_curSelection.m_groupIndex) {
-//						pScr = pGroup->getScript();
-//						break;
-//					}
-//				}
-//			}
-//			Int scriptNdx;
-//			for (scriptNdx = 0; pScr; scriptNdx++,pScr=pScr->getNext()) {
-//				if (scriptNdx == m_curSelection.m_scriptIndex) {
-//					return pScr;
-//				}
-//			}
-//		}
-//	}
-//	return nullptr;
-//}
 
 ScriptGroup *ScriptDialog::getCurGroup(void)
 {
@@ -515,42 +328,12 @@ ScriptGroup *ScriptDialog::getCurGroup(void)
 		return nullptr;
 	}
 	if (pSL) {
-		ScriptGroup *found = findGroupById(pSL->getScriptGroup(), m_curSelection.m_groupIndex);
-		if (found) return found;
-	}
-	return nullptr;
-}
-//ScriptGroup *ScriptDialog::getCurGroup(void)
-//{
-//	ScriptList *pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-//	if (m_curSelection.m_objType == ListType::PLAYER_TYPE) {
-//		return nullptr;
-//	}
-//	if (m_curSelection.m_objType == ListType::SCRIPT_IN_PLAYER_TYPE) {
-//		return nullptr;
-//	}
-//	if (pSL) {
-//		Int groupNdx;
-//		ScriptGroup *pGroup = pSL->getScriptGroup();
-//		for (groupNdx = 0; pGroup; groupNdx++,pGroup=pGroup->getNext()) {
-//			if (groupNdx == m_curSelection.m_groupIndex) {
-//				return pGroup;
-//			}
-//		}
-//	}
-//	return nullptr;
-//}
-
-ScriptGroup* ScriptDialog::findGroupById(ScriptGroup* root, Int groupId)
-{
-	if (!root) return nullptr;
-	for (ScriptGroup* cur = root; cur; cur = cur->getNext())
-	{
-		if (cur->getGroupId() == groupId) return cur;
-		if (cur->getFirstSubGroup())
-		{
-			ScriptGroup* found = findGroupById(cur->getFirstSubGroup(), groupId);
-			if (found) return found;
+		Int groupNdx;
+		ScriptGroup *pGroup = pSL->getScriptGroup();
+		for (groupNdx = 0; pGroup; groupNdx++,pGroup=pGroup->getNext()) {
+			if (groupNdx == m_curSelection.m_groupIndex) {
+				return pGroup;
+			}
 		}
 	}
 	return nullptr;
@@ -758,31 +541,46 @@ BOOL ScriptDialog::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 
-	m_autoUpdateWarnings=::AfxGetApp()->GetProfileInt(SCRIPT_DIALOG_SECTION, "AutoVerifyScripts", 1);
+	m_autoUpdateWarnings = ::AfxGetApp()->GetProfileInt(SCRIPT_DIALOG_SECTION, "AutoVerifyScripts", 1);
 
 	CButton *pButton = (CButton*)GetDlgItem(IDC_AUTO_VERIFY);
-	pButton->SetCheck(m_autoUpdateWarnings ? 1:0);
+	if (pButton) pButton->SetCheck(m_autoUpdateWarnings ? 1 : 0);
 
-	//if user wants to check warnings manually, enable the verify button
+
 	CWnd *pWnd = GetDlgItem(IDC_VERIFY);
-	pWnd->EnableWindow(!m_autoUpdateWarnings);
+	if (pWnd) pWnd->EnableWindow(!m_autoUpdateWarnings);
 
 	m_staticThis = this;
+
+
 	CTreeCtrl *pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
+	if (!pTree) {
+		DEBUG_LOG(("ScriptDialog::OnInitDialog - IDC_SCRIPT_TREE not found"));
+		return FALSE;
+	}
 
-	// replace current Tree Dialog with CSDTreeCtrl
+	if (mTree == nullptr) {
+		CRect rect;
+		pTree->GetWindowRect(&rect);
+		ScreenToClient(&rect);
 
-	CRect rect;
-	mTree = new CSDTreeCtrl;
-	pTree->GetWindowRect(&rect);
-	ScreenToClient(&rect);
-
-	DWORD style = pTree->GetStyle();
-	mTree->Create(style, rect, this, IDC_SCRIPT_TREE);
-	pTree->DestroyWindow();
+		DWORD style = pTree->GetStyle();
+		mTree = new CSDTreeCtrl;
+		if (!mTree->Create(style, rect, this, IDC_SCRIPT_TREE)) {
+			delete mTree;
+			mTree = nullptr;
+			DEBUG_LOG(("ScriptDialog::OnInitDialog - failed to create CSDTreeCtrl"));
+			return FALSE;
+		}
+		
+		pTree->DestroyWindow();
+	}
 
 	pTree = (CTreeCtrl*) GetDlgItem(IDC_SCRIPT_TREE);
-	// pTree should == mTree now.
+	if (!pTree) {
+		DEBUG_LOG(("ScriptDialog::OnInitDialog - GetDlgItem after replacement returned null"));
+		return FALSE;
+	}
 
 	Bool didSelect = false;
 	ScriptList::updateDefaults();
@@ -790,27 +588,31 @@ BOOL ScriptDialog::OnInitDialog()
 	EditParameter::setCurSidesList(&m_sides);
 	Int i;
 	updateWarnings(true);
-	if (pTree) {
+
+	// Create image list only if not already created; attach to the tree.
+	if (m_imageList.GetSafeHandle() == nullptr) {
 		m_imageList.Create(IDB_FOLDERSCRIPT, 16, 2, ILC_COLOR4);
-		pTree->SetImageList(&m_imageList, TVSIL_STATE);
-		for (i=0; i<m_sides.getNumSides(); i++) {
-			HTREEITEM hItem = addPlayer(i);
-			if (!didSelect && hItem != nullptr) {
-				pTree->SelectItem(hItem);
-				didSelect = true;
-			}
-		}
-		pTree->SetFocus();
 	}
+	// Attach state image list (detach previous implicitly by passing pointer to tree)
+	pTree->SetImageList(&m_imageList, TVSIL_STATE);
+
+	for (i = 0; i < m_sides.getNumSides(); i++) {
+		HTREEITEM hItem = addPlayer(i);
+		if (!didSelect && hItem != nullptr) {
+			pTree->SelectItem(hItem);
+			didSelect = true;
+		}
+	}
+	pTree->SetFocus();
 
 	CRect top;
 	GetWindowRect(&top);
 	top.top = ::AfxGetApp()->GetProfileInt(SCRIPT_DIALOG_SECTION, "Top", top.top);
-	top.left =::AfxGetApp()->GetProfileInt(SCRIPT_DIALOG_SECTION, "Left", top.left);
-	SetWindowPos(nullptr, top.left, top.top, 0, 0, SWP_NOZORDER|SWP_NOSIZE);
+	top.left = ::AfxGetApp()->GetProfileInt(SCRIPT_DIALOG_SECTION, "Left", top.left);
+	SetWindowPos(nullptr, top.left, top.top, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 
-	return FALSE;  // return TRUE unless you set the focus to a control
-	              // EXCEPTION: OCX Property Pages should return FALSE
+	// Return FALSE per existing behaviour (OCX pages exception already noted in file)
+	return FALSE;
 }
 
 HTREEITEM ScriptDialog::addPlayer(Int playerIndx)
@@ -938,142 +740,191 @@ void ScriptDialog::addScriptList(HTREEITEM hPlayer, Int playerIndex, ScriptList 
 {
 	CTreeCtrl *pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
 	TVINSERTSTRUCT ins;
-	Bool warnings = false;
-	ScriptGroup *pGroup = pSL->getScriptGroup();
-	addGroupRecursive(hPlayer, playerIndex, pGroup);
+
+	std::vector<ScriptGroup*> groups;
+	for (ScriptGroup *g = pSL->getScriptGroup(); g; g = g->getNext())
+		groups.push_back(g);
+
+	std::vector<HTREEITEM> groupItems(groups.size(), nullptr);
+
+	// First, create all top-level groups (parentIndex == -1)
+	for (size_t gi = 0; gi < groups.size(); ++gi)
+	{
+		if (groups[gi]->getParentIndex() == -1)
+		{
+			ScriptGroup *g = groups[gi];
+			if (g->getName().isEmpty())
+				continue;
+
+			AsciiString fmt = formatScriptLabel(g);
+			::memset(&ins, 0, sizeof(ins));
+
+			ListType lt;
+			lt.m_objType = ListType::GROUP_TYPE;
+			lt.m_playerIndex = (unsigned char)playerIndex;
+			lt.m_groupIndex = (unsigned short)gi;
+
+			ins.hParent = hPlayer;
+			ins.hInsertAfter = TVI_LAST;
+			ins.item.mask = TVIF_PARAM | TVIF_TEXT | TVIF_STATE;
+			ins.item.state = g->hasWarnings() ? INDEXTOSTATEIMAGEMASK(3) : INDEXTOSTATEIMAGEMASK(1);
+			ins.item.stateMask = TVIS_STATEIMAGEMASK;
+			ins.item.lParam = lt.ListToInt();
+			ins.item.pszText = (char*)fmt.str();
+			ins.item.cchTextMax = 0;
+
+			groupItems[gi] = pTree->InsertItem(&ins);
+		}
+	}
+
+	size_t remaining = groups.size();
+	for (size_t gi = 0; gi < groups.size(); ++gi)
+		if (groupItems[gi])
+			remaining--;
+
+	bool progress = true;
+	while (remaining > 0 && progress)
+	{
+		progress = false;
+
+		for (size_t gi = 0; gi < groups.size(); ++gi)
+		{
+			if (groupItems[gi])
+				continue;
+
+			int parentIdx = groups[gi]->getParentIndex();
+
+			if (parentIdx < 0 || parentIdx >= (Int)groups.size())
+				continue;
+
+			if (groupItems[parentIdx] == nullptr)
+				continue;
+
+			ScriptGroup *g = groups[gi];
+			if (g->getName().isEmpty())
+			{
+				remaining--;
+				continue;
+			}
+
+			AsciiString fmt = formatScriptLabel(g);
+			::memset(&ins, 0, sizeof(ins));
+
+			ListType lt;
+			lt.m_objType = ListType::GROUP_TYPE;
+			lt.m_playerIndex = (unsigned char)playerIndex;
+			lt.m_groupIndex = (unsigned short)gi;
+
+			ins.hParent = groupItems[parentIdx];
+			ins.hInsertAfter = TVI_LAST;
+			ins.item.mask = TVIF_PARAM | TVIF_TEXT | TVIF_STATE;
+			ins.item.state = g->hasWarnings() ? INDEXTOSTATEIMAGEMASK(3) : INDEXTOSTATEIMAGEMASK(1);
+			ins.item.stateMask = TVIS_STATEIMAGEMASK;
+			ins.item.lParam = lt.ListToInt();
+			ins.item.pszText = (char*)fmt.str();
+			ins.item.cchTextMax = 0;
+
+			groupItems[gi] = pTree->InsertItem(&ins);
+			progress = true;
+			remaining--;
+		}
+	}
+
+	for (size_t gi = 0; gi < groups.size(); ++gi)
+	{
+		if (groupItems[gi])
+			continue;
+
+		ScriptGroup *g = groups[gi];
+		if (g->getName().isEmpty())
+			continue;
+
+		AsciiString fmt = formatScriptLabel(g);
+		::memset(&ins, 0, sizeof(ins));
+
+		ListType lt;
+		lt.m_objType = ListType::GROUP_TYPE;
+		lt.m_playerIndex = (unsigned char)playerIndex;
+		lt.m_groupIndex = (unsigned short)gi;
+
+		ins.hParent = hPlayer;
+		ins.hInsertAfter = TVI_LAST;
+		ins.item.mask = TVIF_PARAM | TVIF_TEXT | TVIF_STATE;
+		ins.item.state = g->hasWarnings() ? INDEXTOSTATEIMAGEMASK(3) : INDEXTOSTATEIMAGEMASK(1);
+		ins.item.stateMask = TVIS_STATEIMAGEMASK;
+		ins.item.lParam = lt.ListToInt();
+		ins.item.pszText = (char*)fmt.str();
+		ins.item.cchTextMax = 0;
+
+		groupItems[gi] = pTree->InsertItem(&ins);
+	}
+
 	Script *pScr = pSL->getScript();
-	if (pScr) {
-		Int scriptNdx;
-		for (scriptNdx = 0; pScr; scriptNdx++,pScr=pScr->getNext()) {
-			AsciiString fmt;
+	if (pScr)
+	{
+		for (Int scriptNdx = 0; pScr; ++scriptNdx, pScr = pScr->getNext())
+		{
 			if (pScr->getName().isEmpty())
 				continue;
-			fmt = formatScriptLabel(pScr);
+
+			AsciiString fmt = formatScriptLabel(pScr);
 			::memset(&ins, 0, sizeof(ins));
+
 			ListType lt;
-			lt.m_objType=ListType::SCRIPT_IN_PLAYER_TYPE;
+			lt.m_objType = ListType::SCRIPT_IN_PLAYER_TYPE;
 			lt.m_playerIndex = playerIndex;
 			lt.m_groupIndex = 0;
 			lt.m_scriptIndex = scriptNdx;
+
 			ins.hParent = hPlayer;
 			ins.hInsertAfter = TVI_LAST;
-			ins.item.mask = TVIF_PARAM|TVIF_TEXT|TVIF_STATE;
-			ins.item.state = INDEXTOSTATEIMAGEMASK(2);
-			if (pScr->hasWarnings()) {
-				ins.item.state = INDEXTOSTATEIMAGEMASK(4);
-				warnings = true;
-			}
-			ins.item.stateMask = TVIS_STATEIMAGEMASK ;
+			ins.item.mask = TVIF_PARAM | TVIF_TEXT | TVIF_STATE;
+			ins.item.state = pScr->hasWarnings() ? INDEXTOSTATEIMAGEMASK(4) : INDEXTOSTATEIMAGEMASK(2);
+			ins.item.stateMask = TVIS_STATEIMAGEMASK;
 			ins.item.lParam = lt.ListToInt();
-			ins.item.pszText = (char *)fmt.str();
+			ins.item.pszText = (char*)fmt.str();
 			ins.item.cchTextMax = 0;
-			/*HTREEITEM hItem =*/ pTree->InsertItem(&ins);
+
+			pTree->InsertItem(&ins);
 		}
 	}
-	if (warnings) {
-		pTree->SetItemState(hPlayer, INDEXTOSTATEIMAGEMASK(3), TVIS_STATEIMAGEMASK);
-	} else {
-		pTree->SetItemState(hPlayer, INDEXTOSTATEIMAGEMASK(1), TVIS_STATEIMAGEMASK);
+
+	// :D
+	for (size_t gi = 0; gi < groups.size(); ++gi)
+	{
+		Script *pg = groups[gi]->getScript();
+		if (!pg)
+			continue;
+
+		HTREEITEM parent = groupItems[gi] ? groupItems[gi] : hPlayer;
+
+		for (Int scriptNdx = 0; pg; ++scriptNdx, pg = pg->getNext())
+		{
+			if (pg->getName().isEmpty())
+				continue;
+
+			AsciiString fmt = formatScriptLabel(pg);
+			::memset(&ins, 0, sizeof(ins));
+
+			ListType lt;
+			lt.m_objType = ListType::SCRIPT_IN_GROUP_TYPE;
+			lt.m_playerIndex = playerIndex;
+			lt.m_groupIndex = (unsigned short)gi;
+			lt.m_scriptIndex = scriptNdx;
+
+			ins.hParent = parent;
+			ins.hInsertAfter = TVI_LAST;
+			ins.item.mask = TVIF_PARAM | TVIF_TEXT | TVIF_STATE;
+			ins.item.state = pg->hasWarnings() ? INDEXTOSTATEIMAGEMASK(4) : INDEXTOSTATEIMAGEMASK(2);
+			ins.item.stateMask = TVIS_STATEIMAGEMASK;
+			ins.item.lParam = lt.ListToInt();
+			ins.item.pszText = (char*)fmt.str();
+			ins.item.cchTextMax = 0;
+
+			pTree->InsertItem(&ins);
+		}
 	}
 }
-
-//void ScriptDialog::addScriptList(HTREEITEM hPlayer, Int playerIndex, ScriptList *pSL)
-//{
-//	CTreeCtrl *pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
-//	TVINSERTSTRUCT ins;
-//	Int groupNdx;
-//	ScriptGroup *pGroup = pSL->getScriptGroup();
-//	Bool warnings = false;
-//	for (groupNdx = 0; pGroup; groupNdx++,pGroup=pGroup->getNext()) {
-//		AsciiString fmt;
-//		if (pGroup->getName().isEmpty())
-//			continue;
-//		else
-//			fmt = formatScriptLabel(pGroup);
-//		::memset(&ins, 0, sizeof(ins));
-//		ListType lt;
-//		lt.m_objType=ListType::GROUP_TYPE;
-//		lt.m_playerIndex = playerIndex;
-//		lt.m_groupIndex = groupNdx;
-//		ins.hParent = hPlayer;
-//		ins.hInsertAfter = TVI_LAST;
-//		ins.item.mask = TVIF_PARAM|TVIF_TEXT|TVIF_STATE;
-//		ins.item.lParam = lt.ListToInt();
-//		ins.item.pszText = (char *)fmt.str();
-//		ins.item.cchTextMax = 0;
-//		ins.item.state = INDEXTOSTATEIMAGEMASK(1);
-//		if (pGroup->hasWarnings()) {
-//			ins.item.state = INDEXTOSTATEIMAGEMASK(3);
-//			warnings = true;
-//		}
-//		ins.item.stateMask = TVIS_STATEIMAGEMASK ;
-//		HTREEITEM hItem = pTree->InsertItem(&ins);
-//		Script *pScr = pGroup->getScript();
-//		if (pScr) {
-//			Int scriptNdx;
-//			for (scriptNdx = 0; pScr; scriptNdx++,pScr=pScr->getNext()) {
-//				AsciiString fmt;
-//				if (pScr->getName().isEmpty())
-//					continue;
-//				fmt = formatScriptLabel(pScr);
-//				::memset(&ins, 0, sizeof(ins));
-//				ListType lt;
-//				lt.m_objType=ListType::SCRIPT_IN_GROUP_TYPE;
-//				lt.m_playerIndex = playerIndex;
-//				lt.m_groupIndex = groupNdx;
-//				lt.m_scriptIndex = scriptNdx;
-//				ins.hParent = hItem;
-//				ins.hInsertAfter = TVI_LAST;
-//				ins.item.mask = TVIF_PARAM|TVIF_TEXT|TVIF_STATE;
-//				ins.item.state = INDEXTOSTATEIMAGEMASK(2);
-//				if (pScr->hasWarnings()) {
-//					ins.item.state = INDEXTOSTATEIMAGEMASK(4);
-//					warnings = true;
-//				}
-//				ins.item.stateMask = TVIS_STATEIMAGEMASK ;
-//				ins.item.lParam = lt.ListToInt();
-//				ins.item.pszText = (char *)fmt.str();
-//				ins.item.cchTextMax = 0;
-//				/*HTREEITEM hItem =*/ pTree->InsertItem(&ins);
-//			}
-//		}
-//	}
-//	Script *pScr = pSL->getScript();
-//	if (pScr) {
-//		Int scriptNdx;
-//		for (scriptNdx = 0; pScr; scriptNdx++,pScr=pScr->getNext()) {
-//			AsciiString fmt;
-//			if (pScr->getName().isEmpty())
-//				continue;
-//			fmt = formatScriptLabel(pScr);
-//			::memset(&ins, 0, sizeof(ins));
-//			ListType lt;
-//			lt.m_objType=ListType::SCRIPT_IN_PLAYER_TYPE;
-//			lt.m_playerIndex = playerIndex;
-//			lt.m_groupIndex = 0;
-//			lt.m_scriptIndex = scriptNdx;
-//			ins.hParent = hPlayer;
-//			ins.hInsertAfter = TVI_LAST;
-//			ins.item.mask = TVIF_PARAM|TVIF_TEXT|TVIF_STATE;
-//			ins.item.state = INDEXTOSTATEIMAGEMASK(2);
-//			if (pScr->hasWarnings()) {
-//				ins.item.state = INDEXTOSTATEIMAGEMASK(4);
-//				warnings = true;
-//			}
-//			ins.item.stateMask = TVIS_STATEIMAGEMASK ;
-//			ins.item.lParam = lt.ListToInt();
-//			ins.item.pszText = (char *)fmt.str();
-//			ins.item.cchTextMax = 0;
-//			/*HTREEITEM hItem =*/ pTree->InsertItem(&ins);
-//		}
-//	}
-//	if (warnings) {
-//		pTree->SetItemState(hPlayer, INDEXTOSTATEIMAGEMASK(3), TVIS_STATEIMAGEMASK);
-//	} else {
-//		pTree->SetItemState(hPlayer, INDEXTOSTATEIMAGEMASK(1), TVIS_STATEIMAGEMASK);
-//	}
-//}
-
 void ScriptDialog::reloadPlayer(Int playerIndex, ScriptList *pSL)
 {
 //	Dict *d = m_sides.getSideInfo(playerIndex)->getDict();
@@ -1122,270 +973,107 @@ void ScriptDialog::updateSelection(ListType sel)
 	}
 }
 
-HTREEITEM ScriptDialog::findItem(ListType sel, Bool failSafe)
+HTREEITEM ScriptDialog::findItemRecursive(HTREEITEM parent, const ListType& sel)
 {
-	CTreeCtrl *pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
-	HTREEITEM player = pTree->GetChildItem(TVI_ROOT);
-	TVITEM item;
-	while (player != nullptr) {
-		::memset(&item, 0, sizeof(item));
-		item.mask = TVIF_HANDLE|TVIF_PARAM;
-		item.hItem = player;
+	CTreeCtrl* pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
+
+	HTREEITEM child = pTree->GetChildItem(parent);
+
+	while (child)
+	{
+		TVITEM item;
+		memset(&item, 0, sizeof(item));
+		item.mask = TVIF_PARAM;
+		item.hItem = child;
 		pTree->GetItem(&item);
-		ListType lt;
-		lt.IntToList(item.lParam);
-		if (lt.m_playerIndex==sel.m_playerIndex) {
-			break;
-		}
-		player = pTree->GetNextSiblingItem(player);
-	}
-	DEBUG_ASSERTCRASH(player, ("Couldn't find player."));
-	if (!player) return nullptr;
-	if (sel.m_objType == ListType::PLAYER_TYPE) {
-		return player;
-	}
 
-	if (sel.m_objType == ListType::SCRIPT_IN_PLAYER_TYPE) {
-		for (HTREEITEM child = pTree->GetChildItem(player); child != nullptr; child = pTree->GetNextSiblingItem(child)) {
-			::memset(&item, 0, sizeof(item));
-			item.mask = TVIF_HANDLE | TVIF_PARAM;
-			item.hItem = child;
-			pTree->GetItem(&item);
-			ListType lt;
-			lt.IntToList(item.lParam);
-			if (lt.m_objType == ListType::GROUP_TYPE) continue;
-			DEBUG_ASSERTCRASH(lt.m_objType == ListType::SCRIPT_IN_PLAYER_TYPE, ("Not script"));
-			if (lt.m_scriptIndex == sel.m_scriptIndex) {
-				return child;
-			}
-		}
-		if (!failSafe) DEBUG_CRASH(("Couldn't find script."));
-		return nullptr;
-	}
-
-	HTREEITEM start = pTree->GetChildItem(player);
-	if (!start) {
-		if (!failSafe) DEBUG_CRASH(("Couldn't find group."));
-		return nullptr;
-	}
-
-	std::vector<HTREEITEM> stack;
-	stack.push_back(start);
-
-	HTREEITEM groupItem = nullptr;
-	while (!stack.empty()) {
-		HTREEITEM node = stack.back();
-		stack.pop_back();
-
-		::memset(&item, 0, sizeof(item));
-		item.mask = TVIF_HANDLE | TVIF_PARAM;
-		item.hItem = node;
-		pTree->GetItem(&item);
 		ListType lt;
 		lt.IntToList(item.lParam);
 
-		if (lt.m_objType == ListType::GROUP_TYPE && lt.m_groupIndex == sel.m_groupIndex) {
-			groupItem = node;
-			break;
+		if (lt.m_objType == sel.m_objType &&
+			lt.m_playerIndex == sel.m_playerIndex &&
+			lt.m_groupIndex == sel.m_groupIndex &&
+			lt.m_scriptIndex == sel.m_scriptIndex)
+		{
+			return child;
 		}
 
-		HTREEITEM sib = pTree->GetNextSiblingItem(node);
-		if (sib) stack.push_back(sib);
-		HTREEITEM child = pTree->GetChildItem(node);
-		if (child) stack.push_back(child);
+		HTREEITEM found = findItemRecursive(child, sel);
+		if (found)
+			return found;
+
+		child = pTree->GetNextSiblingItem(child);
 	}
 
-	DEBUG_ASSERTCRASH(groupItem, ("Couldn't find group."));
-	if (!groupItem) return nullptr;
-
-	if (sel.m_objType == ListType::GROUP_TYPE) {
-		return groupItem;
-	}
-
-	for (HTREEITEM script = pTree->GetChildItem(groupItem); script != nullptr; script = pTree->GetNextSiblingItem(script)) {
-		::memset(&item, 0, sizeof(item));
-		item.mask = TVIF_HANDLE | TVIF_PARAM;
-		item.hItem = script;
-		pTree->GetItem(&item);
-		ListType lt;
-		lt.IntToList(item.lParam);
-		if (lt.m_objType == ListType::GROUP_TYPE) continue;
-		DEBUG_ASSERTCRASH(lt.m_objType == ListType::SCRIPT_IN_PLAYER_TYPE || lt.m_objType == ListType::SCRIPT_IN_GROUP_TYPE, ("Not script"));
-		if (lt.m_scriptIndex == sel.m_scriptIndex) {
-			return script;
-		}
-	}
-
-	if (!failSafe) DEBUG_CRASH(("Couldn't find script."));
-	return groupItem;
+	return nullptr;
 }
 
-//HTREEITEM ScriptDialog::findItem(ListType sel, Bool failSafe)
-//{
-//	CTreeCtrl *pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
-//	HTREEITEM player = pTree->GetChildItem(TVI_ROOT);
-//	TVITEM item;
-//	while (player != nullptr) {
-//		::memset(&item, 0, sizeof(item));
-//		item.mask = TVIF_HANDLE|TVIF_PARAM;
-//		item.hItem = player;
-//		pTree->GetItem(&item);
-//		ListType lt;
-//		lt.IntToList(item.lParam);
-//		if (lt.m_playerIndex==sel.m_playerIndex) {
-//			break;
-//		}
-//		player = pTree->GetNextSiblingItem(player);
-//	}
-//	DEBUG_ASSERTCRASH(player, ("Couldn't find player."));
-//	if (!player) return nullptr;
-//	if (sel.m_objType == ListType::PLAYER_TYPE) {
-//		return player;
-//	}
-//
-//	HTREEITEM group;
-//	if (sel.m_objType == ListType::SCRIPT_IN_PLAYER_TYPE) {
-//		group = player; // top level scripts are grouped under player.
-//	} else {
-//		group = pTree->GetChildItem(player);
-//		while (group != nullptr) {
-//			::memset(&item, 0, sizeof(item));
-//			item.mask = TVIF_HANDLE|TVIF_PARAM;
-//			item.hItem = group;
-//			pTree->GetItem(&item);
-//			ListType lt;
-//			lt.IntToList(item.lParam);
-//			if (lt.m_groupIndex==sel.m_groupIndex) {
-//				break;
-//			}
-//			DEBUG_ASSERTCRASH(lt.m_objType == ListType::GROUP_TYPE, ("Not group"));
-//			group = pTree->GetNextSiblingItem(group);
-//		}
-//	}
-//	DEBUG_ASSERTCRASH(group, ("Couldn't find group."));
-//	if (!group) return nullptr;
-//	if (sel.m_objType == ListType::GROUP_TYPE) {
-//		return group;
-//	}
-//
-//	HTREEITEM script;
-//	for (script = pTree->GetChildItem(group); script != nullptr; script = pTree->GetNextSiblingItem(script)) {
-//		::memset(&item, 0, sizeof(item));
-//		item.mask = TVIF_HANDLE|TVIF_PARAM;
-//		item.hItem = script;
-//		pTree->GetItem(&item);
-//		ListType lt;
-//		lt.IntToList(item.lParam);
-//		if (sel.m_objType == ListType::SCRIPT_IN_PLAYER_TYPE && lt.m_objType == ListType::GROUP_TYPE) {
-//			continue;
-//		}
-//		DEBUG_ASSERTCRASH(lt.m_objType == ListType::SCRIPT_IN_PLAYER_TYPE || lt.m_objType == ListType::SCRIPT_IN_GROUP_TYPE, ("Not script"));
-//		if (lt.m_scriptIndex==sel.m_scriptIndex) {
-//			break;
-//		}
-//	}
-//
-//	if (script || !failSafe) {
-//		DEBUG_ASSERTCRASH(script, ("Couldn't find script."));
-//		return script;
-//	}
-//
-//	// at least select the group if possible.
-//	return group;
-//}
-
-void ScriptDialog::scanGroupAndSubgroupsForWaypointsAndTeams(ScriptGroup* pGroup, Bool doUnits, Bool doWaypoints, Bool doTriggers)
+HTREEITEM ScriptDialog::findItem(ListType sel, Bool failSafe)
 {
-	if (!pGroup) return;
-	for (ScriptGroup* g = pGroup; g; g = g->getNext()) {
-		for (Script* pScr = g->getScript(); pScr; pScr = pScr->getNext()) {
-			scanForWaypointsAndTeams(pScr, doUnits, doWaypoints, doTriggers);
-		}
-		if (g->getFirstSubGroup()) {
-			scanGroupAndSubgroupsForWaypointsAndTeams(g->getFirstSubGroup(), doUnits, doWaypoints, doTriggers);
-		}
-	}
+    CTreeCtrl *pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
+
+    HTREEITEM player = pTree->GetChildItem(TVI_ROOT);
+
+    while (player)
+    {
+        TVITEM item;
+        memset(&item, 0, sizeof(item));
+        item.mask = TVIF_PARAM;
+        item.hItem = player;
+        pTree->GetItem(&item);
+
+        ListType lt;
+        lt.IntToList(item.lParam);
+
+        if (lt.m_playerIndex == sel.m_playerIndex)
+            break;
+
+        player = pTree->GetNextSiblingItem(player);
+    }
+
+    if (!player)
+        return nullptr;
+
+    if (sel.m_objType == ListType::PLAYER_TYPE)
+        return player;
+
+    return findItemRecursive(player, sel);
 }
 
 void ScriptDialog::OnNewFolder()
 {
-	ScriptList *pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-	if (!pSL) return;
-
-	ListType savSel = m_curSelection;
-	ScriptGroup *pNewGroup = newInstance( ScriptGroup);
-	EditGroup editDlg(pNewGroup);
-	if (IDOK == editDlg.DoModal()) {
-		if (savSel.m_objType == ListType::GROUP_TYPE || savSel.m_objType == ListType::SCRIPT_IN_GROUP_TYPE) {
-			ScriptGroup* parent = getCurGroup();
-			if (parent) {
-				CTreeCtrl *pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
-				HTREEITEM selItem = findItem(savSel);
-				int depth = 0;
-				HTREEITEM it = selItem;
-				while (it) {
-					HTREEITEM parentItem = pTree->GetParentItem(it);
-					if (!parentItem) break;
-					// stop when hitting player root (direct child of root)
-					TVITEM vi; ::memset(&vi, 0, sizeof(vi));
-					vi.hItem = parentItem; vi.mask = TVIF_PARAM;
-					pTree->GetItem(&vi);
-					ListType l; l.IntToList(vi.lParam);
-					if (l.m_objType == ListType::PLAYER_TYPE) break;
-					depth++;
-					it = parentItem;
-				}
-				if (depth + 1 >= 5) {
-					::AfxMessageBox("Cannot create folder: maximum nested folder depth of 5 reached.");
-					deleteInstance(pNewGroup);
-					return;
-				}
-				else {
-					parent->addSubGroup(pNewGroup, AT_END);
-				}
-			}
-			else {
-				pSL->addGroup(pNewGroup, AT_END);
-			}
-		}
-		else {
-			pSL->addGroup(pNewGroup, AT_END);
-		}
-		reloadPlayer(savSel.m_playerIndex, pSL);
-		savSel.m_groupIndex = pNewGroup->getGroupId();
-		savSel.m_objType = ListType::GROUP_TYPE;
-		updateSelection(savSel);
+	Int ndx;
+	Int parentIndex = -1;
+	if (m_curSelection.m_objType == ListType::PLAYER_TYPE) {
+		ndx = 0;
+		parentIndex = -1;
 	} else {
-		deleteInstance(pNewGroup);
+		ndx = m_curSelection.m_groupIndex+1;
+		// :D
+		if (m_curSelection.m_objType == ListType::GROUP_TYPE || m_curSelection.m_objType == ListType::SCRIPT_IN_GROUP_TYPE) {
+			parentIndex = m_curSelection.m_groupIndex;
+		} else {
+			parentIndex = -1;
+		}
+	}
+	ScriptList *pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
+	if (pSL) {
+		ListType savSel = m_curSelection;
+		ScriptGroup *pNewGroup = newInstance( ScriptGroup);
+		pNewGroup->setParentIndex(parentIndex); // <- use it here
+		EditGroup editDlg(pNewGroup);
+		if (IDOK==editDlg.DoModal()) {
+			pSL->addGroup(pNewGroup, ndx);
+			reloadPlayer(savSel.m_playerIndex, pSL);
+			savSel.m_groupIndex = ndx;
+			savSel.m_objType = ListType::GROUP_TYPE;
+			updateSelection(savSel);
+		} else {
+			deleteInstance(pNewGroup);
+		}
 	}
 	updateIcons(TVI_ROOT);
 }
-
-//void ScriptDialog::OnNewFolder()
-//{
-//	Int ndx;
-//	if (m_curSelection.m_objType == ListType::PLAYER_TYPE) {
-//		ndx = 0;
-//	} else {
-//		ndx = m_curSelection.m_groupIndex+1;
-//	}
-//	ScriptList *pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-//	if (pSL) {
-//		ListType savSel = m_curSelection;
-//		ScriptGroup *pNewGroup = newInstance( ScriptGroup);
-//		EditGroup editDlg(pNewGroup);
-//		if (IDOK==editDlg.DoModal()) {
-//			pSL->addGroup(pNewGroup, ndx);
-//			reloadPlayer(savSel.m_playerIndex, pSL);
-//			savSel.m_groupIndex = ndx;
-//			savSel.m_objType = ListType::GROUP_TYPE;
-//			updateSelection(savSel);
-//		} else {
-//			deleteInstance(pNewGroup);
-//		}
-//	}
-//	updateIcons(TVI_ROOT);
-//}
 
 void ScriptDialog::OnNewScript()
 {
@@ -1429,77 +1117,44 @@ void ScriptDialog::OnNewScript()
 
 void ScriptDialog::insertScript(Script *pNewScript)
 {
+	Int ndx;
 	ScriptList *pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-	if (!pSL) return;
-	ListType savSel = m_curSelection;
-	Bool inGroup = savSel.m_objType == ListType::GROUP_TYPE||savSel.m_objType == ListType::SCRIPT_IN_GROUP_TYPE;
-
-	if (inGroup) {
-		ScriptGroup *pGroup = findGroupById(pSL->getScriptGroup(), savSel.m_groupIndex);
-		if (pGroup) {
-			pGroup->addScript(pNewScript, AT_END);
-			savSel.m_objType = ListType::SCRIPT_IN_GROUP_TYPE;
-			savSel.m_scriptIndex = 0;
-		}
-		else {
-			pSL->addScript(pNewScript, AT_END);
+	if (pSL) {
+		ListType savSel = m_curSelection;
+		Bool inGroup = savSel.m_objType == ListType::GROUP_TYPE	||
+			savSel.m_objType == ListType::SCRIPT_IN_GROUP_TYPE;
+		if (inGroup) {
+			if (savSel.m_objType == ListType::GROUP_TYPE ) {
+				ndx = 0;
+			} else {
+				ndx = savSel.m_scriptIndex+1;
+			}
+			Int groupNdx;
+			ScriptGroup *pGroup = pSL->getScriptGroup();
+			for (groupNdx = 0; pGroup; groupNdx++,pGroup=pGroup->getNext()) {
+				if (groupNdx == savSel.m_groupIndex) {
+					pGroup->addScript(pNewScript, ndx);
+					savSel.m_objType = ListType::SCRIPT_IN_GROUP_TYPE;
+					savSel.m_scriptIndex = ndx;
+					break;
+				}
+			}
+		} else {
+			if (m_curSelection.m_objType == ListType::PLAYER_TYPE ) {
+				ndx = 0;
+			} else {
+				ndx = m_curSelection.m_scriptIndex+1;
+			}
+			pSL->addScript(pNewScript, ndx);
 			savSel.m_objType = ListType::SCRIPT_IN_PLAYER_TYPE;
-			savSel.m_groupIndex = 0;
-			savSel.m_scriptIndex = 0;
+			savSel.m_scriptIndex = ndx;
 		}
-	}
-	else {
-		pSL->addScript(pNewScript, AT_END);
-		savSel.m_objType = ListType::SCRIPT_IN_PLAYER_TYPE;
-		savSel.m_groupIndex = 0;
-		savSel.m_scriptIndex = 0;
-	}
 
-	reloadPlayer(savSel.m_playerIndex, pSL);
-	updateSelection(savSel);
+		reloadPlayer(savSel.m_playerIndex, pSL);
+		updateSelection(savSel);
+	}
 	updateIcons(TVI_ROOT);
 }
-
-//void ScriptDialog::insertScript(Script *pNewScript)
-//{
-//	Int ndx;
-//	ScriptList *pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-//	if (pSL) {
-//		ListType savSel = m_curSelection;
-//		Bool inGroup = savSel.m_objType == ListType::GROUP_TYPE	||
-//			savSel.m_objType == ListType::SCRIPT_IN_GROUP_TYPE;
-//		if (inGroup) {
-//			if (savSel.m_objType == ListType::GROUP_TYPE ) {
-//				ndx = 0;
-//			} else {
-//				ndx = savSel.m_scriptIndex+1;
-//			}
-//			Int groupNdx;
-//			ScriptGroup *pGroup = pSL->getScriptGroup();
-//			for (groupNdx = 0; pGroup; groupNdx++,pGroup=pGroup->getNext()) {
-//				if (groupNdx == savSel.m_groupIndex) {
-//				pGroup->addScript(pNewScript, ndx);
-//				savSel.m_objType = ListType::SCRIPT_IN_GROUP_TYPE;
-//					savSel.m_scriptIndex = ndx;
-//					break;
-//				}
-//			}
-//		} else {
-//			if (m_curSelection.m_objType == ListType::PLAYER_TYPE ) {
-//				ndx = 0;
-//			} else {
-//				ndx = m_curSelection.m_scriptIndex+1;
-//			}
-//			pSL->addScript(pNewScript, ndx);
-//			savSel.m_objType = ListType::SCRIPT_IN_PLAYER_TYPE;
-//			savSel.m_scriptIndex = ndx;
-//		}
-//
-//		reloadPlayer(savSel.m_playerIndex, pSL);
-//		updateSelection(savSel);
-//	}
-//	updateIcons(TVI_ROOT);
-//}
 
 void ScriptDialog::OnEditScript()
 {
@@ -1560,120 +1215,50 @@ void ScriptDialog::OnEditScript()
 void ScriptDialog::OnCopyScript()
 {
 	Script *pScript = getCurScript();
-	ScriptList *pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-	DEBUG_ASSERTCRASH(pSL, ("Null script list."));
-	if (!pSL) return;
-
-	if (pScript) {
-		Script *pDup = pScript->duplicate();
-		AsciiString newName = pDup->getName();
-		newName.concat(" C");
-		pDup->setName(newName);
-		insertScript(pDup);
-	} else {
-		ScriptGroup* pGroup = getCurGroup();
-		if (!pGroup) return;
-		ScriptGroup* pDup = pGroup->duplicate();
-		ScriptGroup* parent = pSL->findParentOfGroup(pGroup);
-		if (parent) {
-			parent->addSubGroup(pDup, AT_END);
-		}
-		else {
-			pSL->addGroup(pDup, AT_END);
-		}
-		reloadPlayer(m_curSelection.m_playerIndex, pSL);
-		ListType sel = m_curSelection;
-		sel.m_groupIndex = pDup->getGroupId();
-		sel.m_objType = ListType::GROUP_TYPE;
-		updateSelection(sel);
-		updateIcons(TVI_ROOT);
-	}
+	DEBUG_ASSERTCRASH(pScript, ("Null script."));
+	if (pScript == nullptr) return;
+	Script *pDup = pScript->duplicate();
+	AsciiString newName = pDup->getName();
+	newName.concat(" C");
+	pDup->setName(newName);
+	insertScript(pDup);
+	updateIcons(TVI_ROOT);
 }
-
-//void ScriptDialog::OnCopyScript()
-//{
-//	Script *pScript = getCurScript();
-//	DEBUG_ASSERTCRASH(pScript, ("Null script."));
-//	if (pScript == nullptr) return;
-//	Script *pDup = pScript->duplicate();
-//	AsciiString newName = pDup->getName();
-//	newName.concat(" C");
-//	pDup->setName(newName);
-//	insertScript(pDup);
-//	updateIcons(TVI_ROOT);
-//}
 
 void ScriptDialog::OnDelete()
 {
 	Script *pScript = getCurScript();
 	ScriptList *pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-	if (!pSL) return;
-
-	Bool inGroup = m_curSelection.m_objType != ListType::SCRIPT_IN_PLAYER_TYPE;
-	if (inGroup) {
-		if (m_curSelection.m_objType == ListType::GROUP_TYPE) {
-			ScriptGroup *pGroup = getCurGroup();
-			if (pGroup) {
-				pSL->removeGroupRecursive(pGroup);
-				m_curSelection.m_objType = ListType::PLAYER_TYPE;
-			}
-		} else {
-			ScriptGroup *pGroup = getCurGroup();
-			if (pGroup && pScript) {
-				pGroup->deleteScript(pScript);
-				if (pGroup->getScript()==nullptr) {
-					m_curSelection.m_objType = ListType::GROUP_TYPE;
+	if (pSL) {
+		Bool inGroup = m_curSelection.m_objType != ListType::SCRIPT_IN_PLAYER_TYPE;
+		if (inGroup) {
+			Int groupNdx;
+			ScriptGroup *pGroup = pSL->getScriptGroup();
+			for (groupNdx = 0; pGroup; groupNdx++,pGroup=pGroup->getNext()) {
+				if (groupNdx == m_curSelection.m_groupIndex) {
+					if (m_curSelection.m_objType == ListType::GROUP_TYPE) {
+						pSL->deleteGroup(pGroup);
+						m_curSelection.m_objType = ListType::PLAYER_TYPE;
+					} else {
+						pGroup->deleteScript(pScript);
+						if (pGroup->getScript()==nullptr) {
+							m_curSelection.m_objType = ListType::GROUP_TYPE;
+						}
+					}
+					break;
 				}
 			}
-		}
-	} else {
-		if (pScript) {
+		} else {
 			pSL->deleteScript(pScript);
 			if (pSL->getScript()==nullptr) {
 				m_curSelection.m_objType = ListType::PLAYER_TYPE;
 			}
 		}
+ 		reloadPlayer(m_curSelection.m_playerIndex, pSL);
+		updateSelection(m_curSelection);
 	}
-
-	reloadPlayer(m_curSelection.m_playerIndex, pSL);
-	updateSelection(m_curSelection);
 	updateIcons(TVI_ROOT);
 }
-
-//void ScriptDialog::OnDelete()
-//{
-//	Script *pScript = getCurScript();
-//	ScriptList *pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-//	if (pSL) {
-//		Bool inGroup = m_curSelection.m_objType != ListType::SCRIPT_IN_PLAYER_TYPE;
-//		if (inGroup) {
-//			Int groupNdx;
-//			ScriptGroup *pGroup = pSL->getScriptGroup();
-//			for (groupNdx = 0; pGroup; groupNdx++,pGroup=pGroup->getNext()) {
-//				if (groupNdx == m_curSelection.m_groupIndex) {
-//					if (m_curSelection.m_objType == ListType::GROUP_TYPE) {
-//						pSL->deleteGroup(pGroup);
-//						m_curSelection.m_objType = ListType::PLAYER_TYPE;
-//					} else {
-//						pGroup->deleteScript(pScript);
-//						if (pGroup->getScript()==nullptr) {
-//							m_curSelection.m_objType = ListType::GROUP_TYPE;
-//						}
-//					}
-//					break;
-//				}
-//			}
-//		} else {
-//			pSL->deleteScript(pScript);
-//			if (pSL->getScript()==nullptr) {
-//				m_curSelection.m_objType = ListType::PLAYER_TYPE;
-//			}
-//		}
-// 		reloadPlayer(m_curSelection.m_playerIndex, pSL);
-//		updateSelection(m_curSelection);
-//	}
-//	updateIcons(TVI_ROOT);
-//}
 
 class LocalMFCFileOutputStream : public OutputStream
 {
@@ -1913,10 +1498,11 @@ void ScriptDialog::OnSave()
 		for (pScr = pSL->getScript(); pScr; pScr=pScr->getNext()) {
 			scanForWaypointsAndTeams(pScr, doUnits, doWaypoints, doTriggerAreas);
 		}
-		for (pScr = pSL->getScript(); pScr; pScr = pScr->getNext()) {
-			scanForWaypointsAndTeams(pScr, doUnits, doWaypoints, doTriggerAreas);
+		for (pGroup = pSL->getScriptGroup(); pGroup; pGroup=pGroup->getNext()) {
+			for (pScr = pGroup->getScript(); pScr; pScr=pScr->getNext()) {
+				scanForWaypointsAndTeams(pScr, doUnits, doWaypoints, doTriggerAreas);
+			}
 		}
-		scanGroupAndSubgroupsForWaypointsAndTeams(pSL->getScriptGroup(), doUnits, doWaypoints, doTriggerAreas);
 	}
 
 
@@ -2062,22 +1648,6 @@ void ScriptDialog::OnSave()
 	theFile.Close();
 }
 
-static void DumpScriptGroupStructureHelper(ScriptGroup* g, int indent)
-{
-	if (!g) return;
-	for (ScriptGroup* cur = g; cur; cur = cur->getNext()) {
-		AsciiString pad;
-		for (int i = 0; i < indent; ++i) pad.concat("  ");
-		DEBUG_LOG(("ImportedGroup: %s'%s'", pad.str(), cur->getName().str()));
-		for (Script* s = cur->getScript(); s; s = s->getNext()) {
-			DEBUG_LOG(("ImportedGroup: %s  - Script: '%s'", pad.str(), s->getName().str()));
-		}
-		if (cur->getFirstSubGroup()) {
-			DumpScriptGroupStructureHelper(cur->getFirstSubGroup(), indent + 1);
-		}
-	}
-}
-
 void ScriptDialog::OnLoad()
 {
 	CFileDialog fileDlg(true, ".scb", nullptr, 0,
@@ -2171,14 +1741,7 @@ void ScriptDialog::OnLoad()
 				::AfxMessageBox("Imported scripts came from more players than exist in this map.  Additional scripts moved to Neutral player.");
 			}
 			ScriptList *pSL = m_sides.getSideInfo(curSide)->getScriptList();
-			for (Int di = 0; di < count; ++di) {
-				if (scripts[di] == nullptr) continue;
-				DEBUG_LOG(("--- Imported ScriptList[%d] ---", di));
-				for (Script* s = scripts[di]->getScript(); s; s = s->getNext()) {
-					DEBUG_LOG(("ImportedTopLevelScript: '%s'", s->getName().str()));
-				}
-				DumpScriptGroupStructureHelper(scripts[di]->getScriptGroup(), 0);
-			}
+
 			if (pSL) {
 				Script *pScr;
 				Script *pNextScr;
@@ -2591,13 +2154,71 @@ void ScriptDialog::doDropOn(HTREEITEM hDrag, HTREEITEM hTarget)
 	ListType target;
 	target.IntToList(pTree->GetItemData(hTarget));
 
-	Script *dragScript = nullptr;
-	ScriptGroup *dragGroup = nullptr;
+	// :D
+	if (drag.m_objType == ListType::GROUP_TYPE && drag.m_playerIndex == target.m_playerIndex) {
+		ScriptList* srcSL = m_sides.getSideInfo(drag.m_playerIndex)->getScriptList();
+		auto isDescendantIndex = [&](Int possibleDescendantIdx, Int ancestorIdx) -> bool {
+			if (!srcSL) return false;
+			if (possibleDescendantIdx < 0 || ancestorIdx < 0) return false;
+			Int cur = possibleDescendantIdx;
+			while (cur != -1) {
+				if (cur == ancestorIdx) return true;
+				ScriptGroup* g = srcSL->getScriptGroup();
+				Int i = 0;
+				ScriptGroup* found = nullptr;
+				for (; g; g = g->getNext(), ++i) {
+					if (i == cur) { found = g; break; }
+				}
+				if (!found) break;
+				cur = found->getParentIndex();
+			}
+			return false;
+		};
+
+		if (target.m_groupIndex == drag.m_groupIndex) return;
+		if (isDescendantIndex(target.m_groupIndex, drag.m_groupIndex)) {
+			return;
+		}
+	}
+
+	Int desiredParent = -1;
+	if (target.m_objType == ListType::GROUP_TYPE || target.m_objType == ListType::SCRIPT_IN_GROUP_TYPE) {
+		desiredParent = target.m_groupIndex;
+	} else {
+		desiredParent = -1;
+	}
+
+	Script* dragScript = nullptr;
+	ScriptGroup* dragGroup = nullptr;
+
+	ScriptList* srcSL = m_sides.getSideInfo(drag.m_playerIndex)->getScriptList();
+
+	auto findIndexOf = [](ScriptList* sl, ScriptGroup* target) -> Int {
+		Int i = 0;
+		for (ScriptGroup* gg = sl->getScriptGroup(); gg; gg = gg->getNext(), ++i) {
+			if (gg == target) return i;
+		}
+		return -1;
+	};
+	auto findGroupByIndex = [](ScriptList* sl, Int idx) -> ScriptGroup* {
+		Int i = 0;
+		for (ScriptGroup* g = sl->getScriptGroup(); g; g = g->getNext(), ++i) {
+			if (i == idx) return g;
+		}
+		return nullptr;
+	};
+	auto countGroups = [](ScriptList* sl) -> Int {
+		Int c = 0;
+		for (ScriptGroup* gg = sl->getScriptGroup(); gg; gg = gg->getNext()) ++c;
+		return c;
+	};
+
 	m_curSelection = drag;
-	Script *pScript = getCurScript();
-	ScriptList *pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-	ScriptGroup *pGroup = getCurGroup();
-	if (pSL == nullptr) return;
+	Script* pScript = getCurScript();
+	ScriptList* pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
+	ScriptGroup* pGroup = getCurGroup();
+	if (!pSL) return;
+
 	if (pScript) {
 		dragScript = pScript->duplicate();
 		if (pGroup) {
@@ -2605,145 +2226,222 @@ void ScriptDialog::doDropOn(HTREEITEM hDrag, HTREEITEM hTarget)
 		} else {
 			pSL->deleteScript(pScript);
 		}
+		// :p
 		if (drag.m_objType == target.m_objType &&
 			drag.m_playerIndex == target.m_playerIndex &&
 			drag.m_groupIndex == target.m_groupIndex &&
 			drag.m_scriptIndex < target.m_scriptIndex) {
 			target.m_scriptIndex--;
 		}
-	}	else if (drag.m_objType == ListType::GROUP_TYPE) {
-			ScriptGroup *origGroup = getCurGroup();
-			if (!origGroup) return;
-			dragGroup = origGroup->duplicate();
-			pSL->removeGroupRecursive(origGroup);
-		if (drag.m_objType != ListType::SCRIPT_IN_PLAYER_TYPE &&
-			drag.m_playerIndex == target.m_playerIndex &&
-			drag.m_groupIndex < target.m_groupIndex) {
-			target.m_groupIndex--;
-		}
-	}
-	pTree->DeleteItem(hDrag);
-	m_curSelection = target;
-	pScript = getCurScript();
-	pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-	pGroup = getCurGroup();
-	DEBUG_ASSERTCRASH((pSL), ("Hmm - bad data. jba."));
-	if (pSL == nullptr) return;
+		pTree->DeleteItem(hDrag);
+		// :D
+		m_curSelection = target;
+		pScript = getCurScript();
+		pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
+		pGroup = getCurGroup();
+		if (!pSL) return;
 
-	if (dragGroup) {
-		if (target.m_objType == ListType::GROUP_TYPE) {
-			ScriptGroup *targetGroup = findGroupById(pSL->getScriptGroup(), target.m_groupIndex);
-			if (targetGroup) {
-				targetGroup->addSubGroup(dragGroup, AT_END);
-				target.m_groupIndex = dragGroup->getGroupId();
-			}
-			else {
-				pSL->addGroup(dragGroup, AT_END);
-				target.m_groupIndex = dragGroup->getGroupId();
-			}
-		}
-		else {
-			pSL->addGroup(dragGroup, target.m_groupIndex);
-			target.m_groupIndex = dragGroup->getGroupId();
-		}
+		if (pGroup) pGroup->addScript(dragScript, target.m_scriptIndex);
+		else pSL->addScript(dragScript, target.m_scriptIndex);
+
+		// Hello :D
+		if (target.m_playerIndex != drag.m_playerIndex)
+			reloadPlayer(drag.m_playerIndex, m_sides.getSideInfo(drag.m_playerIndex)->getScriptList());
+		reloadPlayer(target.m_playerIndex, pSL);
+		updateSelection(target);
+		updateIcons(TVI_ROOT);
+		return;
 	}
 
-	else if (dragScript) {
-		if (pGroup) {
-			pGroup->addScript(dragScript, target.m_scriptIndex);
-		}	else {
-			pSL->addScript(dragScript, target.m_scriptIndex);
+	if (drag.m_objType == ListType::GROUP_TYPE) {
+		if (!pGroup) return;
+
+		dragGroup = pGroup->duplicate();
+
+		pTree->DeleteItem(hDrag);
+
+		ScriptList* dstSL = m_sides.getSideInfo(target.m_playerIndex)->getScriptList();
+		if (!dstSL) return;
+
+		std::vector<ScriptGroup*> allSrcGroups;
+		for (ScriptGroup* g = srcSL->getScriptGroup(); g; g = g->getNext()) allSrcGroups.push_back(g);
+		Int totalSrc = (Int)allSrcGroups.size();
+
+		std::unordered_map<ScriptGroup*, Int> srcPtrToIndex;
+		srcPtrToIndex.reserve(totalSrc);
+		for (Int i = 0; i < totalSrc; ++i) srcPtrToIndex[allSrcGroups[i]] = i;
+
+		Int rootIndex = findIndexOf(srcSL, pGroup);
+		if (rootIndex < 0) {
+			dragGroup->setParentIndex(desiredParent);
+			dstSL->addGroup(dragGroup, target.m_groupIndex);
+			reloadPlayer(target.m_playerIndex, dstSL);
+			updateIcons(TVI_ROOT);
+			return;
 		}
+
+		std::vector<Int> subtreeIndices;
+		subtreeIndices.reserve(16);
+		for (Int i = 0; i < totalSrc; ++i) {
+			Int cur = i;
+			while (cur != -1) {
+				ScriptGroup* curPtr = allSrcGroups[cur];
+				if (!curPtr) { cur = -1; break; }
+				if (cur == rootIndex) { subtreeIndices.push_back(i); break; }
+				cur = curPtr->getParentIndex();
+			}
+		}
+
+		std::sort(subtreeIndices.begin(), subtreeIndices.end());
+
+		std::unordered_map<Int, Int> newIndexOf;
+		newIndexOf.reserve(subtreeIndices.size());
+
+		Int dstInsertIndexForRoot = (target.m_groupIndex >= 0 && target.m_groupIndex != 9999) ? target.m_groupIndex : countGroups(dstSL);
+		dragGroup->setParentIndex(desiredParent);
+		dstSL->addGroup(dragGroup, dstInsertIndexForRoot);
+
+		Int newRootIndex = -1;
+		{
+			Int idx = 0;
+			for (ScriptGroup* g = dstSL->getScriptGroup(); g; g = g->getNext(), ++idx) {
+				if (g == dragGroup) { newRootIndex = idx; break; }
+			}
+		}
+		newIndexOf[rootIndex] = newRootIndex;
+
+		// :p
+		for (Int origIdx : subtreeIndices) {
+			if (origIdx == rootIndex) continue;
+			ScriptGroup* orig = allSrcGroups[origIdx];
+			if (!orig) continue;
+			ScriptGroup* dup = orig->duplicate();
+			Int origParent = orig->getParentIndex();
+			Int newParent = desiredParent;
+			if (origParent >= 0) {
+				auto it = newIndexOf.find(origParent);
+				if (it != newIndexOf.end()) {
+					newParent = it->second;
+				} else {
+					// :c
+					newParent = desiredParent;
+				}
+			} else {
+				newParent = desiredParent;
+			}
+			dup->setParentIndex(newParent);
+			// :o
+			Int insertAt = countGroups(dstSL);
+			dstSL->addGroup(dup, insertAt);
+			// o:
+			Int newIdx = -1;
+			{
+				Int idx = 0;
+				for (ScriptGroup* g = dstSL->getScriptGroup(); g; g = g->getNext(), ++idx) {
+					if (g == dup) { newIdx = idx; break; }
+				}
+			}
+			if (newIdx >= 0) newIndexOf[origIdx] = newIdx;
+		}
+
+		// Gone
+		std::sort(subtreeIndices.begin(), subtreeIndices.end(), std::greater<Int>());
+		for (Int origIdx : subtreeIndices) {
+			ScriptGroup* orig = findGroupByIndex(srcSL, origIdx);
+			if (orig) {
+				srcSL->deleteGroup(orig);
+			}
+		}
+
+		// Regone
+		if (target.m_playerIndex != drag.m_playerIndex) {
+			reloadPlayer(drag.m_playerIndex, srcSL);
+		}
+		reloadPlayer(target.m_playerIndex, dstSL);
+		updateSelection(target);
+		updateIcons(TVI_ROOT);
+		return;
 	}
-	if (target.m_playerIndex != drag.m_playerIndex) {
-		reloadPlayer(drag.m_playerIndex, m_sides.getSideInfo(drag.m_playerIndex)->getScriptList());
-	}
-	reloadPlayer(target.m_playerIndex, pSL);
-	updateSelection(target);
-	updateIcons(TVI_ROOT);
 }
 
-//void ScriptDialog::doDropOn(HTREEITEM hDrag, HTREEITEM hTarget)
-//{
-//	if (hDrag == hTarget) return;
-//	CTreeCtrl *pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
-//	ListType drag;
-//	drag.IntToList(pTree->GetItemData(hDrag));
-//	ListType target;
-//	target.IntToList(pTree->GetItemData(hTarget));
-//
-//	Script *dragScript = nullptr;
-//	ScriptGroup *dragGroup = nullptr;
-//	m_curSelection = drag;
-//	Script *pScript = getCurScript();
-//	ScriptList *pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-//	ScriptGroup *pGroup = getCurGroup();
-//	if (pSL == nullptr) return;
-//	if (pScript) {
-//		dragScript = pScript->duplicate();
-//		if (pGroup) {
-//			pGroup->deleteScript(pScript);
-//		} else {
-//			pSL->deleteScript(pScript);
-//		}
-//		if (drag.m_objType == target.m_objType &&
-//				drag.m_playerIndex == target.m_playerIndex &&
-//				drag.m_groupIndex == target.m_groupIndex &&
-//				drag.m_scriptIndex < target.m_scriptIndex) {
-//				target.m_scriptIndex--;
-//		}
-//	}	else if (drag.m_objType == ListType::GROUP_TYPE) {
-//		dragGroup = pGroup->duplicate();
-//		pSL->deleteGroup(pGroup);
-//		if (drag.m_objType != ListType::SCRIPT_IN_PLAYER_TYPE &&
-//				drag.m_playerIndex == target.m_playerIndex &&
-//				drag.m_groupIndex < target.m_groupIndex) {
-//				target.m_groupIndex--;
-//		}
-//	}
-//	pTree->DeleteItem(hDrag);
-//	m_curSelection = target;
-//	pScript = getCurScript();
-//	pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-//	pGroup = getCurGroup();
-//	DEBUG_ASSERTCRASH((pSL), ("Hmm - bad data. jba."));
-//	if (pSL == nullptr) return;
-//
-//	// If we are dragging a group onto a script, adjust the group index so we add after.
-//	if (drag.m_objType == ListType::GROUP_TYPE) {
-//		if (target.m_objType == ListType::SCRIPT_IN_PLAYER_TYPE) {
-//			target.m_groupIndex = 9999;
-//		}
-//		if (target.m_objType == ListType::SCRIPT_IN_GROUP_TYPE) {
-//			target.m_groupIndex++;
-//		}
-//		target.m_objType = ListType::GROUP_TYPE;
-//	}
-//
-//	if (dragScript) {
-//		if (pGroup) {
-//				pGroup->addScript(dragScript, target.m_scriptIndex);
-//		}	else {
-//			pSL->addScript(dragScript, target.m_scriptIndex);
-//		}
-//	} else if (dragGroup) {
-//		pSL->addGroup(dragGroup, target.m_groupIndex);
-//		Int count = 0;
-//		ScriptGroup *pGroup = pSL->getScriptGroup();
-//		while (pGroup->getNext()) {
-//			if (pGroup==dragGroup) break;
-//			count++;
-//			pGroup = pGroup->getNext();
-//		}
-//		target.m_groupIndex = count;
-//	}
-//	if (target.m_playerIndex != drag.m_playerIndex) {
-//		reloadPlayer(drag.m_playerIndex, m_sides.getSideInfo(drag.m_playerIndex)->getScriptList());
-//	}
-//	reloadPlayer(target.m_playerIndex, pSL);
-//	updateSelection(target);
-//	updateIcons(TVI_ROOT);
-//}
+void ScriptDialog::DuplicateSubGroupsRecursive(ScriptList* srcSL, ScriptList* dstSL, Int srcParentIndex, Int dstParentIndex, int depth)
+{
+	if (!srcSL || !dstSL) return;
+	if (depth > 64) return;
+
+	auto findGroupByIndex = [](ScriptList* sl, Int idx) -> ScriptGroup* {
+		Int i = 0;
+		for (ScriptGroup* g = sl->getScriptGroup(); g; g = g->getNext(), ++i) {
+			if (i == idx) return g;
+		}
+		return nullptr;
+	};
+
+	auto findIndexOf = [](ScriptList* sl, ScriptGroup* target) -> Int {
+		Int i = 0;
+		for (ScriptGroup* gg = sl->getScriptGroup(); gg; gg = gg->getNext(), ++i) {
+			if (gg == target) return i;
+		}
+		return -1;
+	};
+
+	auto isDescendant = [&](Int possibleDescendant, Int ancestor) -> bool {
+		if (possibleDescendant < 0 || ancestor < 0) return false;
+		Int cur = possibleDescendant;
+		while (cur != -1) {
+			if (cur == ancestor) return true;
+			ScriptGroup* g = findGroupByIndex(srcSL, cur);
+			if (!g) break;
+			cur = g->getParentIndex();
+		}
+		return false;
+	};
+
+	if (srcSL == dstSL && dstParentIndex != -1 && isDescendant(dstParentIndex, srcParentIndex)) {
+		return;
+	}
+
+	std::vector<ScriptGroup*> children;
+	{
+		Int idx = 0;
+		for (ScriptGroup* g = srcSL->getScriptGroup(); g; g = g->getNext(), ++idx) {
+			if (g->getParentIndex() == srcParentIndex) {
+				children.push_back(g);
+			}
+		}
+	}
+
+	auto countGroups = [](ScriptList* sl) -> Int {
+		Int c = 0;
+		for (ScriptGroup* gg = sl->getScriptGroup(); gg; gg = gg->getNext()) ++c;
+		return c;
+	};
+
+	for (ScriptGroup* srcChild : children) {
+		Int curSrcChildIndex = findIndexOf(srcSL, srcChild);
+		if (curSrcChildIndex < 0) {
+			continue;
+		}
+
+		if (srcSL == dstSL) {
+			srcChild->setParentIndex(dstParentIndex);
+			Int newIndex = findIndexOf(dstSL, srcChild);
+			if (newIndex >= 0 && newIndex != curSrcChildIndex) {
+				DuplicateSubGroupsRecursive(srcSL, dstSL, curSrcChildIndex, newIndex, depth + 1);
+			}
+		} else {
+			ScriptGroup* dup = srcChild->duplicate();
+			dup->setParentIndex(dstParentIndex);
+			Int insertAt = countGroups(dstSL);
+			dstSL->addGroup(dup, insertAt);
+			Int newIndex = findIndexOf(dstSL, dup);
+			if (newIndex >= 0) {
+				DuplicateSubGroupsRecursive(srcSL, dstSL, curSrcChildIndex, newIndex, depth + 1);
+			}
+			srcSL->deleteGroup(srcChild);
+		}
+	}
+}
 
 void ScriptDialog::OnMove(int x, int y)
 {

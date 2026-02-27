@@ -115,12 +115,9 @@ protected:
 	void doDropOn(HTREEITEM hDrop, HTREEITEM hTarget);
 	Script *getCurScript(void);
 	ScriptGroup *getCurGroup(void);
-	ScriptGroup* findGroupById(ScriptGroup* root, Int groupId);
 	void reloadPlayer(Int playerIndex, ScriptList *pSL);
 	HTREEITEM findItem(ListType sel, Bool failSafe = FALSE);
 	void insertScript(Script *pNewScript);
-	void addGroupRecursive(HTREEITEM hParent, Int playerIndex, ScriptGroup* pGroup);
-	void scanGroupAndSubgroupsForWaypointsAndTeams(ScriptGroup* pGroup, Bool doUnits, Bool doWaypoints, Bool doTriggers);
 	void scanForWaypointsAndTeams(Script *pScript, Bool doUnits, Bool doWaypoints, Bool doTriggers);
 	void scanParmForWaypointsAndTeams(Parameter *pParm, Bool doUnits, Bool doWaypoints, Bool doTriggers);
 	void updateSelection(ListType sel);
@@ -128,8 +125,9 @@ protected:
 	void setIconGroup(HTREEITEM item);
 	Bool updateIcons(HTREEITEM hItem);
 	void markWaypoint(MapObject *pObj);
-	void populateGroupTree(HTREEITEM hGroupItem, Int playerIndex, ScriptGroup* pGroup);
-	afx_msg void OnItemExpanding(NMHDR* pNMHDR, LRESULT* pResult);
+
+	HTREEITEM findItemRecursive(HTREEITEM parent, const ListType& sel);
+	void DuplicateSubGroupsRecursive(ScriptList* srcSL, ScriptList* dstSL, Int srcParentIndex, Int dstParentIndex, int depth = 0);
 
 	static Bool ParseObjectsDataChunk(DataChunkInput &file, DataChunkInfo *info, void *userData);
 	static Bool ParseObjectDataChunk(DataChunkInput &file, DataChunkInfo *info, void *userData);
