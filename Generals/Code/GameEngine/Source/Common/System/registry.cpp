@@ -115,9 +115,27 @@ Bool setUnsignedIntInRegistry( HKEY root, AsciiString path, AsciiString key, Uns
 	return (returnValue == ERROR_SUCCESS);
 }
 
-Bool GetStringFromRegistry(AsciiString path, AsciiString key, AsciiString& val)
+Bool GetStringFromGeneralsRegistry(AsciiString path, AsciiString key, AsciiString& val)
 {
 	AsciiString fullPath = "SOFTWARE\\Electronic Arts\\EA Games\\Generals";
+
+	fullPath.concat(path);
+	DEBUG_LOG(("GetStringFromRegistry - looking in %s for key %s", fullPath.str(), key.str()));
+	if (getStringFromRegistry(HKEY_CURRENT_USER, fullPath.str(), key.str(), val))
+	{
+		return TRUE;
+	}
+
+	return getStringFromRegistry(HKEY_LOCAL_MACHINE, fullPath.str(), key.str(), val);
+}
+
+Bool GetStringFromRegistry(AsciiString path, AsciiString key, AsciiString& val)
+{
+#if RTS_GENERALS
+	AsciiString fullPath = "SOFTWARE\\Electronic Arts\\EA Games\\Generals";
+#elif RTS_ZEROHOUR
+	AsciiString fullPath = "SOFTWARE\\Electronic Arts\\EA Games\\Command and Conquer Generals Zero Hour";
+#endif
 
 	fullPath.concat(path);
 	DEBUG_LOG(("GetStringFromRegistry - looking in %s for key %s", fullPath.str(), key.str()));
@@ -131,21 +149,26 @@ Bool GetStringFromRegistry(AsciiString path, AsciiString key, AsciiString& val)
 
 Bool GetUnsignedIntFromRegistry(AsciiString path, AsciiString key, UnsignedInt& val)
 {
+#if RTS_GENERALS
 	AsciiString fullPath = "SOFTWARE\\Electronic Arts\\EA Games\\Generals";
+#elif RTS_ZEROHOUR
+	AsciiString fullPath = "SOFTWARE\\Electronic Arts\\EA Games\\Command and Conquer Generals Zero Hour";
+#endif
 
 	fullPath.concat(path);
 	DEBUG_LOG(("GetUnsignedIntFromRegistry - looking in %s for key %s", fullPath.str(), key.str()));
-	if (getUnsignedIntFromRegistry(HKEY_LOCAL_MACHINE, fullPath.str(), key.str(), val))
+	if (getUnsignedIntFromRegistry(HKEY_CURRENT_USER, fullPath.str(), key.str(), val))
 	{
 		return TRUE;
 	}
 
-	return getUnsignedIntFromRegistry(HKEY_CURRENT_USER, fullPath.str(), key.str(), val);
+	return getUnsignedIntFromRegistry(HKEY_LOCAL_MACHINE, fullPath.str(), key.str(), val);
 }
 
-AsciiString GetRegistryLanguage(void)
+AsciiString GetRegistryLanguage()
 {
 	static Bool cached = FALSE;
+	// NOTE: static causes a memory leak, but we have to keep it because the value is cached.
 	static AsciiString val = "english";
 	if (cached) {
 		return val;
@@ -157,21 +180,21 @@ AsciiString GetRegistryLanguage(void)
 	return val;
 }
 
-AsciiString GetRegistryGameName(void)
+AsciiString GetRegistryGameName()
 {
 	AsciiString val = "GeneralsMPTest";
 	GetStringFromRegistry("", "SKU", val);
 	return val;
 }
 
-UnsignedInt GetRegistryVersion(void)
+UnsignedInt GetRegistryVersion()
 {
 	UnsignedInt val = 65536;
 	GetUnsignedIntFromRegistry("", "Version", val);
 	return val;
 }
 
-UnsignedInt GetRegistryMapPackVersion(void)
+UnsignedInt GetRegistryMapPackVersion()
 {
 	UnsignedInt val = 65536;
 	GetUnsignedIntFromRegistry("", "MapPackVersion", val);

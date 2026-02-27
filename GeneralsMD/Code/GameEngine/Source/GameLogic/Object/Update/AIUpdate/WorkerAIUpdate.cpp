@@ -100,6 +100,7 @@ WorkerAIUpdate::WorkerAIUpdate( Thing *thing, const ModuleData* moduleData ) :
 		}
 	}
 	m_currentTask = DOZER_TASK_INVALID;
+	m_previousTask = DOZER_TASK_INVALID;
 	m_buildSubTask = DOZER_SELECT_BUILD_DOCK_LOCATION;  // irrelevant, but I want non-garbage value
 
 	m_supplyTruckStateMachine = nullptr;
@@ -117,7 +118,7 @@ WorkerAIUpdate::WorkerAIUpdate( Thing *thing, const ModuleData* moduleData ) :
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
-WorkerAIUpdate::~WorkerAIUpdate( void )
+WorkerAIUpdate::~WorkerAIUpdate()
 {
 
 	// delete our behavior state machine
@@ -153,23 +154,23 @@ Bool WorkerAIUpdate::isAvailableForSupplying() const
 }
 
 // ------------------------------------------------------------------------------------------------
-Real WorkerAIUpdate::getRepairHealthPerSecond( void ) const
+Real WorkerAIUpdate::getRepairHealthPerSecond() const
 {
 	return getWorkerAIUpdateModuleData()->m_repairHealthPercentPerSecond;
 }
 // ------------------------------------------------------------------------------------------------
-Real WorkerAIUpdate::getBoredTime( void ) const
+Real WorkerAIUpdate::getBoredTime() const
 {
 	return getWorkerAIUpdateModuleData()->m_boredTime;
 }
 // ------------------------------------------------------------------------------------------------
-Real WorkerAIUpdate::getBoredRange( void ) const
+Real WorkerAIUpdate::getBoredRange() const
 {
 	return getWorkerAIUpdateModuleData()->m_boredRange;
 }
 
 // ------------------------------------------------------------------------------------------------
-void WorkerAIUpdate::createMachines( void )
+void WorkerAIUpdate::createMachines()
 {
 
 	if( m_workerMachine == nullptr )
@@ -232,7 +233,7 @@ Real WorkerAIUpdate::getWarehouseScanDistance() const
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
-UpdateSleepTime WorkerAIUpdate::update( void )
+UpdateSleepTime WorkerAIUpdate::update()
 {
 
 	//
@@ -696,6 +697,19 @@ void WorkerAIUpdate::cancelTask( DozerTask task )
 }
 
 //-------------------------------------------------------------------------------------------------
+/** Attempt to resume the previous task */
+//-------------------------------------------------------------------------------------------------
+void WorkerAIUpdate::resumePreviousTask()
+{
+	if (m_previousTask != DOZER_TASK_INVALID)
+	{
+		newTask(m_previousTask, TheGameLogic->findObjectByID(m_previousTaskInfo.m_targetObjectID));
+		m_previousTask = DOZER_TASK_INVALID;
+		m_previousTaskInfo = DozerTaskInfo();
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
 /** Is there a given task waiting to be done */
 //-------------------------------------------------------------------------------------------------
 Bool WorkerAIUpdate::isTaskPending( DozerTask task )
@@ -711,7 +725,7 @@ Bool WorkerAIUpdate::isTaskPending( DozerTask task )
 //-------------------------------------------------------------------------------------------------
 /** Is there any task pending */
 //-------------------------------------------------------------------------------------------------
-Bool WorkerAIUpdate::isAnyTaskPending( void )
+Bool WorkerAIUpdate::isAnyTaskPending()
 {
 
 	for( Int i = 0; i < DOZER_NUM_TASKS; i++ )
@@ -751,6 +765,9 @@ void WorkerAIUpdate::internalTaskComplete( DozerTask task )
 	m_task[ task ].m_targetObjectID = INVALID_ID;
 	m_task[ task ].m_taskOrderFrame = 0;
 
+	m_previousTask = DOZER_TASK_INVALID;
+	m_previousTaskInfo = DozerTaskInfo();
+
 	// remove dock point info for this task
 	for( Int i = 0; i < DOZER_NUM_DOCK_POINTS; i++ )
 		m_dockPoint[ task ][ i ].valid = FALSE;
@@ -772,6 +789,9 @@ void WorkerAIUpdate::internalCancelTask( DozerTask task )
 
 	// call the single method that gets called for completing and canceling tasks
 	internalTaskCompleteOrCancelled( task );
+
+	m_previousTask = task;
+	m_previousTaskInfo = m_task[task];
 
 	// remove the info for this task
 	m_task[ task ].m_targetObjectID = INVALID_ID;
@@ -874,7 +894,7 @@ void WorkerAIUpdate::internalTaskCompleteOrCancelled( DozerTask task )
 //-------------------------------------------------------------------------------------------------
 /** If we were building something, kill the active-construction flag on it */
 //-------------------------------------------------------------------------------------------------
-void WorkerAIUpdate::onDelete( void )
+void WorkerAIUpdate::onDelete()
 {
 	Int i;
 
@@ -900,7 +920,7 @@ void WorkerAIUpdate::onDelete( void )
 //-------------------------------------------------------------------------------------------------
 /** Get the most recently issued task */
 //-------------------------------------------------------------------------------------------------
-DozerTask WorkerAIUpdate::getMostRecentCommand( void )
+DozerTask WorkerAIUpdate::getMostRecentCommand()
 {
 	Int i;
 	DozerTask mostRecentTask = DOZER_TASK_INVALID;
@@ -1215,7 +1235,7 @@ void WorkerStateMachine::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void WorkerStateMachine::loadPostProcess( void )
+void WorkerStateMachine::loadPostProcess()
 {
 	StateMachine::loadPostProcess();
 }
@@ -1411,11 +1431,17 @@ void WorkerAIUpdate::crc( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Xfer method
 	* Version Info:
-	* 1: Initial version */
+	* 1: Initial version
+	* 2: TheSuperHackers @tweak Stubbjax 17/11/2025 Save the worker's previous task
+	*/
 // ------------------------------------------------------------------------------------------------
 void WorkerAIUpdate::xfer( Xfer *xfer )
 {
-  XferVersion currentVersion = 1;
+#if RETAIL_COMPATIBLE_XFER_SAVE
+	XferVersion currentVersion = 1;
+#else
+	XferVersion currentVersion = 2;
+#endif
   XferVersion version = currentVersion;
   xfer->xferVersion( &version, currentVersion );
 
@@ -1438,6 +1464,12 @@ void WorkerAIUpdate::xfer( Xfer *xfer )
 	}
 	xfer->xferSnapshot(m_dozerMachine);
 	xfer->xferUser(&m_currentTask, sizeof(m_currentTask));
+
+	if (currentVersion >= 2)
+	{
+		xfer->xferUser(&m_previousTask, sizeof(m_previousTask));
+		xfer->xferUser(&m_previousTaskInfo, sizeof(m_previousTaskInfo));
+	}
 
 	Int dockPoints = DOZER_NUM_DOCK_POINTS;
 	xfer->xferInt(&dockPoints);
@@ -1468,7 +1500,7 @@ void WorkerAIUpdate::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void WorkerAIUpdate::loadPostProcess( void )
+void WorkerAIUpdate::loadPostProcess()
 {
  // extend base class
 	AIUpdateInterface::loadPostProcess();

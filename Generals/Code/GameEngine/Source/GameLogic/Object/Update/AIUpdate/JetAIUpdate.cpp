@@ -2147,7 +2147,7 @@ Bool JetAIUpdate::isAllowedToMoveAwayFromUnit() const
 }
 
 //-------------------------------------------------------------------------------------------------
-Bool JetAIUpdate::isDoingGroundMovement(void) const
+Bool JetAIUpdate::isDoingGroundMovement() const
 {
 	// srj per jba: Air units should never be doing ground movement, even when taxiing...
 	// (exception: see getTreatAsAircraftForLocoDistToGoal)
@@ -2337,6 +2337,27 @@ void JetAIUpdate::aiDoCommand(const AICommandParms* parms)
 				// don't need (or want) to take off for these
 				break;
 
+#if !RETAIL_COMPATIBLE_CRC
+			// TheSuperHackers @tweak Stubbjax 23/01/2026 Parked jets now defer offensive commands when out of ammo.
+			case AICMD_ATTACKMOVE_TO_POSITION:
+			case AICMD_ATTACK_AREA:
+			case AICMD_ATTACK_OBJECT:
+			case AICMD_ATTACK_POSITION:
+			case AICMD_ATTACK_TEAM:
+			case AICMD_FORCE_ATTACK_OBJECT:
+			case AICMD_GUARD_AREA:
+			case AICMD_GUARD_OBJECT:
+			case AICMD_GUARD_POSITION:
+			case AICMD_HUNT:
+				if (isOutOfSpecialReloadAmmo(getObject()))
+				{
+					setFlag(HAS_PENDING_COMMAND, true);
+					return;
+				}
+
+				FALLTHROUGH;
+#endif
+
 			case AICMD_ENTER:
 			case AICMD_GET_REPAIRED:
 
@@ -2482,7 +2503,7 @@ void JetAIUpdate::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void JetAIUpdate::loadPostProcess( void )
+void JetAIUpdate::loadPostProcess()
 {
 	//When drawables are created, so are their ambient sounds. After loading, only turn off the
 	//ambient sound if the engine is off.

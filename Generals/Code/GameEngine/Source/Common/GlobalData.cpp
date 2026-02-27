@@ -46,7 +46,7 @@
 #include "Common/FileSystem.h"
 #include "Common/GameAudio.h"
 #include "Common/INI.h"
-#include "Common/UserPreferences.h"
+#include "Common/OptionPreferences.h"
 #include "Common/version.h"
 
 #include "GameLogic/AI.h"
@@ -942,6 +942,7 @@ GlobalData::GlobalData()
 	m_renderFpsFontSize = 8;
 	m_systemTimeFontSize = 8;
 	m_gameTimeFontSize = 8;
+	m_playerInfoListFontSize = 8;
 
 	m_showMoneyPerMinute = FALSE;
 	m_allowMoneyPerMinuteForPlayer = FALSE;
@@ -1040,7 +1041,7 @@ AsciiString GlobalData::getPath_UserData() const
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
-GlobalData::~GlobalData( void )
+GlobalData::~GlobalData()
 {
 	DEBUG_ASSERTCRASH( TheWritableGlobalData->m_next == nullptr, ("~GlobalData: theOriginal is not original") );
 
@@ -1078,7 +1079,7 @@ Bool GlobalData::setTimeOfDay( TimeOfDay tod )
 	* initial values of the newly created instance will be a copy of the current
 	* data (or the most recently created override) */
 //-------------------------------------------------------------------------------------------------
-GlobalData *GlobalData::newOverride( void )
+GlobalData *GlobalData::newOverride()
 {
 	// TheSuperHackers @info This copy is not implemented in VS6 builds
 	GlobalData *override = NEW GlobalData;
@@ -1102,7 +1103,7 @@ GlobalData *GlobalData::newOverride( void )
 }
 
 //-------------------------------------------------------------------------------------------------
-void GlobalData::init( void )
+void GlobalData::init()
 {
 	m_exeCRC = generateExeCRC();
 }
@@ -1111,7 +1112,7 @@ void GlobalData::init( void )
 /** Reset, remove any override data instances and return to just the initial one
 	*/
 //-------------------------------------------------------------------------------------------------
-void GlobalData::reset( void )
+void GlobalData::reset()
 {
 	DEBUG_ASSERTCRASH(this == TheWritableGlobalData, ("calling reset on wrong GlobalData"));
 
@@ -1205,6 +1206,7 @@ void GlobalData::parseGameDataDefinition( INI* ini )
 	TheWritableGlobalData->m_renderFpsFontSize = optionPref.getRenderFpsFontSize();
 	TheWritableGlobalData->m_systemTimeFontSize = optionPref.getSystemTimeFontSize();
 	TheWritableGlobalData->m_gameTimeFontSize = optionPref.getGameTimeFontSize();
+	TheWritableGlobalData->m_playerInfoListFontSize = optionPref.getPlayerInfoListFontSize();
 	TheWritableGlobalData->m_showMoneyPerMinute = optionPref.getShowMoneyPerMinute();
 
 	Int val=optionPref.getGammaValue();

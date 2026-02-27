@@ -86,7 +86,7 @@ public:
 
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
-BodyParticleSystem::~BodyParticleSystem( void )
+BodyParticleSystem::~BodyParticleSystem()
 {
 
 }
@@ -184,13 +184,13 @@ ActiveBody::ActiveBody( Thing *thing, const ModuleData* moduleData ) :
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
-ActiveBody::~ActiveBody( void )
+ActiveBody::~ActiveBody()
 {
 }
 
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
-void ActiveBody::onDelete( void )
+void ActiveBody::onDelete()
 {
 
 	// delete all particle systems
@@ -1084,7 +1084,7 @@ void ActiveBody::createParticleSystems( const AsciiString &boneBaseName,
 // ------------------------------------------------------------------------------------------------
 /** Delete all the body particle systems */
 // ------------------------------------------------------------------------------------------------
-void ActiveBody::deleteAllParticleSystems( void )
+void ActiveBody::deleteAllParticleSystems()
 {
 	BodyParticleSystem *nextBodySystem;
 	ParticleSystem *particleSystem;
@@ -1113,7 +1113,7 @@ void ActiveBody::deleteAllParticleSystems( void )
 // ------------------------------------------------------------------------------------------------
 /* 	This function is called on state changes only.  Body Type or Aflameness. */
 // ------------------------------------------------------------------------------------------------
-void ActiveBody::updateBodyParticleSystems( void )
+void ActiveBody::updateBodyParticleSystems()
 {
 	static const ParticleSystemTemplate *fireSmallTemplate   = TheParticleSystemManager->findTemplate( TheGlobalData->m_autoFireParticleSmallSystem );
 	static const ParticleSystemTemplate *fireMediumTemplate  = TheParticleSystemManager->findTemplate( TheGlobalData->m_autoFireParticleMediumSystem );
@@ -1263,7 +1263,13 @@ void ActiveBody::internalAddSubdualDamage( Real delta )
 	const ActiveBodyModuleData *data = getActiveBodyModuleData();
 
 	m_currentSubdualDamage += delta;
+#if RETAIL_COMPATIBLE_CRC
 	m_currentSubdualDamage = min(m_currentSubdualDamage, data->m_subdualDamageCap);
+#else
+	// TheSuperHackers @bugfix Stubbjax 25/01/2026 Subdual damage can no longer go negative, which
+	// stops weak subdual damage + rapid healing from negatively stacking subdual damage over time.
+	m_currentSubdualDamage = clamp(0.0f, m_currentSubdualDamage, data->m_subdualDamageCap);
+#endif
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -1659,7 +1665,7 @@ void ActiveBody::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void ActiveBody::loadPostProcess( void )
+void ActiveBody::loadPostProcess()
 {
 
 	// extend base class

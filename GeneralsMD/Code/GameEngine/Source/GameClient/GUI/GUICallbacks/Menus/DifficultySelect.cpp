@@ -51,7 +51,7 @@
 //-----------------------------------------------------------------------------
 // USER INCLUDES //////////////////////////////////////////////////////////////
 //-----------------------------------------------------------------------------
-#include "Common/UserPreferences.h"
+#include "Common/OptionPreferences.h"
 #include "GameClient/WindowLayout.h"
 #include "GameClient/Gadget.h"
 #include "GameClient/Shell.h"
@@ -89,7 +89,7 @@ void setupGameStart(AsciiString mapName, GameDifficulty diff);
 //-----------------------------------------------------------------------------
 // PUBLIC FUNCTIONS ///////////////////////////////////////////////////////////
 //-----------------------------------------------------------------------------
-static void SetDifficultyRadioButton( void )
+static void SetDifficultyRadioButton()
 {
 	OptionPreferences pref;
 	if (!TheScriptEngine)
