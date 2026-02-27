@@ -38,7 +38,7 @@
 #include "Common/GlobalData.h"
 #include "Common/NameKeyGenerator.h"
 #include "Common/RandomValue.h"
-#include "Common/UserPreferences.h"
+#include "Common/OptionPreferences.h"
 #include "Common/version.h"
 #include "GameClient/AnimateWindowManager.h"
 #include "GameClient/ExtendedMessageBox.h"
@@ -70,7 +70,6 @@
 #include "GameNetwork/DownloadManager.h"
 #include "GameNetwork/GameSpy/MainMenuUtils.h"
 
-#include "GameClient/CDCheck.h"
 #include "GameClient/InGameUI.h"
 
 
@@ -95,7 +94,7 @@ static NameKeyType campaignID = NAMEKEY_INVALID;
 static GameWindow *buttonCampaign = nullptr;
 #ifdef TEST_COMPRESSION
 static GameWindow *buttonCompressTest = nullptr;
-void DoCompressTest( void );
+void DoCompressTest();
 #endif // TEST_COMPRESSION
 #endif
 
@@ -205,7 +204,7 @@ extern DisplaySettings oldDispSettings, newDispSettings;
 extern Bool dispChanged;
 //static time_t timeStarted = 0, currentTime = 0;
 
-void diffReverseSide( void );
+void diffReverseSide();
 void HandleCanceledDownload( Bool resetDropDown )
 {
 	buttonPushed = FALSE;
@@ -230,7 +229,7 @@ static void showSelectiveButtons( Int show )
 	buttonChinaLoadGame->winHide(!(show == SHOW_CHINA ));
 }
 
-static void quitCallback( void )
+static void quitCallback()
 {
 	buttonPushed = TRUE;
 	TheScriptEngine->signalUIInteract(TheShellHookNames[SHELL_SCRIPT_HOOK_MAIN_MENU_EXIT_SELECTED]);
@@ -264,25 +263,7 @@ void prepareCampaignGame(GameDifficulty diff)
 	setupGameStart(TheCampaignManager->getCurrentMap(), diff );
 }
 
-static MessageBoxReturnType cancelStartBecauseOfNoCD( void *userData )
-{
-	return MB_RETURN_CLOSE;
-}
-
-static MessageBoxReturnType checkCDCallback( void *userData )
-{
-	if (!IsFirstCDPresent())
-	{
-		return MB_RETURN_KEEPOPEN;
-	}
-	else
-	{
-		prepareCampaignGame((GameDifficulty)(Int)(Int *)userData);
-		return MB_RETURN_CLOSE;
-	}
-}
-
-static void doGameStart( void )
+static void doGameStart()
 {
 	startGame = FALSE;
 
@@ -297,20 +278,6 @@ static void doGameStart( void )
 	InitRandom(0);
 
 	isShuttingDown = TRUE;
-}
-
-static void checkCDBeforeCampaign(GameDifficulty diff)
-{
-	if (!IsFirstCDPresent())
-	{
-		// popup a dialog asking for a CD
-		ExMessageBoxOkCancel(TheGameText->fetch("GUI:InsertCDPrompt"), TheGameText->fetch("GUI:InsertCDMessage"),
-			(void *)diff, checkCDCallback, cancelStartBecauseOfNoCD);
-	}
-	else
-	{
-		prepareCampaignGame(diff);
-	}
 }
 
 static void shutdownComplete( WindowLayout *layout )
@@ -336,7 +303,7 @@ static void TimetToFileTime( time_t t, LPFILETIME pft )
 }
 */
 
-void initialHide( void )
+void initialHide()
 {
 GameWindow *win = nullptr;
 	win = TheWindowManager->winGetWindowFromId(parentMainMenu, TheNameKeyGenerator->nameToKey("MainMenu.wnd:WinFactionGLA"));
@@ -987,7 +954,7 @@ WindowMsgHandledType MainMenuInput( GameWindow *window, UnsignedInt msg,
 	return MSG_IGNORED;
 
 }
-void PrintOffsetsFromControlBarParent( void );
+void PrintOffsetsFromControlBarParent();
 //-------------------------------------------------------------------------------------------------
 /** Main menu window system callback */
 //-------------------------------------------------------------------------------------------------
@@ -1534,21 +1501,21 @@ WindowMsgHandledType MainMenuSystem( GameWindow *window, UnsignedInt msg,
 				if(dontAllowTransitions)
 					break;
 
-				checkCDBeforeCampaign(DIFFICULTY_EASY);
+				prepareCampaignGame(DIFFICULTY_EASY);
 			}
 			else if(controlID == buttonMediumID)
 			{
 				if(dontAllowTransitions)
 					break;
 
-				checkCDBeforeCampaign(DIFFICULTY_NORMAL);
+				prepareCampaignGame(DIFFICULTY_NORMAL);
 			}
 			else if(controlID == buttonHardID)
 			{
 				if(dontAllowTransitions)
 					break;
 
-				checkCDBeforeCampaign(DIFFICULTY_HARD);
+				prepareCampaignGame(DIFFICULTY_HARD);
 			}
 			else if(controlID == buttonDiffBackID)
 			{
@@ -1575,7 +1542,7 @@ WindowMsgHandledType MainMenuSystem( GameWindow *window, UnsignedInt msg,
 
 }
 
-void diffReverseSide( void )
+void diffReverseSide()
 {
 	switch (showSide) {
 	case SHOW_TRAINING:
