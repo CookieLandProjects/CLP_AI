@@ -1200,13 +1200,17 @@ Bool SpecialAbilityUpdate::continuePreparation()
         //Target is dead, stop.
         return false;
       }
+      target->setIsBeingCaptured(false); // @-TanSo-: track whether a building is in the process of being captured. Usable for scripts.
 
       Relationship r = getObject()->getRelationship(target);
       if( r == ALLIES )
       {
         //It's been captured by a colleague, so cancel!
+        target->setIsBeingCaptured(false);
         return false;
       }
+
+      target->setIsBeingCaptured(true);
 
       if (data->m_doCaptureFX)
       {

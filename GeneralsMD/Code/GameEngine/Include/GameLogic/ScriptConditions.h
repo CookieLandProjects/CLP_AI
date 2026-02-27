@@ -210,8 +210,14 @@ protected:
   Bool evaluatePlayerSightedRelationType(Parameter* pPlayerParm, Int relationType, Parameter* pObjectType);
   Bool evaluateRelationPlayerSightedRelationType(Parameter* pPlayerParm, Int playerRelationType, Int relationType, Parameter* pObjecType);
 	Bool evaluateRelationPlayerValueArea(Condition* pCondition, Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Int value, Parameter* pTriggerParm);
+	Bool evaluateRelationPlayerOwnsComparsionType(Condition* pCondition, Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Int value, Parameter* objectType);
+	Bool evaluatePlayerAttackedInArea(Parameter* pPlayerParm, Parameter* pTriggerParm);
+  Bool evaluatePlayerBuildingBeingCaptured(Parameter* pPlayerParm);
+	Bool evaluatePlayerBuildingBeingCapturedType(Parameter* pPlayerParm, Parameter* objectType);
+	Bool evaluatePlayerBuildingBeingCapturedArea(Parameter* pPlayerParm, Parameter* pTriggerParm);
+	Bool evaluatePlayerBuildingBeingCapturedTypeArea(Parameter* pPlayerParm, Parameter* objectType, Parameter* pTriggerParm);
 
-	// @-TanSo-: 24 additions, 1 helper method
+	// @-TanSo-: 30 additions, 1 helper method
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 	//-------------------------------------------------------------------------------------------------

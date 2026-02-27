@@ -45,6 +45,8 @@
 #include "Common/Team.h"
 #include "Common/Upgrade.h"
 
+#include "Common/BuildAssistant.h"			//  @-TanSo-: we need it for scripts, thanks.
+
 #include "GameClient/Anim2D.h"
 #include "GameClient/CampaignManager.h"
 #include "GameClient/CommandXlat.h"
@@ -9056,6 +9058,566 @@ void ScriptActions::doTeamLoadAllTransportsEvenly(const AsciiString& teamName)
 		}
 	}
 }
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerCancelAllConstructions(const AsciiString& playerName)
+{
+  Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+			{
+				Object* pObj = objIter.cur();
+				if (!pObj) continue;
+
+				if (pObj->getStatusBits().test(OBJECT_STATUS_UNDER_CONSTRUCTION))
+				{
+					//@-TanSo-: it's easier to do this than to implement an actual command button case for "GUI_COMMAND_DOZER_CONSTRUCT_CANCEL"
+					pPlayer->getMoney()->deposit(pObj->getTemplate()->friend_getBuildCost());
+					pObj->kill();
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerCancelAllConstructionsType(const AsciiString& playerName, const AsciiString& objectType)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		Player::PlayerTeamList::const_iterator it;
+		for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+		{
+			for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+				Team* team = iter.cur();
+				if (!team) continue;
+
+				for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+				{
+					Object* pObj = objIter.cur();
+					if (!pObj) continue;
+
+					if (pObj->getTemplate() != templ)
+						continue;
+						
+					if (pObj->getStatusBits().test(OBJECT_STATUS_UNDER_CONSTRUCTION))
+					{
+						//@-TanSo-: it's easier to do this than to implement an actual command button case for "GUI_COMMAND_DOZER_CONSTRUCT_CANCEL"
+						pPlayer->getMoney()->deposit(pObj->getTemplate()->friend_getBuildCost());
+						pObj->kill();
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			Player::PlayerTeamList::const_iterator it;
+			for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+			{
+				for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+					Team* team = iter.cur();
+					if (!team) continue;
+
+					for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+					{
+						Object* pObj = objIter.cur();
+						if (!pObj) continue;
+
+						if (!objectTypes->isInSet(pObj->getTemplate()))
+							continue;
+
+						if (pObj->getStatusBits().test(OBJECT_STATUS_UNDER_CONSTRUCTION))
+						{
+							//@-TanSo-: it's easier to do this than to implement an actual command button case for "GUI_COMMAND_DOZER_CONSTRUCT_CANCEL"
+							pPlayer->getMoney()->deposit(pObj->getTemplate()->friend_getBuildCost());
+							pObj->kill();
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerCancelAllConstructionsArea(const AsciiString& playerName, const AsciiString& triggerArea)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(triggerArea);
+	if (!pTrig) return;
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+			{
+				Object* pObj = objIter.cur();
+				if (!pObj) continue;
+
+				if (!pObj->isInside(pTrig))
+					continue;
+
+				if (pObj->getStatusBits().test(OBJECT_STATUS_UNDER_CONSTRUCTION))
+				{
+					//@-TanSo-: it's easier to do this than to implement an actual command button case for "GUI_COMMAND_DOZER_CONSTRUCT_CANCEL"
+					pPlayer->getMoney()->deposit(pObj->getTemplate()->friend_getBuildCost());
+					pObj->kill();
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerCancelAllConstructionsTypeArea(const AsciiString& playerName, const AsciiString& objectType, const AsciiString& triggerArea)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(triggerArea);
+	if (!pTrig) return;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		Player::PlayerTeamList::const_iterator it;
+		for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+		{
+			for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+				Team* team = iter.cur();
+				if (!team) continue;
+
+				for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+				{
+					Object* pObj = objIter.cur();
+					if (!pObj) continue;
+
+					if (pObj->getTemplate() != templ)
+						continue;
+
+					if (!pObj->isInside(pTrig))
+						continue;
+
+					if (pObj->getStatusBits().test(OBJECT_STATUS_UNDER_CONSTRUCTION))
+					{
+						//@-TanSo-: it's easier to do this than to implement an actual command button case for "GUI_COMMAND_DOZER_CONSTRUCT_CANCEL"
+						pPlayer->getMoney()->deposit(pObj->getTemplate()->friend_getBuildCost());
+						pObj->kill();
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			Player::PlayerTeamList::const_iterator it;
+			for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+			{
+				for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+					Team* team = iter.cur();
+					if (!team) continue;
+
+					for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+					{
+						Object* pObj = objIter.cur();
+						if (!pObj) continue;
+
+						if (!objectTypes->isInSet(pObj->getTemplate()))
+							continue;
+
+						if (!pObj->isInside(pTrig))
+							continue;
+
+						if (pObj->getStatusBits().test(OBJECT_STATUS_UNDER_CONSTRUCTION))
+						{
+							//@-TanSo-: it's easier to do this than to implement an actual command button case for "GUI_COMMAND_DOZER_CONSTRUCT_CANCEL"
+							pPlayer->getMoney()->deposit(pObj->getTemplate()->friend_getBuildCost());
+							pObj->kill();
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerSellAllBuildingsInCaptureProcessPercentage(const AsciiString& playerName, Int percentage)
+{
+  Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+			{
+				Object* pObj = objIter.cur();
+				if (!pObj) continue;
+
+				if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+				{
+					Int randomValue = GameLogicRandomValue(0, 100);
+          if (randomValue <= percentage) TheBuildAssistant->sellObject(pObj);
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerSellAllBuildingsTypeInCaptureProcessPercentage(const AsciiString& playerName, const AsciiString& objectType, Int percentage)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+	if (templ)
+	{
+		Player::PlayerTeamList::const_iterator it;
+		for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+		{
+			for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+				Team* team = iter.cur();
+				if (!team) continue;
+
+				for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+				{
+					Object* pObj = objIter.cur();
+					if (!pObj) continue;
+
+					if (pObj->getTemplate() != templ) continue;
+
+					if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+					{
+						Int randomValue = GameLogicRandomValue(0, 100);
+						if (randomValue <= percentage) TheBuildAssistant->sellObject(pObj);
+					}
+				}
+			}
+		}
+	}
+	else {
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			Player::PlayerTeamList::const_iterator it;
+			for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+			{
+				for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+					Team* team = iter.cur();
+					if (!team) continue;
+
+					for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+					{
+						Object* pObj = objIter.cur();
+						if (!pObj) continue;
+
+						if (!objectTypes->isInSet(pObj->getTemplate())) continue;
+
+						if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+						{
+							Int randomValue = GameLogicRandomValue(0, 100);
+							if (randomValue <= percentage) TheBuildAssistant->sellObject(pObj);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerSellAllBuildingsAreaInCaptureProcessPercentage(const AsciiString& playerName, const AsciiString& triggerArea, Int percentage)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(triggerArea);
+	if (!pTrig) return;
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+			{
+				Object* pObj = objIter.cur();
+				if (!pObj) continue;
+
+				if (!pObj->isInside(pTrig)) continue;
+
+				if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+				{
+					Int randomValue = GameLogicRandomValue(0, 100);
+					if (randomValue <= percentage) TheBuildAssistant->sellObject(pObj);
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerSellAllBuildingsTypeAreaInCaptureProcessPercentage(const AsciiString& playerName, const AsciiString& objectType, const AsciiString& triggerArea, Int percentage)
+{
+  Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(triggerArea);
+	if (!pTrig) return;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+	if (templ)
+	{
+		Player::PlayerTeamList::const_iterator it;
+		for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+		{
+			for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+				Team* team = iter.cur();
+				if (!team) continue;
+
+				for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+				{
+					Object* pObj = objIter.cur();
+					if (!pObj) continue;
+
+					if (pObj->getTemplate() != templ) continue;
+
+					if (!pObj->isInside(pTrig)) continue;
+
+					if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+					{
+						Int randomValue = GameLogicRandomValue(0, 100);
+						if (randomValue <= percentage) TheBuildAssistant->sellObject(pObj);
+					}
+				}
+			}
+		}
+	}
+	else {
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			Player::PlayerTeamList::const_iterator it;
+			for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+			{
+				for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+					Team* team = iter.cur();
+					if (!team) continue;
+
+					for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+					{
+						Object* pObj = objIter.cur();
+						if (!pObj) continue;
+
+						if (!objectTypes->isInSet(pObj->getTemplate())) continue;
+
+						if (!pObj->isInside(pTrig)) continue;
+
+						if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+						{
+							Int randomValue = GameLogicRandomValue(0, 100);
+							if (randomValue <= percentage) TheBuildAssistant->sellObject(pObj);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerSellAllBuildingsType(const AsciiString& playerName, const AsciiString& objectType)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+	if (templ)
+	{
+		Player::PlayerTeamList::const_iterator it;
+		for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+		{
+			for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+				Team* team = iter.cur();
+				if (!team) continue;
+
+				for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+				{
+					Object* pObj = objIter.cur();
+					if (!pObj) continue;
+
+					if (pObj->getTemplate() != templ) continue;
+
+					if (pObj->isKindOf(KINDOF_STRUCTURE))
+					{
+						TheBuildAssistant->sellObject(pObj);
+					}
+				}
+			}
+		}
+	}
+	else {
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			Player::PlayerTeamList::const_iterator it;
+			for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+			{
+				for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+					Team* team = iter.cur();
+					if (!team) continue;
+
+					for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+					{
+						Object* pObj = objIter.cur();
+						if (!pObj) continue;
+
+						if (!objectTypes->isInSet(pObj->getTemplate())) continue;
+
+						if (pObj->isKindOf(KINDOF_STRUCTURE))
+						{
+							TheBuildAssistant->sellObject(pObj);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerSellAllBuildingsArea(const AsciiString& playerName, const AsciiString& triggerArea)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(triggerArea);
+	if (!pTrig) return;
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+			{
+				Object* pObj = objIter.cur();
+				if (!pObj) continue;
+
+				if (!pObj->isInside(pTrig)) continue;
+
+				if (pObj->isKindOf(KINDOF_STRUCTURE))
+				{
+					TheBuildAssistant->sellObject(pObj);
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerSellAllBuildingsTypeArea(const AsciiString& playerName, const AsciiString& objectType, const AsciiString& triggerArea)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(triggerArea);
+	if (!pTrig) return;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+	if (templ)
+	{
+		Player::PlayerTeamList::const_iterator it;
+		for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+		{
+			for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+				Team* team = iter.cur();
+				if (!team) continue;
+
+				for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+				{
+					Object* pObj = objIter.cur();
+					if (!pObj) continue;
+
+					if (pObj->getTemplate() != templ) continue;
+
+					if (!pObj->isInside(pTrig)) continue;
+
+					if (pObj->isKindOf(KINDOF_STRUCTURE))
+					{
+						TheBuildAssistant->sellObject(pObj);
+					}
+				}
+			}
+		}
+	}
+	else {
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			Player::PlayerTeamList::const_iterator it;
+			for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+			{
+				for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+					Team* team = iter.cur();
+					if (!team) continue;
+
+					for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+					{
+						Object* pObj = objIter.cur();
+						if (!pObj) continue;
+
+						if (!objectTypes->isInSet(pObj->getTemplate())) continue;
+
+						if (!pObj->isInside(pTrig)) continue;
+
+						if (pObj->isKindOf(KINDOF_STRUCTURE))
+						{
+							TheBuildAssistant->sellObject(pObj);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 //-------------------------------------------------------------------------------------------------
 //----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 //-------------------------------------------------------------------------------------------------
@@ -10361,5 +10923,39 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 		case ScriptAction::TEAM_LOAD_EVENLY:
 			doTeamLoadAllTransportsEvenly(pAction->getParameter(0)->getString());
       return;
+    case ScriptAction::PLAYER_CANCEL_ALL_CONSTRUCTIONS:
+			doPlayerCancelAllConstructions(pAction->getParameter(0)->getString());
+			return;
+		case ScriptAction::PLAYER_CANCEL_ALL_CONSTRUCTIONS_TYPE:
+			doPlayerCancelAllConstructionsType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::PLAYER_CANCEL_ALL_CONSTRUCTIONS_AREA:
+			doPlayerCancelAllConstructionsArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::PLAYER_CANCEL_ALL_CONSTRUCTIONS_TYPE_AREA:
+			doPlayerCancelAllConstructionsTypeArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::PLAYER_SELL_ALL_BUILDINGS_IN_CAPTURE_PROCESS_PERCENTAGE:
+			doPlayerSellAllBuildingsInCaptureProcessPercentage(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+      return;
+		case ScriptAction::PLAYER_SELL_ALL_BUILDINGS_TYPE_IN_CAPTURE_PROCESS_PERCENTAGE:
+			doPlayerSellAllBuildingsTypeInCaptureProcessPercentage(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
+			return;
+    case ScriptAction::PLAYER_SELL_ALL_BUILDINGS_AREA_IN_CAPTURE_PROCESS_PERCENTAGE:
+      doPlayerSellAllBuildingsAreaInCaptureProcessPercentage(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
+      return;
+    case ScriptAction::PLAYER_SELL_ALL_BUILDINGS_TYPE_AREA_IN_CAPTURE_PROCESS_PERCENTAGE:
+			doPlayerSellAllBuildingsTypeAreaInCaptureProcessPercentage(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getInt());
+      return;
+		case ScriptAction::PLAYER_SELL_ALL_BUILDINGS_TYPE:
+			doPlayerSellAllBuildingsType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+      return;
+    case ScriptAction::PLAYER_SELL_ALL_BUILDINGS_AREA:
+      doPlayerSellAllBuildingsArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+      return;
+    case ScriptAction::PLAYER_SELL_ALL_BUILDINGS_TYPE_AREA:
+			doPlayerSellAllBuildingsTypeArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+      return;
+
 	}
 }

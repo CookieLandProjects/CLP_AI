@@ -438,7 +438,19 @@ protected:
 
 	void doSkirmishFireSpecialPowerAtMostCostEconomy(const AsciiString& player, const AsciiString& specialPower);
 
-	// @-TanSo-: 42 additions
+  void doPlayerCancelAllConstructions(const AsciiString& playerName);
+	void doPlayerCancelAllConstructionsType(const AsciiString& playerName, const AsciiString& objectType);
+	void doPlayerCancelAllConstructionsArea(const AsciiString& playerName, const AsciiString& triggerArea);
+	void doPlayerCancelAllConstructionsTypeArea(const AsciiString& playerName, const AsciiString& objectType, const AsciiString& triggerArea);
+	void doPlayerSellAllBuildingsInCaptureProcessPercentage(const AsciiString& playerName, Int percentage);
+	void doPlayerSellAllBuildingsTypeInCaptureProcessPercentage(const AsciiString& playerName, const AsciiString& objectType, Int percentage);
+	void doPlayerSellAllBuildingsAreaInCaptureProcessPercentage(const AsciiString& playerName, const AsciiString& triggerArea, Int percentage);
+	void doPlayerSellAllBuildingsTypeAreaInCaptureProcessPercentage(const AsciiString& playerName, const AsciiString& objectType, const AsciiString& triggerArea, Int percentage);
+	void doPlayerSellAllBuildingsType(const AsciiString& playerName, const AsciiString& objectType);
+	void doPlayerSellAllBuildingsArea(const AsciiString& playerName, const AsciiString& triggerArea);
+	void doPlayerSellAllBuildingsTypeArea(const AsciiString& playerName, const AsciiString& objectType, const AsciiString& triggerArea);
+
+	// @-TanSo-: 53 additions
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 	//-------------------------------------------------------------------------------------------------

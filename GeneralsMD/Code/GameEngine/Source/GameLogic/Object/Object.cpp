@@ -6541,3 +6541,5 @@ ObjectID Object::calculateCountermeasureToDivertTo( const Object& victim )
 	}
 	return INVALID_ID;
 }
+
+void Object::setIsBeingCaptured(Bool beingCaptured) { m_isBeingCaptured = beingCaptured; }

@@ -633,6 +633,9 @@ public:
 	// player. These are friend_s for player.
 	void friend_adjustPowerForPlayer( Bool incoming );
 
+	Bool isBeingCaptured() const { return m_isBeingCaptured; }
+	void setIsBeingCaptured(Bool beingCaptured);
+
 protected:
 
 	void setOrRestoreTeam( Team* team, Bool restoring );
@@ -814,6 +817,8 @@ private:
 	Bool													m_singleUseCommandUsed;
 	Bool													m_isReceivingDifficultyBonus;
 
+	// --------- @CLP_AI ADDITIONS
+  Bool													m_isBeingCaptured;			 ///< True if we're in the process of being captured.
 };
 
 // deleteInstance is not meant to be used with Object in order to require the use of TheGameLogic->destroyObject()

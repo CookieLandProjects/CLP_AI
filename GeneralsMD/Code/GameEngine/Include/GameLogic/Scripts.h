@@ -631,7 +631,19 @@ public:
 
 			/*TODO*/SWITCH_BUILDLIST_ID,													///< The player switches to BuildList ID <int> for its main base.
 			/*TODO*/SWITCH_BUILDLIST_ID_AT_SPOT,									///< The player switches to BuildList ID <int> at a specified spot.
-			/*TODO*/SELL_BUILDING_IN_CAPTURE_PROCESS_PERCENTAGE,	///< Make an AI player sell off a building that is being captured with a % chance.
+			PLAYER_SELL_ALL_BUILDINGS_IN_CAPTURE_PROCESS_PERCENTAGE,///< Make an AI player sell off all buildings that are being captured with a % chance.
+			PLAYER_SELL_ALL_BUILDINGS_TYPE_IN_CAPTURE_PROCESS_PERCENTAGE,///< Make an AI player sell off all buildings of a type that are being captured with a % chance.
+			PLAYER_SELL_ALL_BUILDINGS_AREA_IN_CAPTURE_PROCESS_PERCENTAGE,///< Make an AI player sell off a building in an area that are being captured with a % chance.
+			PLAYER_SELL_ALL_BUILDINGS_TYPE_AREA_IN_CAPTURE_PROCESS_PERCENTAGE,///< Make an AI player sell off a building of a type in an area that are being captured with a % chance.
+
+      PLAYER_CANCEL_ALL_CONSTRUCTIONS,							///< A player cancels the construction of all buildings.
+      PLAYER_CANCEL_ALL_CONSTRUCTIONS_TYPE,					///< A player cancels the construction of all buildings of a type.
+      PLAYER_CANCEL_ALL_CONSTRUCTIONS_AREA,					///< A player cancels the construction of all buildings in an area.
+      PLAYER_CANCEL_ALL_CONSTRUCTIONS_TYPE_AREA,		///< A player cancels the construction of all buildings of a type in an area.
+
+      PLAYER_SELL_ALL_BUILDINGS_TYPE,								///< Make an AI player sell off all buildings of a type.
+      PLAYER_SELL_ALL_BUILDINGS_AREA,								///< Make an AI player sell off all buildings in an area.
+      PLAYER_SELL_ALL_BUILDINGS_TYPE_AREA,					///< Make an AI player sell off all buildings of a type in an area.
 
 			//-------------------------------------------------------------------------------------------------
 			//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------
@@ -1118,9 +1130,16 @@ public:
 		PLAYER_MAPCONTROL,											// True if a player's map control is <comparison> <Real>.
 		PLAYER_RELATION_MAPCONTROL,							// True if all <relation> player's map control is <comparison> <Real>.
 
-    PLAYER_SIGHTED_RELATION_TYPE,							// True if a player has sighted a <relation> unit of <type>.
-    RELATION_PLAYER_SIGHTED_RELATION_TYPE,		// True if a <relation> player has sighted a <relation> unit of <type>.
-    RELATION_PLAYER_VALUE_AREA, 							// True if the value of a <relation> player in an area is <comparison> <Int>.
+    PLAYER_SIGHTED_RELATION_TYPE,						// True if a player has sighted a <relation> unit of <type>.
+    RELATION_PLAYER_SIGHTED_RELATION_TYPE,	// True if a <relation> player has sighted a <relation> unit of <type>.
+    RELATION_PLAYER_VALUE_AREA, 						// True if the value of a <relation> player in an area is <comparison> <Int>.
+    RELATION_PLAYER_OWNS_COMPARISON_TYPE,		// True if a <relation> player owns <comparison> amount of <type>.
+    PLAYER_ATTACKED_AREA,										// True if a player has been attacked in an area.
+
+		PLAYER_BUILDING_BEING_CAPTURED,					// True if a player's building is being captured by an enemy.
+		PLAYER_BUILDING_BEING_CAPTURED_TYPE,		// True if a player's building of a type is being captured by an enemy.
+		PLAYER_BUILDING_BEING_CAPTURED_AREA,		// True if a player's building in an area is being captured by an enemy.
+		PLAYER_BUILDING_BEING_CAPTURED_TYPE_AREA,// True if a player's building of a type in an area is being captured by an enemy.
 
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------

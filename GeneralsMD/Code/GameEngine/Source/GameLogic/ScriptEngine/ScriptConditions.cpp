@@ -3769,12 +3769,328 @@ Bool ScriptConditions::evaluateRelationPlayerValueArea(Condition* pCondition,Par
 }
 
 //-------------------------------------------------------------------------------------------------
-//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
+Bool ScriptConditions::evaluateRelationPlayerOwnsComparsionType(Condition* pCondition, Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Int value, Parameter* objectType)
+{
+	if (pCondition->getCustomData() != 0)
+	{
+		// We have a cached value.
+		if (TheScriptEngine->getFrameObjectCountChanged() == pCondition->getCustomFrame())
+		{
+			// object count hasn't changed since we cached.  Use cached value.
+			if (pCondition->getCustomData() == 1)
+			{
+				return true;
+			}
+			if (pCondition->getCustomData() == -1)
+			{
+				return false;
+			}
+		}
+	}
+
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer)
+	{
+		return false;
+	}
+
+	ObjectTypesTemp types;
+	objectTypesFromParam(objectType, types.m_types);
+
+		std::vector<Int> counts;
+		std::vector<const ThingTemplate*> templates;
+
+		Int numObjs = types.m_types->prepForPlayerCounting(templates, counts);
+		Int count = 0;
+
+	for (int i = 0; i < ThePlayerList->getPlayerCount(); i++) {
+		if (numObjs > 0)
+		{
+      Player* cPlayer = ThePlayerList->getNthPlayer(i);
+			if (!cPlayer)
+				continue;
+			if (cPlayer == pPlayer)
+				continue;
+      if (cPlayer->getRelationship(pPlayer->getDefaultTeam()) != relationType)
+				continue;
+
+			cPlayer->countObjectsByThingTemplate(numObjs, &(*templates.begin()), false, &(*counts.begin()));
+			count += rts::sum(counts);
+		}
+
+	}
+
+	Bool comparison = false;
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:		comparison = (count < value);break;
+	case Parameter::LESS_EQUAL:		comparison = (count <= value);break;
+	case Parameter::EQUAL:				comparison = (count == value);break;
+	case Parameter::GREATER_EQUAL:comparison = (count >= value);break;
+	case Parameter::GREATER:			comparison = (count > value);break;
+	case Parameter::NOT_EQUAL:		comparison = (count != value);break;
+	}
+	pCondition->setCustomData(-1); // false.
+	if (comparison)
+	{
+		pCondition->setCustomData(1); // true.
+	}
+	pCondition->setCustomFrame(TheScriptEngine->getFrameObjectCountChanged());
+	return comparison;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluatePlayerAttackedInArea(Parameter* pPlayerParm, Parameter* pArea)
+{
+  Player* pPlayer = playerFromParam(pPlayerParm);
+  if (!pPlayer) return false;
+  PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(pArea->getString());
+  if (!pTrig) return false;
+
+	for (Player::PlayerTeamList::const_iterator it = pPlayer->getPlayerTeams()->begin();
+		it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> teamIter = (*it)->iterate_TeamInstanceList();
+			!teamIter.done(); teamIter.advance())
+		{
+			Team* team = teamIter.cur();
+			if (!team)
+				continue;
+			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList();
+				!objIter.done(); objIter.advance())
+			{
+				Object* obj = objIter.cur();
+				if (!obj)
+					continue;
+
+				if (obj->isEffectivelyDead() || obj->isKindOf(KINDOF_INERT) || obj->isKindOf(KINDOF_CRATE))
+					continue;
+
+				if (!obj->isInside(pTrig))
+					continue;
+
+				//now check whether our object is being attacked
+				BodyModuleInterface* theBodyModule = obj->getBodyModule();
+				if (!theBodyModule)
+					continue;
+
+				const DamageInfo * lastDamageInfo = theBodyModule->getLastDamageInfo();
+
+				ObjectID id = lastDamageInfo->in.m_sourceID;
+				Object* pAttacker = TheGameLogic->findObjectByID(id);
+				if (!pAttacker) continue;
+
+				Player* attackingPlayer = pAttacker->getControllingPlayer();
+				if (!attackingPlayer)
+					continue;
+
+				if (attackingPlayer == pPlayer)
+					continue;
+
+				Int currentFrame = TheGameLogic->getFrame();
+				if (currentFrame != theBodyModule->getLastDamageTimestamp() + 1)
+                continue;
+
+				if (pPlayer->getRelationship(attackingPlayer->getDefaultTeam()) == ENEMIES) return true;
+			}
+		}
+  }
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluatePlayerBuildingBeingCaptured(Parameter* pPlayerParm)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer) return false;
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+			{
+				Object* pObj = objIter.cur();
+				if (!pObj) continue;
+
+				if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluatePlayerBuildingBeingCapturedType(Parameter* pPlayerParm, Parameter* objectType)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer) return false;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType->getString());
+	if (templ)
+	{
+		Player::PlayerTeamList::const_iterator it;
+		for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+		{
+			for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+				Team* team = iter.cur();
+				if (!team) continue;
+
+				for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+				{
+					Object* pObj = objIter.cur();
+					if (!pObj) continue;
+
+					if (pObj->getTemplate() != templ) continue;
+
+					if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+					{
+						return true;
+					}
+				}
+			}
+		}
+	}
+	else {
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType->getString());
+		if (objectTypes)
+		{
+			Player::PlayerTeamList::const_iterator it;
+			for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+			{
+				for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+					Team* team = iter.cur();
+					if (!team) continue;
+
+					for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+					{
+						Object* pObj = objIter.cur();
+						if (!pObj) continue;
+
+						if (!objectTypes->isInSet(pObj->getTemplate())) continue;
+
+						if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+						{
+							return true;
+						}
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluatePlayerBuildingBeingCapturedArea(Parameter* pPlayerParm, Parameter* pTriggerParm)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer) return false;
+
+	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(pTriggerParm->getString());
+	if (!pTrig) return false;
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+			{
+				Object* pObj = objIter.cur();
+				if (!pObj) continue;
+
+				if (!pObj->isInside(pTrig)) continue;
+
+				if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
 //-------------------------------------------------------------------------------------------------
 
+Bool ScriptConditions::evaluatePlayerBuildingBeingCapturedTypeArea(Parameter* pPlayerParm, Parameter* objectType, Parameter* pTriggerParm)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer) return false;
 
+	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(pTriggerParm->getString());
+	if (!pTrig) return false;
 
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType->getString());
+	if (templ)
+	{
+		Player::PlayerTeamList::const_iterator it;
+		for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+		{
+			for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+				Team* team = iter.cur();
+				if (!team) continue;
 
+				for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+				{
+					Object* pObj = objIter.cur();
+					if (!pObj) continue;
+
+					if (pObj->getTemplate() != templ) continue;
+
+					if (!pObj->isInside(pTrig)) continue;
+
+					if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+					{
+						return true;
+					}
+				}
+			}
+		}
+	}
+	else {
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType->getString());
+		if (objectTypes)
+		{
+			Player::PlayerTeamList::const_iterator it;
+			for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+			{
+				for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+					Team* team = iter.cur();
+					if (!team) continue;
+
+					for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+					{
+						Object* pObj = objIter.cur();
+						if (!pObj) continue;
+
+						if (!objectTypes->isInSet(pObj->getTemplate())) continue;
+
+						if (!pObj->isInside(pTrig)) continue;
+
+						if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+						{
+							return true;
+						}
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
+//-------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------------------------------
 /** Evaluate a condition */
@@ -4089,5 +4405,18 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
       return evaluateRelationPlayerSightedRelationType(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2)->getInt(), pCondition->getParameter(3));
 		case Condition::RELATION_PLAYER_VALUE_AREA:
       return evaluateRelationPlayerValueArea(pCondition, pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2), pCondition->getParameter(3)->getInt(),pCondition->getParameter(4));
+    case Condition::RELATION_PLAYER_OWNS_COMPARISON_TYPE:
+      return evaluateRelationPlayerOwnsComparsionType(pCondition, pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2), pCondition->getParameter(3)->getInt(), pCondition->getParameter(4));
+		case Condition::PLAYER_ATTACKED_AREA:
+      return evaluatePlayerAttackedInArea(pCondition->getParameter(0), pCondition->getParameter(1));
+		case Condition::PLAYER_BUILDING_BEING_CAPTURED:
+      return evaluatePlayerBuildingBeingCaptured(pCondition->getParameter(0));
+		case Condition::PLAYER_BUILDING_BEING_CAPTURED_TYPE:
+			return evaluatePlayerBuildingBeingCapturedType(pCondition->getParameter(0), pCondition->getParameter(1));
+		case Condition::PLAYER_BUILDING_BEING_CAPTURED_AREA:
+			return evaluatePlayerBuildingBeingCapturedArea(pCondition->getParameter(0), pCondition->getParameter(1));
+		case Condition::PLAYER_BUILDING_BEING_CAPTURED_TYPE_AREA:
+			return evaluatePlayerBuildingBeingCapturedTypeArea(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2));
+
 	}
 }

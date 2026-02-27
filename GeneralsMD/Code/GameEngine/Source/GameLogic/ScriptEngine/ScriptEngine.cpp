@@ -5292,7 +5292,7 @@ void ScriptEngine::init( void )
 	curTemplate->m_uiStrings[0] = "KD-Ratio ";
 	curTemplate->m_uiStrings[1] = " IS ";
 	curTemplate->m_uiStrings[2] = " ";
-	curTemplate->m_uiStrings[3] = "\n\nNOTE: Due to the way floats are stored, EQUALS does not really work.";
+	curTemplate->m_uiStrings[3] = "\n\nNOTE:\nDue to the way floats are stored, EQUALS does not really work.\nIf either kills or deaths are 0.0f, return false.";
 
 	curTemplate = &m_actionTemplates[ScriptAction::INCREMENT_KD_RATIO_KILLS];
 	curTemplate->m_internalName = "INCREMENT_KD_RATIO_KILLS";
@@ -5365,8 +5365,8 @@ void ScriptEngine::init( void )
 	curTemplate->m_numParameters = 1;
 	curTemplate->m_parameters[0] = Parameter::INT;
 	curTemplate->m_numUiStrings = 2;
-	curTemplate->m_uiStrings[0] = "Spot (Player_N_Start) ";
-	curTemplate->m_uiStrings[1] = " is not a starting point for any player.";
+	curTemplate->m_uiStrings[0] = "Spot Player_";
+	curTemplate->m_uiStrings[1] = "_Start is not a starting point for any player.";
 
 	curTemplate = &m_conditionTemplates[Condition::SPOT_NEIGHBOURING];
 	curTemplate->m_internalName = "SPOT_NEIGHBOURING";
@@ -6167,6 +6167,204 @@ void ScriptEngine::init( void )
 	curTemplate->m_numUiStrings = 2;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " loads into transports evenly.";
+
+	curTemplate = &m_conditionTemplates[Condition::RELATION_PLAYER_OWNS_COMPARISON_TYPE];
+	curTemplate->m_internalName = "RELATION_PLAYER_OWNS_COMPARISON_TYPE";
+	curTemplate->m_uiName = "Player/Owns/All of a players friendly|neutral|enemy co-players own a total N object types.";
+	curTemplate->m_numParameters = 5;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::COMPARISON;
+	curTemplate->m_parameters[3] = Parameter::INT;
+	curTemplate->m_parameters[4] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = " All of ";
+	curTemplate->m_uiStrings[1] = " 's ";
+	curTemplate->m_uiStrings[2] = " co-players combined have ";
+	curTemplate->m_uiStrings[3] = " ";
+	curTemplate->m_uiStrings[4] = " objects of type ";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_ATTACKED_AREA];
+	curTemplate->m_internalName = "PLAYER_ATTACKED_AREA";
+	curTemplate->m_uiName = "Player/Player has been attacked in an area.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " has been attacked in ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_CANCEL_ALL_CONSTRUCTIONS];
+	curTemplate->m_internalName = "PLAYER_CANCEL_ALL_CONSTRUCTIONS";
+	curTemplate->m_uiName = "Player/AI/Cancel/Cancel all buildings currently under construction";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " cancels all buildings currently under construction.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_CANCEL_ALL_CONSTRUCTIONS_TYPE];
+	curTemplate->m_internalName = "PLAYER_CANCEL_ALL_CONSTRUCTIONS_TYPE";
+	curTemplate->m_uiName = "Player/AI/Cancel/Cancel all buildings of a specifc type currently under construction";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " cancels all buildings of type ";
+	curTemplate->m_uiStrings[2] = " currently under construction.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_CANCEL_ALL_CONSTRUCTIONS_AREA];
+	curTemplate->m_internalName = "PLAYER_CANCEL_ALL_CONSTRUCTIONS_AREA";
+	curTemplate->m_uiName = "Player/AI/Cancel/Cancel all buildings in an area currently under construction";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " cancels all buildings in area ";
+	curTemplate->m_uiStrings[2] = " currently under construction.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_CANCEL_ALL_CONSTRUCTIONS_TYPE_AREA];
+	curTemplate->m_internalName = "PLAYER_CANCEL_ALL_CONSTRUCTIONS_TYPE_AREA";
+	curTemplate->m_uiName = "Player/AI/Cancel/Cancel all buildings of a specifc type in an area currently under construction";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " cancels all buildings of type ";
+	curTemplate->m_uiStrings[2] = " in area ";
+	curTemplate->m_uiStrings[3] = " currently under construction.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_SELL_ALL_BUILDINGS_IN_CAPTURE_PROCESS_PERCENTAGE];
+	curTemplate->m_internalName = "PLAYER_SELL_ALL_BUILDINGS_IN_CAPTURE_PROCESS_PERCENTAGE";
+	curTemplate->m_uiName = "Player/Sell/Capture/Set a player to sell all buildings currently being captured with % chance";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " sells all buildings currently being captured with a ";
+	curTemplate->m_uiStrings[2] = " % chance.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_SELL_ALL_BUILDINGS_TYPE_IN_CAPTURE_PROCESS_PERCENTAGE];
+	curTemplate->m_internalName = "PLAYER_SELL_ALL_BUILDINGS_TYPE_IN_CAPTURE_PROCESS_PERCENTAGE";
+	curTemplate->m_uiName = "Player/Sell/Capture/Set a player to sell all buildings of a type currently being captured with % chance";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::INT;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " sells all buildings of type ";
+	curTemplate->m_uiStrings[2] = " currently being captured with a ";
+	curTemplate->m_uiStrings[3] = " % chance.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_SELL_ALL_BUILDINGS_AREA_IN_CAPTURE_PROCESS_PERCENTAGE];
+	curTemplate->m_internalName = "PLAYER_SELL_ALL_BUILDINGS_AREA_IN_CAPTURE_PROCESS_PERCENTAGE";
+	curTemplate->m_uiName = "Player/Sell/Capture/Set a player to sell all buildings in an area currently being captured with % chance";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[2] = Parameter::INT;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " sells all buildings in area ";
+	curTemplate->m_uiStrings[2] = " currently being captured with a ";
+	curTemplate->m_uiStrings[3] = " % chance.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_SELL_ALL_BUILDINGS_TYPE_AREA_IN_CAPTURE_PROCESS_PERCENTAGE];
+	curTemplate->m_internalName = "PLAYER_SELL_ALL_BUILDINGS_TYPE_AREA_IN_CAPTURE_PROCESS_PERCENTAGE";
+	curTemplate->m_uiName = "Player/Sell/Capture/Set a player to sell all buildings of a type in an area currently being captured with % chance";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[3] = Parameter::INT;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " sells all buildings of type ";
+	curTemplate->m_uiStrings[2] = " in area ";
+	curTemplate->m_uiStrings[3] = " currently being captured with a ";
+	curTemplate->m_uiStrings[4] = " % chance.";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_BUILDING_BEING_CAPTURED];
+	curTemplate->m_internalName = "PLAYER_BUILDING_BEING_CAPTURED";
+	curTemplate->m_uiName = "Player/Capture/A Player's building are currently being captured.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " Any of ";
+	curTemplate->m_uiStrings[1] = " 's buildings are currently being captured.";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_BUILDING_BEING_CAPTURED_TYPE];
+	curTemplate->m_internalName = "PLAYER_BUILDING_BEING_CAPTURED_TYPE";
+	curTemplate->m_uiName = "Player/Capture/A Player's building of a type are currently being captured.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " Any of ";
+	curTemplate->m_uiStrings[1] = " 's buildings of type ";
+	curTemplate->m_uiStrings[2] = " are currently being captured.";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_BUILDING_BEING_CAPTURED_AREA];
+	curTemplate->m_internalName = "PLAYER_BUILDING_BEING_CAPTURED_AREA";
+	curTemplate->m_uiName = "Player/Capture/A Player's building in an area are currently being captured.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " Any of ";
+	curTemplate->m_uiStrings[1] = " 's buildings in area";
+	curTemplate->m_uiStrings[2] = " are currently being captured.";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_BUILDING_BEING_CAPTURED_TYPE_AREA];
+	curTemplate->m_internalName = "PLAYER_BUILDING_BEING_CAPTURED_TYPE_AREA";
+	curTemplate->m_uiName = "Player/Capture/A Player's building of type in an area are currently being captured.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " Any of ";
+	curTemplate->m_uiStrings[1] = " 's buildings of type ";
+	curTemplate->m_uiStrings[2] = " in area ";
+	curTemplate->m_uiStrings[3] = " are currently being captured.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_SELL_ALL_BUILDINGS_TYPE_AREA];
+	curTemplate->m_internalName = "PLAYER_SELL_ALL_BUILDINGS_TYPE_AREA";
+	curTemplate->m_uiName = "Player/Sell/Set a player to sell all buildings of a type in an area";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " sells all buildings of type ";
+	curTemplate->m_uiStrings[2] = " in area ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_SELL_ALL_BUILDINGS_TYPE];
+	curTemplate->m_internalName = "PLAYER_SELL_ALL_BUILDINGS_TYPE";
+	curTemplate->m_uiName = "Player/Sell/Set a player to sell all buildings of a type";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " sells all buildings of type ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_SELL_ALL_BUILDINGS_AREA];
+	curTemplate->m_internalName = "PLAYER_SELL_ALL_BUILDINGS_AREA";
+	curTemplate->m_uiName = "Player/Sell/Set a player to sell all buildings in an area";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " sells all buildings in area ";
 
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
@@ -7479,6 +7677,8 @@ Bool ScriptEngine::evaluateKDRatio(Condition* pCondition)
 		counterNdx = allocateKDRatio(pCondition->getParameter(0)->getString());
 		pCondition->getParameter(0)->friend_setInt(counterNdx);
 	}
+	if (m_KDRatios[counterNdx].valueKills == 0.0 || m_KDRatios[counterNdx].valueDeaths == 0.0) return false;
+
 	Int value = pCondition->getParameter(2)->getReal();
 	switch (pCondition->getParameter(1)->getInt()) {
 	case Parameter::LESS_THAN:			return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths < value;
