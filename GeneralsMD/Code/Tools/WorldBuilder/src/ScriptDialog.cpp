@@ -2157,9 +2157,6 @@ void ScriptDialog::doDropOn(HTREEITEM hDrag, HTREEITEM hTarget)
     ListType target;
     target.IntToList(pTree->GetItemData(hTarget));
 
-    // ─────────────────────────────────────────────────────────────
-    // Moving a SINGLE SCRIPT
-    // ─────────────────────────────────────────────────────────────
     Script *pScript = nullptr;
     if (drag.m_objType == ListType::SCRIPT_IN_PLAYER_TYPE ||
         drag.m_objType == ListType::SCRIPT_IN_GROUP_TYPE)
