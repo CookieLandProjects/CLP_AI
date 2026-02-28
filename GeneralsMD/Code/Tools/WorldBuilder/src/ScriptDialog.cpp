@@ -1,4 +1,4 @@
-/*
+﻿/*
 **	Command & Conquer Generals Zero Hour(tm)
 **	Copyright 2025 Electronic Arts Inc.
 **
@@ -2147,221 +2147,161 @@ void ScriptDialog::OnLButtonUp(UINT nFlags, CPoint point)
 
 void ScriptDialog::doDropOn(HTREEITEM hDrag, HTREEITEM hTarget)
 {
-	if (hDrag == hTarget) return;
-	CTreeCtrl *pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
-	ListType drag;
-	drag.IntToList(pTree->GetItemData(hDrag));
-	ListType target;
-	target.IntToList(pTree->GetItemData(hTarget));
+    if (hDrag == hTarget) return;
 
-	// :D
-	if (drag.m_objType == ListType::GROUP_TYPE && drag.m_playerIndex == target.m_playerIndex) {
-		ScriptList* srcSL = m_sides.getSideInfo(drag.m_playerIndex)->getScriptList();
-		auto isDescendantIndex = [&](Int possibleDescendantIdx, Int ancestorIdx) -> bool {
-			if (!srcSL) return false;
-			if (possibleDescendantIdx < 0 || ancestorIdx < 0) return false;
-			Int cur = possibleDescendantIdx;
-			while (cur != -1) {
-				if (cur == ancestorIdx) return true;
-				ScriptGroup* g = srcSL->getScriptGroup();
-				Int i = 0;
-				ScriptGroup* found = nullptr;
-				for (; g; g = g->getNext(), ++i) {
-					if (i == cur) { found = g; break; }
-				}
-				if (!found) break;
-				cur = found->getParentIndex();
-			}
-			return false;
-		};
+    CTreeCtrl *pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
 
-		if (target.m_groupIndex == drag.m_groupIndex) return;
-		if (isDescendantIndex(target.m_groupIndex, drag.m_groupIndex)) {
-			return;
-		}
-	}
+    ListType drag;
+    drag.IntToList(pTree->GetItemData(hDrag));
 
-	Int desiredParent = -1;
-	if (target.m_objType == ListType::GROUP_TYPE || target.m_objType == ListType::SCRIPT_IN_GROUP_TYPE) {
-		desiredParent = target.m_groupIndex;
-	} else {
-		desiredParent = -1;
-	}
+    ListType target;
+    target.IntToList(pTree->GetItemData(hTarget));
 
-	Script* dragScript = nullptr;
-	ScriptGroup* dragGroup = nullptr;
+    // ─────────────────────────────────────────────────────────────
+    // Moving a SINGLE SCRIPT
+    // ─────────────────────────────────────────────────────────────
+    Script *pScript = nullptr;
+    if (drag.m_objType == ListType::SCRIPT_IN_PLAYER_TYPE ||
+        drag.m_objType == ListType::SCRIPT_IN_GROUP_TYPE)
+    {
+        m_curSelection = drag;
+        pScript = getCurScript();
+        if (!pScript) return;
 
-	ScriptList* srcSL = m_sides.getSideInfo(drag.m_playerIndex)->getScriptList();
+        ScriptList *pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
+        if (!pSL) return;
 
-	auto findIndexOf = [](ScriptList* sl, ScriptGroup* target) -> Int {
-		Int i = 0;
-		for (ScriptGroup* gg = sl->getScriptGroup(); gg; gg = gg->getNext(), ++i) {
-			if (gg == target) return i;
-		}
-		return -1;
-	};
-	auto findGroupByIndex = [](ScriptList* sl, Int idx) -> ScriptGroup* {
-		Int i = 0;
-		for (ScriptGroup* g = sl->getScriptGroup(); g; g = g->getNext(), ++i) {
-			if (i == idx) return g;
-		}
-		return nullptr;
-	};
-	auto countGroups = [](ScriptList* sl) -> Int {
-		Int c = 0;
-		for (ScriptGroup* gg = sl->getScriptGroup(); gg; gg = gg->getNext()) ++c;
-		return c;
-	};
+        ScriptGroup *pGroup = getCurGroup();
 
-	m_curSelection = drag;
-	Script* pScript = getCurScript();
-	ScriptList* pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-	ScriptGroup* pGroup = getCurGroup();
-	if (!pSL) return;
+        if (pGroup)
+            pGroup->deleteScript(pScript);
+        else
+            pSL->deleteScript(pScript);
 
-	if (pScript) {
-		dragScript = pScript->duplicate();
-		if (pGroup) {
-			pGroup->deleteScript(pScript);
-		} else {
-			pSL->deleteScript(pScript);
-		}
-		// :p
-		if (drag.m_objType == target.m_objType &&
-			drag.m_playerIndex == target.m_playerIndex &&
-			drag.m_groupIndex == target.m_groupIndex &&
-			drag.m_scriptIndex < target.m_scriptIndex) {
-			target.m_scriptIndex--;
-		}
-		pTree->DeleteItem(hDrag);
-		// :D
-		m_curSelection = target;
-		pScript = getCurScript();
-		pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-		pGroup = getCurGroup();
-		if (!pSL) return;
+        pTree->DeleteItem(hDrag);
 
-		if (pGroup) pGroup->addScript(dragScript, target.m_scriptIndex);
-		else pSL->addScript(dragScript, target.m_scriptIndex);
+        if (drag.m_playerIndex == target.m_playerIndex &&
+            drag.m_objType == target.m_objType &&
+            drag.m_groupIndex == target.m_groupIndex &&
+            drag.m_scriptIndex < target.m_scriptIndex)
+        {
+            target.m_scriptIndex--;
+        }
 
-		// Hello :D
-		if (target.m_playerIndex != drag.m_playerIndex)
-			reloadPlayer(drag.m_playerIndex, m_sides.getSideInfo(drag.m_playerIndex)->getScriptList());
-		reloadPlayer(target.m_playerIndex, pSL);
-		updateSelection(target);
-		updateIcons(TVI_ROOT);
-		return;
-	}
+        m_curSelection = target;
+        pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
+        pGroup = getCurGroup();
 
-	if (drag.m_objType == ListType::GROUP_TYPE) {
-		if (!pGroup) return;
+        if (pGroup)
+            pGroup->addScript(pScript, target.m_scriptIndex);
+        else
+            pSL->addScript(pScript, target.m_scriptIndex);
 
-		dragGroup = pGroup->duplicate();
+        if (drag.m_playerIndex != target.m_playerIndex)
+            reloadPlayer(drag.m_playerIndex, m_sides.getSideInfo(drag.m_playerIndex)->getScriptList());
 
-		pTree->DeleteItem(hDrag);
+        reloadPlayer(target.m_playerIndex, pSL);
+        updateSelection(target);
+        updateIcons(TVI_ROOT);
+        return;
+    }
 
-		ScriptList* dstSL = m_sides.getSideInfo(target.m_playerIndex)->getScriptList();
-		if (!dstSL) return;
+    if (drag.m_objType == ListType::GROUP_TYPE)
+    {
+        m_curSelection = drag;
+        ScriptGroup *pGroup = getCurGroup();
+        if (!pGroup) return;
 
-		std::vector<ScriptGroup*> allSrcGroups;
-		for (ScriptGroup* g = srcSL->getScriptGroup(); g; g = g->getNext()) allSrcGroups.push_back(g);
-		Int totalSrc = (Int)allSrcGroups.size();
+        ScriptList *srcSL = m_sides.getSideInfo(drag.m_playerIndex)->getScriptList();
+        if (!srcSL) return;
 
-		std::unordered_map<ScriptGroup*, Int> srcPtrToIndex;
-		srcPtrToIndex.reserve(totalSrc);
-		for (Int i = 0; i < totalSrc; ++i) srcPtrToIndex[allSrcGroups[i]] = i;
+        bool wouldCreateCycle = false;
+        if (drag.m_playerIndex == target.m_playerIndex)
+        {
+            int checkIdx = (target.m_objType == ListType::GROUP_TYPE ||
+                            target.m_objType == ListType::SCRIPT_IN_GROUP_TYPE)
+                               ? target.m_groupIndex
+                               : -1;
 
-		Int rootIndex = findIndexOf(srcSL, pGroup);
-		if (rootIndex < 0) {
-			dragGroup->setParentIndex(desiredParent);
-			dstSL->addGroup(dragGroup, target.m_groupIndex);
-			reloadPlayer(target.m_playerIndex, dstSL);
-			updateIcons(TVI_ROOT);
-			return;
-		}
+            int safety = 0;
+            while (checkIdx != -1 && safety++ < 128)
+            {
+                if (checkIdx == drag.m_groupIndex)
+                {
+                    wouldCreateCycle = true;
+                    break;
+                }
 
-		std::vector<Int> subtreeIndices;
-		subtreeIndices.reserve(16);
-		for (Int i = 0; i < totalSrc; ++i) {
-			Int cur = i;
-			while (cur != -1) {
-				ScriptGroup* curPtr = allSrcGroups[cur];
-				if (!curPtr) { cur = -1; break; }
-				if (cur == rootIndex) { subtreeIndices.push_back(i); break; }
-				cur = curPtr->getParentIndex();
-			}
-		}
+                ScriptGroup *g = srcSL->getScriptGroup();
+                int i = 0;
+                for (; g && i < checkIdx; g = g->getNext(), ++i) {}
+                if (!g || i != checkIdx) break;
 
-		std::sort(subtreeIndices.begin(), subtreeIndices.end());
+                checkIdx = g->getParentIndex();
+            }
+        }
 
-		std::unordered_map<Int, Int> newIndexOf;
-		newIndexOf.reserve(subtreeIndices.size());
+        if (wouldCreateCycle)
+        {
+            return;
+        }
 
-		Int dstInsertIndexForRoot = (target.m_groupIndex >= 0 && target.m_groupIndex != 9999) ? target.m_groupIndex : countGroups(dstSL);
-		dragGroup->setParentIndex(desiredParent);
-		dstSL->addGroup(dragGroup, dstInsertIndexForRoot);
+        if (drag.m_playerIndex != target.m_playerIndex)
+        {
+            ScriptList *dstSL = m_sides.getSideInfo(target.m_playerIndex)->getScriptList();
+            if (!dstSL) return;
 
-		Int newRootIndex = -1;
-		{
-			Int idx = 0;
-			for (ScriptGroup* g = dstSL->getScriptGroup(); g; g = g->getNext(), ++idx) {
-				if (g == dragGroup) { newRootIndex = idx; break; }
-			}
-		}
-		newIndexOf[rootIndex] = newRootIndex;
+            ScriptGroup *dragGroup = pGroup->duplicate();
 
-		// :p
-		for (Int origIdx : subtreeIndices) {
-			if (origIdx == rootIndex) continue;
-			ScriptGroup* orig = allSrcGroups[origIdx];
-			if (!orig) continue;
-			ScriptGroup* dup = orig->duplicate();
-			Int origParent = orig->getParentIndex();
-			Int newParent = desiredParent;
-			if (origParent >= 0) {
-				auto it = newIndexOf.find(origParent);
-				if (it != newIndexOf.end()) {
-					newParent = it->second;
-				} else {
-					// :c
-					newParent = desiredParent;
-				}
-			} else {
-				newParent = desiredParent;
-			}
-			dup->setParentIndex(newParent);
-			// :o
-			Int insertAt = countGroups(dstSL);
-			dstSL->addGroup(dup, insertAt);
-			// o:
-			Int newIdx = -1;
-			{
-				Int idx = 0;
-				for (ScriptGroup* g = dstSL->getScriptGroup(); g; g = g->getNext(), ++idx) {
-					if (g == dup) { newIdx = idx; break; }
-				}
-			}
-			if (newIdx >= 0) newIndexOf[origIdx] = newIdx;
-		}
+            pTree->DeleteItem(hDrag);
 
-		// Gone
-		std::sort(subtreeIndices.begin(), subtreeIndices.end(), std::greater<Int>());
-		for (Int origIdx : subtreeIndices) {
-			ScriptGroup* orig = findGroupByIndex(srcSL, origIdx);
-			if (orig) {
-				srcSL->deleteGroup(orig);
-			}
-		}
+            srcSL->deleteGroup(pGroup);
 
-		// Regone
-		if (target.m_playerIndex != drag.m_playerIndex) {
-			reloadPlayer(drag.m_playerIndex, srcSL);
-		}
-		reloadPlayer(target.m_playerIndex, dstSL);
-		updateSelection(target);
-		updateIcons(TVI_ROOT);
-		return;
-	}
+            int insertPos = (target.m_objType == ListType::GROUP_TYPE ||
+                             target.m_objType == ListType::SCRIPT_IN_GROUP_TYPE)
+                                ? target.m_groupIndex
+                                : 9999;
+
+            int desiredParent = (target.m_objType == ListType::GROUP_TYPE ||
+                                 target.m_objType == ListType::SCRIPT_IN_GROUP_TYPE)
+                                    ? target.m_groupIndex
+                                    : -1;
+
+            dragGroup->setParentIndex(desiredParent);
+            dstSL->addGroup(dragGroup, insertPos);
+
+            reloadPlayer(drag.m_playerIndex, srcSL);
+            reloadPlayer(target.m_playerIndex, dstSL);
+            updateSelection(target);
+            updateIcons(TVI_ROOT);
+            return;
+        }
+
+        int newParentIndex = (target.m_objType == ListType::GROUP_TYPE ||
+                              target.m_objType == ListType::SCRIPT_IN_GROUP_TYPE)
+                                 ? target.m_groupIndex
+                                 : -1;
+
+        pGroup->setParentIndex(newParentIndex);
+
+        reloadPlayer(target.m_playerIndex, srcSL);
+
+        ListType newSel = drag;
+        int newIdx = 0;
+        ScriptGroup *scan = srcSL->getScriptGroup();
+        for (; scan; scan = scan->getNext(), ++newIdx)
+        {
+            if (scan == pGroup)
+            {
+                newSel.m_groupIndex = newIdx;
+                break;
+            }
+        }
+
+        updateSelection(newSel);
+        updateIcons(TVI_ROOT);
+        return;
+    }
 }
 
 void ScriptDialog::DuplicateSubGroupsRecursive(ScriptList* srcSL, ScriptList* dstSL, Int srcParentIndex, Int dstParentIndex, int depth)

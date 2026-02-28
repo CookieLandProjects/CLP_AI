@@ -497,24 +497,102 @@ void ScriptList::deleteScript(Script *pScr)
 */
 void ScriptList::deleteGroup(ScriptGroup *pGrp)
 {
-	ScriptGroup *pPrev = nullptr;
-	ScriptGroup *pCur = m_firstGroup;
-	while (pCur != pGrp) {
-		pPrev = pCur;
-		pCur = pCur->getNext();
+	if (pGrp == nullptr) return;
+
+	// Build snapshot of groups in list order
+	std::vector<ScriptGroup*> groups;
+	for (ScriptGroup *g = m_firstGroup; g; g = g->getNext()) {
+		groups.push_back(g);
 	}
-	DEBUG_ASSERTCRASH(pCur, ("Couldn't find group."));
-	if (pCur==nullptr) return;
-	if (pPrev) {
-		// unlink from previous group.
-		pPrev->setNextGroup(pCur->getNext());
+	Int count = (Int)groups.size();
+	if (count == 0) return;
+
+	// Find index of target group
+	Int targetIndex = -1;
+	for (Int i = 0; i < count; ++i) {
+		if (groups[i] == pGrp) { targetIndex = i; break; }
+	}
+	if (targetIndex == -1) {
+		// Fallback: original single unlink if not found
+		ScriptGroup *pPrev = nullptr;
+		ScriptGroup *pCur = m_firstGroup;
+		while (pCur != pGrp) {
+			pPrev = pCur;
+			pCur = pCur->getNext();
+		}
+		DEBUG_ASSERTCRASH(pCur, ("Couldn't find group."));
+		if (pCur == nullptr) return;
+		if (pPrev) {
+			pPrev->setNextGroup(pCur->getNext());
+		} else {
+			m_firstGroup = pCur->getNext();
+		}
+		pCur->setNextGroup(nullptr);
+		deleteInstance(pCur);
+		return;
+	}
+
+	// Mark all groups that are in the subtree rooted at targetIndex for deletion.
+	std::vector<char> toDelete(count, 0);
+	toDelete[targetIndex] = 1;
+	for (Int i = 0; i < count; ++i) {
+		if (toDelete[i]) continue;
+		Int cur = i;
+		while (cur != -1) {
+			Int parent = groups[cur]->getParentIndex();
+			if (parent == targetIndex) { toDelete[i] = 1; break; }
+			if (parent < 0 || parent >= count) break;
+			cur = parent;
+		}
+	}
+
+	// Build new list of kept groups and map old index -> new index
+	std::vector<ScriptGroup*> kept;
+	kept.reserve(count);
+	std::vector<Int> newIndex(count, -1);
+	for (Int i = 0, idx = 0; i < count; ++i) {
+		if (!toDelete[i]) {
+			kept.push_back(groups[i]);
+			newIndex[i] = idx++;
+		}
+	}
+
+	// Rebuild linked list of groups using kept nodes in original relative order
+	if (kept.empty()) {
+		m_firstGroup = nullptr;
 	} else {
-		// Unlink from head of list.
-		m_firstGroup = pCur->getNext();
+		m_firstGroup = kept[0];
+		for (size_t k = 0; k < kept.size(); ++k) {
+			if (k + 1 < kept.size())
+				kept[k]->setNextGroup(kept[k + 1]);
+			else
+				kept[k]->setNextGroup(nullptr);
+		}
 	}
-	// Clear the link & delete.
-	pCur->setNextGroup(nullptr);
-	deleteInstance(pCur);
+
+	// Update parentIndex for remaining groups to reflect new indices
+	for (Int i = 0; i < count; ++i) {
+		if (toDelete[i]) continue;
+		Int oldParent = groups[i]->getParentIndex();
+		if (oldParent < 0) {
+			groups[i]->setParentIndex(-1);
+		} else if (oldParent >= 0 && oldParent < count) {
+			groups[i]->setParentIndex(newIndex[oldParent]);
+		} else {
+			// Out-of-range parent -> make top-level
+			groups[i]->setParentIndex(-1);
+		}
+	}
+
+	// Delete the marked groups (detach next pointers to prevent recursive deletes)
+	for (Int i = 0; i < count; ++i) {
+		if (!toDelete[i]) continue;
+		ScriptGroup *g = groups[i];
+		if (g) {
+			g->setNextGroup(nullptr); // prevent destructor from attempting to delete siblings
+			deleteInstance(g);
+		}
+	}
 }
 
 /**
@@ -2208,6 +2286,10 @@ AsciiString Parameter::getUiText(void) const
 
 		case OBJECT_PANEL_FLAG:
 			uiText.format("Object Flag: %s", uiString.str());
+			break;
+
+		case KD_RATIO:
+			uiText.format("K/D Ratio %s", uiString.str());
 			break;
 	}
 	return uiText;
