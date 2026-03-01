@@ -147,6 +147,7 @@ public:
 
 	void addScript(Script *pScr, Int ndx);
 	void deleteScript(Script *pScr);
+	void removeScript(Script* pScr);
 
 	static void WriteGroupDataChunk(DataChunkOutput &chunkWriter, ScriptGroup *pGroup);
 	static Bool ParseGroupDataChunk(DataChunkInput &file, DataChunkInfo *info, void *userData);
@@ -1283,8 +1284,13 @@ public:
 	static Bool ParseScriptListDataChunk(DataChunkInput &file, DataChunkInfo *info, void *userData);
 
 	void addGroup(ScriptGroup *pGrp, Int ndx);
+	void updateParentIndicesAfterInsert(int insertPos);
+	void updateParentIndicesAfterDelete(int deletedPos);
 	void addScript(Script *pScr, Int ndx);
 	void deleteScript(Script *pScr);
+	void removeScript(Script* pScr);
+	void insertGroup(ScriptGroup* pGrp, ScriptGroup* insertAfter);
+	void unlinkGroup(ScriptGroup* pGrp);
 	void deleteGroup(ScriptGroup *pGrp);
 
 	void discard();
