@@ -8619,6 +8619,24 @@ void ScriptActions::doBuildSupplyCenterAngle(const AsciiString& player, const As
 {
 	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(player);
 	if (thePlayer) {
+
+		//@-TanSo-: Give us the option to make random angles possible to bring some spice to the AI's building placement.
+		// If the angle is 361, we'll random between the 4 diagonal angles (45, -45, 135, -135).
+		// If the angle is 362, we'll random between any integer angle (0 - 359).
+
+		if (angle == 361.0f) {
+			Int randomValue = GameLogicRandomValue(0, 3);
+			switch (randomValue)
+			{
+			case 0:angle = 45.0f; break;
+			case 1:angle = -45.0f; break;
+			case 2:angle = 135.0f; break;
+			case 3:angle = -135.0f; break;
+			}
+		}
+
+		if (angle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
+
 		thePlayer->buildBySuppliesAngle(cash, buildingType, angle);
 	}
 }
@@ -8631,6 +8649,23 @@ void ScriptActions::doBuildObjectNearestTeamAngle(const AsciiString& playerName,
 	Team* theTeam = TheScriptEngine->getTeamNamed(teamName);
 	if (thePlayer && theTeam)
 	{
+		//@-TanSo-: Give us the option to make random angles possible to bring some spice to the AI's building placement.
+		// If the angle is 361, we'll random between the 4 diagonal angles (45, -45, 135, -135).
+		// If the angle is 362, we'll random between any integer angle (0 - 359).
+
+		if (angle == 361.0f) {
+			Int randomValue = GameLogicRandomValue(0, 3);
+			switch (randomValue)
+			{
+			case 0:angle = 45.0f; break;
+			case 1:angle = -45.0f; break;
+			case 2:angle = 135.0f; break;
+			case 3:angle = -135.0f; break;
+			}
+		}
+
+		if (angle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
+		
 		thePlayer->buildSpecificBuildingNearestTeamAngle(buildingType, theTeam, angle);
 	}
 }
@@ -8708,6 +8743,22 @@ void ScriptActions::doBuildObjectNearestTypeAngle(const AsciiString& playerName,
 	}
 
 	if (!bestObj) return;
+  //@-TanSo-: Give us the option to make random angles possible to bring some spice to the AI's building placement.
+	// If the angle is 361, we'll random between the 4 diagonal angles (45, -45, 135, -135).
+	// If the angle is 362, we'll random between any integer angle (0 - 359).
+
+	if (angle == 361.0f) {
+		Int randomValue = GameLogicRandomValue(0, 3);
+		switch (randomValue)
+		{
+		case 0:angle = 45.0f; break;
+    case 1:angle = -45.0f; break;
+    case 2:angle = 135.0f; break;
+    case 3:angle = -135.0f; break;
+		}
+	}
+
+	if (angle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
 
 	thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle);
 }
@@ -8750,6 +8801,22 @@ void ScriptActions::doBuildObjectNearestKindOfAngle(const AsciiString& playerNam
 	{
 		return;
 	}
+	//@-TanSo-: Give us the option to make random angles possible to bring some spice to the AI's building placement.
+	// If the angle is 361, we'll random between the 4 diagonal angles (45, -45, 135, -135).
+	// If the angle is 362, we'll random between any integer angle (0 - 359).
+
+	if (angle == 361.0f) {
+		Int randomValue = GameLogicRandomValue(0, 3);
+		switch (randomValue)
+		{
+		case 0:angle = 45.0f; break;
+		case 1:angle = -45.0f; break;
+		case 2:angle = 135.0f; break;
+		case 3:angle = -135.0f; break;
+		}
+	}
+
+	if (angle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
 
 	thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle);
 }
@@ -9610,6 +9677,42 @@ void ScriptActions::doPlayerSellAllBuildingsTypeArea(const AsciiString& playerNa
 			}
 		}
 	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doAIPlayerBuildDefenseStructureFromVector(Bool flank, Real rotation, Real percent)
+{
+	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
+	if(!pPlayer) return;
+
+	pPlayer->buildBaseDefenseFromVector(flank, rotation, percent);
+}
+
+//-------------------------------------------------------------------------------------------------
+void  ScriptActions::doAIPlayerBuildDefenseStructureFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName)
+{
+	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
+	if (!pPlayer) return;
+
+	pPlayer->buildBaseDefenseFromVectorAtPlayer(flank, rotation, percent, playerName);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doAIPlayerAddBaseDefenseStructure(const AsciiString& objectType)
+{
+	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
+	if (!pPlayer) return;
+
+	pPlayer->addAIBaseDefenseToVector(objectType);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doAIPlayerRemoveBaseDefenseStructure(const AsciiString& objectType)
+{
+	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
+	if (!pPlayer) return;
+
+	pPlayer->removeAIBaseDefenseFromVector(objectType);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -10950,6 +11053,23 @@ void ScriptActions::executeAction( ScriptAction *pAction )
     case ScriptAction::PLAYER_SELL_ALL_BUILDINGS_TYPE_AREA:
 			doPlayerSellAllBuildingsTypeArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
       return;
-
+		case ScriptAction::AI_PLAYER_BUILD_DEFENSE_FRONT_FROM_VECTOR_ROTATED_PERCENT:
+			doAIPlayerBuildDefenseStructureFromVector(false, pAction->getParameter(0)->getReal(), pAction->getParameter(1)->getReal());
+			return;
+		case ScriptAction::AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT:
+			doAIPlayerBuildDefenseStructureFromVector(true, pAction->getParameter(0)->getReal(), pAction->getParameter(1)->getReal());
+			return;
+		case ScriptAction::AI_PLAYER_ADD_DEFENSE_TO_VECTOR:
+			doAIPlayerAddBaseDefenseStructure(pAction->getParameter(0)->getString());
+      return;
+		case ScriptAction::AI_PLAYER_REMOVE_DEFENSE_FROM_VECTOR:
+			doAIPlayerRemoveBaseDefenseStructure(pAction->getParameter(0)->getString());
+			return;
+		case ScriptAction::AI_PLAYER_BUILD_DEFENSE_FRONT_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER:
+			doAIPlayerBuildDefenseStructureFromVectorAtPlayer(false, pAction->getParameter(0)->getReal(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER:
+			doAIPlayerBuildDefenseStructureFromVectorAtPlayer(true, pAction->getParameter(0)->getReal(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getString());
+			return;
 	}
 }

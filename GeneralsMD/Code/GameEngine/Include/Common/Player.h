@@ -605,6 +605,12 @@ public:
 	/// Build base defense on front or flank of base.  Gets passed to aiPlayer.
 	void buildBaseDefense(Bool flank);
 
+  /// @-TanSo-: Build base defense on front or flank of base based on our vector.  Gets passed to aiPlayer.
+	void buildBaseDefenseFromVector(Bool flank, Real rotation, Real percent);
+	void buildBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName);
+	void addAIBaseDefenseToVector(const AsciiString& objectType);
+	void removeAIBaseDefenseFromVector(const AsciiString& objectType);
+
 	/// Build structure type on front or flank of base.  Gets passed to aiPlayer.
 	void buildBaseDefenseStructure(const AsciiString &thingName, Bool flank);
 

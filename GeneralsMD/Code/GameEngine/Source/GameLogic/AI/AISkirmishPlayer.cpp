@@ -54,6 +54,7 @@
 #include "GameLogic/PartitionManager.h"
 #include "GameLogic/ScriptEngine.h"
 #include "GameLogic/Module/ProductionUpdate.h"
+#include "GameLogic/ObjectTypes.h"										// @-TanSo-: we need this thank you.
 #include "GameClient/TerrainVisual.h"
 
 
@@ -1233,3 +1234,418 @@ void AISkirmishPlayer::loadPostProcess()
 
 }
 
+
+//-------------------------------------------------------------------------------------------------
+//---------------------------------- @CLP_AI AI PLAYER ADDITIONS ----------------------------------
+//-------------------------------------------------------------------------------------------------
+
+Int AISkirmishPlayer::getCurrentFrontBaseDefense() { return m_curFrontBaseDefense; }
+Int AISkirmishPlayer::getCurrentFlankBaseDefense() { return m_curFrontBaseDefense; }
+Real AISkirmishPlayer::getCurrentFrontLeftDefenseAngle() { return m_curFrontLeftDefenseAngle; }
+Real AISkirmishPlayer::getCurrentFrontRightDefenseAngle() { return m_curFrontRightDefenseAngle; }
+Real AISkirmishPlayer::getCurrentLeftFlankLeftDefenseAngle() { return m_curLeftFlankLeftDefenseAngle; }
+Real AISkirmishPlayer::getCurrentLeftFlankRightDefenseAngle() { return m_curLeftFlankRightDefenseAngle; }
+Real AISkirmishPlayer::getCurrentRightFlankLeftDefenseAngle() { return m_curRightFlankLeftDefenseAngle; }
+Real AISkirmishPlayer::getCurrentRightFlankRightDefenseAngle() { return m_curRightFlankRightDefenseAngle; }
+
+// @-TanSo-: take a random building from m_baseDefenseStructures and feed it back to the existing function.
+void AISkirmishPlayer::buildAIBaseDefenseFromVector(Bool flank, Real rotation, Real percent)
+{
+	const AISideInfo* resInfo = TheAI->getAiData()->m_sideInfo;
+
+	if (resInfo->m_baseDefenseStructures.size() > 0)
+	{
+		Int randomIndex = GameLogicRandomValue(0, resInfo->m_baseDefenseStructures.size() - 1);
+		if (m_player->canBuild(TheThingFactory->findTemplate(resInfo->m_baseDefenseStructures[randomIndex])))
+		{
+			DEBUG_LOG(("Now Building: %s", resInfo->m_baseDefenseStructures[randomIndex].str()));
+			buildAIBaseDefenseStructureFromVector(resInfo->m_baseDefenseStructures[randomIndex], flank, rotation, percent);
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+
+void AISkirmishPlayer::buildAIBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName)
+{
+	const AISideInfo* resInfo = TheAI->getAiData()->m_sideInfo;
+
+	if (resInfo->m_baseDefenseStructures.size() > 0)
+	{
+		Int randomIndex = GameLogicRandomValue(0, resInfo->m_baseDefenseStructures.size() - 1);
+		if (m_player->canBuild(TheThingFactory->findTemplate(resInfo->m_baseDefenseStructures[randomIndex])))
+		{
+			DEBUG_LOG(("Now Building: %s", resInfo->m_baseDefenseStructures[randomIndex].str()));
+			buildAIBaseDefenseStructureFromVectorAtPlayer(resInfo->m_baseDefenseStructures[randomIndex], flank, rotation, percent, playerName);
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void AISkirmishPlayer::buildAIBaseDefenseStructureFromVector(const AsciiString& thingName, Bool flank, Real rotation, Real percent)
+{
+	const ThingTemplate* tTemplate = TheThingFactory->findTemplate(thingName);
+	if (tTemplate == nullptr) {
+		DEBUG_CRASH(("Couldn't find base defense structure '%s' for side %s", thingName.str(), m_player->getSide().str()));
+		return;
+	}
+	do {
+		AsciiString pathLabel;
+		if (flank) {
+			if (m_curFlankBaseDefense & 1) {
+				pathLabel.format("%s%d", SKIRMISH_FLANK, m_player->getMpStartIndex() + 1);
+			}
+			else {
+				pathLabel.format("%s%d", SKIRMISH_BACKDOOR, m_player->getMpStartIndex() + 1);
+			}
+		}
+		else {
+			pathLabel.format("%s%d", SKIRMISH_CENTER, m_player->getMpStartIndex() + 1);
+		}
+
+		Coord3D goalPos = m_baseCenter;
+		Waypoint* way = TheTerrainLogic->getClosestWaypointOnPath(&goalPos, pathLabel);
+		if (way) {
+			goalPos = *way->getLocation();
+		}
+		else {
+			if (flank) return;
+			Region2D bounds;
+			getPlayerStructureBounds(&bounds, getMyEnemyPlayerIndex());
+			goalPos.x = bounds.lo.x + bounds.width() / 2;
+			goalPos.y = bounds.lo.y + bounds.height() / 2;
+		}
+		Coord2D offset;
+		offset.x = goalPos.x - m_baseCenter.x;
+		offset.y = goalPos.y - m_baseCenter.y;
+		offset.normalize();
+		Real defenseDistance = m_baseRadius;
+		defenseDistance += TheAI->getAiData()->m_skirmishBaseDefenseExtraDistance;
+		offset.x *= defenseDistance;
+		offset.y *= defenseDistance;
+
+		Real structureRadius = tTemplate->getTemplateGeometryInfo().getBoundingCircleRadius();
+		Real baseCircumference = 2 * PI * defenseDistance;
+		Real angleOffset = 2 * PI * (structureRadius * 4 / baseCircumference);
+
+		Int selector;
+		Real angle;
+		if (flank) {
+			selector = m_curFlankBaseDefense >> 1;
+			if (m_curFlankBaseDefense & 1) {
+				if (selector & 1) {
+					m_curLeftFlankRightDefenseAngle -= angleOffset;
+					angle = m_curLeftFlankRightDefenseAngle;
+				}
+				else {
+					angle = m_curLeftFlankLeftDefenseAngle;
+					m_curLeftFlankLeftDefenseAngle += angleOffset;
+				}
+			}
+			else {
+				if (selector & 1) {
+					m_curRightFlankRightDefenseAngle -= angleOffset;
+					angle = m_curRightFlankRightDefenseAngle;
+				}
+				else {
+					angle = m_curRightFlankLeftDefenseAngle;
+					m_curRightFlankLeftDefenseAngle += angleOffset;
+				}
+			}
+
+		}
+		else {
+			selector = m_curFrontBaseDefense;
+			if (selector & 1) {
+				m_curFrontRightDefenseAngle -= angleOffset;
+				angle = m_curFrontRightDefenseAngle;
+			}
+			else {
+				angle = m_curFrontLeftDefenseAngle;
+				m_curFrontLeftDefenseAngle += angleOffset;
+			}
+		}
+
+		if (angle > PI / 3) break;
+		Real s = sin(angle);
+		Real c = cos(angle);
+
+		// TheSuperHackers @info helmutbuhler 21/04/2025 This debug mutates the code to become CRC incompatible
+#if defined(RTS_DEBUG) || !RETAIL_COMPATIBLE_CRC
+		DEBUG_LOG(("buildAIBaseDefenseStructure -- Angle is %f sin %f, cos %f", 180 * angle / PI, s, c));
+		DEBUG_LOG(("buildAIBaseDefenseStructure -- Offset is %f  %f, Final Position is %f, %f",
+			offset.x, offset.y,
+			offset.x * c - offset.y * s,
+			offset.y * c + offset.x * s
+			));
+#endif
+		Coord3D buildPos = m_baseCenter;
+		buildPos.x += (offset.x * c - offset.y * s) * (percent / 100.0f);
+		buildPos.y += (offset.y * c + offset.x * s) * (percent / 100.0f);
+
+		/* See if we can build there. */
+		Bool canBuild;
+		Real placeAngle = rotation;
+
+		//@-TanSo-: Give us the option to make random angles possible to bring some spice to the AI's building placement.
+		// If the angle is 361, we'll random between the 4 diagonal angles (45, -45, 135, -135).
+		// If the angle is 362, we'll random between any integer angle (0 - 359).
+
+		if (placeAngle == 361.0f) {
+			Int randomValue = GameLogicRandomValue(0, 3);
+			switch (randomValue)
+			{
+			case 0:placeAngle = 45.0f; break;
+			case 1:placeAngle = -45.0f; break;
+			case 2:placeAngle = 135.0f; break;
+			case 3:placeAngle = -135.0f; break;
+			}
+		}
+
+		if (placeAngle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
+
+    placeAngle = placeAngle * (PI / 180.0f);
+
+		canBuild = LBC_OK == TheBuildAssistant->isLocationLegalToBuild(&buildPos, tTemplate, placeAngle,
+			BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP, nullptr, m_player);
+		TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
+		if (flank) {
+			m_curFlankBaseDefense++;
+		}
+		else {
+			m_curFrontBaseDefense++;
+		}
+		if (canBuild) {
+			m_player->addToPriorityBuildList(thingName, &buildPos, placeAngle);
+			break;
+		}
+	} while (true);
+}
+
+//-------------------------------------------------------------------------------------------------
+void AISkirmishPlayer::buildAIBaseDefenseStructureFromVectorAtPlayer(const AsciiString& thingName, Bool flank, Real rotation, Real percent, const AsciiString& playerName)
+{
+	Player* targetPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!targetPlayer) return;
+
+	AISkirmishPlayer* targetAI = dynamic_cast<AISkirmishPlayer*>(targetPlayer->getAi());
+	if (!targetAI) DEBUG_LOG(("WE GOT OUR SKIRMISH AI")); return;
+	DEBUG_LOG(("WE GOT OUR SKIRMISH AI"));
+	const ThingTemplate* tTemplate = TheThingFactory->findTemplate(thingName);
+	if (tTemplate == nullptr) {
+		DEBUG_CRASH(("Couldn't find base defense structure '%s' for side %s", thingName.str(), m_player->getSide().str()));
+		return;
+	}
+	do {
+		AsciiString pathLabel;
+		if (flank) {
+			if (targetAI->getCurrentFlankBaseDefense() & 1) {
+				pathLabel.format("%s%d", SKIRMISH_FLANK, targetPlayer->getMpStartIndex() + 1);
+			}
+			else {
+				pathLabel.format("%s%d", SKIRMISH_BACKDOOR, targetPlayer->getMpStartIndex() + 1);
+			}
+		}
+		else {
+			pathLabel.format("%s%d", SKIRMISH_CENTER, targetPlayer->getMpStartIndex() + 1);
+		}
+
+		Coord3D goalPos = targetAI->getSkirmishBuildListBaseCenter();
+		Waypoint* way = TheTerrainLogic->getClosestWaypointOnPath(&goalPos, pathLabel);
+		if (way) {
+			goalPos = *way->getLocation();
+		}
+		else {
+			if (flank) return;
+			Region2D bounds;
+			getPlayerStructureBounds(&bounds, getMyEnemyPlayerIndex());
+			goalPos.x = bounds.lo.x + bounds.width() / 2;
+			goalPos.y = bounds.lo.y + bounds.height() / 2;
+		}
+		Coord2D offset;
+		offset.x = goalPos.x - targetAI->getSkirmishBuildListBaseCenter().x;
+		offset.y = goalPos.y - targetAI->getSkirmishBuildListBaseCenter().y;
+		offset.normalize();
+		Real defenseDistance = targetAI->getSkirmishBuildListBaseRadius();
+		defenseDistance += TheAI->getAiData()->m_skirmishBaseDefenseExtraDistance;
+		offset.x *= defenseDistance;
+		offset.y *= defenseDistance;
+
+		Real structureRadius = tTemplate->getTemplateGeometryInfo().getBoundingCircleRadius();
+		Real baseCircumference = 2 * PI * defenseDistance;
+		Real angleOffset = 2 * PI * (structureRadius * 4 / baseCircumference);
+
+		Int selector;
+		Real angle;
+		if (flank) {
+			selector = targetAI->getCurrentFlankBaseDefense() >> 1;
+			if (targetAI->getCurrentFlankBaseDefense() & 1) {
+				if (selector & 1) {
+					Real curLeftFlankRightDefenseAngle = targetAI->getCurrentLeftFlankRightDefenseAngle();
+					curLeftFlankRightDefenseAngle -= angleOffset;
+					angle = curLeftFlankRightDefenseAngle;
+				}
+				else {
+					Real curLeftFlankLeftDefenseAngle = targetAI->getCurrentLeftFlankLeftDefenseAngle();
+					angle = curLeftFlankLeftDefenseAngle;
+					curLeftFlankLeftDefenseAngle += angleOffset;
+				}
+			}
+			else {
+				if (selector & 1) {
+					Real curRightFlankRightDefenseAngle = targetAI->getCurrentRightFlankRightDefenseAngle();
+					curRightFlankRightDefenseAngle -= angleOffset;
+					angle = curRightFlankRightDefenseAngle;
+				}
+				else {
+					Real curRightFlankLeftDefenseAngle = targetAI->getCurrentRightFlankLeftDefenseAngle();
+					angle = curRightFlankLeftDefenseAngle;
+					curRightFlankLeftDefenseAngle += angleOffset;
+				}
+			}
+
+		}
+		else {
+			selector = targetAI->getCurrentFrontBaseDefense();
+			if (selector & 1) {
+				Real curFrontRightDefenseAngle = targetAI->getCurrentFrontRightDefenseAngle();
+				curFrontRightDefenseAngle -= angleOffset;
+				angle = curFrontRightDefenseAngle;
+			}
+			else {
+				Real curFrontLeftDefenseAngle = targetAI->getCurrentFrontLeftDefenseAngle();
+				angle = curFrontLeftDefenseAngle;
+				curFrontLeftDefenseAngle += angleOffset;
+			}
+		}
+
+		if (angle > PI / 3) break;
+		Real s = sin(angle);
+		Real c = cos(angle);
+
+		// TheSuperHackers @info helmutbuhler 21/04/2025 This debug mutates the code to become CRC incompatible
+#if defined(RTS_DEBUG) || !RETAIL_COMPATIBLE_CRC
+		DEBUG_LOG(("buildAIBaseDefenseStructure -- Angle is %f sin %f, cos %f", 180 * angle / PI, s, c));
+		DEBUG_LOG(("buildAIBaseDefenseStructure -- Offset is %f  %f, Final Position is %f, %f",
+			offset.x, offset.y,
+			offset.x * c - offset.y * s,
+			offset.y * c + offset.x * s
+			));
+#endif
+		Coord3D buildPos = targetAI->getSkirmishBuildListBaseCenter();
+		buildPos.x += (offset.x * c - offset.y * s) * (percent / 100.0f);
+		buildPos.y += (offset.y * c + offset.x * s) * (percent / 100.0f);
+
+		/* See if we can build there. */
+		Bool canBuild;
+		Real placeAngle = rotation;
+
+		//@-TanSo-: Give us the option to make random angles possible to bring some spice to the AI's building placement.
+		// If the angle is 361, we'll random between the 4 diagonal angles (45, -45, 135, -135).
+		// If the angle is 362, we'll random between any integer angle (0 - 359).
+
+		if (placeAngle == 361.0f) {
+			Int randomValue = GameLogicRandomValue(0, 3);
+			switch (randomValue)
+			{
+			case 0:placeAngle = 45.0f; break;
+			case 1:placeAngle = -45.0f; break;
+			case 2:placeAngle = 135.0f; break;
+			case 3:placeAngle = -135.0f; break;
+			}
+		}
+
+		if (placeAngle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
+
+		placeAngle = placeAngle * (PI / 180.0f);
+
+		canBuild = LBC_OK == TheBuildAssistant->isLocationLegalToBuild(&buildPos, tTemplate, placeAngle,
+			BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP, nullptr, m_player);
+		TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
+
+		if (canBuild) {
+			m_player->addToPriorityBuildList(thingName, &buildPos, placeAngle);
+			break;
+		}
+	} while (true);
+}
+
+//-------------------------------------------------------------------------------------------------
+void AISkirmishPlayer::addAIBaseDefenseToVector(const AsciiString& thingName)
+{
+	AISideInfo* resInfo = TheAI->getAiData()->m_sideInfo;
+	const ThingTemplate* templ = TheThingFactory->findTemplate(thingName);
+
+	if (templ)
+	{
+		if (resInfo->m_baseDefenseStructures.size() > 0) {
+			for (int i = 0; i < resInfo->m_baseDefenseStructures.size() - 1; i++)
+			{
+				if (resInfo->m_baseDefenseStructures[i] == templ->getName()) return;
+			}
+		}			resInfo->m_baseDefenseStructures.push_back(thingName);
+	}
+	else
+	{
+		ObjectTypes* types = TheScriptEngine->getObjectTypes(thingName);
+		if (types)
+		{
+			for (int i = 0; i < types->getListSize() - 1; i++)
+			{
+				const ThingTemplate* oTempl = TheThingFactory->findTemplate(types->getNthInList(i));
+				if (oTempl)
+				{
+					Bool isAlreadyInVector = false;
+					if (resInfo->m_baseDefenseStructures.size() > 0) {
+						for (int j = 0; j < resInfo->m_baseDefenseStructures.size() - 1; j++)
+						{
+							if (resInfo->m_baseDefenseStructures[j] == oTempl->getName()) isAlreadyInVector = true;
+						}
+					}
+
+					if (isAlreadyInVector)
+						continue;
+
+					resInfo->m_baseDefenseStructures.push_back(oTempl->getName());
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void AISkirmishPlayer::removeAIBaseDefenseFromVector(const AsciiString& thingName)
+{
+	AISideInfo* resInfo = TheAI->getAiData()->m_sideInfo;
+	const ThingTemplate* templ = TheThingFactory->findTemplate(thingName);
+
+	if (templ)
+	{
+		for (int i =  resInfo->m_baseDefenseStructures.size() - 1; i > 0; i--)
+		{
+			if (resInfo->m_baseDefenseStructures[i] == templ->getName()) resInfo->m_baseDefenseStructures.erase(resInfo->m_baseDefenseStructures.begin() + i);
+		}
+	}
+	else
+	{
+		ObjectTypes* types = TheScriptEngine->getObjectTypes(thingName);
+		if (types)
+		{
+			for (int i = 0; i < types->getListSize() - 1; i++)
+			{
+				const ThingTemplate* oTempl = TheThingFactory->findTemplate(types->getNthInList(i));
+				if (oTempl)
+				{
+					for (int j = resInfo->m_baseDefenseStructures.size() - 1; j > 0; j--)
+					{
+						if (resInfo->m_baseDefenseStructures[j] == oTempl->getName()) resInfo->m_baseDefenseStructures.erase(resInfo->m_baseDefenseStructures.begin() + j);
+					}
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+//-------------------------------- @CLP_AI AI PLAYER ADDITIONS END --------------------------------
+//-------------------------------------------------------------------------------------------------

@@ -3062,6 +3062,12 @@ void AIPlayer::doUpgradesAndSkills()
 					limit = 3;
 					if (sideInfo->m_skillSet5.m_numSkills>0) {
 						limit = 4;
+						if (sideInfo->m_skillSet6.m_numSkills > 0) {
+							limit = 5;
+							if (sideInfo->m_skillSet7.m_numSkills > 0) {
+								limit = 6;
+							}
+						}
 					}
 				}
 			}
@@ -3083,6 +3089,8 @@ void AIPlayer::doUpgradesAndSkills()
 			case 2: skillset = &sideInfo->m_skillSet3; break;
 			case 3: skillset = &sideInfo->m_skillSet4; break;
 			case 4: skillset = &sideInfo->m_skillSet5; break;
+			case 5: skillset = &sideInfo->m_skillSet6; break;
+			case 6: skillset = &sideInfo->m_skillSet7; break;
 		}
 		Int i;
 		for (i=0; i<skillset->m_numSkills; i++) {
@@ -4527,6 +4535,40 @@ void AIPlayer::buildSpecificBuildingNearestObjectAngle(const AsciiString& thingN
 	TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
 }
 
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::buildAIBaseDefenseFromVector(Bool flank, Real rotation, Real percent)
+{
+	//
+	AsciiString teamStr = "Error : Solo ai doesn't support buildAIBaseDefense. '";
+	TheScriptEngine->AppendDebugMessage(teamStr, false);
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::buildAIBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName)
+{
+	//
+	AsciiString teamStr = "Error : Solo ai doesn't support buildAIBaseDefense. '";
+	TheScriptEngine->AppendDebugMessage(teamStr, false);
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::addAIBaseDefenseToVector(const AsciiString& objectType)
+{
+	//
+	AsciiString teamStr = "Error : Solo ai doesn't support addBaseDefenseFromVector. '";
+	TheScriptEngine->AppendDebugMessage(teamStr, false);
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::removeAIBaseDefenseFromVector(const AsciiString& objectType)
+{
+	//
+	AsciiString teamStr = "Error : Solo ai doesn't support removeBaseDefenseFromVector. '";
+	TheScriptEngine->AppendDebugMessage(teamStr, false);
+}
+
+Coord3D AIPlayer::getSkirmishBuildListBaseCenter() { return m_baseCenter; }
+Real AIPlayer::getSkirmishBuildListBaseRadius() { return m_baseRadius; }
 //-------------------------------------------------------------------------------------------------
 //-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------
 //-------------------------------------------------------------------------------------------------

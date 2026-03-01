@@ -3506,6 +3506,141 @@ Bool ScriptConditions::evaluateRelationMapControl(Parameter* pPlayerParm, Int re
 }
 
 //-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateMapControlArea(Parameter* pPlayerParm, Parameter* pComparisonParm, Real pValue, Parameter* pTriggerParm)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer) return false;
+
+	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(pTriggerParm->getString());
+	if (!pTrig) return false;
+
+	const Real gridSize = 200.0f;
+	const Real controlRadius = 300.0f;
+
+	Int controlled = 0;
+	Int total = 0;
+
+	Region3D mapExtent;
+	TheTerrainLogic->getExtent(&mapExtent);
+
+	Coord3D mapMin = mapExtent.lo;
+	Coord3D mapMax = mapExtent.hi;
+
+	for (Real x = mapMin.x; x < mapMax.x; x += gridSize)
+	{
+		for (Real y = mapMin.y; y < mapMax.y; y += gridSize)
+		{
+			total++;
+
+			Coord3D point;
+			point.x = x;
+			point.y = y;
+			point.z = 0;
+
+      ICoord3D triggerPoint;
+			triggerPoint.x = point.x;
+			triggerPoint.y = point.y;
+			triggerPoint.z = 0;
+
+			if (pTrig->pointInTrigger(triggerPoint)) {
+				if (evaluatePointControlled(pPlayer, point, controlRadius))
+					controlled++;
+			}
+		}
+	}
+
+	if (total == 0) return false;
+
+	Real value = pValue / 100.0f;
+
+	switch (pComparisonParm->getInt()) {
+	case Parameter::LESS_THAN:			return (Real)controlled / (Real)total < value;
+	case Parameter::LESS_EQUAL:			return (Real)controlled / (Real)total <= value;
+	case Parameter::EQUAL:					return (Real)controlled / (Real)total == value;
+	case Parameter::GREATER_EQUAL:	return (Real)controlled / (Real)total >= value;
+	case Parameter::GREATER:				return (Real)controlled / (Real)total > value;
+	case Parameter::NOT_EQUAL:			return (Real)controlled / (Real)total != value;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateRelationMapControlArea(Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Real pValue, Parameter* pTriggerParm)
+{
+	Player* thePlayer = playerFromParam(pPlayerParm);
+	if (!thePlayer) return false;
+
+	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(pTriggerParm->getString());
+	if (!pTrig) return false;
+
+	const Real gridSize = 200.0f;
+	const Real controlRadius = 300.0f;
+
+	Int controlled = 0;
+	Int total = 0;
+
+	Region3D mapExtent;
+	TheTerrainLogic->getExtent(&mapExtent);
+
+	for (Real x = mapExtent.lo.x; x < mapExtent.hi.x; x += gridSize)
+	{
+		for (Real y = mapExtent.lo.y; y < mapExtent.hi.y; y += gridSize)
+		{
+			total++;
+
+			Coord3D point;
+			point.x = x;
+			point.y = y;
+			point.z = 0;
+
+			bool pointControlled = false;
+
+			ICoord3D triggerPoint;
+			triggerPoint.x = point.x;
+			triggerPoint.y = point.y;
+			triggerPoint.z = 0;
+
+			for (int i = 2; i < ThePlayerList->getPlayerCount() - 1; i++)
+			{
+				Player* pPlayer = ThePlayerList->getNthPlayer(i);
+				if (!pPlayer)
+					continue;
+
+				if (pPlayer == thePlayer && relationType != 2) //@-TanSo-: if friendly players are being asked for, include me!
+					continue;
+
+				if (pPlayer->getRelationship(thePlayer->getDefaultTeam()) != relationType)
+					continue;
+
+				if (pTrig->pointInTrigger(triggerPoint)) {
+					if (evaluatePointControlled(pPlayer, point, controlRadius))
+					{
+						pointControlled = true;
+						break;
+					}
+				}
+			}
+
+			if (pointControlled)
+				controlled++;
+		}
+	}
+	if (total == 0) return false;
+
+	Real value = pValue / 100.f;
+	DEBUG_LOG(("\n\n\ntotal points: %d\ntotal controlled: %d\nTotal control: %f\n\n\n", total, controlled, (Real)controlled / (Real)total));
+	switch (pComparisonParm->getInt()) {
+	case Parameter::LESS_THAN:			return (Real)controlled / (Real)total < value;
+	case Parameter::LESS_EQUAL:			return (Real)controlled / (Real)total <= value;
+	case Parameter::EQUAL:					return (Real)controlled / (Real)total == value;
+	case Parameter::GREATER_EQUAL:	return (Real)controlled / (Real)total >= value;
+	case Parameter::GREATER:				return (Real)controlled / (Real)total > value;
+	case Parameter::NOT_EQUAL:			return (Real)controlled / (Real)total != value;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
 Bool ScriptConditions::evaluateTeamLostType(Parameter* pTeamParm, Parameter* objectType)
 {
 	Team* theTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
@@ -4395,7 +4530,11 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 			return evaluateMapControl(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getReal());
 		case Condition::PLAYER_RELATION_MAPCONTROL:
 			return evaluateRelationMapControl(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2), pCondition->getParameter(3)->getReal());
-    case Condition::TEAM_LOST_TYPE:
+		case Condition::PLAYER_MAPCONTROL_AREA:
+			return evaluateMapControlArea(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getReal(), pCondition->getParameter(3));
+		case Condition::PLAYER_RELATION_MAPCONTROL_AREA:
+			return evaluateRelationMapControlArea(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2), pCondition->getParameter(3)->getReal(), pCondition->getParameter(4));
+		case Condition::TEAM_LOST_TYPE:
       return evaluateTeamLostType(pCondition->getParameter(0), pCondition->getParameter(1));
 		case Condition::TEAM_LOST_UNIT:
 			return evaluateTeamLostUnit(pCondition->getParameter(0));

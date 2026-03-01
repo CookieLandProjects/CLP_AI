@@ -567,12 +567,13 @@ public:
 			AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED,	///< AI player builds a structure near a kindOf rotated <Real> degrees.
 			AI_PLAYER_BUILD_TYPE_NEAREST_TEAM_ROTATED,		///< AI player builds a structure near a team rotated <Real> degrees.
 			AI_PLAYER_BUILD_TYPE_NEAREST_SUPPLY_ROTATED,	///< AI player builds a structure near a supply source rotaded <Real> degrees.
-			/*TODO*/AI_PLAYER_BUILD_TYPE_AT_BACKDOOR,							///< AI player builds a structure at the back door path.
-			/*TODO*/AT_PLAYER_BUILD_TYPE_AT_SPECIAL,							///< AI player builds a structure at the special path.
-			/*TODO*/AI_PLAYER_BUILD_TYPE_AT_PERCENT_FRONT,				///< AI player builds a structure at <Real> percent distance between spot and outskirts at the center path.
-			/*TODO*/AI_PLAYER_BUILD_TYPE_AT_PERCENT_FLANK,				///< AI player builds a structure at <Real> percent distance between spot and outskirts at the flank path.
-			/*TODO*/AI_PLAYER_BUILD_TYPE_AT_PERCENT_BACKDOOR,			///< AI player builds a structure at <Real> percent distance between spot and outskirts at the back door path.
-			/*TODO*/AI_PLAYER_BUILD_TYPE_AT_PERCENT_SPECIAL,			///< AI player builds a structure at <Real> percent distance between spot and outskirts at the special path.
+			AI_PLAYER_BUILD_DEFENSE_FRONT_FROM_VECTOR_ROTATED_PERCENT, ///< AI player builds a defensive structure on the front from our vector, rotated <Real> degrees, and at a distance of <Real> percent of our actual base boundaries.
+			AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT, ///< AI player builds a defensive structure on the flank from our vector, rotated <Real> degrees, and at a distance of <Real> percent of our actual base boundaries.
+
+      AI_PLAYER_ADD_DEFENSE_TO_VECTOR,							///< add a defensive structure to m_baseDefenseStructures.
+			AI_PLAYER_REMOVE_DEFENSE_FROM_VECTOR,					///< remove a defensive structure from m_baseDefenseStructures.
+			AI_PLAYER_BUILD_DEFENSE_FRONT_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER,///< AI player builds a defensive structure on the front from our vector, rotated <Real> degrees, and at a distance of <Real> percent of a player's actual base boundaries.
+			AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER,///< AI player builds a defensive structure on the flank from our vector, rotated <Real> degrees, and at a distance of <Real> percent of a player's actual base boundaries.
 
 			PLAYER_SURRENDER,															///< The player surrenders, provided that other allied players are alive; otherwise quit.
 			PLAYER_MERGE_KINDOF,													///< The player merges all units with <kindOf> into another team.
@@ -1120,6 +1121,8 @@ public:
 
 		PLAYER_MAPCONTROL,											// True if a player's map control is <comparison> <Real>.
 		PLAYER_RELATION_MAPCONTROL,							// True if all <relation> player's map control is <comparison> <Real>.
+    PLAYER_MAPCONTROL_AREA,									// True if a player's map control in an area is <comparison> <Real>.
+    PLAYER_RELATION_MAPCONTROL_AREA, 				// True if all <relation> player's map control in an area is <comparison> <Real>.
 
     PLAYER_SIGHTED_RELATION_TYPE,						// True if a player has sighted a <relation> unit of <type>.
     RELATION_PLAYER_SIGHTED_RELATION_TYPE,	// True if a <relation> player has sighted a <relation> unit of <type>.

@@ -72,6 +72,22 @@ public:	// AIPlayer interface methods.
 
 	virtual Player *getAiEnemy();	///< Solo AI attacks based on scripting.  Only skirmish auto-acquires an enemy at this point.  jba.
 
+  virtual void buildAIBaseDefenseFromVector(Bool flank, Real rotation, Real percent); ///< Do the same as buildAIBaseDefense, but use the vector and randomize the outcome.
+	virtual void buildAIBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName);
+	virtual void buildAIBaseDefenseStructureFromVector(const AsciiString& thingName, Bool flank, Real rotation, Real percent);
+	virtual void buildAIBaseDefenseStructureFromVectorAtPlayer(const AsciiString& thingName, Bool flank, Real rotation, Real percent, const AsciiString& playerName);
+	virtual void addAIBaseDefenseToVector(const AsciiString &thingName);
+	virtual void removeAIBaseDefenseFromVector(const AsciiString& thingName);
+
+	Int getCurrentFrontBaseDefense();
+	Int getCurrentFlankBaseDefense();
+  Real getCurrentFrontLeftDefenseAngle();
+  Real getCurrentFrontRightDefenseAngle();
+  Real getCurrentLeftFlankLeftDefenseAngle();
+  Real getCurrentLeftFlankRightDefenseAngle();
+	Real getCurrentRightFlankLeftDefenseAngle();
+	Real getCurrentRightFlankRightDefenseAngle();
+
 protected:
 
 	// snapshot methods
