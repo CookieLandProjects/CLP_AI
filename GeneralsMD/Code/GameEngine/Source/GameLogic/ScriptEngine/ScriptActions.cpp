@@ -8822,6 +8822,166 @@ void ScriptActions::doBuildObjectNearestKindOfAngle(const AsciiString& playerNam
 }
 
 //-------------------------------------------------------------------------------------------------
+void ScriptActions::doBuildObjectNearestTypeAngleArea(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, const AsciiString& triggerArea, Real angle)
+{
+	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!thePlayer) return;
+
+	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(triggerArea);
+	if (!pTrig) return;
+
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = thePlayer->getDefaultTeam()->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj)
+	{
+		return;
+	}
+
+	Coord3D teamPos = *thePlayer->getDefaultTeam()->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	Object* bestObj = nullptr;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		//Find the closest specified template.
+		PartitionFilterThing thingsToAccept(templ, true);
+		PartitionFilterPolygonTrigger acceptWithin(pTrig);
+		PartitionFilter* filters[] = { &thingsToAccept, &acceptWithin, &filterMapStatus, nullptr };
+		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+		if (!bestObj)
+		{
+			return;
+		}
+	}
+	else
+	{
+		//Find the closest object within the object template list.
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			Real closestDist;
+			Real dist;
+			for (size_t typeIndex = 0; typeIndex < objectTypes->getListSize(); typeIndex++)
+			{
+				AsciiString thisTypeName = objectTypes->getNthInList(typeIndex);
+				const ThingTemplate* thisType = TheThingFactory->findTemplate(thisTypeName);
+				if (thisType)
+				{
+					PartitionFilterThing thingToAccept(thisType, true);
+					PartitionFilterPolygonTrigger acceptWithin(pTrig);
+					PartitionFilter* filters[] = { &thingToAccept, &acceptWithin, &filterMapStatus, nullptr };
+
+					Object* obj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters, &dist);
+					if (obj)
+					{
+						if (!bestObj || dist < closestDist)
+						{
+							bestObj = obj;
+							closestDist = dist;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if (!bestObj) return;
+	//@-TanSo-: Give us the option to make random angles possible to bring some spice to the AI's building placement.
+	// If the angle is 361, we'll random between the 4 diagonal angles (45, -45, 135, -135).
+	// If the angle is 362, we'll random between any integer angle (0 - 359).
+
+	if (angle == 361.0f) {
+		Int randomValue = GameLogicRandomValue(0, 3);
+		switch (randomValue)
+		{
+		case 0:angle = 45.0f; break;
+		case 1:angle = -45.0f; break;
+		case 2:angle = 135.0f; break;
+		case 3:angle = -135.0f; break;
+		}
+	}
+
+	if (angle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
+
+	thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doBuildObjectNearestKindOfAngleArea(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, const AsciiString& triggerArea, Real angle)
+{
+	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!thePlayer) return;
+
+	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(triggerArea);
+	if (!pTrig) return;
+
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = thePlayer->getDefaultTeam()->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj)
+	{
+		return;
+	}
+
+	Coord3D teamPos = *thePlayer->getDefaultTeam()->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	Object* bestObj = nullptr;
+
+	KindOfType pKindOf = (KindOfType)kindOf;
+	PartitionFilterPolygonTrigger acceptWithin(pTrig);
+
+	PartitionFilterAcceptByKindOf theKindOf(pKindOf, TRUE);
+	PartitionFilter* filters[] = { &theKindOf, &acceptWithin, &filterMapStatus, nullptr };
+	bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	if (!bestObj)
+	{
+		return;
+	}
+	//@-TanSo-: Give us the option to make random angles possible to bring some spice to the AI's building placement.
+	// If the angle is 361, we'll random between the 4 diagonal angles (45, -45, 135, -135).
+	// If the angle is 362, we'll random between any integer angle (0 - 359).
+
+	if (angle == 361.0f) {
+		Int randomValue = GameLogicRandomValue(0, 3);
+		switch (randomValue)
+		{
+		case 0:angle = 45.0f; break;
+		case 1:angle = -45.0f; break;
+		case 2:angle = 135.0f; break;
+		case 3:angle = -135.0f; break;
+		}
+	}
+
+	if (angle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
+
+	thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle);
+}
+
+//-------------------------------------------------------------------------------------------------
 void ScriptActions::doTeamMoveAwayFromRelation(const AsciiString& teamName, Real feet, Int relationType)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
@@ -11071,5 +11231,12 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 		case ScriptAction::AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER:
 			doAIPlayerBuildDefenseStructureFromVectorAtPlayer(true, pAction->getParameter(0)->getReal(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getString());
 			return;
+		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED_AREA:
+			doBuildObjectNearestKindOfAngleArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString(), pAction->getParameter(4)->getReal());
+      return;
+		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED_AREA:
+			doBuildObjectNearestTypeAngleArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getString(), pAction->getParameter(4)->getReal());
+			return;
+			
 	}
 }

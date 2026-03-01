@@ -396,6 +396,9 @@ protected:
 	void doBuildSupplyCenterAngle(const AsciiString& player, const AsciiString& buildingType, Int cash, Real angle);
 	void doBuildObjectNearestTypeAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, Real angle);
 	void doBuildObjectNearestKindOfAngle(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, Real angle);
+	
+	void doBuildObjectNearestTypeAngleArea(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, const AsciiString& triggerArea, Real angle);
+	void doBuildObjectNearestKindOfAngleArea(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, const AsciiString& triggerArea, Real angle);
 
 	void doTeamMoveRelative(const AsciiString& teamName, Coord3D* coords);
 	void doUnitMoveRelative(const AsciiString& unitName, Coord3D* coords);
@@ -456,7 +459,7 @@ protected:
 	void doAIPlayerRemoveBaseDefenseStructure(const AsciiString& objectType);
 
 
-	// @-TanSo-: 56 additions
+	// @-TanSo-: 58 additions
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 	//-------------------------------------------------------------------------------------------------

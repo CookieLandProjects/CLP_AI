@@ -4223,6 +4223,10 @@ Bool ScriptConditions::evaluatePlayerBuildingBeingCapturedTypeArea(Parameter* pP
 	return false;
 }
 
+Bool ScriptConditions::evaluateRelationPlayerComparisonTypeArea(Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Parameter* objectType, Parameter* pTriggerParm)
+{
+	
+}
 //-------------------------------------------------------------------------------------------------
 //---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 //-------------------------------------------------------------------------------------------------

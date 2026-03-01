@@ -638,6 +638,9 @@ public:
       PLAYER_SELL_ALL_BUILDINGS_AREA,								///< Make an AI player sell off all buildings in an area.
       PLAYER_SELL_ALL_BUILDINGS_TYPE_AREA,					///< Make an AI player sell off all buildings of a type in an area.
 
+			AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED_AREA,	///< AI player builds a structure near a kindOf in an area rotated <Real> degrees.
+			AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED_AREA,	///< AI player builds a structure near a type in an area source rotaded <Real> degrees.
+			
 			//-------------------------------------------------------------------------------------------------
 			//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------
 			//-------------------------------------------------------------------------------------------------
@@ -1136,6 +1139,7 @@ public:
 		PLAYER_BUILDING_BEING_CAPTURED_AREA,		// True if a player's building in an area is being captured by an enemy.
 		PLAYER_BUILDING_BEING_CAPTURED_TYPE_AREA,// True if a player's building of a type in an area is being captured by an enemy.
 
+		RELATION_PLAYER_HAS_COMPARISON_TYPE_AREA,// True if all of player's <relation> co-players combined have <comparison> <int> <type> in an area.
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 		//-------------------------------------------------------------------------------------------------

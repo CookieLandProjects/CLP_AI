@@ -5853,6 +5853,40 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[3] = " , rotated ";
 	curTemplate->m_uiStrings[4] = " degrees.\n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
 
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED_AREA];
+	curTemplate->m_internalName = "AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED_AREA";
+	curTemplate->m_uiName = "Player/AI/Rotated/AI player build nearest objectType in an area with custom rotation.";
+	curTemplate->m_numParameters = 5;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[3] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[4] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 6;
+	curTemplate->m_uiStrings[0] = "Have AI ";
+	curTemplate->m_uiStrings[1] = " build a ";
+	curTemplate->m_uiStrings[2] = " near the closest ";
+	curTemplate->m_uiStrings[3] = " in area ";
+	curTemplate->m_uiStrings[4] = " , rotated ";
+	curTemplate->m_uiStrings[5] = " degrees.\n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED_AREA];
+	curTemplate->m_internalName = "AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED_AREA";
+	curTemplate->m_uiName = "Player/AI/Rotated/AI player build nearest kindOf in an area with custom rotation.";
+	curTemplate->m_numParameters = 5;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::KIND_OF_PARAM;
+	curTemplate->m_parameters[3] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[4] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 6;
+	curTemplate->m_uiStrings[0] = "Have AI ";
+	curTemplate->m_uiStrings[1] = " build a ";
+	curTemplate->m_uiStrings[2] = " near the closest ";
+	curTemplate->m_uiStrings[3] = " in area ";
+	curTemplate->m_uiStrings[4] = " , rotated ";
+	curTemplate->m_uiStrings[5] = " degrees.\n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
+
 	curTemplate = &m_conditionTemplates[Condition::PLAYER_RELATION_FACTION];
 	curTemplate->m_internalName = "PLAYER_RELATION_FACTION";
 	curTemplate->m_uiName = "Player/Skirmish/One or more of a player's co-players is a faction.";
