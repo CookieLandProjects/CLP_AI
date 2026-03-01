@@ -1264,6 +1264,7 @@ protected:
 
 	static ScriptList *s_readLists[MAX_PLAYER_COUNT];
 	static Int				s_numInReadList;
+	std::vector<ScriptGroup*> m_markedChildrenForMove;
 
 public:
 	ScriptList();
