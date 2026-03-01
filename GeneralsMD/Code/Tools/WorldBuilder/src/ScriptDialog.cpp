@@ -229,11 +229,98 @@ BEGIN_MESSAGE_MAP(ScriptDialog, CDialog)
 	ON_WM_MOUSEMOVE()
 	ON_WM_LBUTTONUP()
 	ON_WM_MOVE()
+	ON_WM_SIZE()
+	ON_WM_GETMINMAXINFO()
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
 // ScriptDialog message handlers
+
+void ScriptDialog::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
+{
+    CDialog::OnGetMinMaxInfo(lpMMI);
+
+    if (m_layoutInited && m_initialClientRect.Width() > 0)
+    {
+        CRect win, client;
+        GetWindowRect(&win);
+        GetClientRect(&client);
+
+        int nonClientW = win.Width() - client.Width();
+        int nonClientH = win.Height() - client.Height();
+
+        lpMMI->ptMinTrackSize.x = m_initialClientRect.Width() + nonClientW;
+        lpMMI->ptMinTrackSize.y = m_initialClientRect.Height() + nonClientH;
+    }
+}
+
+void ScriptDialog::OnSize(UINT nType, int cx, int cy)
+{
+    CDialog::OnSize(nType, cx, cy);
+
+    if (!::IsWindow(m_hWnd)) return;
+    if (!m_layoutInited) return;
+
+    int deltaX = cx - m_initialClientRect.Width();
+    int deltaY = cy - m_initialClientRect.Height();
+
+    for (const CtrlInfo &ci : m_ctrlInfo)
+    {
+        CWnd* pCtl = GetDlgItem(ci.id);
+        if (!pCtl || !::IsWindow(pCtl->m_hWnd)) continue;
+
+        if (ci.anchorRight && !ci.stretchH && m_rightColumnWidth > 0)
+        {
+            int origW = ci.rc.Width();
+            int offset = ci.rc.left - m_rightColumnLeft;
+            int newLeft = cx - m_rightColumnWidth + offset;
+            if (newLeft < 2) newLeft = 2;
+
+            int newTop = ci.rc.top;
+            int newHeight = ci.rc.Height();
+
+            if (ci.anchorBottom)
+                newTop += deltaY;
+            else if (ci.stretchV)
+                newHeight += deltaY;
+
+            pCtl->SetWindowPos(nullptr, newLeft, newTop, origW, newHeight, SWP_NOZORDER);
+            continue;
+        }
+
+        CRect newRc = ci.rc;
+
+        if (ci.stretchH)
+        {
+            newRc.right = ci.rc.right + deltaX;
+            if (newRc.Width() < 50) newRc.right = newRc.left + 50;
+        }
+        else
+        {
+            newRc.right = newRc.left + ci.rc.Width();
+        }
+
+        int newTop = ci.rc.top;
+        int newHeight = ci.rc.Height();
+
+        if (ci.stretchV)
+        {
+            newHeight += deltaY;
+            if (newHeight < 24) newHeight = 24;
+        }
+        else if (ci.anchorBottom)
+        {
+            newTop += deltaY;
+        }
+
+        newRc.top = newTop;
+        newRc.bottom = newTop + newHeight;
+
+        pCtl->SetWindowPos(nullptr, newRc.left, newRc.top,
+                           newRc.Width(), newRc.Height(), SWP_NOZORDER);
+    }
+}
 
 void ScriptDialog::OnSelchangedScriptTree(NMHDR* pNMHDR, LRESULT* pResult)
 {
@@ -548,12 +635,10 @@ BOOL ScriptDialog::OnInitDialog()
 	CButton *pButton = (CButton*)GetDlgItem(IDC_AUTO_VERIFY);
 	if (pButton) pButton->SetCheck(m_autoUpdateWarnings ? 1 : 0);
 
-
 	CWnd *pWnd = GetDlgItem(IDC_VERIFY);
 	if (pWnd) pWnd->EnableWindow(!m_autoUpdateWarnings);
 
 	m_staticThis = this;
-
 
 	CTreeCtrl *pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
 	if (!pTree) {
@@ -574,7 +659,6 @@ BOOL ScriptDialog::OnInitDialog()
 			DEBUG_LOG(("ScriptDialog::OnInitDialog - failed to create CSDTreeCtrl"));
 			return FALSE;
 		}
-		
 		pTree->DestroyWindow();
 	}
 
@@ -595,7 +679,6 @@ BOOL ScriptDialog::OnInitDialog()
 	if (m_imageList.GetSafeHandle() == nullptr) {
 		m_imageList.Create(IDB_FOLDERSCRIPT, 16, 2, ILC_COLOR4);
 	}
-	// Attach state image list (detach previous implicitly by passing pointer to tree)
 	pTree->SetImageList(&m_imageList, TVSIL_STATE);
 
 	for (i = 0; i < m_sides.getNumSides(); i++) {
@@ -606,6 +689,77 @@ BOOL ScriptDialog::OnInitDialog()
 		}
 	}
 	pTree->SetFocus();
+
+	m_ctrlInfo.clear();
+
+	CRect clientRect;
+	GetClientRect(&clientRect);
+	m_initialClientRect = clientRect;
+	int clientW = clientRect.Width();
+	int clientH = clientRect.Height();
+
+	const UINT rightAnchored[] = {
+			IDOK, IDC_VERIFY, IDC_NEW_FOLDER, IDC_NEW_SCRIPT, IDC_EDIT_SCRIPT,
+			IDC_MOVE_UP, IDC_MOVE_DOWN, IDC_COPY_SCRIPT, IDC_DELETE, IDC_PATCH_GC,
+			IDCANCEL, IDC_SAVE, IDC_LOAD
+	};
+
+	const UINT stretchH[] = { IDC_SCRIPT_TREE, IDC_SCRIPT_DESCRIPTION };
+
+	const UINT stretchV[] = { IDC_SCRIPT_TREE };
+
+	const UINT bottomAnchored[] = {
+			IDC_SCRIPT_COMMENT, IDC_SCRIPT_DESCRIPTION, IDC_AUTO_VERIFY,
+			IDCANCEL, IDC_SAVE, IDC_LOAD
+	};
+
+	auto isIn = [](UINT id, const UINT* arr, size_t len) -> bool {
+		for (size_t k = 0; k < len; ++k) if (arr[k] == id) return true;
+		return false;
+		};
+
+	const UINT tracked[] = {
+			IDC_SCRIPT_TREE,
+			IDC_SCRIPT_COMMENT,
+			IDC_SCRIPT_DESCRIPTION,
+			IDOK, IDC_VERIFY, IDC_NEW_FOLDER, IDC_NEW_SCRIPT, IDC_EDIT_SCRIPT,
+			IDC_MOVE_UP, IDC_MOVE_DOWN, IDC_COPY_SCRIPT, IDC_DELETE, IDC_PATCH_GC,
+			IDCANCEL, IDC_SAVE, IDC_LOAD, IDC_AUTO_VERIFY
+	};
+
+	for (UINT id : tracked)
+	{
+		CWnd* pCtl = GetDlgItem(id);
+		if (!pCtl || !::IsWindow(pCtl->m_hWnd)) continue;
+
+		CRect rc;
+		pCtl->GetWindowRect(&rc);
+		ScreenToClient(&rc);
+
+		CtrlInfo ci{};
+		ci.id = id;
+		ci.rc = rc;
+		ci.offsetRight = clientW - rc.right;
+		ci.offsetBottom = clientH - rc.bottom;
+		ci.anchorRight = isIn(id, rightAnchored, _countof(rightAnchored));
+		ci.stretchH = isIn(id, stretchH, _countof(stretchH));
+		ci.stretchV = isIn(id, stretchV, _countof(stretchV));
+		ci.anchorBottom = isIn(id, bottomAnchored, _countof(bottomAnchored));
+
+		m_ctrlInfo.push_back(ci);
+	}
+
+	int rightLeft = clientW;
+	for (const auto& ci : m_ctrlInfo)
+		if (ci.anchorRight && ci.rc.left < rightLeft)
+			rightLeft = ci.rc.left;
+
+	if (rightLeft >= clientW - 20) rightLeft = clientW - 120;
+
+	m_rightColumnLeft = rightLeft;
+	m_rightColumnWidth = clientW - rightLeft;
+
+	m_layoutInited = true;
 
 	CRect top;
 	GetWindowRect(&top);
@@ -927,44 +1081,147 @@ void ScriptDialog::addScriptList(HTREEITEM hPlayer, Int playerIndex, ScriptList 
 		}
 	}
 }
+
+static AsciiString extractLabelName(const CString &label)
+{
+    CStringA a(label);
+    std::string s(a.GetString() ? a.GetString() : "");
+    std::size_t pos = s.rfind(']');
+    std::string name;
+    if (pos == std::string::npos) {
+        name = s;
+    } else {
+        name = s.substr(pos + 1);
+    }
+    auto l = name.find_first_not_of(" \t\r\n");
+    if (l == std::string::npos) return AsciiString::TheEmptyString;
+    auto r = name.find_last_not_of(" \t\r\n");
+    name = name.substr(l, r - l + 1);
+    return AsciiString(name.c_str());
+}
+
+static void collectExpandedNames(CTreeCtrl *pTree, HTREEITEM start, std::vector<AsciiString> &outNames)
+{
+    if (!pTree) return;
+    HTREEITEM child = pTree->GetChildItem(start);
+    while (child) {
+        UINT state = pTree->GetItemState(child, TVIS_EXPANDED);
+        if (state & TVIS_EXPANDED) {
+            CString lbl = pTree->GetItemText(child);
+            outNames.push_back(extractLabelName(lbl));
+        }
+        collectExpandedNames(pTree, child, outNames);
+        child = pTree->GetNextSiblingItem(child);
+    }
+}
+
+static bool nameInVector(const AsciiString &needle, const std::vector<AsciiString> &vec)
+{
+    for (const AsciiString &s : vec) {
+        if (s == needle) return true;
+    }
+    return false;
+}
+
+static void restoreExpandedByName(CTreeCtrl *pTree, HTREEITEM start, const std::vector<AsciiString> &expanded)
+{
+    if (!pTree) return;
+    HTREEITEM child = pTree->GetChildItem(start);
+    while (child) {
+        CString lbl = pTree->GetItemText(child);
+        AsciiString name = extractLabelName(lbl);
+        if (!name.isEmpty() && nameInVector(name, expanded)) {
+            pTree->Expand(child, TVE_EXPAND);
+        }
+        restoreExpandedByName(pTree, child, expanded);
+        child = pTree->GetNextSiblingItem(child);
+    }
+}
+
+
 void ScriptDialog::reloadPlayer(Int playerIndex, ScriptList *pSL)
 {
 //	Dict *d = m_sides.getSideInfo(playerIndex)->getDict();
-	updateWarnings();
+    updateWarnings();
 
-	CTreeCtrl *pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
-	HTREEITEM player = pTree->GetChildItem(TVI_ROOT);
-	while (player != nullptr) {
-		TVITEM item;
-		::memset(&item, 0, sizeof(item));
-		item.mask = TVIF_HANDLE|TVIF_PARAM;
-		item.hItem = player;
-		pTree->GetItem(&item);
-		ListType lt;
-		lt.IntToList(item.lParam);
-		if (lt.m_playerIndex==playerIndex) {
-			break;
-		}
-		player = pTree->GetNextSiblingItem(player);
-	}
-	DEBUG_ASSERTCRASH(player, ("Couldn't find player."));
-	if (!player) return;
-	HTREEITEM child;
-	ListType currentSel = m_curSelection;
+    CTreeCtrl *pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
+    HTREEITEM player = pTree->GetChildItem(TVI_ROOT);
+    while (player != nullptr) {
+        TVITEM item;
+        ::memset(&item, 0, sizeof(item));
+        item.mask = TVIF_HANDLE|TVIF_PARAM;
+        item.hItem = player;
+        pTree->GetItem(&item);
+        ListType lt;
+        lt.IntToList(item.lParam);
+        if (lt.m_playerIndex==playerIndex) {
+            break;
+        }
+        player = pTree->GetNextSiblingItem(player);
+    }
+    DEBUG_ASSERTCRASH(player, ("Couldn't find player."));
+    if (!player) return;
 
-	if (currentSel.m_objType == ListType::SCRIPT_IN_GROUP_TYPE) {
-		if (currentSel.m_scriptIndex > 0) {
-			--currentSel.m_scriptIndex;
-		}
-	}
+    std::vector<AsciiString> expandedNames;
+    collectExpandedNames(pTree, player, expandedNames);
 
-	do {
-		child = pTree->GetChildItem(player);
-		if (child) pTree->DeleteItem(child);
-	} while (child);
-	m_curSelection = currentSel;
-	addScriptList(player, playerIndex, pSL);
+    ListType currentSel = m_curSelection;
+    if (currentSel.m_objType == ListType::SCRIPT_IN_GROUP_TYPE) {
+        if (currentSel.m_scriptIndex > 0) {
+            --currentSel.m_scriptIndex;
+        }
+    }
+
+    HTREEITEM child;
+    do {
+        child = pTree->GetChildItem(player);
+        if (child) pTree->DeleteItem(child);
+    } while (child);
+
+    m_curSelection = currentSel;
+    addScriptList(player, playerIndex, pSL);
+
+    restoreExpandedByName(pTree, player, expandedNames);
 }
+
+//void ScriptDialog::reloadPlayer(Int playerIndex, ScriptList *pSL)
+//{
+////	Dict *d = m_sides.getSideInfo(playerIndex)->getDict();
+//	updateWarnings();
+//
+//	CTreeCtrl *pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
+//	HTREEITEM player = pTree->GetChildItem(TVI_ROOT);
+//	while (player != nullptr) {
+//		TVITEM item;
+//		::memset(&item, 0, sizeof(item));
+//		item.mask = TVIF_HANDLE|TVIF_PARAM;
+//		item.hItem = player;
+//		pTree->GetItem(&item);
+//		ListType lt;
+//		lt.IntToList(item.lParam);
+//		if (lt.m_playerIndex==playerIndex) {
+//			break;
+//		}
+//		player = pTree->GetNextSiblingItem(player);
+//	}
+//	DEBUG_ASSERTCRASH(player, ("Couldn't find player."));
+//	if (!player) return;
+//	HTREEITEM child;
+//	ListType currentSel = m_curSelection;
+//
+//	if (currentSel.m_objType == ListType::SCRIPT_IN_GROUP_TYPE) {
+//		if (currentSel.m_scriptIndex > 0) {
+//			--currentSel.m_scriptIndex;
+//		}
+//	}
+//
+//	do {
+//		child = pTree->GetChildItem(player);
+//		if (child) pTree->DeleteItem(child);
+//	} while (child);
+//	m_curSelection = currentSel;
+//	addScriptList(player, playerIndex, pSL);
+//}
 
 void ScriptDialog::updateSelection(ListType sel)
 {

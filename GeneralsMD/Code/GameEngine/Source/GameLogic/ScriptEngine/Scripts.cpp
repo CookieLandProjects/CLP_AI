@@ -660,17 +660,27 @@ void ScriptList::deleteGroup(ScriptGroup *pGrp)
 		return;
 	}
 
+	std::vector<std::vector<Int>> children(count);
+	for (Int i = 0; i < count; ++i) {
+		Int parent = groups[i]->getParentIndex();
+		if (parent >= 0 && parent < count) {
+			children[parent].push_back(i);
+		}
+	}
+
 	// Mark all groups that are in the subtree rooted at targetIndex for deletion.
 	std::vector<char> toDelete(count, 0);
+	std::vector<Int> stack;
+	stack.push_back(targetIndex);
 	toDelete[targetIndex] = 1;
-	for (Int i = 0; i < count; ++i) {
-		if (toDelete[i]) continue;
-		Int cur = i;
-		while (cur != -1) {
-			Int parent = groups[cur]->getParentIndex();
-			if (parent == targetIndex) { toDelete[i] = 1; break; }
-			if (parent < 0 || parent >= count) break;
-			cur = parent;
+	while (!stack.empty()) {
+		Int cur = stack.back();
+		stack.pop_back();
+		for (Int child : children[cur]) {
+			if (!toDelete[child]) {
+				toDelete[child] = 1;
+				stack.push_back(child);
+			}
 		}
 	}
 

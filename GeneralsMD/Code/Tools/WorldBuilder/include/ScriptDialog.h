@@ -166,8 +166,27 @@ protected:
 
 	afx_msg void OnMoveUp();
 	afx_msg void OnMoveDown();
+	afx_msg void OnSize(UINT nType, int cx, int cy);
+	void OnGetMinMaxInfo(MINMAXINFO * lpMMI);
+
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
+	struct CtrlInfo {
+		int id;
+		CRect rc;           // initial rect in client coords (left,top,right,bottom)
+		int offsetRight;    // initial clientWidth - rc.right
+		int offsetBottom;   // initial clientHeight - rc.bottom
+
+		bool anchorRight;
+		bool stretchH;
+		bool stretchV;
+		bool anchorBottom;
+	};
+	std::vector<CtrlInfo> m_ctrlInfo;
+	CRect m_initialClientRect;
+	int m_rightColumnLeft;
+	int m_rightColumnWidth;
+	bool m_layoutInited;
 };
 
 //{{AFX_INSERT_LOCATION}}
