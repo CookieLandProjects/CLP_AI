@@ -4614,6 +4614,43 @@ void Player::buildSpecificBuildingNearestObjectAngle(const AsciiString& thingNam
 	}
 }
 
+//-------------------------------------------------------------------------------------------------
+void Player::buildBaseDefenseFromVector(Bool flank, Real rotation, Real percent)
+{
+	if (m_ai)
+	{
+		// Do a priority build.
+		m_ai->buildAIBaseDefenseFromVector(flank, rotation, percent);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void Player::buildBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName)
+{
+	if (m_ai)
+	{
+		// Do a priority build.
+		m_ai->buildAIBaseDefenseFromVectorAtPlayer(flank, rotation, percent, playerName);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void Player::addAIBaseDefenseToVector(const AsciiString& objectType)
+{
+	if (m_ai)
+	{
+		m_ai->addAIBaseDefenseToVector(objectType);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void Player::removeAIBaseDefenseFromVector(const AsciiString& objectType)
+{
+	if (m_ai)
+	{
+		m_ai->removeAIBaseDefenseFromVector(objectType);
+	}
+}
 
 //-------------------------------------------------------------------------------------------------
 //--------------------------------- @CLP_AI PLAYER ADDITIONS END ----------------------------------

@@ -203,8 +203,10 @@ protected:
 	Bool evaluatePlayerDestroyedEnemyType(Parameter* pPlayerParm, Parameter* pObjectType);
 	Bool evaluatePlayerDestroyedEnemyUnit(Parameter* pPlayerParm);
 	Bool evaluatePointControlled(Player* player, const Coord3D& point, Real radius);				//@-TanSo-: helper method for evaluate(Relation)MapControl.
-	Bool evaluateMapControl(Parameter* pPlayerParm, Parameter* pComparisonParm, Real value);
-	Bool evaluateRelationMapControl(Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Real value);
+	Bool evaluateMapControl(Parameter* pPlayerParm, Parameter* pComparisonParm, Real pValue);
+	Bool evaluateRelationMapControl(Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Real pValue);
+	Bool evaluateMapControlArea(Parameter* pPlayerParm, Parameter* pComparisonParm, Real pValue, Parameter* pTriggerParm);
+	Bool evaluateRelationMapControlArea(Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Real pValue, Parameter* pTriggerParm);
 	Bool evaluateTeamLostType(Parameter* pTeamParm, Parameter* objectType);
 	Bool evaluateTeamLostUnit(Parameter* pTeamParm);
   Bool evaluatePlayerSightedRelationType(Parameter* pPlayerParm, Int relationType, Parameter* pObjectType);
@@ -217,7 +219,7 @@ protected:
 	Bool evaluatePlayerBuildingBeingCapturedArea(Parameter* pPlayerParm, Parameter* pTriggerParm);
 	Bool evaluatePlayerBuildingBeingCapturedTypeArea(Parameter* pPlayerParm, Parameter* objectType, Parameter* pTriggerParm);
 
-	// @-TanSo-: 30 additions, 1 helper method
+	// @-TanSo-: 32 additions, 1 helper method
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 	//-------------------------------------------------------------------------------------------------

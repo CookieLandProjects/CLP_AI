@@ -5806,7 +5806,7 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[1] = " build a ";
 	curTemplate->m_uiStrings[2] = " nearest team ";
 	curTemplate->m_uiStrings[3] = " ,rotated ";
-	curTemplate->m_uiStrings[4] = " degrees.";
+	curTemplate->m_uiStrings[4] = " degrees.\n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
 
 	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_SUPPLY_ROTATED];
 	curTemplate->m_internalName = "AI_PLAYER_BUILD_TYPE_NEAREST_SUPPLY_ROTATED";
@@ -5821,7 +5821,7 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[1] = " build a ";
 	curTemplate->m_uiStrings[2] = " near a supply source with at least ";
 	curTemplate->m_uiStrings[3] = " available resources, rotated ";
-	curTemplate->m_uiStrings[4] = " degrees. ";
+	curTemplate->m_uiStrings[4] = " degrees.\n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
 
 	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED];
 	curTemplate->m_internalName = "AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED";
@@ -5836,7 +5836,7 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[1] = " build a ";
 	curTemplate->m_uiStrings[2] = " near the closest ";
 	curTemplate->m_uiStrings[3] = " , rotated ";
-	curTemplate->m_uiStrings[4] = " degrees. ";
+	curTemplate->m_uiStrings[4] = " degrees.\n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
 
 	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED];
 	curTemplate->m_internalName = "AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED";
@@ -5851,7 +5851,7 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[1] = " build a ";
 	curTemplate->m_uiStrings[2] = " near the closest ";
 	curTemplate->m_uiStrings[3] = " , rotated ";
-	curTemplate->m_uiStrings[4] = " degrees. ";
+	curTemplate->m_uiStrings[4] = " degrees.\n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
 
 	curTemplate = &m_conditionTemplates[Condition::PLAYER_RELATION_FACTION];
 	curTemplate->m_internalName = "PLAYER_RELATION_FACTION";
@@ -6050,7 +6050,7 @@ void ScriptEngine::init()
 
 	curTemplate = &m_conditionTemplates[Condition::PLAYER_MAPCONTROL];
 	curTemplate->m_internalName = "PLAYER_MAPCONTROL";
-	curTemplate->m_uiName = "Player/Owns/Map Control/Player currently has N% map control.";
+	curTemplate->m_uiName = "Player/Owns/Control/Player currently has N% map control.";
 	curTemplate->m_numParameters = 3;
 	curTemplate->m_parameters[0] = Parameter::SIDE;
 	curTemplate->m_parameters[1] = Parameter::COMPARISON;
@@ -6063,7 +6063,7 @@ void ScriptEngine::init()
 
 	curTemplate = &m_conditionTemplates[Condition::PLAYER_RELATION_MAPCONTROL];
 	curTemplate->m_internalName = "PLAYER_RELATION_MAPCONTROL";
-	curTemplate->m_uiName = "Player/Owns/Map Control/All of friendly|neutral|enemy co-players currently have N% map control.";
+	curTemplate->m_uiName = "Player/Owns/Control/All of friendly|neutral|enemy co-players currently have N% map control.";
 	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::SIDE;
 	curTemplate->m_parameters[1] = Parameter::RELATION;
@@ -6075,6 +6075,38 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[2] = " co-players currently control ";
 	curTemplate->m_uiStrings[3] = " ";
 	curTemplate->m_uiStrings[4] = "% of the map (if FRIEND is selected, include this player).";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_MAPCONTROL_AREA];
+	curTemplate->m_internalName = "PLAYER_MAPCONTROL_AREA";
+	curTemplate->m_uiName = "Player/Owns/Control/Player currently has N% area control.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::REAL;
+	curTemplate->m_parameters[3] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " currently controls ";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = "% of area";
+	curTemplate->m_uiStrings[4] = ".";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_RELATION_MAPCONTROL_AREA];
+	curTemplate->m_internalName = "PLAYER_RELATION_MAPCONTROL_AREA";
+	curTemplate->m_uiName = "Player/Owns/Control/All of friendly|neutral|enemy co-players currently have N% area control.";
+	curTemplate->m_numParameters = 5;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::COMPARISON;
+	curTemplate->m_parameters[3] = Parameter::REAL;
+	curTemplate->m_parameters[4] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 6;
+	curTemplate->m_uiStrings[0] = "All of ";
+	curTemplate->m_uiStrings[1] = " 's ";
+	curTemplate->m_uiStrings[2] = " co-players currently control ";
+	curTemplate->m_uiStrings[3] = " ";
+	curTemplate->m_uiStrings[4] = "% of area ";
+	curTemplate->m_uiStrings[5] = " (if FRIEND is selected, include this player).";
 
 	curTemplate = &m_conditionTemplates[Condition::TEAM_LOST_TYPE];
 	curTemplate->m_internalName = "TEAM_LOST_TYPE";
@@ -6366,6 +6398,69 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " sells all buildings in area ";
 
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_DEFENSE_FRONT_FROM_VECTOR_ROTATED_PERCENT];
+	curTemplate->m_internalName = "AI_PLAYER_BUILD_DEFENSE_FRONT_FROM_VECTOR_ROTATED_PERCENT";
+	curTemplate->m_uiName = "Skirmish Only/Build/Build base defense on front perimeter, rotated and at N% distance.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::REAL;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "Build one additional front base defense from the list, rotated ";
+	curTemplate->m_uiStrings[1] = " degrees, and at ";
+	curTemplate->m_uiStrings[2] = "% distance from the base boundaries.\n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT];
+	curTemplate->m_internalName = "AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT";
+	curTemplate->m_uiName = "Skirmish Only/Build/Build base defense on front perimeter, rotated and at N% distance.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::REAL;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "Build one additional flank base defense from the list, rotated ";
+	curTemplate->m_uiStrings[1] = " degrees, and at ";
+	curTemplate->m_uiStrings[2] = "% distance from the base boundaries.\n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_ADD_DEFENSE_TO_VECTOR];
+	curTemplate->m_internalName = "AI_PLAYER_ADD_DEFENSE_TO_VECTOR";
+	curTemplate->m_uiName = "Skirmish Only/Build/Add a base defense of type to the vector list.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 1;
+	curTemplate->m_uiStrings[0] = "Vector list: Add ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_REMOVE_DEFENSE_FROM_VECTOR];
+	curTemplate->m_internalName = "AI_PLAYER_REMOVE_DEFENSE_FROM_VECTOR";
+	curTemplate->m_uiName = "Skirmish Only/Build/Remove a base defense of type from the vector list.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 1;
+	curTemplate->m_uiStrings[0] = "Vector list: Remove ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_DEFENSE_FRONT_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER];
+	curTemplate->m_internalName = "AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER";
+	curTemplate->m_uiName = "Skirmish Only/Build/Build base defense on front perimeter, rotated and at N% distance at a player's base.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::REAL;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_parameters[2] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = "Build one additional front base defense from the list, rotated ";
+	curTemplate->m_uiStrings[1] = " degrees, and at ";
+	curTemplate->m_uiStrings[2] = "% distance from the base boundaries, for the base of ";
+	curTemplate->m_uiStrings[3] = " \n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER];
+	curTemplate->m_internalName = "AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER";
+	curTemplate->m_uiName = "Skirmish Only/Build/Build base defense on front perimeter, rotated and at N% distance at a player's base.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::REAL;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_parameters[2] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = "Build one additional flank base defense from the list, rotated ";
+	curTemplate->m_uiStrings[1] = " degrees, and at ";
+	curTemplate->m_uiStrings[2] = "% distance from the base boundaries, for the base of ";
+	curTemplate->m_uiStrings[3] = " \n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
 	//-------------------------------------------------------------------------------------------------

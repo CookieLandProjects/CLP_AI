@@ -181,6 +181,10 @@ public: // AIPlayer interface, may be overridden by AISkirmishPlayer.  jba.
 	virtual void buildSpecificAITeam(TeamPrototype *teamProto, Bool priorityBuild); ///< Builds this team immediately.
 
 	virtual void buildAIBaseDefense(Bool flank); ///< Builds base defense on front or flank of base.
+	virtual void buildAIBaseDefenseFromVector(Bool flank, Real rotation, Real percent); // @-TanSo-: for whatever reason we need to put this into THIS public section...
+	virtual void buildAIBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName);
+	virtual void addAIBaseDefenseToVector(const AsciiString& objectType);
+	virtual void removeAIBaseDefenseFromVector(const AsciiString& objectType);
 
 	virtual void buildAIBaseDefenseStructure(const AsciiString &thingName, Bool flank); ///< Builds base defense on front or flank of base.
 
@@ -227,10 +231,11 @@ public:
 	//---------------------------------- @CLP_AI AIPLAYER ADDITIONS -----------------------------------
 	//-------------------------------------------------------------------------------------------------
 	void buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real bAngle);
-
 	void buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real bAngle);
-
 	void buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real bAngle);
+
+	Coord3D getSkirmishBuildListBaseCenter();
+  Real getSkirmishBuildListBaseRadius();
 
 	//-------------------------------------------------------------------------------------------------
 	//-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------

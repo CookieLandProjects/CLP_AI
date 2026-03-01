@@ -450,7 +450,13 @@ protected:
 	void doPlayerSellAllBuildingsArea(const AsciiString& playerName, const AsciiString& triggerArea);
 	void doPlayerSellAllBuildingsTypeArea(const AsciiString& playerName, const AsciiString& objectType, const AsciiString& triggerArea);
 
-	// @-TanSo-: 53 additions
+	void doAIPlayerBuildDefenseStructureFromVector(Bool flank, Real rotation, Real percent);
+	void doAIPlayerBuildDefenseStructureFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName);
+	void doAIPlayerAddBaseDefenseStructure(const AsciiString& objectType);
+	void doAIPlayerRemoveBaseDefenseStructure(const AsciiString& objectType);
+
+
+	// @-TanSo-: 56 additions
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 	//-------------------------------------------------------------------------------------------------
