@@ -215,6 +215,8 @@ BEGIN_MESSAGE_MAP(ScriptDialog, CDialog)
 	ON_BN_CLICKED(IDC_NEW_SCRIPT, OnNewScript)
 	ON_BN_CLICKED(IDC_EDIT_SCRIPT, OnEditScript)
 	ON_BN_CLICKED(IDC_COPY_SCRIPT, OnCopyScript)
+	ON_BN_CLICKED(IDC_MOVE_UP, OnMoveUp)
+	ON_BN_CLICKED(IDC_MOVE_DOWN, OnMoveDown)
 	ON_BN_CLICKED(IDC_DELETE, OnDelete)
 	ON_BN_CLICKED(IDC_VERIFY, OnVerify)
 	ON_BN_CLICKED(IDC_PATCH_GC, OnPatchGC)
@@ -2145,6 +2147,233 @@ void ScriptDialog::OnLButtonUp(UINT nFlags, CPoint point)
 	CDialog::OnLButtonUp(nFlags, point);
 }
 
+BOOL ScriptDialog::PreTranslateMessage(MSG* pMsg)
+{
+	if (pMsg && pMsg->message == WM_KEYDOWN) {
+		if ((GetKeyState(VK_CONTROL) & 0x8000) == 0 && (GetKeyState(VK_MENU) & 0x8000) == 0) {
+			if (pMsg->wParam == 'W' || pMsg->wParam == 'w') {
+				OnMoveUp();
+				return TRUE;
+			}
+			if (pMsg->wParam == 'S' || pMsg->wParam == 's') {
+				OnMoveDown();
+				return TRUE;
+			}
+		}
+	}
+	return CDialog::PreTranslateMessage(pMsg);
+}
+
+void ScriptDialog::OnMoveUp()
+{
+	moveSelected(true);   // true = up
+}
+
+void ScriptDialog::OnMoveDown()
+{
+	moveSelected(false);  // false = down
+}
+
+void ScriptDialog::moveSelected(bool up)
+{
+    CTreeCtrl *pTree = (CTreeCtrl*)GetDlgItem(IDC_SCRIPT_TREE);
+    HTREEITEM hItem = pTree->GetSelectedItem();
+    if (!hItem) return;
+
+    ListType sel;
+    sel.IntToList(pTree->GetItemData(hItem));
+
+    if (sel.m_objType == ListType::PLAYER_TYPE) return; // can't move players
+
+    ScriptList *pSL = m_sides.getSideInfo(sel.m_playerIndex)->getScriptList();
+    if (!pSL) return;
+
+    const Int dir = up ? -1 : 1;
+    ListType newSel = sel;
+
+    if (sel.m_objType == ListType::SCRIPT_IN_PLAYER_TYPE ||
+        sel.m_objType == ListType::SCRIPT_IN_GROUP_TYPE)
+    {
+        const Int curIdx = sel.m_scriptIndex;
+        Int newIdx = curIdx + dir;
+        if (newIdx < 0) return;
+
+        // Count max to prevent going out of bounds
+        Int maxIdx = 0;
+        Script *listStart = nullptr;
+        if (sel.m_objType == ListType::SCRIPT_IN_GROUP_TYPE)
+        {
+            ScriptGroup *pG = nullptr;
+            Int i = 0;
+            for (ScriptGroup *g = pSL->getScriptGroup(); g; g = g->getNext(), ++i)
+                if (i == sel.m_groupIndex) { pG = g; break; }
+            if (pG) listStart = pG->getScript();
+        }
+        else
+        {
+            listStart = pSL->getScript();
+        }
+
+        for (Script *s = listStart; s; s = s->getNext()) ++maxIdx;
+        if (newIdx >= maxIdx) return;
+
+        Script *pScr = getCurScript();
+        if (!pScr) return;
+
+        if (sel.m_objType == ListType::SCRIPT_IN_GROUP_TYPE)
+        {
+            ScriptGroup *pG = nullptr;
+            Int i = 0;
+            for (ScriptGroup *g = pSL->getScriptGroup(); g; g = g->getNext(), ++i)
+                if (i == sel.m_groupIndex) { pG = g; break; }
+            if (pG) pG->removeScript(pScr);
+        }
+        else
+        {
+            pSL->removeScript(pScr);
+        }
+
+        if (sel.m_objType == ListType::SCRIPT_IN_GROUP_TYPE)
+        {
+            ScriptGroup *pG = nullptr;
+            Int i = 0;
+            for (ScriptGroup *g = pSL->getScriptGroup(); g; g = g->getNext(), ++i)
+                if (i == sel.m_groupIndex) { pG = g; break; }
+            if (pG) pG->addScript(pScr, newIdx);
+        }
+        else
+        {
+            pSL->addScript(pScr, newIdx);
+        }
+
+        newSel.m_scriptIndex = newIdx;
+    }
+
+    else if (sel.m_objType == ListType::GROUP_TYPE)
+    {
+        ScriptGroup *pGrp = getCurGroup();
+        if (!pGrp) return;
+
+        std::vector<ScriptGroup*> oldGroups;
+        for (ScriptGroup* g = pSL->getScriptGroup(); g; g = g->getNext())
+            oldGroups.push_back(g);
+
+        Int oldCount = (Int)oldGroups.size();
+        std::vector<ScriptGroup*> oldParentPtr(oldCount, nullptr);
+        for (Int idx = 0; idx < oldCount; ++idx)
+        {
+            Int pidx = oldGroups[idx]->getParentIndex();
+            if (pidx >= 0 && pidx < oldCount)
+                oldParentPtr[idx] = oldGroups[pidx];
+            else
+                oldParentPtr[idx] = nullptr;
+        }
+
+        const Int curParent = pGrp->getParentIndex();
+
+        std::vector<ScriptGroup*> siblings;
+        Int curSibIdx = -1;
+        Int i = 0;
+        for (ScriptGroup *g = pSL->getScriptGroup(); g; g = g->getNext(), ++i)
+        {
+            if (g->getParentIndex() == curParent)
+            {
+                siblings.push_back(g);
+                if (g == pGrp) curSibIdx = (Int)siblings.size() - 1;
+            }
+        }
+
+				if (curSibIdx == -1) return;
+
+        Int newSibIdx = curSibIdx + dir;
+        if (newSibIdx < 0 || newSibIdx >= (Int)siblings.size()) return;
+
+        ScriptGroup *targetSib = siblings[newSibIdx];
+
+        pSL->unlinkGroup(pGrp);
+
+        ScriptGroup *insertAfter = nullptr;
+        if (up)
+        {
+            ScriptGroup *cur = pSL->getScriptGroup();
+            while (cur && cur != targetSib)
+            {
+                insertAfter = cur;
+                cur = cur->getNext();
+            }
+        }
+        else
+        {
+            insertAfter = targetSib;
+        }
+
+        pSL->insertGroup(pGrp, insertAfter);
+
+        std::vector<ScriptGroup*> newGroups;
+        for (ScriptGroup* g = pSL->getScriptGroup(); g; g = g->getNext())
+            newGroups.push_back(g);
+
+        auto findIndex = [](const std::vector<ScriptGroup*>& vec, ScriptGroup* ptr) -> Int {
+            for (Int k = 0; k < (Int)vec.size(); ++k)
+                if (vec[k] == ptr) return k;
+            return -1;
+        };
+
+        for (Int newIdx = 0; newIdx < (Int)newGroups.size(); ++newIdx)
+        {
+            ScriptGroup* node = newGroups[newIdx];
+            Int oldIdx = -1;
+            for (Int k = 0; k < oldCount; ++k) {
+                if (oldGroups[k] == node) { oldIdx = k; break; }
+            }
+            if (oldIdx < 0) {
+                continue;
+            }
+
+            ScriptGroup* oldParent = oldParentPtr[oldIdx];
+            if (!oldParent)
+            {
+                node->setParentIndex(-1);
+            }
+            else
+            {
+                Int newParentIndex = findIndex(newGroups, oldParent);
+                if (newParentIndex >= 0)
+                    node->setParentIndex(newParentIndex);
+                else
+                    node->setParentIndex(-1);
+            }
+        }
+
+        Int newGroupIndex = -1;
+        i = 0;
+        for (ScriptGroup *g = pSL->getScriptGroup(); g; g = g->getNext(), ++i)
+        {
+            if (g == pGrp)
+            {
+                newGroupIndex = i;
+                break;
+            }
+        }
+
+        if (newGroupIndex != -1)
+        {
+            newSel.m_groupIndex = newGroupIndex;
+        }
+    }
+
+    reloadPlayer(sel.m_playerIndex, pSL);
+    updateSelection(newSel);
+    updateIcons(TVI_ROOT);
+
+    HTREEITEM newItem = findItem(newSel);
+    if (newItem)
+    {
+        pTree->SelectItem(newItem);
+        pTree->EnsureVisible(newItem);
+    }
+}
+
 void ScriptDialog::doDropOn(HTREEITEM hDrag, HTREEITEM hTarget)
 {
     if (hDrag == hTarget) return;
@@ -2157,48 +2386,104 @@ void ScriptDialog::doDropOn(HTREEITEM hDrag, HTREEITEM hTarget)
     ListType target;
     target.IntToList(pTree->GetItemData(hTarget));
 
-    Script *pScript = nullptr;
+    auto computeDestination = [&](const ListType &t, Int &outPlayer, Int &outGroup) {
+        outPlayer = t.m_playerIndex;
+        if (t.m_objType == ListType::GROUP_TYPE || t.m_objType == ListType::SCRIPT_IN_GROUP_TYPE) {
+            outGroup = t.m_groupIndex;
+        } else {
+            outGroup = -1;
+        }
+    };
+
+    auto countScriptsInGroupOrList = [&](ScriptList* sl, Int groupIndex) -> Int {
+        Int cnt = 0;
+        if (!sl) return 0;
+        if (groupIndex >= 0) {
+            Int idx = 0;
+            for (ScriptGroup* g = sl->getScriptGroup(); g; g = g->getNext(), ++idx) {
+                if (idx == groupIndex) {
+                    for (Script* s = g->getScript(); s; s = s->getNext()) ++cnt;
+                    break;
+                }
+            }
+        } else {
+            for (Script* s = sl->getScript(); s; s = s->getNext()) ++cnt;
+        }
+        return cnt;
+    };
+
+    auto countGroupsInList = [&](ScriptList* sl) -> Int {
+        Int c = 0;
+        if (!sl) return 0;
+        for (ScriptGroup* gg = sl->getScriptGroup(); gg; gg = gg->getNext()) ++c;
+        return c;
+    };
+
     if (drag.m_objType == ListType::SCRIPT_IN_PLAYER_TYPE ||
         drag.m_objType == ListType::SCRIPT_IN_GROUP_TYPE)
     {
         m_curSelection = drag;
-        pScript = getCurScript();
+        Script *pScript = getCurScript();
         if (!pScript) return;
 
-        ScriptList *pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-        if (!pSL) return;
+        ScriptList *srcSL = m_sides.getSideInfo(drag.m_playerIndex)->getScriptList();
+        Int srcGroupIndex = (drag.m_objType == ListType::SCRIPT_IN_GROUP_TYPE) ? drag.m_groupIndex : -1;
 
-        ScriptGroup *pGroup = getCurGroup();
+        Int dstPlayer, dstGroup;
+        computeDestination(target, dstPlayer, dstGroup);
 
-        if (pGroup)
-            pGroup->deleteScript(pScript);
-        else
-            pSL->deleteScript(pScript);
+        if (drag.m_playerIndex == dstPlayer && srcGroupIndex == dstGroup) {
+            return;
+        }
+
+        if (srcGroupIndex >= 0) {
+            Int groupNdx = 0;
+            ScriptGroup* sg = srcSL->getScriptGroup();
+            for (; sg && groupNdx < srcGroupIndex; sg = sg->getNext(), ++groupNdx) {}
+            if (sg) sg->removeScript(pScript);
+        } else {
+            srcSL->removeScript(pScript);
+        }
 
         pTree->DeleteItem(hDrag);
 
-        if (drag.m_playerIndex == target.m_playerIndex &&
-            drag.m_objType == target.m_objType &&
-            drag.m_groupIndex == target.m_groupIndex &&
-            drag.m_scriptIndex < target.m_scriptIndex)
-        {
-            target.m_scriptIndex--;
+        ScriptList *dstSL = m_sides.getSideInfo(dstPlayer)->getScriptList();
+        if (!dstSL) return;
+
+        if (dstGroup >= 0) {
+            Int groupNdx = 0;
+            ScriptGroup* dstG = dstSL->getScriptGroup();
+            for (; dstG && groupNdx < dstGroup; dstG = dstG->getNext(), ++groupNdx) {}
+            if (!dstG) {
+                Int appendIndex = countScriptsInGroupOrList(dstSL, -1);
+                dstSL->addScript(pScript, appendIndex);
+            } else {
+                Int appendIndex = countScriptsInGroupOrList(dstSL, dstGroup);
+                dstG->addScript(pScript, appendIndex);
+            }
+        } else {
+            Int appendIndex = countScriptsInGroupOrList(dstSL, -1);
+            dstSL->addScript(pScript, appendIndex);
         }
 
-        m_curSelection = target;
-        pSL = m_sides.getSideInfo(m_curSelection.m_playerIndex)->getScriptList();
-        pGroup = getCurGroup();
+        if (drag.m_playerIndex != dstPlayer) {
+            reloadPlayer(drag.m_playerIndex, srcSL);
+        }
 
-        if (pGroup)
-            pGroup->addScript(pScript, target.m_scriptIndex);
-        else
-            pSL->addScript(pScript, target.m_scriptIndex);
+        reloadPlayer(dstPlayer, dstSL);
 
-        if (drag.m_playerIndex != target.m_playerIndex)
-            reloadPlayer(drag.m_playerIndex, m_sides.getSideInfo(drag.m_playerIndex)->getScriptList());
-
-        reloadPlayer(target.m_playerIndex, pSL);
-        updateSelection(target);
+        ListType newSel;
+        newSel.m_playerIndex = dstPlayer;
+        if (dstGroup >= 0) {
+            newSel.m_objType = ListType::SCRIPT_IN_GROUP_TYPE;
+            newSel.m_groupIndex = dstGroup;
+            newSel.m_scriptIndex = countScriptsInGroupOrList(dstSL, dstGroup) - 1;
+        } else {
+            newSel.m_objType = ListType::SCRIPT_IN_PLAYER_TYPE;
+            newSel.m_groupIndex = 0;
+            newSel.m_scriptIndex = countScriptsInGroupOrList(dstSL, -1) - 1;
+        }
+        updateSelection(newSel);
         updateIcons(TVI_ROOT);
         return;
     }
@@ -2212,40 +2497,31 @@ void ScriptDialog::doDropOn(HTREEITEM hDrag, HTREEITEM hTarget)
         ScriptList *srcSL = m_sides.getSideInfo(drag.m_playerIndex)->getScriptList();
         if (!srcSL) return;
 
-        bool wouldCreateCycle = false;
-        if (drag.m_playerIndex == target.m_playerIndex)
-        {
-            int checkIdx = (target.m_objType == ListType::GROUP_TYPE ||
-                            target.m_objType == ListType::SCRIPT_IN_GROUP_TYPE)
-                               ? target.m_groupIndex
-                               : -1;
+        Int dstPlayer, dstGroup;
+        computeDestination(target, dstPlayer, dstGroup);
 
+        if (drag.m_playerIndex == dstPlayer && pGroup->getParentIndex() == dstGroup) {
+            return;
+        }
+
+        if (drag.m_playerIndex == dstPlayer && dstGroup != -1) {
+            bool wouldCreateCycle = false;
+            int checkIdx = dstGroup;
             int safety = 0;
-            while (checkIdx != -1 && safety++ < 128)
-            {
-                if (checkIdx == drag.m_groupIndex)
-                {
-                    wouldCreateCycle = true;
-                    break;
-                }
-
+            while (checkIdx != -1 && safety++ < 128) {
+                if (checkIdx == drag.m_groupIndex) { wouldCreateCycle = true; break; }
                 ScriptGroup *g = srcSL->getScriptGroup();
                 int i = 0;
                 for (; g && i < checkIdx; g = g->getNext(), ++i) {}
                 if (!g || i != checkIdx) break;
-
                 checkIdx = g->getParentIndex();
             }
+            if (wouldCreateCycle) return;
         }
 
-        if (wouldCreateCycle)
+        if (drag.m_playerIndex != dstPlayer)
         {
-            return;
-        }
-
-        if (drag.m_playerIndex != target.m_playerIndex)
-        {
-            ScriptList *dstSL = m_sides.getSideInfo(target.m_playerIndex)->getScriptList();
+            ScriptList *dstSL = m_sides.getSideInfo(dstPlayer)->getScriptList();
             if (!dstSL) return;
 
             ScriptGroup *dragGroup = pGroup->duplicate();
@@ -2254,37 +2530,29 @@ void ScriptDialog::doDropOn(HTREEITEM hDrag, HTREEITEM hTarget)
 
             srcSL->deleteGroup(pGroup);
 
-            int insertPos = (target.m_objType == ListType::GROUP_TYPE ||
-                             target.m_objType == ListType::SCRIPT_IN_GROUP_TYPE)
-                                ? target.m_groupIndex
-                                : 9999;
-
-            int desiredParent = (target.m_objType == ListType::GROUP_TYPE ||
-                                 target.m_objType == ListType::SCRIPT_IN_GROUP_TYPE)
-                                    ? target.m_groupIndex
-                                    : -1;
-
+            Int insertAt = countGroupsInList(dstSL);
+            Int desiredParent = dstGroup >= 0 ? dstGroup : -1;
             dragGroup->setParentIndex(desiredParent);
-            dstSL->addGroup(dragGroup, insertPos);
+            dstSL->addGroup(dragGroup, insertAt);
 
             reloadPlayer(drag.m_playerIndex, srcSL);
-            reloadPlayer(target.m_playerIndex, dstSL);
-            updateSelection(target);
+            reloadPlayer(dstPlayer, dstSL);
+
+            ListType newSel;
+            newSel.m_playerIndex = dstPlayer;
+            newSel.m_objType = ListType::GROUP_TYPE;
+            newSel.m_groupIndex = insertAt;
+            updateSelection(newSel);
             updateIcons(TVI_ROOT);
             return;
         }
 
-        int newParentIndex = (target.m_objType == ListType::GROUP_TYPE ||
-                              target.m_objType == ListType::SCRIPT_IN_GROUP_TYPE)
-                                 ? target.m_groupIndex
-                                 : -1;
-
+        int newParentIndex = dstGroup >= 0 ? dstGroup : -1;
         pGroup->setParentIndex(newParentIndex);
-
-        reloadPlayer(target.m_playerIndex, srcSL);
+        reloadPlayer(drag.m_playerIndex, srcSL);
 
         ListType newSel = drag;
-        int newIdx = 0;
+        Int newIdx = 0;
         ScriptGroup *scan = srcSL->getScriptGroup();
         for (; scan; scan = scan->getNext(), ++newIdx)
         {

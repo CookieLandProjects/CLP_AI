@@ -76,6 +76,7 @@ public:
 	//{{AFX_VIRTUAL(ScriptDialog)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -136,6 +137,8 @@ protected:
 	static Bool ParseTeamsDataChunk(DataChunkInput &file, DataChunkInfo *info, void *userData);
 	static Bool ParsePlayersDataChunk(DataChunkInput &file, DataChunkInfo *info, void *userData);
 
+	void moveSelected(bool up);
+
 protected:
 
 	// Generated message map functions
@@ -160,6 +163,9 @@ protected:
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnMove(int x, int y);
+
+	afx_msg void OnMoveUp();
+	afx_msg void OnMoveDown();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };

@@ -420,6 +420,30 @@ void ScriptList::discard()
 	deleteInstance(this);
 }
 
+void ScriptList::updateParentIndicesAfterDelete(int deletedPos)
+{
+	ScriptGroup* g = m_firstGroup;
+	while (g)
+	{
+		int parent = g->getParentIndex();
+		if (parent > deletedPos)
+		{
+			g->setParentIndex(parent - 1);
+		}
+		g = g->getNext();
+	}
+}
+
+void ScriptList::updateParentIndicesAfterInsert(int insertPos)
+{
+	for (ScriptGroup* g = m_firstGroup; g; g = g->getNext())
+	{
+		Int p = g->getParentIndex();
+		if (p >= insertPos)
+			g->setParentIndex(p + 1);
+	}
+}
+
 /**
   Add a script group to the current list of groups.  Offset to position ndx.
 */
@@ -427,12 +451,14 @@ void ScriptList::addGroup(ScriptGroup *pGrp, Int ndx)
 {
 	ScriptGroup *pPrev = nullptr;
 	ScriptGroup *pCur = m_firstGroup;
+	Int originalNdx = ndx;
 	DEBUG_ASSERTCRASH(pGrp->getNext()==nullptr, ("Adding already linked group."));
 	while (ndx && pCur) {
 		pPrev = pCur;
 		pCur = pCur->getNext();
 		ndx--;
 	}
+	int insertPos = originalNdx - ndx;
 	if (pPrev) {
 		// Weave into prev link.
 		pGrp->setNextGroup(pPrev->getNext());
@@ -442,6 +468,7 @@ void ScriptList::addGroup(ScriptGroup *pGrp, Int ndx)
 		pGrp->setNextGroup(m_firstGroup);
 		m_firstGroup = pGrp;
 	}
+	updateParentIndicesAfterInsert(insertPos);
 }
 
 /**
@@ -464,6 +491,107 @@ void ScriptList::addScript(Script *pScr, Int ndx)
 		pScr->setNextScript(m_firstScript);
 		m_firstScript = pScr;
 	}
+}
+
+void ScriptList::unlinkGroup(ScriptGroup* pGrp)
+{
+	if (pGrp == nullptr) return;
+
+	int deletedPos = 0;
+	ScriptGroup* pPrev = nullptr;
+	ScriptGroup* pCur = m_firstGroup;
+	while (pCur && pCur != pGrp)
+	{
+		pPrev = pCur;
+		pCur = pCur->getNext();
+		++deletedPos;
+	}
+	if (pCur == nullptr) return;
+
+	if (pPrev)
+		pPrev->setNextGroup(pCur->getNext());
+	else
+		m_firstGroup = pCur->getNext();
+
+	pCur->setNextGroup(nullptr);
+
+	updateParentIndicesAfterDelete(deletedPos);
+}
+
+void ScriptList::insertGroup(ScriptGroup* pGrp, ScriptGroup* insertAfter)
+{
+	if (pGrp == nullptr) return;
+	pGrp->setNextGroup(nullptr);
+
+	int insertPos = 0;
+	if (insertAfter == nullptr)
+	{
+		insertPos = 0;
+	}
+	else
+	{
+		ScriptGroup* cur = m_firstGroup;
+		while (cur && cur != insertAfter)
+		{
+			cur = cur->getNext();
+			++insertPos;
+		}
+		if (cur == nullptr) return;
+		++insertPos;
+	}
+
+	if (insertAfter == nullptr)
+	{
+		pGrp->setNextGroup(m_firstGroup);
+		m_firstGroup = pGrp;
+	}
+	else
+	{
+		pGrp->setNextGroup(insertAfter->getNext());
+		insertAfter->setNextGroup(pGrp);
+	}
+	updateParentIndicesAfterInsert(insertPos);
+}
+
+void ScriptList::removeScript(Script* pScr)
+{
+	Script* pPrev = nullptr;
+	Script* pCur = m_firstScript;
+	while (pCur && pCur != pScr) {
+		pPrev = pCur;
+		pCur = pCur->getNext();
+	}
+	DEBUG_ASSERTCRASH(pCur, ("Couldn't find script."));
+	if (pCur == nullptr) return;
+
+	if (pPrev) {
+		pPrev->setNextScript(pCur->getNext());
+	}
+	else {
+		m_firstScript = pCur->getNext();
+	}
+	pCur->setNextScript(nullptr);
+}
+
+void ScriptGroup::removeScript(Script* pScr)
+{
+	Script* pPrev = nullptr;
+	Script* pCur = m_firstScript;
+	while (pCur && pCur != pScr) {
+		pPrev = pCur;
+		pCur = pCur->getNext();
+	}
+	DEBUG_ASSERTCRASH(pCur, ("Couldn't find script."));
+	if (pCur == nullptr) return;
+
+	if (pPrev) {
+		pPrev->setNextScript(pCur->getNext());
+	}
+	else {
+		m_firstScript = pCur->getNext();
+	}
+	// Detach but DO NOT delete instance (caller will re-insert or delete later).
+	pCur->setNextScript(nullptr);
 }
 
 /**
