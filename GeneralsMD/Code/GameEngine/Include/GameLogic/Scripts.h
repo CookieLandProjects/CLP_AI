@@ -1139,7 +1139,7 @@ public:
 		PLAYER_BUILDING_BEING_CAPTURED_AREA,		// True if a player's building in an area is being captured by an enemy.
 		PLAYER_BUILDING_BEING_CAPTURED_TYPE_AREA,// True if a player's building of a type in an area is being captured by an enemy.
 
-		RELATION_PLAYER_HAS_COMPARISON_TYPE_AREA,// True if all of player's <relation> co-players combined have <comparison> <int> <type> in an area.
+		RELATION_PLAYER_COMPARISON_TYPE_AREA,// True if all of player's <relation> co-players combined have <comparison> <int> <type> in an area.
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 		//-------------------------------------------------------------------------------------------------

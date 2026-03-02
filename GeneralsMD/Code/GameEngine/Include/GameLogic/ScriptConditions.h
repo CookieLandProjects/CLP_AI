@@ -218,8 +218,8 @@ protected:
 	Bool evaluatePlayerBuildingBeingCapturedType(Parameter* pPlayerParm, Parameter* objectType);
 	Bool evaluatePlayerBuildingBeingCapturedArea(Parameter* pPlayerParm, Parameter* pTriggerParm);
 	Bool evaluatePlayerBuildingBeingCapturedTypeArea(Parameter* pPlayerParm, Parameter* objectType, Parameter* pTriggerParm);
-	Bool evaluateRelationPlayerComparisonTypeArea(Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Parameter* objectType, Parameter* pTriggerParm);
-	// @-TanSo-: 32 additions, 1 helper method
+	Bool evaluateRelationPlayerComparisonTypeArea(Condition* pCondition, Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Int value, Parameter* objectType, Parameter* pTriggerParm);
+	// @-TanSo-: 33 additions, 1 helper method
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 	//-------------------------------------------------------------------------------------------------

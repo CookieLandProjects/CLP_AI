@@ -6445,7 +6445,7 @@ void ScriptEngine::init()
 
 	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT];
 	curTemplate->m_internalName = "AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT";
-	curTemplate->m_uiName = "Skirmish Only/Build/Build base defense on front perimeter, rotated and at N% distance.";
+	curTemplate->m_uiName = "Skirmish Only/Build/Build base defense on flank perimeter, rotated and at N% distance.";
 	curTemplate->m_numParameters = 2;
 	curTemplate->m_parameters[0] = Parameter::REAL;
 	curTemplate->m_parameters[1] = Parameter::REAL;
@@ -6485,7 +6485,7 @@ void ScriptEngine::init()
 
 	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER];
 	curTemplate->m_internalName = "AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER";
-	curTemplate->m_uiName = "Skirmish Only/Build/Build base defense on front perimeter, rotated and at N% distance at a player's base.";
+	curTemplate->m_uiName = "Skirmish Only/Build/Build base defense on flank perimeter, rotated and at N% distance at a player's base.";
 	curTemplate->m_numParameters = 3;
 	curTemplate->m_parameters[0] = Parameter::REAL;
 	curTemplate->m_parameters[1] = Parameter::REAL;
@@ -6495,6 +6495,25 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[1] = " degrees, and at ";
 	curTemplate->m_uiStrings[2] = "% distance from the base boundaries, for the base of ";
 	curTemplate->m_uiStrings[3] = " \n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
+
+	curTemplate = &m_conditionTemplates[Condition::RELATION_PLAYER_COMPARISON_TYPE_AREA];
+	curTemplate->m_internalName = "RELATION_PLAYER_COMPARISON_TYPE_AREA";
+	curTemplate->m_uiName = "Player/Owns/All of a player's friendly|neutral|enemy co-players combined have comparison N objects of a type in an area.";
+	curTemplate->m_numParameters = 6;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::COMPARISON;
+	curTemplate->m_parameters[3] = Parameter::INT;
+	curTemplate->m_parameters[4] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[5] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 6;
+	curTemplate->m_uiStrings[0] = " All of ";
+	curTemplate->m_uiStrings[1] = " 's ";
+	curTemplate->m_uiStrings[2] = " co-players combined have ";
+	curTemplate->m_uiStrings[3] = " ";
+	curTemplate->m_uiStrings[4] = " objects of type ";
+	curTemplate->m_uiStrings[5] = " in area ";
+
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
 	//-------------------------------------------------------------------------------------------------

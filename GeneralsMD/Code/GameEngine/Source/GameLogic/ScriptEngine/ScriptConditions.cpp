@@ -4223,9 +4223,134 @@ Bool ScriptConditions::evaluatePlayerBuildingBeingCapturedTypeArea(Parameter* pP
 	return false;
 }
 
-Bool ScriptConditions::evaluateRelationPlayerComparisonTypeArea(Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Parameter* objectType, Parameter* pTriggerParm)
+Bool ScriptConditions::evaluateRelationPlayerComparisonTypeArea(Condition* pCondition, Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Int value, Parameter* objectType, Parameter* pTriggerParm)
 {
-	
+	AsciiString triggerName = pTriggerParm->getString();
+	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(pTriggerParm->getString());
+	if (pTrig == nullptr) return false;
+
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer) {
+		return false;
+	}
+
+	Player::PlayerTeamList::const_iterator it;
+	Bool anyChanges = false;
+	if (pCondition->getCustomData() == 0) anyChanges = true;
+
+
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it) {
+		if (anyChanges) break;
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			if (anyChanges) break;
+			Team* team = iter.cur();
+			if (!team) {
+				continue;
+			}
+			if (team->didEnterOrExit()) {
+				anyChanges = true;
+			}
+		}
+	}
+	if (TheScriptEngine->getFrameObjectCountChanged() > pCondition->getCustomFrame()) {
+		anyChanges = true; // Objects were added/deleted since we cached, so count could have changed.  jba.
+	}
+	if (!anyChanges) {
+		if (pCondition->getCustomData() == -1) return false;
+		if (pCondition->getCustomData() == 1) return true;
+
+	}
+
+	Int count = 0;
+
+  const ThingTemplate* templ = TheThingFactory->findTemplate(objectType->getString());
+	if (templ) {
+		for (int i = 0; i < ThePlayerList->getPlayerCount(); i++)
+		{
+      Player* cPlayer = ThePlayerList->getNthPlayer(i);
+			if (ThePlayerList->getNthPlayer(i)->getRelationship(pPlayer->getDefaultTeam()) != relationType)
+				continue;
+			if (ThePlayerList->getNthPlayer(i) == pPlayer)
+				continue;
+
+			for (it = cPlayer->getPlayerTeams()->begin(); it != cPlayer->getPlayerTeams()->end(); ++it) {
+				for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+					Team* team = iter.cur();
+					if (!team)
+						continue;
+
+					for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
+						Object* pObj = iter.cur();
+						if (!pObj) 
+							continue;
+
+						if (pObj->isEffectivelyDead() || pObj->isKindOf(KINDOF_INERT))
+							continue;
+
+						if (!pObj->isInside(pTrig))
+							continue;
+
+						if (pObj->getTemplate() != templ)
+							continue;
+
+						count++;
+					}
+				}
+			}
+		}
+	}
+	else {
+    ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType->getString());
+		if (types)
+		{
+			for (int i = 0; i < ThePlayerList->getPlayerCount(); i++)
+			{
+				Player* cPlayer = ThePlayerList->getNthPlayer(i);
+				if (ThePlayerList->getNthPlayer(i)->getRelationship(pPlayer->getDefaultTeam()) != relationType)
+					continue;
+				if (ThePlayerList->getNthPlayer(i) == pPlayer)
+					continue;
+
+				for (it = cPlayer->getPlayerTeams()->begin(); it != cPlayer->getPlayerTeams()->end(); ++it) {
+					for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+						Team* team = iter.cur();
+						if (!team)
+							continue;
+
+						for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
+							Object* pObj = iter.cur();
+							if (!pObj)
+								continue;
+
+							if (pObj->isEffectivelyDead() || pObj->isKindOf(KINDOF_INERT))
+								continue;
+
+							if (!pObj->isInside(pTrig))
+								continue;
+
+							if (!types->isInSet(pObj->getTemplate()))
+								continue;
+
+							count++;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	Bool comparison = false;
+	switch (pComparisonParm->getInt())
+	{
+		case Parameter::LESS_THAN:			comparison = (count < value); break;
+		case Parameter::LESS_EQUAL:			comparison = (count <= value); break;
+		case Parameter::EQUAL:					comparison = (count == value); break;
+		case Parameter::GREATER_EQUAL:	comparison = (count >= value); break;
+		case Parameter::GREATER:				comparison = (count > value); break;
+		case Parameter::NOT_EQUAL:			comparison = (count != value); break;
+	}
+	pCondition->setCustomData(TheScriptEngine->getFrameObjectCountChanged());
+	return comparison;
 }
 //-------------------------------------------------------------------------------------------------
 //---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
@@ -4560,6 +4685,8 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 			return evaluatePlayerBuildingBeingCapturedArea(pCondition->getParameter(0), pCondition->getParameter(1));
 		case Condition::PLAYER_BUILDING_BEING_CAPTURED_TYPE_AREA:
 			return evaluatePlayerBuildingBeingCapturedTypeArea(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2));
+    case Condition::RELATION_PLAYER_COMPARISON_TYPE_AREA:
+			return evaluateRelationPlayerComparisonTypeArea(pCondition, pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2), pCondition->getParameter(3)->getInt(), pCondition->getParameter(4), pCondition->getParameter(5));
 
 	}
 }
