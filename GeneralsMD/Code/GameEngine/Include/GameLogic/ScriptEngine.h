@@ -381,6 +381,7 @@ protected:
 	void executeScripts( Script *pScriptHead );
 	void executeScript( Script *pScript );
 	Script *findScript(const AsciiString& name);
+	Script *findScript(const AsciiString& name, Team* pTeam); //@-TanSo-: make it possible to also find scripts within generic scripts
 	ScriptGroup *findGroup(const AsciiString& name);
 	void setSway( ScriptAction *pAction );
 	void setCounter( ScriptAction *pAction );

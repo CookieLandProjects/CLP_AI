@@ -7587,6 +7587,48 @@ void ScriptEngine::copyCounter(ScriptAction* pAction)
 }
 
 //-------------------------------------------------------------------------------------------------
+Script* ScriptEngine::findScript(const AsciiString& name, Team* pTeam)
+{
+	if (pTeam)
+	{
+		TeamPrototype* teamProto = const_cast<TeamPrototype*>(pTeam->getPrototype());
+		for (Int i = 0; i < MAX_GENERIC_SCRIPTS; ++i)
+		{
+			Script* teamScript = teamProto->getGenericScript(i);
+			if (teamScript && name == teamScript->getName())
+			{
+				return teamScript;
+			}
+		}
+	}
+
+	for (Int i = 0; i < TheSidesList->getNumSides(); i++)
+	{
+		ScriptList* pSL = TheSidesList->getSideInfo(i)->getScriptList();
+		if (!pSL) continue;
+
+		Script* pScr;
+		for (pScr = pSL->getScript(); pScr; pScr = pScr->getNext())
+		{
+			if (name == pScr->getName())
+				return pScr;
+		}
+
+		ScriptGroup* pGroup;
+		for (pGroup = pSL->getScriptGroup(); pGroup; pGroup = pGroup->getNext())
+		{
+			for (pScr = pGroup->getScript(); pScr; pScr = pScr->getNext())
+			{
+				if (name == pScr->getName())
+					return pScr;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+//-------------------------------------------------------------------------------------------------
 //--------------------------------- @CLP_AI SCRIPT ADDITIONS END ----------------------------------
 //-------------------------------------------------------------------------------------------------
 
@@ -8437,16 +8479,42 @@ void ScriptEngine::adjustTimer( ScriptAction *pAction, Bool millisecondTimer, Bo
 //-------------------------------------------------------------------------------------------------
 /** Enables a script or group. */
 //-------------------------------------------------------------------------------------------------
-void ScriptEngine::enableScript( ScriptAction *pAction )
+void ScriptEngine::enableScript(ScriptAction* pAction)
 {
 	DEBUG_ASSERTCRASH(pAction->getNumParameters() >= 1, ("Not enough parameters."));
-	ScriptGroup *pGroup = findGroup(pAction->getParameter(0)->getString());
-	if (pGroup) {
-		pGroup->setActive(true);
+	const AsciiString& scriptName = pAction->getParameter(0)->getString();
+
+	Script* pScript = nullptr;
+
+	// @-TanSo-: make it possible to look up generic scripts as well.
+	if (m_callingTeam)
+	{
+    TeamPrototype* teamProto = const_cast<TeamPrototype*>(m_callingTeam->getPrototype());
+		for (Int i = 0; i < MAX_GENERIC_SCRIPTS; ++i)
+		{
+			Script* candidate = teamProto->getGenericScript(i);
+			if (candidate && candidate->getName() == scriptName)
+			{
+				pScript = candidate;
+				break;
+			}
+		}
+
+		if (pScript)
+		{
+			pScript->setActive(true);
+			return;
+		}
 	}
-	Script *pScript = findScript(pAction->getParameter(0)->getString());
-	if (pScript) {
+
+	pScript = findScript(scriptName);
+	if (pScript)
+	{
 		pScript->setActive(true);
+	}
+	else
+	{
+		DEBUG_LOG(("WARNING: Script '%s' not found for enabling.", scriptName.str()));
 	}
 }
 
@@ -8456,13 +8524,39 @@ void ScriptEngine::enableScript( ScriptAction *pAction )
 void ScriptEngine::disableScript( ScriptAction *pAction )
 {
 	DEBUG_ASSERTCRASH(pAction->getNumParameters() >= 1, ("Not enough parameters."));
-	Script *pScript = findScript(pAction->getParameter(0)->getString());
-	if (pScript) {
+	const AsciiString& scriptName = pAction->getParameter(0)->getString();
+
+	Script* pScript = nullptr;
+
+	// @-TanSo-: make it possible to look up generic scripts as well.
+	if (m_callingTeam)
+	{
+		TeamPrototype* teamProto = const_cast<TeamPrototype*>(m_callingTeam->getPrototype());
+		for (Int i = 0; i < MAX_GENERIC_SCRIPTS; ++i)
+		{
+			Script* candidate = teamProto->getGenericScript(i);
+			if (candidate && candidate->getName() == scriptName)
+			{
+				pScript = candidate;
+				break;
+			}
+		}
+
+		if (pScript)
+		{
+			pScript->setActive(false);
+			return;
+		}
+	}
+
+	pScript = findScript(scriptName);
+	if (pScript)
+	{
 		pScript->setActive(false);
 	}
-	ScriptGroup *pGroup = findGroup(pAction->getParameter(0)->getString());
-	if (pGroup) {
-		pGroup->setActive(false);
+	else
+	{
+		DEBUG_LOG(("WARNING: Script '%s' not found for enabling.", scriptName.str()));
 	}
 }
 

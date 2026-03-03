@@ -2554,18 +2554,30 @@ void Team::updateGenericScripts()
 			// shouldn't run it again.
 			Script *script = m_proto->getGenericScript(i);
 			if (script) {
-				if (TheScriptEngine->evaluateConditions(script, this)) {
-					// It was successful.
-					if (script->isOneShot()) {
-						m_shouldAttemptGenericScript[i] = false;
-					}
-					TheScriptEngine->friend_executeAction(script->getAction(), this);
-					AsciiString msg = "Generic script '";
-					msg.concat(script->getName());
-					msg.concat("' run on team ");
-					msg.concat(getName());
-					TheScriptEngine->AppendDebugMessage(msg, false);
+				//@-TanSo-: Scripts must be active!
+				if (!script->isActive())
+					continue;
+				//@-TanSo-: And also respect the fact that we might not want to check every frame!
+				if (TheGameLogic->getFrame() < script->getFrameToEvaluate())
+					continue;
+
+				Int delaySeconds = script->getDelayEvalSeconds();
+				if (delaySeconds > 0) {
+					script->setFrameToEvaluate(TheGameLogic->getFrame() + delaySeconds * LOGICFRAMES_PER_SECOND);
 				}
+
+					if (TheScriptEngine->evaluateConditions(script, this)) {
+						// It was successful.
+						if (script->isOneShot()) {
+							m_shouldAttemptGenericScript[i] = false;
+						}
+						TheScriptEngine->friend_executeAction(script->getAction(), this);
+						AsciiString msg = "Generic script '";
+						msg.concat(script->getName());
+						msg.concat("' run on team ");
+						msg.concat(getName());
+						TheScriptEngine->AppendDebugMessage(msg, false);
+					}
 			} else {
 				m_shouldAttemptGenericScript[i] = false;
 			}
