@@ -187,39 +187,74 @@ protected:
 
 	Bool evaluatePlayerRelation(const AsciiString& playerSrcName, Int relationType, const AsciiString& playerDstName);
   Bool evaluateEmptySpot(Parameter* pStartNdx);
+	Bool evaluateActivePlayerCount(Parameter* pComparisonParm, Int pPlayerCount);
+	Bool evaluateEmptySpotCount(Parameter* pComparisonParm, Int pEmptySpotCount);
 	Bool evaluateNeighbouringSpot(Parameter* pPlayerParm, Parameter* pStartNdx);
 	Bool evaluateNeighbouringSpotsEmpty(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pCount);
   Bool evaluateNeighbouringSpotsRelation(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pCount, Int relationType);
+
+	Bool evaluateMapSize(Parameter* pComparisonParm, Int pMapSize);
 	Bool evaluateStartingCash(Parameter* pComparisonParm, Int pAmount);
+
 	Bool evaluateClosestRelationUnitToMySpawn(Int relationType, Parameter* pPlayerParm, Parameter* pComparisonParm, Real pDist);
+
 	Bool evaluateHunted(Parameter* pPlayerParm);
+
 	Bool evaluatePlayerLostTypeInArea(Parameter* pPlayerParm, Parameter* pObjectType, Parameter* pArea);
 	Bool evaluatePlayerLostUnit(Parameter* pPlayerParm);
+
 	Bool evaluateTeamSightedRelationType(Parameter* pTeam, Int relationType, Parameter* pObjectType);
+
 	Bool evaluateSkirmishAnyRelationFaction(Parameter* pPlayerParm, Int relationType, Parameter* pFactionParm);
-	Bool evaluateMapSize(Parameter* pComparisonParm, Int pMapSize);
-	Bool evaluateActivePlayerCount(Parameter* pComparisonParm, Int pPlayerCount);
-	Bool evaluateEmptySpotCount(Parameter* pComparisonParm, Int pEmptySpotCount);
+
 	Bool evaluatePlayerDestroyedEnemyType(Parameter* pPlayerParm, Parameter* pObjectType);
 	Bool evaluatePlayerDestroyedEnemyUnit(Parameter* pPlayerParm);
-	Bool evaluatePointControlled(Player* player, const Coord3D& point, Real radius);				//@-TanSo-: helper method for evaluate(Relation)MapControl.
+
+	Bool evaluatePointControlled(Player* player, const Coord3D& point, Real radius);				//@-TanSo-: helper method for evaluate(Relation)MapControl(Area).
 	Bool evaluateMapControl(Parameter* pPlayerParm, Parameter* pComparisonParm, Real pValue);
 	Bool evaluateRelationMapControl(Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Real pValue);
 	Bool evaluateMapControlArea(Parameter* pPlayerParm, Parameter* pComparisonParm, Real pValue, Parameter* pTriggerParm);
 	Bool evaluateRelationMapControlArea(Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Real pValue, Parameter* pTriggerParm);
+
 	Bool evaluateTeamLostType(Parameter* pTeamParm, Parameter* objectType);
 	Bool evaluateTeamLostUnit(Parameter* pTeamParm);
+
   Bool evaluatePlayerSightedRelationType(Parameter* pPlayerParm, Int relationType, Parameter* pObjectType);
-  Bool evaluateRelationPlayerSightedRelationType(Parameter* pPlayerParm, Int playerRelationType, Int relationType, Parameter* pObjecType);
+  Bool evaluateRelationPlayerSightedRelationType(Parameter* pPlayerParm, Int playerRelationType, Int relationType, Parameter* pObjectType);
+	Bool evaluateRelationPlayerSightedRelationArea(Parameter* pPlayerParm, Int playerRelationType, Int relationType, Parameter* pTriggerParm);
+	Bool evaluateRelationPlayerSightedRelationTypeArea(Parameter* pPlayerParm, Int playerRelationType, Int relationType, Parameter* pObjectType, Parameter* pTriggerParm);
+
 	Bool evaluateRelationPlayerValueArea(Condition* pCondition, Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Int value, Parameter* pTriggerParm);
-	Bool evaluateRelationPlayerOwnsComparsionType(Condition* pCondition, Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Int value, Parameter* objectType);
+	Bool evaluateRelationPlayerOwnsComparisonType(Condition* pCondition, Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Int value, Parameter* objectType);
+
 	Bool evaluatePlayerAttackedInArea(Parameter* pPlayerParm, Parameter* pTriggerParm);
+
   Bool evaluatePlayerBuildingBeingCaptured(Parameter* pPlayerParm);
 	Bool evaluatePlayerBuildingBeingCapturedType(Parameter* pPlayerParm, Parameter* objectType);
 	Bool evaluatePlayerBuildingBeingCapturedArea(Parameter* pPlayerParm, Parameter* pTriggerParm);
 	Bool evaluatePlayerBuildingBeingCapturedTypeArea(Parameter* pPlayerParm, Parameter* objectType, Parameter* pTriggerParm);
+
 	Bool evaluateRelationPlayerComparisonTypeArea(Condition* pCondition, Parameter* pPlayerParm, Int relationType, Parameter* pComparisonParm, Int value, Parameter* objectType, Parameter* pTriggerParm);
-	// @-TanSo-: 33 additions, 1 helper method
+
+	Bool evaluateTeamIdle(Parameter* pTeamParm);
+	Bool evaluateTeamIdleFrames(Parameter* pTeam, Int value);
+
+	Bool evaluatePlayerHasComparisonRatioOther(Condition* pCondition, Parameter* pPlayerParm, Parameter* pComparisonParm, Real ratio, Parameter* pOther);
+	Bool evaluatePlayerHasComparisonRatioTypeOther(Condition* pCondition, Parameter* pPlayerParm, Parameter* pComparisonParm, Real ratio, Parameter* objectType, Parameter* pOther, Parameter* otherObjectType);
+	Bool evaluatePlayerHasComparisonRatioAreaOther(Condition* pCondition, Parameter* pPlayerParm, Parameter* pComparisonParm, Real ratio, Parameter* pTriggerParm, Parameter* pOther);
+	Bool evaluatePlayerHasComparisonRatioTypeAreaOther(Condition* pCondition, Parameter* pPlayerParm, Parameter* pComparisonParm, Real ratio, Parameter* objectType, Parameter* pTriggerParm, Parameter* pOther, Parameter* otherObjectType);
+	Bool evaluateRelationPlayerHasComparisonRatioOtherRelation(Condition* pCondition, Parameter* pPlayerParm, Int pRelation, Parameter* pComparisonParm, Real ratio, Int pOtherRelation);
+	Bool evaluateRelationPlayerHasComparisonRatioTypeOtherRelation(Condition* pCondition, Parameter* pPlayerParm, Int pRelation, Parameter* pComparisonParm, Real ratio, Parameter* objectType, Int pOtherRelation, Parameter* otherObjectType);
+	Bool evaluateRelationPlayerHasComparisonRatioAreaOtherRelation(Condition* pCondition, Parameter* pPlayerParm, Int pRelation, Parameter* pComparisonParm, Real ratio, Parameter* pTriggerParm, Int pOtherRelation);
+	Bool evaluateRelationPlayerHasComparisonRatioTypeAreaOtherRelation(Condition* pCondition, Parameter* pPlayerParm, Int pRelation, Parameter* pComparisonParm, Real ratio, Parameter* objectType, Parameter* pTriggerParm, Int pOtherRelation, Parameter* otherObjectType);
+
+	Bool evaluateTeamContainsType(Parameter* pTeamParm, Parameter* objectType);
+	Bool evaluateTeamContainsComparisonType(Parameter* pTeamParm, Parameter* pComparisonParm, Int value, Parameter* objectType);
+
+	Bool evaluateTeamSingleBelowHealth(Parameter* pTeamParm, Real value);
+	Bool evaluateTeamBelowHealth(Parameter* pTeamParm, Real value);
+
+	// @-TanSo-: 49 additions, 1 helper method
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 	//-------------------------------------------------------------------------------------------------

@@ -1616,7 +1616,7 @@ BEGIN
 END
 
 IDD_TeamGeneric DIALOG DISCARDABLE  0, 0, 223, 311
-STYLE WS_CHILD | WS_CAPTION
+STYLE WS_CHILD | WS_CAPTION | WS_VSCROLL
 CAPTION "Generic"
 FONT 8, "MS Sans Serif"
 BEGIN
@@ -1678,6 +1678,199 @@ BEGIN
     COMBOBOX        IDC_TeamGeneric_Script16,58,283,160,73,CBS_DROPDOWN | 
                     CBS_SORT | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Script 16:",IDC_SCRIPT_PREFIX16,6,284,47,12,
+                    SS_CENTERIMAGE
+    // @-TanSo-: Please more space for generic scripts :)
+    COMBOBOX        IDC_TeamGeneric_Script17, 58, 301, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 17:", IDC_SCRIPT_PREFIX17, 6, 302, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script18, 58, 319, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 18:", IDC_SCRIPT_PREFIX18, 6, 320, 47, 12,
+                     SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script19, 58, 337, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 19:", IDC_SCRIPT_PREFIX19, 6, 338, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script20, 58, 355, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 20:", IDC_SCRIPT_PREFIX20, 6, 356, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script21, 58, 373, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 21:", IDC_SCRIPT_PREFIX21, 6, 374, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script22, 58, 391, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 22:", IDC_SCRIPT_PREFIX22, 6, 392, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script23, 58, 409, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 23:", IDC_SCRIPT_PREFIX23, 6, 410, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script24, 58, 427, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 24:", IDC_SCRIPT_PREFIX24, 6, 428, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script25, 58, 445, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 25:", IDC_SCRIPT_PREFIX25, 6, 446, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script26, 58, 463, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 26:", IDC_SCRIPT_PREFIX26, 6, 464, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script27, 58, 481, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 27:", IDC_SCRIPT_PREFIX27, 6, 482, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script28, 58, 499, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 28:", IDC_SCRIPT_PREFIX28, 6, 500, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script29, 58, 517, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 29:", IDC_SCRIPT_PREFIX29, 6, 518, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script30, 58, 535, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 30:", IDC_SCRIPT_PREFIX30, 6, 536, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script31, 58, 553, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 31:", IDC_SCRIPT_PREFIX31, 6, 554, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script32, 58, 571, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 32:", IDC_SCRIPT_PREFIX32, 6, 572, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script33, 58, 589, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 33:", IDC_SCRIPT_PREFIX33, 6, 590, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script34, 58, 607, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 34:", IDC_SCRIPT_PREFIX34, 6, 608, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script35, 58, 625, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 35:", IDC_SCRIPT_PREFIX35, 6, 626, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script36, 58, 643, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 36:", IDC_SCRIPT_PREFIX36, 6, 644, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script37, 58, 661, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 37:", IDC_SCRIPT_PREFIX37, 6, 662, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script38, 58, 679, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 38:", IDC_SCRIPT_PREFIX38, 6, 680, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script39, 58, 697, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 39:", IDC_SCRIPT_PREFIX39, 6, 698, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script40, 58, 715, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 40:", IDC_SCRIPT_PREFIX40, 6, 716, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script41, 58, 733, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 41:", IDC_SCRIPT_PREFIX41, 6, 734, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script42, 58, 751, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 42:", IDC_SCRIPT_PREFIX42, 6, 752, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script43, 58, 769, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 43:", IDC_SCRIPT_PREFIX43, 6, 770, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script44, 58, 787, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 44:", IDC_SCRIPT_PREFIX44, 6, 788, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script45, 58, 805, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 45:", IDC_SCRIPT_PREFIX45, 6, 806, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script46, 58, 823, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 46:", IDC_SCRIPT_PREFIX46, 6, 824, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script47, 58, 841, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 47:", IDC_SCRIPT_PREFIX47, 6, 842, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script48, 58, 859, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 48:", IDC_SCRIPT_PREFIX48, 6, 860, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script49, 58, 877, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 49:", IDC_SCRIPT_PREFIX49, 6, 878, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script50, 58, 895, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 50:", IDC_SCRIPT_PREFIX50, 6, 896, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script51, 58, 913, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 51:", IDC_SCRIPT_PREFIX51, 6, 914, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script52, 58, 931, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 52:", IDC_SCRIPT_PREFIX52, 6, 932, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script53, 58, 949, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 53:", IDC_SCRIPT_PREFIX53, 6, 950, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script54, 58, 967, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 54:", IDC_SCRIPT_PREFIX54, 6, 968, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script55, 58, 985, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 55:", IDC_SCRIPT_PREFIX55, 6, 986, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script56, 58, 1003, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 56:", IDC_SCRIPT_PREFIX56, 6, 1004, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script57, 58, 1021, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 57:", IDC_SCRIPT_PREFIX57, 6, 1022, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script58, 58, 1039, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 58:", IDC_SCRIPT_PREFIX58, 6, 1040, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script59, 58, 1057, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 59:", IDC_SCRIPT_PREFIX59, 6, 1058, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script60, 58, 1075, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 60:", IDC_SCRIPT_PREFIX60, 6, 1076, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script61, 58, 1093, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 61:", IDC_SCRIPT_PREFIX61, 6, 1094, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script62, 58, 1111, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 62:", IDC_SCRIPT_PREFIX62, 6, 1112, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script63, 58, 1129, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 63:", IDC_SCRIPT_PREFIX63, 6, 1130, 47, 12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_TeamGeneric_Script64, 58, 1147, 160, 73, CBS_DROPDOWN |
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Script 64:", IDC_SCRIPT_PREFIX64, 6, 1148, 47, 12,
                     SS_CENTERIMAGE
 END
 

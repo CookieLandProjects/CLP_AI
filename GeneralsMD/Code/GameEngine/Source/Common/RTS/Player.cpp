@@ -4653,5 +4653,90 @@ void Player::removeAIBaseDefenseFromVector(const AsciiString& objectType)
 }
 
 //-------------------------------------------------------------------------------------------------
+void Player::updateLastFrameSeen()
+{
+	for (PlayerTeamList::const_iterator it = getPlayerTeams()->begin(); it != getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> teamIter = (*it)->iterate_TeamInstanceList(); !teamIter.done(); teamIter.advance())
+		{
+			Team* team = teamIter.cur();
+			if (!team)
+				continue;
+
+			Coord3D teamCenter = { 0,0,0 };
+			int count = 0;
+
+			// @-TanSo-: Get an estimate team position and the max vision of our team members
+			Real maxVision = 0.0f;
+
+			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+			{
+				Object* obj = objIter.cur();
+				if (!obj)
+					continue;
+
+				if (!obj->getAIUpdateInterface())
+					continue;
+
+				Real v = obj->getShroudClearingRange();
+				if (v > maxVision)
+					maxVision = v;
+
+				const Coord3D* pos = obj->getPosition();
+				if (!pos)
+					continue;
+
+				teamCenter.x += pos->x;
+				teamCenter.y += pos->y;
+				teamCenter.z += pos->z;
+				count++;
+			}
+
+			if (maxVision <= 0.0f)
+				continue;
+
+			if (count == 0)
+				continue;
+
+			teamCenter.x /= count;
+			teamCenter.y /= count;
+			teamCenter.z /= count;
+
+			PartitionFilterAlive filterAlive;
+			PartitionFilter* filters[] = { &filterAlive, nullptr };
+
+			SimpleObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(&teamCenter, maxVision, FROM_CENTER_2D, filters);
+
+			MemoryPoolObjectHolder hold(iter);
+
+			for (Object* them = iter->first(); them; them = iter->next())
+			{
+				if (!them || them->isEffectivelyDead())
+					continue;
+
+				them->m_seenByEnemy = true;
+				them->m_lastSeenFrame = TheGameLogic->getFrame();
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void Player::countObjectsByThingTemplateArea(Int numTmplates, const ThingTemplate* const* things, Bool ignoreDead, Int* counts, Bool ignoreUnderConstruction, const PolygonTrigger* triggerArea) const
+{
+	Int i;
+
+	for (i = 0; i < numTmplates; ++i)
+		counts[i] = 0;
+
+	for (PlayerTeamList::const_iterator it = m_playerTeamPrototypes.begin();
+		it != m_playerTeamPrototypes.end();
+		++it)
+	{
+		(*it)->countObjectsByThingTemplateArea(numTmplates, things, ignoreDead, counts, ignoreUnderConstruction, triggerArea);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
 //--------------------------------- @CLP_AI PLAYER ADDITIONS END ----------------------------------
 //-------------------------------------------------------------------------------------------------

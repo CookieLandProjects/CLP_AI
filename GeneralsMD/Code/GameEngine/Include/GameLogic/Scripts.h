@@ -639,8 +639,26 @@ public:
       PLAYER_SELL_ALL_BUILDINGS_TYPE_AREA,					///< Make an AI player sell off all buildings of a type in an area.
 
 			AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED_AREA,	///< AI player builds a structure near a kindOf in an area rotated <Real> degrees.
-			AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED_AREA,	///< AI player builds a structure near a type in an area source rotaded <Real> degrees.
-			
+			AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED_AREA,	///< AI player builds a structure near a type in an area source rotated <Real> degrees.
+
+			TEAM_ATTACK_TYPE,															///< Set a team to attack units with a specific type.
+			TEAM_ATTACK_TYPE_AREA,												///< Set a team to attack unis with a specific type in an area.
+      TEAM_ATTACK_SEEN_UNIT,												///< Set a team to attack units the player sees.
+			TEAM_ATTACK_SEEN_TYPE,												///< Set a team to attack units the player sees with a specific type.
+			TEAM_ATTACK_SEEN_AREA,												///< Set a team to attack units the player sees in an area.
+			TEAM_ATTACK_SEEN_TYPE_AREA,										///< Set a team to attack unis the player sees with a specific type in an area.
+
+			TEAM_ATTACKMOVE_WAYPOINT,											///< Set a team to attack move towards a waypoint.
+			TEAM_ATTACKMOVE_TYPE,													///< Set a team to attack move towards an enemy object of a type.
+			TEAM_ATTACKMOVE_TYPE_AREA,										///< Set a team to attack move towards an enemy object of a type in an area.
+
+			TEAM_EVACUATE_DESTROYED_PERCENT,							///< Set a team to evacuate all transports below N%.
+
+			TEAM_ATTACKMOVE_AREA,													///< Set a team to attack move towards an enemy object in an area.
+			TEAM_ATTACKMOVE_SEEN_UNIT,										///< Set a team to attack move towards units the player sees .
+			TEAM_ATTACKMOVE_SEEN_TYPE,										///< Set a team to attack move towards units of a type the player sees.
+			TEAM_ATTACKMOVE_SEEN_AREA,										///< Set a team to attack move towards units in an area the player sees.
+			TEAM_ATTACKMOVE_SEEN_TYPE_AREA,								///< Set a team to attack move towards units of a type in an area the player sees.
 			//-------------------------------------------------------------------------------------------------
 			//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------
 			//-------------------------------------------------------------------------------------------------
@@ -1140,6 +1158,30 @@ public:
 		PLAYER_BUILDING_BEING_CAPTURED_TYPE_AREA,// True if a player's building of a type in an area is being captured by an enemy.
 
 		RELATION_PLAYER_COMPARISON_TYPE_AREA,// True if all of player's <relation> co-players combined have <comparison> <int> <type> in an area.
+
+    PLAYER_COMPARISON_RATIO_OTHER,					// True if player A has <comparison> <Real> times as many units as player B.
+    PLAYER_COMPARISON_RATIO_TYPE_OTHER,			// True if player A has <comparison> <Real> times as many units of a type as player B.
+    PLAYER_COMPARISON_RATIO_AREA_OTHER,			// True if player A has <comparison> <Real> times as many units in an area as player B.
+    PLAYER_COMPARISON_RATIO_TYPE_AREA_OTHER,// True if player A has <comparison> <Real> times as many units of a type in an area than player B.
+    RELATION_PLAYER_COMPARISON_RATIO_OTHER_RELATION,// True if all of player A's <relation> co-players combined have <comparison> <Real> times as many units as player B's co-players.
+    RELATION_PLAYER_COMPARISON_RATIO_TYPE_OTHER_RELATION,// True if all of player A's <relation> co-players combined have <comparison> <Real> times as many units of a type as player B's co-players.
+    RELATION_PLAYER_COMPARISON_RATIO_AREA_OTHER_RELATION,// True if all of player A's <relation> co-players combined have <comparison> <Real> times as many units in an area as player B's co-players.
+    RELATION_PLAYER_COMPARISON_RATIO_TYPE_AREA_OTHER_RELATION, // True if all of player A's <relation> co-players combined have <comparison> <Real> times as many units of a type in an area as Player B's co-players.
+
+		RELATION_PLAYER_SIGHTED_RELATION_AREA,	// True if one of a player's <relation> co-players has sighted a <relation> unit in an area.
+		RELATION_PLAYER_SIGHTED_RELATION_TYPE_AREA,// True if one of a player's <relation> co-players has sighted a <relation> unit of type in an area.
+
+		TEAM_IDLE,															// True if a team is idling.
+
+		TEAM_CONTAINS_TYPE,											// True if a team contains an object of a type.
+		TEAM_CONTAINS_COMPARISON_TYPE,					// True if a team contains <comparison> <int> objects of a type.
+
+		COUNTER_DIVISIBLE,											// True if a counter is divisible by <int>.
+		TEAM_SINGLE_BELOW_HEALTH,								// True if a single member of a team drops below <real> % health.
+		TEAM_BELOW_HEALTH,											// True if the entire team drops below <real> & health.
+
+		TEAM_IDLE_FRAMES,												// True if a team has been idling for at least the past <int> frames.
+
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 		//-------------------------------------------------------------------------------------------------

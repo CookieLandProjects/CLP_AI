@@ -640,6 +640,9 @@ public:
 	Bool isBeingCaptured() const { return m_isBeingCaptured; }
 	void setIsBeingCaptured(Bool beingCaptured);
 
+	Bool m_seenByEnemy;			// @-TanSo-: use this with our scripts so we can make AI attack only things it sees at this moment. Pretty fair, right?
+	Int m_lastSeenFrame;
+
 protected:
 
 	void setOrRestoreTeam( Team* team, Bool restoring );

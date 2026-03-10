@@ -43,5 +43,6 @@ class TeamGeneric : public CPropertyPage
 		virtual BOOL OnInitDialog();
 		afx_msg void _scriptsToDict();
 		afx_msg void OnScriptAdjust();
+		afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 		DECLARE_MESSAGE_MAP()
 };

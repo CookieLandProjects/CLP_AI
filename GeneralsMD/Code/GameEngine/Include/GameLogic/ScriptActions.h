@@ -458,8 +458,26 @@ protected:
 	void doAIPlayerAddBaseDefenseStructure(const AsciiString& objectType);
 	void doAIPlayerRemoveBaseDefenseStructure(const AsciiString& objectType);
 
+  void doTeamAttackType(const AsciiString& teamName, const AsciiString& objectType);
+	void doTeamAttackTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerParm);
+	void doTeamAttackSeenUnit(const AsciiString& teamName);
+	void doTeamAttackSeenType(const AsciiString& teamName, const AsciiString& objectType);
+	void doTeamAttackSeenArea(const AsciiString& teamName, const AsciiString& pTriggerParm);
+	void doTeamAttackSeenTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerParm);
 
-	// @-TanSo-: 58 additions
+	void doTeamAttackMoveLocation(const AsciiString& teamName, const AsciiString& waypointName);
+	void doTeamAttackMoveArea(const AsciiString& teamName, const AsciiString& pTriggerArea);
+	void doTeamAttackMoveType(const AsciiString& teamName, const AsciiString& objectType);
+	void doTeamAttackMoveTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea);
+	void doTeamAttackMoveSeenUnit(const AsciiString& teamName);
+	void doTeamAttackMoveSeenType(const AsciiString& teamName, const AsciiString& objectType);
+	void doTeamAttackMoveSeenArea(const AsciiString& teamName, const AsciiString& pTriggerParm);
+	void doTeamAttackMoveSeenTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerParm);
+
+	void doTeamEvacuateDestroyedPercent(const AsciiString& teamName, Real value);
+
+
+	// @-TanSo-: 73 additions
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 	//-------------------------------------------------------------------------------------------------

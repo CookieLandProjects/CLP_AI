@@ -5187,8 +5187,8 @@ Bool PartitionFilterPlayerAffiliation::allow( Object *other )
 			}
 			break;
 	}
-
-	if (other->getControllingPlayer() == m_player) {
+	//@-TanSo-: Why the hell is this always true? Switched it to match only when ALLOW_ALLIES is active.
+	if (other->getControllingPlayer() == m_player /* --> */ && m_affiliation & ALLOW_ALLIES /* <-- */) {
 		return m_match;
 	}
 
@@ -5926,3 +5926,28 @@ SightingInfo::~SightingInfo()
 
 }
 
+// ------------------------------------------------------------------------------------------------
+Bool PartitionFilterLastFrameSeen::allow(Object* other)
+{
+	const int MEMORY_FRAMES = 300;
+
+	if (!other->m_seenByEnemy)
+		return !m_match;
+
+	int frameDelta = TheGameLogic->getFrame() - other->m_lastSeenFrame;
+
+	bool recentlySeen = frameDelta <= MEMORY_FRAMES;
+
+	return (recentlySeen == m_match);
+}
+
+// ------------------------------------------------------------------------------------------------
+Bool PartitionFilterObjectTypes::allow(Object* other)
+{
+	if (!other) return !m_match;
+	for (auto* templ : m_templates) {
+		if (other->getTemplate() == templ)
+			return m_match;
+	}
+	return !m_match;
+}

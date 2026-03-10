@@ -115,7 +115,7 @@ typedef struct {
 	AsciiString unitThingName;
 } TCreateUnitsInfo;
 
-enum { MAX_GENERIC_SCRIPTS = 32 };
+enum { MAX_GENERIC_SCRIPTS = 64 };
 
 // ------------------------------------------------------------------------
 /// This is the info for creating reinforcement and AI teams.
@@ -351,6 +351,17 @@ public:
 
 	std::vector<const ThingTemplate*> m_lastFrameDeaths;
 	Bool m_lostUnitThisFrame;
+
+	void countObjectsByThingTemplateArea(Int numTmplates, const ThingTemplate* const* things, Bool ignoreDead, Int* counts, Bool ignoreUnderConstruction, const PolygonTrigger* triggerArea) const;
+	Script* m_genericScriptsToRun[MAX_GENERIC_SCRIPTS];			// @-TanSo-: Every team instance should be able to get its own set of generic scripts, and not only the first!
+
+	Int m_ownedUnits;																				// Much like m_curUnits, but we update it regardless of a script being present in "On % destroyed".
+	Real m_maxHealth;																				// Adds max Health of alive and dead units. Only updates if the unit count changed. Used to measure strength loss of a team later on after units potentially died. Counts 'obj->getBodyModule->getMaxHealth();'.
+	Real m_ghostHealth;																			// Save max health of our dead team members so we can add them back in m_maxHealth.
+	Real getCurrentHealth();
+	void updateHealth();
+
+	Int m_idleFrames;																				// How long has our team been idling for?
 
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------------- @CLP_AI TEAM ADDITIONS END -----------------------------------
@@ -640,6 +651,8 @@ public:
 
 	void setAttackPriorityName(const AsciiString &name) { m_attackPriorityName = name;}
 	AsciiString getAttackPriorityName() const { return m_attackPriorityName;}
+
+	void countObjectsByThingTemplateArea(Int numTmplates, const ThingTemplate* const* things, Bool ignoreDead, Int* counts, Bool ignoreUnderConstruction, const PolygonTrigger* triggerArea) const;
 
 protected:
 

@@ -1332,7 +1332,10 @@ Team::Team(TeamPrototype *proto, TeamID id ) :
 	m_isRecruitable(false),
 	m_destroyThreshold(0),
 	m_curUnits(0),
-	m_wasIdle(false)
+	m_wasIdle(false),
+	m_maxHealth(0),
+	m_ownedUnits(0),
+	m_ghostHealth(0)
 {
 	m_created = FALSE;
 	m_commonAttackTarget = INVALID_ID;
@@ -1344,6 +1347,15 @@ Team::Team(TeamPrototype *proto, TeamID id ) :
 	if (proto)
 	{
 		proto->prependTo_TeamInstanceList(this);
+		for (Int i = 0; i < MAX_GENERIC_SCRIPTS; ++i)
+		{
+			Script* protoScript = proto->getGenericScript(i);
+
+			if (protoScript)
+				m_genericScriptsToRun[i] = protoScript->duplicate(); // @-TanSo-: make sure we have our unique copy
+			else
+				m_genericScriptsToRun[i] = nullptr;
+		}
 		if (!proto->getTemplateInfo()->m_scriptOnAllClear.isEmpty() ||
 				!proto->getTemplateInfo()->m_scriptOnEnemySighted.isEmpty())
 		{
@@ -1397,7 +1409,10 @@ Team::~Team()
 
 	// make sure the xfer list is clear
 	m_xferMemberIDList.clear();
-
+	for (Int i = 0; i < MAX_GENERIC_SCRIPTS; ++i)
+	{
+		m_genericScriptsToRun[i] = nullptr;
+	}
 }
 
 // ------------------------------------------------------------------------
@@ -1932,6 +1947,18 @@ void Team::updateState()
 			TheScriptEngine->runScript(pInfo->m_scriptOnIdle, this);
 		}
 		m_wasIdle = isIdle;
+	}
+
+	// @-TanSo-: update our maximum health of both alive and dead units so we can measure realistic strength losses.
+		updateHealth();
+
+	// Also get a feel for how long we've been booping around, doing nothing.
+	if (isIdle())
+	{
+		m_idleFrames++;
+	}
+	else {
+		m_idleFrames = 0;
 	}
 }
 
@@ -2552,7 +2579,7 @@ void Team::updateGenericScripts()
 		if (m_shouldAttemptGenericScript[i]) {
 			// Does the condition succeed? If so, run it. If it is a run once script, also mark that we
 			// shouldn't run it again.
-			Script *script = m_proto->getGenericScript(i);
+			Script *script = m_genericScriptsToRun[i];
 			if (script) {
 				//@-TanSo-: Scripts must be active!
 				if (!script->isActive())
@@ -2783,3 +2810,96 @@ void Team::loadPostProcess()
 // ------------------------------------------------------------------------
 // ------------------------------------------------------------------------
 
+void TeamPrototype::countObjectsByThingTemplateArea(Int numTmplates, const ThingTemplate* const* things, Bool ignoreDead, Int* counts, Bool ignoreUnderConstruction, const PolygonTrigger* triggerArea) const
+{
+	for (DLINK_ITERATOR<Team> iter = iterate_TeamInstanceList(); !iter.done(); iter.advance())
+	{
+		iter.cur()->countObjectsByThingTemplateArea(numTmplates, things, ignoreDead, counts, ignoreUnderConstruction, triggerArea);
+	}
+}
+
+// ------------------------------------------------------------------------
+void Team::countObjectsByThingTemplateArea(Int numTmplates, const ThingTemplate* const* things, Bool ignoreDead, Int* counts, Bool ignoreUnderConstruction, const PolygonTrigger* triggerArea) const
+{
+	for (DLINK_ITERATOR<Object> iter = iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		const ThingTemplate* objtmpl = iter.cur()->getTemplate();
+		for (Int i = 0; i < numTmplates; ++i)
+		{
+			//Kris: Compare
+			if (!objtmpl->isEquivalentTo(things[i]))
+			{
+				continue;
+			}
+
+			if (ignoreDead && iter.cur()->isEffectivelyDead())
+				continue;
+
+			if (ignoreUnderConstruction && iter.cur()->getStatusBits().test(OBJECT_STATUS_UNDER_CONSTRUCTION))
+				continue;
+
+			if (!iter.cur()->isInside(triggerArea))
+				continue;
+
+			counts[i] += 1;
+			break;	// from 'next i', NOT 'next object'
+
+		}
+	}
+}
+
+// ------------------------------------------------------------------------
+void Team::updateHealth()
+{
+	Int prevUnits = m_ownedUnits;
+	m_ownedUnits = 0;
+
+
+	for (DLINK_ITERATOR<Object> iter = iterate_TeamMemberList(); !iter.done(); iter.advance()) 
+	{
+		if (iter.cur()->isEffectivelyDead())
+			continue;
+
+		m_ownedUnits++;
+	}
+
+	// @-TanSo-: only run when we add team members or when a unit dies; updating accordingly.
+	// Effectively, max HP stays the same if a unit died and nothing else happens.
+	// Flush m_ghostHealth when our team grows. Our team got units merged into or has been reinforced some other way.
+	if (prevUnits != m_ownedUnits)
+	{
+		m_maxHealth = 0.00f;
+		for (DLINK_ITERATOR<Object> iter = iterate_TeamMemberList(); !iter.done(); iter.advance())
+		{
+			if (iter.cur()->isEffectivelyDead())
+			{
+				// @-TanSo-: did a unit die? Add it to our ghost variable so we can still keep track of our dead members.
+				m_ghostHealth += iter.cur()->getBodyModule()->getMaxHealth();
+				continue;
+			}
+
+			m_maxHealth += iter.cur()->getBodyModule()->getMaxHealth();
+		}
+		// Our team grew. Flush.
+		if (prevUnits > m_ownedUnits)
+		{
+			m_ghostHealth = 0.0f;
+			return;
+		}
+		m_maxHealth += m_ghostHealth;
+	}
+}
+
+// ------------------------------------------------------------------------
+Real Team::getCurrentHealth()
+{
+	Real health = 0;
+	for (DLINK_ITERATOR<Object> iter = iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		if (iter.cur()->isEffectivelyDead())
+			continue;
+
+		health += iter.cur()->getBodyModule()->getHealth();
+	}
+	return health;
+}

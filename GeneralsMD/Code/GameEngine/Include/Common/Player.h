@@ -456,6 +456,8 @@ public:
 	void buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real angle);
 	void buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real angle);
 	void buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real angle);
+	void updateLastFrameSeen();
+	void countObjectsByThingTemplateArea(Int numTmplates, const ThingTemplate* const* things, Bool ignoreDead, Int* counts, Bool ignoreUnderConstruction, const PolygonTrigger* triggerArea) const;
 	//-------------------------------------------------------------------------------------------------
 	//--------------------------------- @CLP_AI PLAYER ADDITIONS END ----------------------------------
 	//-------------------------------------------------------------------------------------------------

@@ -218,7 +218,9 @@ Object::Object( const ThingTemplate *tt, const ObjectStatusMaskType &objectStatu
 	m_scriptStatus(0),
 	m_enteredOrExitedFrame(0),
 	m_visionSpiedMask (PLAYERMASK_NONE),
-	m_numTriggerAreasActive(0)
+	m_numTriggerAreasActive(0),
+	m_seenByEnemy(false),
+	m_lastSeenFrame(0)
 {
 #if defined(RTS_DEBUG)
 	m_hasDiedAlready = false;

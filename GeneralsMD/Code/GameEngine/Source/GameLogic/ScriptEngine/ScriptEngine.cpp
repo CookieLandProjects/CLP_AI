@@ -6188,6 +6188,38 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[3] = " unit of type ";
 	curTemplate->m_uiStrings[4] = " (if FRIEND is selected, include this player). ";
 
+	curTemplate = &m_conditionTemplates[Condition::RELATION_PLAYER_SIGHTED_RELATION_AREA];
+	curTemplate->m_internalName = "RELATION_PLAYER_SIGHTED_RELATION_AREA";
+	curTemplate->m_uiName = "Player/Sighted/A(n) friendly|neutral|enemy player sighted a(n) friendly|neutral|enemy unit in an area.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_parameters[3] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = " One of ";
+	curTemplate->m_uiStrings[1] = " 's ";
+	curTemplate->m_uiStrings[2] = " co-players has sighted a(n) ";
+	curTemplate->m_uiStrings[3] = " unit in area ";
+	curTemplate->m_uiStrings[4] = " (if FRIEND is selected, include this player). ";
+
+	curTemplate = &m_conditionTemplates[Condition::RELATION_PLAYER_SIGHTED_RELATION_TYPE_AREA];
+	curTemplate->m_internalName = "RELATION_PLAYER_SIGHTED_RELATION_TYPE_AREA";
+	curTemplate->m_uiName = "Player/Sighted/A(n) friendly|neutral|enemy player sighted a(n) friendly|neutral|enemy unit of type in an area.";
+	curTemplate->m_numParameters = 5;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[4] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 6;
+	curTemplate->m_uiStrings[0] = " One of ";
+	curTemplate->m_uiStrings[1] = " 's ";
+	curTemplate->m_uiStrings[2] = " co-players has sighted a(n) ";
+	curTemplate->m_uiStrings[3] = " unit of type ";
+	curTemplate->m_uiStrings[4] = " in area ";
+	curTemplate->m_uiStrings[5] = " (if FRIEND is selected, include this player). ";
+
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_TO_TEAM];
 	curTemplate->m_internalName = "TEAM_MOVE_TO_TEAM";
 	curTemplate->m_uiName = "Team/Move/A team moves to another team.";
@@ -6514,6 +6546,394 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[4] = " objects of type ";
 	curTemplate->m_uiStrings[5] = " in area ";
 
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACK_TYPE];
+	curTemplate->m_internalName = "TEAM_ATTACK_TYPE";
+	curTemplate->m_uiName = "Team/Attack/Set to attack -- closest enemy unit of a type.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks the closest enemy unit of type ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACK_TYPE_AREA];
+	curTemplate->m_internalName = "TEAM_ATTACK_TYPE_AREA";
+	curTemplate->m_uiName = "Team/Attack/Set to attack -- closest enemy unit of a type in an area.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks the closest enemy unit of type ";
+	curTemplate->m_uiStrings[2] = " in area ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACK_SEEN_UNIT];
+	curTemplate->m_internalName = "TEAM_ATTACK_SEEN_UNIT";
+	curTemplate->m_uiName = "Team/Attack/Seen/Set to attack -- closest enemy unit the player has seen";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks the closest enemy unit (within the past 10 seconds).";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACK_SEEN_TYPE];
+	curTemplate->m_internalName = "TEAM_ATTACK_SEEN_TYPE";
+	curTemplate->m_uiName = "Team/Attack/Seen/Set to attack -- closest enemy unit of a type the player has seen";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks the closest enemy unit of type ";
+	curTemplate->m_uiStrings[2] = " the player has seen (within the past 10 seconds).";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACK_SEEN_AREA];
+	curTemplate->m_internalName = "TEAM_ATTACK_SEEN_AREA";
+	curTemplate->m_uiName = "Team/Attack/Seen/Set to attack -- closest enemy unit in an area the player has seen";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks the closest enemy unit in area ";
+	curTemplate->m_uiStrings[2] = " the player has seen (within the past 10 seconds).";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACK_SEEN_TYPE_AREA];
+	curTemplate->m_internalName = "TEAM_ATTACK_SEEN_TYPE_AREA";
+	curTemplate->m_uiName = "Team/Attack/Seen/Set to attack -- closest enemy unit of a type in an area the player has seen";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks the closest enemy unit of type ";
+	curTemplate->m_uiStrings[2] = " in area ";
+	curTemplate->m_uiStrings[3] = " the player has seen (within the past 10 seconds).";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_IDLE];
+	curTemplate->m_internalName = "TEAM_IDLE";
+	curTemplate->m_uiName = "Team/Idle/Team is idle.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " is idle. ";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_COMPARISON_RATIO_OTHER];
+	curTemplate->m_internalName = "PLAYER_COMPARISON_RATIO_OTHER";
+	curTemplate->m_uiName = "Player/Owns/Ratio/A player owns comparison ratio times the units compared to another player.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::REAL;
+	curTemplate->m_parameters[3] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " owns ";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = " times the units compared to ";
+	curTemplate->m_uiStrings[4] = ".\n\nNOTE: if the ratio is 1.00f, you simply ask without a ratio -- a direct comparison. Ignores structures.";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_COMPARISON_RATIO_TYPE_OTHER];
+	curTemplate->m_internalName = "PLAYER_COMPARISON_RATIO_TYPE_OTHER";
+	curTemplate->m_uiName = "Player/Owns/Ratio/A player owns comparison ratio times the units of a type compared to another player.";
+	curTemplate->m_numParameters = 6;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::REAL;
+	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[4] = Parameter::SIDE;
+	curTemplate->m_parameters[5] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 7;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " owns ";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = " times the units of type ";
+	curTemplate->m_uiStrings[4] = " than ";
+	curTemplate->m_uiStrings[5] = " owns ";
+	curTemplate->m_uiStrings[6] = ".\n\nNOTE: if the ratio is 1.00f, you simply ask without a ratio -- a direct comparison.";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_COMPARISON_RATIO_AREA_OTHER];
+	curTemplate->m_internalName = "PLAYER_COMPARISON_RATIO_AREA_OTHER";
+	curTemplate->m_uiName = "Player/Owns/Ratio/A player owns comparison ratio times the units in an area compared to another player.";
+	curTemplate->m_numParameters = 5;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::REAL;
+	curTemplate->m_parameters[3] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[4] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 6;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " owns ";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = " times the units in area ";
+	curTemplate->m_uiStrings[4] = " compared to ";
+	curTemplate->m_uiStrings[5] = ".\n\nNOTE: if the ratio is 1.00f, you simply ask without a ratio -- a direct comparison. Ignores structures.";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_COMPARISON_RATIO_TYPE_AREA_OTHER];
+	curTemplate->m_internalName = "PLAYER_COMPARISON_RATIO_AREA_OTHER";
+	curTemplate->m_uiName = "Player/Owns/Ratio/A player owns comparison ratio times the units of a type in an area compared to another player.";
+	curTemplate->m_numParameters = 7;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::REAL;
+	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[4] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[5] = Parameter::SIDE;
+	curTemplate->m_parameters[6] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 8;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " owns ";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = " times the units of type ";
+	curTemplate->m_uiStrings[4] = " in area ";
+	curTemplate->m_uiStrings[5] = " than ";
+	curTemplate->m_uiStrings[6] = " owns ";
+	curTemplate->m_uiStrings[7] = ".\n\nNOTE: if the ratio is 1.00f, you simply ask without a ratio -- a direct comparison.";
+
+	curTemplate = &m_conditionTemplates[Condition::RELATION_PLAYER_COMPARISON_RATIO_OTHER_RELATION];
+	curTemplate->m_internalName = "RELATION_PLAYER_COMPARISON_RATIO_OTHER_RELATION";
+	curTemplate->m_uiName = "Player/Owns/Ratio/Relation/All of a player's friendly|neutral|enemy co-players combined own comparison ratio times the units compared to another relation's players.";
+	curTemplate->m_numParameters = 5;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::COMPARISON;
+	curTemplate->m_parameters[3] = Parameter::REAL;
+	curTemplate->m_parameters[4] = Parameter::RELATION;
+	curTemplate->m_numUiStrings = 6;
+	curTemplate->m_uiStrings[0] = " All of ";
+	curTemplate->m_uiStrings[1] = "'s ";
+	curTemplate->m_uiStrings[2] = " co-players combined own ";
+	curTemplate->m_uiStrings[3] = " ";
+	curTemplate->m_uiStrings[4] = " times the units compared to ";
+	curTemplate->m_uiStrings[5] = " players.\n\nNOTE: if the ratio is 1.00f, you simply ask without a ratio -- a direct comparison. Ignores Structures.";
+
+	curTemplate = &m_conditionTemplates[Condition::RELATION_PLAYER_COMPARISON_RATIO_TYPE_OTHER_RELATION];
+	curTemplate->m_internalName = "RELATION_PLAYER_COMPARISON_RATIO_TYPE_OTHER_RELATION";
+	curTemplate->m_uiName = "Player/Owns/Ratio/Relation/All of a player's friendly|neutral|enemy co-players combined own comparison ratio times the units of a type compared to another relation's players.";
+	curTemplate->m_numParameters = 7;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::COMPARISON;
+	curTemplate->m_parameters[3] = Parameter::REAL;
+	curTemplate->m_parameters[4] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[5] = Parameter::RELATION;
+	curTemplate->m_parameters[6] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 8;
+	curTemplate->m_uiStrings[0] = " All of ";
+	curTemplate->m_uiStrings[1] = "'s ";
+	curTemplate->m_uiStrings[2] = " co-players combined own ";
+	curTemplate->m_uiStrings[3] = " ";
+	curTemplate->m_uiStrings[4] = " times the units of type ";
+	curTemplate->m_uiStrings[5] = " than ";
+	curTemplate->m_uiStrings[6] = " players do with ";
+	curTemplate->m_uiStrings[7] = " .\n\nNOTE: if the ratio is 1.00f, you simply ask without a ratio -- a direct comparison. ";
+
+	curTemplate = &m_conditionTemplates[Condition::RELATION_PLAYER_COMPARISON_RATIO_AREA_OTHER_RELATION];
+	curTemplate->m_internalName = "RELATION_PLAYER_COMPARISON_RATIO_AREA_OTHER_RELATION";
+	curTemplate->m_uiName = "Player/Owns/Ratio/Relation/All of a player's friendly|neutral|enemy co-players combined own comparison ratio times the units in an area compared to another relation's players.";
+	curTemplate->m_numParameters = 6;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::COMPARISON;
+	curTemplate->m_parameters[3] = Parameter::REAL;
+	curTemplate->m_parameters[4] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[5] = Parameter::RELATION;
+	curTemplate->m_numUiStrings = 7;
+	curTemplate->m_uiStrings[0] = " All of ";
+	curTemplate->m_uiStrings[1] = "'s ";
+	curTemplate->m_uiStrings[2] = " co-players combined own ";
+	curTemplate->m_uiStrings[3] = " ";
+	curTemplate->m_uiStrings[4] = " times the units in area ";
+	curTemplate->m_uiStrings[5] = " compared to ";
+	curTemplate->m_uiStrings[6] = " players.\n\nNOTE: if the ratio is 1.00f, you simply ask without a ratio -- a direct comparison. Ignores Structures.";
+
+	curTemplate = &m_conditionTemplates[Condition::RELATION_PLAYER_COMPARISON_RATIO_TYPE_AREA_OTHER_RELATION];
+	curTemplate->m_internalName = "RELATION_PLAYER_COMPARISON_RATIO_TYPE_AREA_OTHER_RELATION";
+	curTemplate->m_uiName = "Player/Owns/Ratio/Relation/All of a player's friendly|neutral|enemy co-players combined own comparison ratio times the units of a type in an area compared to another relation's players.";
+	curTemplate->m_numParameters = 8;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::COMPARISON;
+	curTemplate->m_parameters[3] = Parameter::REAL;
+	curTemplate->m_parameters[4] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[5] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[6] = Parameter::RELATION;
+	curTemplate->m_parameters[7] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 9;
+	curTemplate->m_uiStrings[0] = " All of ";
+	curTemplate->m_uiStrings[1] = "'s ";
+	curTemplate->m_uiStrings[2] = " co-players combined own ";
+	curTemplate->m_uiStrings[3] = " ";
+	curTemplate->m_uiStrings[4] = " times the units of type ";
+	curTemplate->m_uiStrings[5] = " in area ";
+	curTemplate->m_uiStrings[6] = " than ";
+	curTemplate->m_uiStrings[7] = " players do with ";
+	curTemplate->m_uiStrings[8] = " .\n\nNOTE: if the ratio is 1.00f, you simply ask without a ratio -- a direct comparison. ";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_CONTAINS_TYPE];
+	curTemplate->m_internalName = "TEAM_CONTAINS_TYPE";
+	curTemplate->m_uiName = "Team/Contains/Team contains a unit of a type.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " contains a unit of type ";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_CONTAINS_COMPARISON_TYPE];
+	curTemplate->m_internalName = "TEAM_CONTAINS_COMPARISON_TYPE";
+	curTemplate->m_uiName = "Team/Contains/Team contains a unit of a type.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::INT;
+	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " contains ";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = " units of type ";
+
+	curTemplate = &m_conditionTemplates[Condition::COUNTER_DIVISIBLE];
+	curTemplate->m_internalName = "COUNTER_DIVISIBLE";
+	curTemplate->m_uiName = "Scripting/Counter is divisible by N.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::COUNTER;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " is divisible by ";
+	curTemplate->m_uiStrings[2] = " (Counter % Int == 0).";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_WAYPOINT];
+	curTemplate->m_internalName = "TEAM_ATTACKMOVE_WAYPOINT";
+	curTemplate->m_uiName = "Team/Attack/Attack Move/Attack Move -- location.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::WAYPOINT;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks moves to ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_AREA];
+	curTemplate->m_internalName = "TEAM_ATTACKMOVE_AREA";
+	curTemplate->m_uiName = "Team/Attack/Attack Move/Attack Move -- closest enemy unit in an area.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks moves to the closest unit in area ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_TYPE];
+	curTemplate->m_internalName = "TEAM_ATTACKMOVE_TYPE";
+	curTemplate->m_uiName = "Team/Attack/Attack Move/Attack Move -- closest enemy unit of a type.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks moves to the closest unit of type ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_TYPE_AREA];
+	curTemplate->m_internalName = "TEAM_ATTACKMOVE_TYPE_AREA";
+	curTemplate->m_uiName = "Team/Attack/Attack Move/Attack Move -- closest enemy unit of a type in an area.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks moves to the closest unit of type ";
+	curTemplate->m_uiStrings[2] = " in area ";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_SINGLE_BELOW_HEALTH];
+	curTemplate->m_internalName = "TEAM_SINGLE_BELOW_HEALTH";
+	curTemplate->m_uiName = "Team/Health/A member of a team dropped below N% health.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " A member of ";
+	curTemplate->m_uiStrings[1] = " dropped below ";
+	curTemplate->m_uiStrings[2] = "% health.";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_BELOW_HEALTH];
+	curTemplate->m_internalName = "TEAM_SINGLE_BELOW_HEALTH";
+	curTemplate->m_uiName = "Team/Health/The entire team dropped below N% health.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " dropped below ";
+	curTemplate->m_uiStrings[2] = "% health.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_EVACUATE_DESTROYED_PERCENT];
+	curTemplate->m_internalName = "TEAM_EVACUATE_DESTROYED_PERCENT";
+	curTemplate->m_uiName = "Team/Transport/Transport -- unload team from all transports below N% health.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " unloads all transports below ";
+	curTemplate->m_uiStrings[2] = "% health.";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_IDLE_FRAMES];
+	curTemplate->m_internalName = "TEAM_IDLE_FRAMES";
+	curTemplate->m_uiName = "Team/Idle/Team has been idle for at least N frames.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " has been idle for at least ";
+	curTemplate->m_uiStrings[2] = " frames.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_SEEN_UNIT];
+	curTemplate->m_internalName = "TEAM_ATTACKMOVE_SEEN_UNIT";
+	curTemplate->m_uiName = "Team/Attack/Attack Move/Seen/Attack Move -- closest seen unit.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks moves the closest seen unit.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_SEEN_AREA];
+	curTemplate->m_internalName = "TEAM_ATTACKMOVE_SEEN_AREA";
+	curTemplate->m_uiName = "Team/Attack/Attack Move/Seen/Attack Move -- closest seen enemy unit in an area.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks moves to the closest seen unit in area ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_SEEN_TYPE];
+	curTemplate->m_internalName = "TEAM_ATTACKMOVE_SEEN_TYPE";
+	curTemplate->m_uiName = "Team/Attack/Attack Move/Seen/Attack Move -- closest seen enemy unit of a type.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks moves to the closest seen unit of type ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_SEEN_TYPE_AREA];
+	curTemplate->m_internalName = "TEAM_ATTACKMOVE_SEEN_TYPE_AREA";
+	curTemplate->m_uiName = "Team/Attack/Attack Move/Seen/Attack Move -- closest seen enemy unit of a type in an area.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks moves to the closest seen unit of type ";
+	curTemplate->m_uiStrings[2] = " in area ";
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
 	//-------------------------------------------------------------------------------------------------
@@ -6817,37 +7237,38 @@ void ScriptEngine::update()
 	USE_PERF_TIMER(ScriptEngine)
 #ifdef SPECIAL_SCRIPT_PROFILING
 #ifdef DEBUG_LOGGING
-	__int64 startTime64;
-	double timeToUpdate=0.0f;
-	__int64 endTime64,freq64;
-	QueryPerformanceFrequency((LARGE_INTEGER *)&freq64);//LORENZEN'S NOTE_TO_SELF: USE THIS
-	QueryPerformanceCounter((LARGE_INTEGER *)&startTime64);//LORENZEN'S NOTE_TO_SELF: USE THIS
-/* dump out the named objects table.  For extremely intense debug only.  jba. :P
-	for (VecNamedRequestsIt it = m_namedObjects.begin(); it != m_namedObjects.end(); ++it) {
-		AsciiString name = it->first;
-		Object * obj = it->second;
-		if (obj && obj->getAIUpdateInterface())
-			DEBUG_LOG(("%s=%x('%s'), isDead%d", name.str(), obj, obj->getName().str(), obj->getAIUpdateInterface()->isDead()));
-	}
-	DEBUG_LOG(("\n"));
-*/
+		__int64 startTime64;
+	double timeToUpdate = 0.0f;
+	__int64 endTime64, freq64;
+	QueryPerformanceFrequency((LARGE_INTEGER*)&freq64);//LORENZEN'S NOTE_TO_SELF: USE THIS
+	QueryPerformanceCounter((LARGE_INTEGER*)&startTime64);//LORENZEN'S NOTE_TO_SELF: USE THIS
+	/* dump out the named objects table.  For extremely intense debug only.  jba. :P
+		for (VecNamedRequestsIt it = m_namedObjects.begin(); it != m_namedObjects.end(); ++it) {
+			AsciiString name = it->first;
+			Object * obj = it->second;
+			if (obj && obj->getAIUpdateInterface())
+				DEBUG_LOG(("%s=%x('%s'), isDead%d", name.str(), obj, obj->getName().str(), obj->getAIUpdateInterface()->isDead()));
+		}
+		DEBUG_LOG(("\n"));
+	*/
 #endif
 #endif
 	if (m_firstUpdate) {
 		createNamedCache();
 		particleEditorUpdate();
 		m_firstUpdate = false;
-	} else {
+	}
+	else {
 		particleEditorUpdate();
 	}
 
-	if (m_closeWindowTimer>0) {
+	if (m_closeWindowTimer > 0) {
 		m_closeWindowTimer--;
 		if (m_closeWindowTimer < 1) {
 			TheScriptActions->closeWindows(FALSE); // Close victory or defeat windows.
 		}
 	}
-	if (m_endGameTimer>0) {
+	if (m_endGameTimer > 0) {
 		m_endGameTimer--;
 		if (m_endGameTimer < 1) {
 			TheGameLogic->exitGame();
@@ -6860,11 +7281,11 @@ void ScriptEngine::update()
 		return;
 	}
 
-	if (m_fade!=FADE_NONE) {
+	if (m_fade != FADE_NONE) {
 		updateFades();
 	}
 
-	if (m_endGameTimer>=0) {
+	if (m_endGameTimer >= 0) {
 		return; // we are just timing down
 	}
 
@@ -6877,7 +7298,7 @@ void ScriptEngine::update()
 	// Update any countdown timers.
 	Int i;
 	// Note - counters start at 1.  0 means not assigned.
-	for (i=1; i<m_numCounters; i++) {
+	for (i = 1; i < m_numCounters; i++) {
 		if (m_counters[i].isCountdownTimer) {
 			// If counter has any time left, decrement.  Counters go to -1 and stop.
 			if (m_counters[i].value >= 0) {
@@ -6887,13 +7308,13 @@ void ScriptEngine::update()
 	}
 
 	// Evaluate the scripts.
-	for (i=0; i<TheSidesList->getNumSides(); i++) {
+	for (i = 0; i < TheSidesList->getNumSides(); i++) {
 		m_currentPlayer = ThePlayerList->getNthPlayer(i);
-		ScriptList *pSL = TheSidesList->getSideInfo(i)->getScriptList();
+		ScriptList* pSL = TheSidesList->getSideInfo(i)->getScriptList();
 		if (!pSL) continue;
 		executeScripts(pSL->getScript());
-		ScriptGroup *pGroup;
-		for (pGroup = pSL->getScriptGroup(); pGroup; pGroup=pGroup->getNext()) {
+		ScriptGroup* pGroup;
+		for (pGroup = pSL->getScriptGroup(); pGroup; pGroup = pGroup->getNext()) {
 			if (!pGroup->isActive()) {
 				continue; // Don't execute inactive groups.
 			}
@@ -6926,9 +7347,9 @@ void ScriptEngine::update()
 			_adjustVariable(m_flags[k].name.str(), m_flags[k].value);
 		}
 	}
-		//-------------------------------------------------------------------------------------------------
-		//------------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS ---------------------------------
-		//-------------------------------------------------------------------------------------------------
+	//-------------------------------------------------------------------------------------------------
+	//------------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS ---------------------------------
+	//-------------------------------------------------------------------------------------------------
 
 	for (int l = 1; l < m_numKDRatios; ++l) {
 		_adjustVariable(m_KDRatios[l].name.str(), m_KDRatios[l].valueKills, m_KDRatios[l].valueDeaths);
@@ -6940,6 +7361,11 @@ void ScriptEngine::update()
 		p->m_lastFrameKills.clear();
 		p->m_lastFrameDeaths.clear();
 		p->m_lostUnitThisFrame = FALSE;
+
+		// @-TanSo-: We don't need it that often, so only do it sporadically.
+		if (TheGameLogic->getFrame() % 15 == 0) {
+			p->updateLastFrameSeen();
+		}
 
 		for (Player::PlayerTeamList::const_iterator it = p->getPlayerTeams()->begin(); it != p->getPlayerTeams()->end(); it++)
 		{
@@ -6956,10 +7382,10 @@ void ScriptEngine::update()
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS END -------------------------------
 	//-------------------------------------------------------------------------------------------------
-	
+
 #ifdef RTS_DEBUG
-	if (TheGameLogic->getFrame()==0) {
-		for (i=0; i<m_numAttackInfo; i++) {
+	if (TheGameLogic->getFrame() == 0) {
+		for (i = 0; i < m_numAttackInfo; i++) {
 			m_attackPriorityInfo[i].dumpPriorityInfo();
 		}
 	}
@@ -6967,10 +7393,10 @@ void ScriptEngine::update()
 
 #ifdef SPECIAL_SCRIPT_PROFILING
 #ifdef DEBUG_LOGGING
-	QueryPerformanceCounter((LARGE_INTEGER *)&endTime64);//LORENZEN'S NOTE_TO_SELF: USE THIS
-	timeToUpdate = ((double)(endTime64-startTime64) / (double)(freq64));//LORENZEN'S NOTE_TO_SELF: USE THIS
+	QueryPerformanceCounter((LARGE_INTEGER*)&endTime64);//LORENZEN'S NOTE_TO_SELF: USE THIS
+	timeToUpdate = ((double)(endTime64 - startTime64) / (double)(freq64));//LORENZEN'S NOTE_TO_SELF: USE THIS
 	m_numFrames++;
-	m_totalUpdateTime+=timeToUpdate;
+	m_totalUpdateTime += timeToUpdate;
 	if (timeToUpdate > m_maxUpdateTime) m_maxUpdateTime = timeToUpdate;
 	m_curUpdateTime = timeToUpdate;
 #endif
@@ -7512,7 +7938,7 @@ const TCounter *ScriptEngine::getCounter(const AsciiString& counterName)
 //----------------------------------- @CLP_AI SCRIPT ADDITIONS ------------------------------------
 //-------------------------------------------------------------------------------------------------
 
-Real ScriptEngine::allocateKDRatio(const AsciiString& name)
+Int ScriptEngine::allocateKDRatio(const AsciiString& name)
 {
 	Int i;
 	// Note - KDRatios start at 1.  0 means not assigned.
@@ -7584,48 +8010,6 @@ void ScriptEngine::copyCounter(ScriptAction* pAction)
 		pAction->getParameter(1)->friend_setInt(counterNdxB);
 	}
 	m_counters[counterNdxB].value = m_counters[counterNdxA].value;
-}
-
-//-------------------------------------------------------------------------------------------------
-Script* ScriptEngine::findScript(const AsciiString& name, Team* pTeam)
-{
-	if (pTeam)
-	{
-		TeamPrototype* teamProto = const_cast<TeamPrototype*>(pTeam->getPrototype());
-		for (Int i = 0; i < MAX_GENERIC_SCRIPTS; ++i)
-		{
-			Script* teamScript = teamProto->getGenericScript(i);
-			if (teamScript && name == teamScript->getName())
-			{
-				return teamScript;
-			}
-		}
-	}
-
-	for (Int i = 0; i < TheSidesList->getNumSides(); i++)
-	{
-		ScriptList* pSL = TheSidesList->getSideInfo(i)->getScriptList();
-		if (!pSL) continue;
-
-		Script* pScr;
-		for (pScr = pSL->getScript(); pScr; pScr = pScr->getNext())
-		{
-			if (name == pScr->getName())
-				return pScr;
-		}
-
-		ScriptGroup* pGroup;
-		for (pGroup = pSL->getScriptGroup(); pGroup; pGroup = pGroup->getNext())
-		{
-			for (pScr = pGroup->getScript(); pScr; pScr = pScr->getNext())
-			{
-				if (name == pScr->getName())
-					return pScr;
-			}
-		}
-	}
-
-	return nullptr;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -7857,6 +8241,20 @@ void ScriptEngine::setCounterRandom(ScriptAction* pAction, Bool random)
 		value = GameLogicRandomValue(value, randomValue);
 	}
 	m_counters[counterNdx].value = value;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptEngine::evaluateCounterDivisible(Condition* pCondition)
+{
+	Int counterNdx = pCondition->getParameter(0)->getInt();
+	if (counterNdx == 0) {
+		counterNdx = allocateKDRatio(pCondition->getParameter(0)->getString());
+		pCondition->getParameter(0)->friend_setInt(counterNdx);
+	}
+
+	Int value = pCondition->getParameter(1)->getInt();
+
+	return m_counters[counterNdx].value % value == 0;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -8784,6 +9182,7 @@ Bool ScriptEngine::evaluateCondition( Condition *pCondition )
 		case Condition::TIMER_EXPIRED: return evaluateTimer(pCondition);
 		case Condition::KD_RATIO: return evaluateKDRatio(pCondition);
 		case Condition::COMPARE_COUNTERS: return evaluateTwoCounters(pCondition);
+		case Condition::COUNTER_DIVISIBLE: return evaluateCounterDivisible(pCondition);
 	}
 }
 

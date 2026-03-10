@@ -1225,6 +1225,42 @@ protected:
 
 //=====================================
 /**
+ * @ -TanSo: Accept all objects with m_seenByEnemy = true
+ */
+class PartitionFilterLastFrameSeen : public PartitionFilter
+{
+private:
+  Player* m_player;
+	Bool m_match;
+public:
+	PartitionFilterLastFrameSeen(Player* player, Bool match) : m_player(player), m_match(match) {}
+protected:
+	virtual Bool allow(Object* other);
+#if defined(RTS_DEBUG)
+	virtual const char* debugGetName() { return "PartitionFilterLastFrameSeen"; }
+#endif
+};
+
+//=====================================
+/**
+ * @ -TanSo: Accept all defined object types 
+ */
+class PartitionFilterObjectTypes : public PartitionFilter
+{
+private:
+	std::vector<const ThingTemplate*> m_templates;
+	Bool m_match;
+public:
+	PartitionFilterObjectTypes(const std::vector<const ThingTemplate*>& acceptedTemplates, Bool match) : m_templates(acceptedTemplates), m_match(match) {}
+protected:
+	virtual Bool allow(Object* other);
+#if defined(RTS_DEBUG)
+	virtual const char* debugGetName() { return "PartitionFilterObjectTypes"; }
+#endif
+};
+
+//=====================================
+/**
 	PartitionManager is the singleton class that manages the entire partition/collision
 	system. It maintains the set of PartitionCells that correspond to the world system,
 	and updates the PartitionDatas as needed during update phase.

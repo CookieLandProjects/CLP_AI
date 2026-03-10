@@ -381,7 +381,6 @@ protected:
 	void executeScripts( Script *pScriptHead );
 	void executeScript( Script *pScript );
 	Script *findScript(const AsciiString& name);
-	Script *findScript(const AsciiString& name, Team* pTeam); //@-TanSo-: make it possible to also find scripts within generic scripts
 	ScriptGroup *findGroup(const AsciiString& name);
 	void setSway( ScriptAction *pAction );
 	void setCounter( ScriptAction *pAction );
@@ -435,10 +434,11 @@ protected:
 	void setCounterRandom(ScriptAction* pAction, Bool random);
 	Bool evaluateTwoCounters(Condition* pCondition);
 	void copyCounter(ScriptAction* pAction);
+	Bool evaluateCounterDivisible(Condition* pCondition);
 
 
 	void setKDRatio(ScriptAction* pAction);
-	Real allocateKDRatio(const AsciiString& name);
+	Int allocateKDRatio(const AsciiString& name);
 	const TKDRatio* getKDRatio(const AsciiString& counterName);
 	Bool evaluateKDRatio(Condition* pCondition);
 	void addKDRatioKills(ScriptAction* pAction);
