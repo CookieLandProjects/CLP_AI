@@ -4714,6 +4714,9 @@ void Player::updateLastFrameSeen()
 				if (!them || them->isEffectivelyDead())
 					continue;
 
+				if (them->getStatusBits().test(OBJECT_STATUS_STEALTHED) && !them->getStatusBits().test(OBJECT_STATUS_DETECTED) && !them->getStatusBits().test(OBJECT_STATUS_DISGUISED))
+					continue;
+
 				them->m_seenByEnemy = true;
 				them->m_lastSeenFrame = TheGameLogic->getFrame();
 			}

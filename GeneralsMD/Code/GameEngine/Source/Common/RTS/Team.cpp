@@ -2629,7 +2629,7 @@ void Team::xfer( Xfer *xfer )
 {
 
 	// version
-	XferVersion currentVersion = 1;
+	XferVersion currentVersion = 2;
 	XferVersion version = currentVersion;
 	xfer->xferVersion( &version, currentVersion );
 
@@ -2752,6 +2752,17 @@ void Team::xfer( Xfer *xfer )
 	// player relations
 	xfer->xferSnapshot( m_playerRelations );
 
+	if (version >= 2)
+	{
+		// owned units
+		xfer->xferInt(&m_ownedUnits);
+		// max health
+		xfer->xferReal(&m_maxHealth);
+		// ghost health
+		xfer->xferReal(&m_ghostHealth);
+		// idle frames
+		xfer->xferInt(&m_idleFrames);
+	}
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -2881,7 +2892,7 @@ void Team::updateHealth()
 			m_maxHealth += iter.cur()->getBodyModule()->getMaxHealth();
 		}
 		// Our team grew. Flush.
-		if (prevUnits > m_ownedUnits)
+		if (prevUnits < m_ownedUnits)
 		{
 			m_ghostHealth = 0.0f;
 			return;

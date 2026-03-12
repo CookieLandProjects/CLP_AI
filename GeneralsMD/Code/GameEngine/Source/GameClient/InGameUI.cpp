@@ -413,11 +413,12 @@ void InGameUI::xfer( Xfer *xfer )
 		{
 			Int timerCount = m_namedTimers.size();
 			xfer->xferInt( &timerCount );
-			for( NamedTimerMapIt timerIter = m_namedTimers.begin(); timerIter != m_namedTimers.end(); ++timerIter )
+			for (NamedTimerMapIt timerIter = m_namedTimers.begin(); timerIter != m_namedTimers.end(); ++timerIter)
 			{
-				xfer->xferAsciiString( &(timerIter->second->m_timerName) );
-				xfer->xferUnicodeString( &(timerIter->second->timerText) );
-				xfer->xferBool( &(timerIter->second->isCountdown) );
+				xfer->xferAsciiString(&(timerIter->second->m_timerName));
+				xfer->xferUnicodeString(&(timerIter->second->timerText));
+				xfer->xferBool(&(timerIter->second->isCountdown));
+				xfer->xferColor(&(timerIter->second->color));
 			}
 		}
 		else // iz a Load
@@ -429,11 +430,13 @@ void InGameUI::xfer( Xfer *xfer )
 				AsciiString timerName;
 				UnicodeString timerText;
 				Bool isCountdown;
+				Color color;
 				xfer->xferAsciiString( &timerName );
 				xfer->xferUnicodeString( &timerText );
 				xfer->xferBool( &isCountdown );
+				xfer->xferColor( &color );
 
-				addNamedTimer( timerName, timerText, isCountdown );
+				addNamedTimer( timerName, timerText, isCountdown, color );
 			}
 		}
 	}
@@ -760,11 +763,11 @@ Bool InGameUI::getSuperweaponDisplayEnabledByScript() const
 
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
-void InGameUI::addNamedTimer( const AsciiString& timerName, const UnicodeString& text, Bool isCountdown )
+void InGameUI::addNamedTimer( const AsciiString& timerName, const UnicodeString& text, Bool isCountdown, Color color)
 {
 	NamedTimerInfo *info = newInstance( NamedTimerInfo );
 	info->m_timerName = timerName;
-	info->color = m_namedTimerNormalColor;
+	info->color = color;
 	info->timerText = text;
 	info->displayString = TheDisplayStringManager->newDisplayString();
 	info->displayString->reset();
@@ -4060,7 +4063,7 @@ void InGameUI::postDraw()
 			}
 		}
 	}
-
+	Int timerCount = 0;
 	// draw named timers
 	if (TheGameLogic->getFrame() > 0 && m_showNamedTimers)
 	{
@@ -4144,8 +4147,15 @@ void InGameUI::postDraw()
 
 				// increment text spot to next location
 				startY -= info->displayString->getFont()->height;
+
+				timerCount++;
+				if (timerCount % 24 == 0) //@-TanSo-: when having too many counters on display, anything above the screen will obviously not be shown anymore.
+				{
+					startX -= 300;
+					startY += info->displayString->getFont()->height * 24;
+				}
 			}
-		}
+		} 
 	}
 
 	// draw RMB scroll anchor

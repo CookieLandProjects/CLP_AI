@@ -473,11 +473,12 @@ protected:
 	void doTeamAttackMoveSeenType(const AsciiString& teamName, const AsciiString& objectType);
 	void doTeamAttackMoveSeenArea(const AsciiString& teamName, const AsciiString& pTriggerParm);
 	void doTeamAttackMoveSeenTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerParm);
+	void doTeamAttackMovePath(const AsciiString& teamName, const AsciiString& waypointPath);
 
 	void doTeamEvacuateDestroyedPercent(const AsciiString& teamName, Real value);
 
 
-	// @-TanSo-: 73 additions
+	// @-TanSo-: 74 additions
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 	//-------------------------------------------------------------------------------------------------

@@ -254,7 +254,9 @@ protected:
 	Bool evaluateTeamSingleBelowHealth(Parameter* pTeamParm, Real value);
 	Bool evaluateTeamBelowHealth(Parameter* pTeamParm, Real value);
 
-	// @-TanSo-: 49 additions, 1 helper method
+	Bool evaluateTeamSeen(Parameter* pTeamParm);
+
+	// @-TanSo-: 50 additions, 1 helper method
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 	//-------------------------------------------------------------------------------------------------

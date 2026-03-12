@@ -3875,7 +3875,7 @@ void ScriptEngine::init()
 	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " uses skillset number ";
-	curTemplate->m_uiStrings[2] = " (1-5).";
+	curTemplate->m_uiStrings[2] = " (1-7).";
 
 	curTemplate = &m_actionTemplates[ScriptAction::SCRIPTING_OVERRIDE_HULK_LIFETIME ];
 	curTemplate->m_internalName = "SCRIPTING_OVERRIDE_HULK_LIFETIME";
@@ -6411,12 +6411,12 @@ void ScriptEngine::init()
 	curTemplate = &m_conditionTemplates[Condition::PLAYER_BUILDING_BEING_CAPTURED_AREA];
 	curTemplate->m_internalName = "PLAYER_BUILDING_BEING_CAPTURED_AREA";
 	curTemplate->m_uiName = "Player/Capture/A Player's building in an area are currently being captured.";
-	curTemplate->m_numParameters = 1;
+	curTemplate->m_numParameters = 2;
 	curTemplate->m_parameters[0] = Parameter::SIDE;
 	curTemplate->m_parameters[1] = Parameter::TRIGGER_AREA;
 	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = " Any of ";
-	curTemplate->m_uiStrings[1] = " 's buildings in area";
+	curTemplate->m_uiStrings[1] = " 's buildings in area ";
 	curTemplate->m_uiStrings[2] = " are currently being captured.";
 
 	curTemplate = &m_conditionTemplates[Condition::PLAYER_BUILDING_BEING_CAPTURED_TYPE_AREA];
@@ -6785,7 +6785,7 @@ void ScriptEngine::init()
 
 	curTemplate = &m_conditionTemplates[Condition::TEAM_CONTAINS_COMPARISON_TYPE];
 	curTemplate->m_internalName = "TEAM_CONTAINS_COMPARISON_TYPE";
-	curTemplate->m_uiName = "Team/Contains/Team contains a unit of a type.";
+	curTemplate->m_uiName = "Team/Contains/Team contain an amount of units of a type.";
 	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::COMPARISON;
@@ -6934,6 +6934,27 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " attacks moves to the closest seen unit of type ";
 	curTemplate->m_uiStrings[2] = " in area ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_PATH];
+	curTemplate->m_internalName = "TEAM_ATTACKMOVE_PATH";
+	curTemplate->m_uiName = "Team/Attack/Attack Move/ Attack Move -- approach path.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::WAYPOINT_PATH;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = "Have ";
+	curTemplate->m_uiStrings[1] = " attack move to the start of enemy path ";
+	curTemplate->m_uiStrings[2] = ".";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_SEEN];
+	curTemplate->m_internalName = "TEAM_SEEN";
+	curTemplate->m_uiName = "Team/Sighted/A team has been spotted by an enemy player";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " At least one of ";
+	curTemplate->m_uiStrings[1] = "'s members has been spotted by an enemy player.";
+
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
 	//-------------------------------------------------------------------------------------------------
@@ -8361,7 +8382,7 @@ void ScriptEngine::updateKDRatioKills(ScriptAction* pAction)
 	{
 		if (!tt)
 			continue;
-		DEBUG_LOG(("\n\n\nREADING KILLS\n\n\n"));
+
 		if((Real)tt->friend_getBuildCost() > 0)
 		{
 			totalCost += (Real)tt->friend_getBuildCost();
@@ -8391,7 +8412,7 @@ void ScriptEngine::updateKDRatioDeaths(ScriptAction* pAction)
 	{
 		if (!tt)
 			continue;
-		DEBUG_LOG(("\n\n\nREADING DEATHS\n\n\n"));
+
 		if ((Real)tt->friend_getBuildCost() > 0)
 		{
 			totalCost += (Real)tt->friend_getBuildCost();
@@ -8401,6 +8422,7 @@ void ScriptEngine::updateKDRatioDeaths(ScriptAction* pAction)
 	m_KDRatios[counterNdx].valueDeaths += totalCost;
 }
 
+//-------------------------------------------------------------------------------------------------
 void ScriptEngine::copyKDRatioOntoCounters(ScriptAction* pAction)
 {
 	Int counterNdxA = pAction->getParameter(0)->getInt();
@@ -8887,10 +8909,9 @@ void ScriptEngine::enableScript(ScriptAction* pAction)
 	// @-TanSo-: make it possible to look up generic scripts as well.
 	if (m_callingTeam)
 	{
-    TeamPrototype* teamProto = const_cast<TeamPrototype*>(m_callingTeam->getPrototype());
 		for (Int i = 0; i < MAX_GENERIC_SCRIPTS; ++i)
 		{
-			Script* candidate = teamProto->getGenericScript(i);
+			Script* candidate = m_callingTeam->m_genericScriptsToRun[i];
 			if (candidate && candidate->getName() == scriptName)
 			{
 				pScript = candidate;
@@ -8929,10 +8950,9 @@ void ScriptEngine::disableScript( ScriptAction *pAction )
 	// @-TanSo-: make it possible to look up generic scripts as well.
 	if (m_callingTeam)
 	{
-		TeamPrototype* teamProto = const_cast<TeamPrototype*>(m_callingTeam->getPrototype());
 		for (Int i = 0; i < MAX_GENERIC_SCRIPTS; ++i)
 		{
-			Script* candidate = teamProto->getGenericScript(i);
+			Script* candidate = m_callingTeam->m_genericScriptsToRun[i];
 			if (candidate && candidate->getName() == scriptName)
 			{
 				pScript = candidate;

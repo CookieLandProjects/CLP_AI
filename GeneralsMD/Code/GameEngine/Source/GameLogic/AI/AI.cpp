@@ -220,6 +220,8 @@ void AI::parseSideInfo(INI *ini, void *instance, void* /*store*/, const void* /*
 			{ "SkillSet3",										AI::parseSkillSet,				nullptr, offsetof( AISideInfo, m_skillSet3 ) },
 			{ "SkillSet4",										AI::parseSkillSet,				nullptr, offsetof( AISideInfo, m_skillSet4 ) },
 			{ "SkillSet5",										AI::parseSkillSet,				nullptr, offsetof( AISideInfo, m_skillSet5 ) },
+			{ "SkillSet6",										AI::parseSkillSet,				nullptr, offsetof( AISideInfo, m_skillSet6 ) },
+			{ "SkillSet7",										AI::parseSkillSet,				nullptr, offsetof( AISideInfo, m_skillSet7 ) },
 			{ nullptr,							nullptr,											nullptr, 0 }
 		};
 

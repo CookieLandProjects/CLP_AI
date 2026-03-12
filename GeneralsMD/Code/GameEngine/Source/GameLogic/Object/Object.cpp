@@ -4100,7 +4100,7 @@ void Object::xfer( Xfer *xfer )
 {
 
 	// version
-	const XferVersion currentVersion = 9;
+	const XferVersion currentVersion = 10;
 	XferVersion version = currentVersion;
 	xfer->xferVersion( &version, currentVersion );
 
@@ -4503,6 +4503,14 @@ void Object::xfer( Xfer *xfer )
 	else
 		m_isReceivingDifficultyBonus = FALSE;
 
+	if (version >= 10)
+	{
+		xfer->xferBool(&m_seenByEnemy);
+
+		xfer->xferInt(&m_lastSeenFrame);
+
+		xfer->xferBool(&m_isBeingCaptured);
+	}
 }
 
 //-------------------------------------------------------------------------------------------------

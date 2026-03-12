@@ -3200,7 +3200,7 @@ Bool ScriptConditions::evaluateTeamSightedRelationType(Parameter* pTeamParm, Int
 
 		PartitionFilter* filters[] = { &filterAlive, &filterStealth, &filterMapStatus, nullptr };
 
-		Real visionRange = obj->getShroudClearingRange() - 10.0f;
+		Real visionRange = obj->getShroudClearingRange();
 		if (visionRange <= 0.0f) continue;
 
 		SimpleObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(obj, visionRange, FROM_CENTER_2D, filters);
@@ -3208,7 +3208,12 @@ Bool ScriptConditions::evaluateTeamSightedRelationType(Parameter* pTeamParm, Int
 
 		for (Object* them = iter->first(); them; them = iter->next())
 		{
-			if (them == obj) continue;
+			if (them == obj)
+				continue;
+
+			if (obj->getStatusBits().test(OBJECT_STATUS_STEALTHED) && !obj->getStatusBits().test(OBJECT_STATUS_DETECTED) && !obj->getStatusBits().test(OBJECT_STATUS_DISGUISED))
+				continue;
+
 			if (them->getRelationship(obj) == relationType) {
 				if (types.m_types->isInSet(them->getTemplate()->getName()))
 					return true;
@@ -3723,7 +3728,7 @@ Bool ScriptConditions::evaluatePlayerSightedRelationType(Parameter* pPlayerParm,
 
 				PartitionFilter* filters[] = { &filterAlive, &filterStealth, &filterMapStatus, nullptr };
 
-				Real visionRange = obj->getShroudClearingRange() - 10.0f;
+				Real visionRange = obj->getShroudClearingRange();
 				if (visionRange <= 0.0f) continue;
 
 				SimpleObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(obj, visionRange, FROM_CENTER_2D, filters);
@@ -3731,7 +3736,12 @@ Bool ScriptConditions::evaluatePlayerSightedRelationType(Parameter* pPlayerParm,
 
 				for (Object* them = iter->first(); them; them = iter->next())
 				{
-					if (them == obj) continue;
+					if (them == obj)
+						continue;
+
+					if (obj->getStatusBits().test(OBJECT_STATUS_STEALTHED) && !obj->getStatusBits().test(OBJECT_STATUS_DETECTED) && !obj->getStatusBits().test(OBJECT_STATUS_DISGUISED))
+						continue;
+
 					if (them->getRelationship(obj) == relationType) {
 						if (types.m_types->isInSet(them->getTemplate()->getName()))
 							return true;
@@ -3788,7 +3798,7 @@ Bool ScriptConditions::evaluateRelationPlayerSightedRelationType(Parameter* pPla
 
 					PartitionFilter* filters[] = { &filterAlive, &filterStealth, &filterMapStatus, nullptr };
 
-					Real visionRange = obj->getShroudClearingRange() - 10.0f;
+					Real visionRange = obj->getShroudClearingRange();
 					if (visionRange <= 0.0f) continue;
 
 					SimpleObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(obj, visionRange, FROM_CENTER_2D, filters);
@@ -3797,6 +3807,9 @@ Bool ScriptConditions::evaluateRelationPlayerSightedRelationType(Parameter* pPla
 					for (Object* them = iter->first(); them; them = iter->next())
 					{
 						if (them == obj)
+							continue;
+
+						if (obj->getStatusBits().test(OBJECT_STATUS_STEALTHED) && !obj->getStatusBits().test(OBJECT_STATUS_DETECTED) && !obj->getStatusBits().test(OBJECT_STATUS_DISGUISED))
 							continue;
 
 						if (them->getRelationship(obj) == relationType) {
@@ -3926,7 +3939,7 @@ Bool ScriptConditions::evaluateRelationPlayerSightedRelationTypeArea(Parameter* 
 
 					PartitionFilter* filters[] = { &filterAlive, &filterStealth, &filterMapStatus, &filterArea, nullptr };
 
-					Real visionRange = obj->getShroudClearingRange() - 10.0f;
+					Real visionRange = obj->getShroudClearingRange();
 					if (visionRange <= 0.0f) continue;
 
 					SimpleObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(obj, visionRange, FROM_CENTER_2D, filters);
@@ -3935,6 +3948,9 @@ Bool ScriptConditions::evaluateRelationPlayerSightedRelationTypeArea(Parameter* 
 					for (Object* them = iter->first(); them; them = iter->next())
 					{
 						if (them == obj)
+							continue;
+
+						if (obj->getStatusBits().test(OBJECT_STATUS_STEALTHED) && !obj->getStatusBits().test(OBJECT_STATUS_DETECTED) && !obj->getStatusBits().test(OBJECT_STATUS_DISGUISED))
 							continue;
 
 						if (them->getRelationship(obj) == relationType) {
@@ -5350,6 +5366,23 @@ Bool ScriptConditions::evaluateTeamIdleFrames(Parameter* pTeamParm, Int value)
 	return pTeam->m_idleFrames >= value;
 }
 
+
+Bool ScriptConditions::evaluateTeamSeen(Parameter* pTeamParm)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
+	if (!pTeam) return false;
+
+	for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
+		Object* pObj = iter.cur();
+		if (!pObj) {
+			continue;
+		}
+
+		if (pObj->m_seenByEnemy)
+			return true;
+	}
+	return false;
+}
 //-------------------------------------------------------------------------------------------------
 //---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 //-------------------------------------------------------------------------------------------------
@@ -5717,5 +5750,7 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 			return evaluateTeamBelowHealth(pCondition->getParameter(0), pCondition->getParameter(1)->getReal());
 		case Condition::TEAM_IDLE_FRAMES:
 			return evaluateTeamIdleFrames(pCondition->getParameter(0), pCondition->getParameter(1)->getInt());
+		case Condition::TEAM_SEEN:
+			return evaluateTeamSeen(pCondition->getParameter(0));
 	}
 }

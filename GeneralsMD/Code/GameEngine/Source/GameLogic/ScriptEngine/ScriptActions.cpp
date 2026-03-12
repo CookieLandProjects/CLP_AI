@@ -4105,7 +4105,7 @@ void ScriptActions::doGiveMoney(const AsciiString& playerName, Int money)
 //-------------------------------------------------------------------------------------------------
 void ScriptActions::doDisplayCounter(const AsciiString& counterName, const AsciiString& counterText)
 {
-	TheInGameUI->addNamedTimer(counterName, TheGameText->fetch(counterText), false);
+	TheInGameUI->addNamedTimer(counterName, TheGameText->fetch(counterText), false, TheScriptEngine->getCurrentPlayer()->getPlayerColor());
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -4121,7 +4121,7 @@ void ScriptActions::doHideCounter(const AsciiString& counterName)
 //-------------------------------------------------------------------------------------------------
 void ScriptActions::doDisplayCountdownTimer(const AsciiString& timerName, const AsciiString& timerText)
 {
-	TheInGameUI->addNamedTimer(timerName, TheGameText->fetch(timerText), true);
+	TheInGameUI->addNamedTimer(timerName, TheGameText->fetch(timerText), true, TheScriptEngine->getCurrentPlayer()->getPlayerColor());
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -5362,41 +5362,30 @@ void ScriptActions::doMoveTeamTowardsNearest( const AsciiString& teamName, const
 		PartitionFilterThing thingsToAccept( templ, true );
 		PartitionFilter *filters[] = { &thingsToAccept, &acceptWithin, &filterMapStatus, nullptr };
 		bestObj = ThePartitionManager->getClosestObject( &teamPos, REALLY_FAR, FROM_CENTER_2D, filters );
-		if (!bestObj)
-		{
-			return;
-		}
 	}
 	else
 	{
 		//Find the closest object within the object template list.
-		ObjectTypes *objectTypes = TheScriptEngine->getObjectTypes( objectType );
-		if( objectTypes )
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
 		{
-			Real closestDist;
-			Real dist;
-			for( size_t typeIndex = 0; typeIndex < objectTypes->getListSize(); typeIndex++ )
+			std::vector<const ThingTemplate*> templates;
+			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
 			{
-				AsciiString thisTypeName = objectTypes->getNthInList( typeIndex );
-				const ThingTemplate *thisType = TheThingFactory->findTemplate( thisTypeName );
-				if( thisType )
-				{
-					PartitionFilterThing thingToAccept( thisType, true );
-					PartitionFilter *filters[] = { &thingToAccept, &acceptWithin, &filterMapStatus, nullptr };
+				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
+				if (t) templates.push_back(t);
+			}
 
-					Object *obj = ThePartitionManager->getClosestObject( &teamPos, REALLY_FAR, FROM_CENTER_2D, filters, &dist );
-					if( obj )
-					{
-						if( !bestObj || dist < closestDist )
-						{
-							bestObj = obj;
-							closestDist = dist;
-						}
-					}
-				}
+			if (!templates.empty())
+			{
+				PartitionFilterObjectTypes typesToAccept(templates, true);
+				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, nullptr };
+				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
 			}
 		}
 	}
+	if (!bestObj) return;
+
 	for( iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance() )
 	{
 		Object *obj = iter.cur();
@@ -9521,7 +9510,7 @@ void ScriptActions::doPlayerSellAllBuildingsInCaptureProcessPercentage(const Asc
 				Object* pObj = objIter.cur();
 				if (!pObj) continue;
 
-				if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+				if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured() && !pObj->isKindOf(KINDOF_TECH_BUILDING));
 				{
 					Int randomValue = GameLogicRandomValue(0, 100);
           if (randomValue <= percentage) TheBuildAssistant->sellObject(pObj);
@@ -9554,7 +9543,7 @@ void ScriptActions::doPlayerSellAllBuildingsTypeInCaptureProcessPercentage(const
 
 					if (pObj->getTemplate() != templ) continue;
 
-					if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+					if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured() && !pObj->isKindOf(KINDOF_TECH_BUILDING))
 					{
 						Int randomValue = GameLogicRandomValue(0, 100);
 						if (randomValue <= percentage) TheBuildAssistant->sellObject(pObj);
@@ -9581,7 +9570,7 @@ void ScriptActions::doPlayerSellAllBuildingsTypeInCaptureProcessPercentage(const
 
 						if (!objectTypes->isInSet(pObj->getTemplate())) continue;
 
-						if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+						if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured() && !pObj->isKindOf(KINDOF_TECH_BUILDING))
 						{
 							Int randomValue = GameLogicRandomValue(0, 100);
 							if (randomValue <= percentage) TheBuildAssistant->sellObject(pObj);
@@ -9616,7 +9605,7 @@ void ScriptActions::doPlayerSellAllBuildingsAreaInCaptureProcessPercentage(const
 
 				if (!pObj->isInside(pTrig)) continue;
 
-				if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+				if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured() && !pObj->isKindOf(KINDOF_TECH_BUILDING))
 				{
 					Int randomValue = GameLogicRandomValue(0, 100);
 					if (randomValue <= percentage) TheBuildAssistant->sellObject(pObj);
@@ -9654,7 +9643,7 @@ void ScriptActions::doPlayerSellAllBuildingsTypeAreaInCaptureProcessPercentage(c
 
 					if (!pObj->isInside(pTrig)) continue;
 
-					if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+					if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured() && !pObj->isKindOf(KINDOF_TECH_BUILDING))
 					{
 						Int randomValue = GameLogicRandomValue(0, 100);
 						if (randomValue <= percentage) TheBuildAssistant->sellObject(pObj);
@@ -9683,7 +9672,7 @@ void ScriptActions::doPlayerSellAllBuildingsTypeAreaInCaptureProcessPercentage(c
 
 						if (!pObj->isInside(pTrig)) continue;
 
-						if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured())
+						if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured() && !pObj->isKindOf(KINDOF_TECH_BUILDING))
 						{
 							Int randomValue = GameLogicRandomValue(0, 100);
 							if (randomValue <= percentage) TheBuildAssistant->sellObject(pObj);
@@ -9718,7 +9707,7 @@ void ScriptActions::doPlayerSellAllBuildingsType(const AsciiString& playerName, 
 
 					if (pObj->getTemplate() != templ) continue;
 
-					if (pObj->isKindOf(KINDOF_STRUCTURE))
+					if (pObj->isKindOf(KINDOF_STRUCTURE) && !pObj->isKindOf(KINDOF_TECH_BUILDING))
 					{
 						TheBuildAssistant->sellObject(pObj);
 					}
@@ -9744,7 +9733,7 @@ void ScriptActions::doPlayerSellAllBuildingsType(const AsciiString& playerName, 
 
 						if (!objectTypes->isInSet(pObj->getTemplate())) continue;
 
-						if (pObj->isKindOf(KINDOF_STRUCTURE))
+						if (pObj->isKindOf(KINDOF_STRUCTURE) && !pObj->isKindOf(KINDOF_TECH_BUILDING))
 						{
 							TheBuildAssistant->sellObject(pObj);
 						}
@@ -9778,7 +9767,7 @@ void ScriptActions::doPlayerSellAllBuildingsArea(const AsciiString& playerName, 
 
 				if (!pObj->isInside(pTrig)) continue;
 
-				if (pObj->isKindOf(KINDOF_STRUCTURE))
+				if (pObj->isKindOf(KINDOF_STRUCTURE) && !pObj->isKindOf(KINDOF_TECH_BUILDING))
 				{
 					TheBuildAssistant->sellObject(pObj);
 				}
@@ -9815,7 +9804,7 @@ void ScriptActions::doPlayerSellAllBuildingsTypeArea(const AsciiString& playerNa
 
 					if (!pObj->isInside(pTrig)) continue;
 
-					if (pObj->isKindOf(KINDOF_STRUCTURE))
+					if (pObj->isKindOf(KINDOF_STRUCTURE) && !pObj->isKindOf(KINDOF_TECH_BUILDING))
 					{
 						TheBuildAssistant->sellObject(pObj);
 					}
@@ -9843,7 +9832,7 @@ void ScriptActions::doPlayerSellAllBuildingsTypeArea(const AsciiString& playerNa
 
 						if (!pObj->isInside(pTrig)) continue;
 
-						if (pObj->isKindOf(KINDOF_STRUCTURE))
+						if (pObj->isKindOf(KINDOF_STRUCTURE) && !pObj->isKindOf(KINDOF_TECH_BUILDING))
 						{
 							TheBuildAssistant->sellObject(pObj);
 						}
@@ -10346,7 +10335,7 @@ void ScriptActions::doTeamAttackMoveLocation(const AsciiString& teamName, const 
 	const Coord3D* pWay = TheTerrainLogic->getWaypointByName(waypointName)->getLocation();
 	if (!pWay) return;
 
-	theGroup->groupAttackMoveToPosition(pWay, 100, CMD_FROM_SCRIPT);
+	theGroup->groupAttackMoveToPosition(pWay, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -10397,7 +10386,7 @@ void ScriptActions::doTeamAttackMoveArea(const AsciiString& teamName, const Asci
 	if (!bestObj) return;
 
 	const Coord3D* attackPos = bestObj->getPosition();
-	theGroup->groupAttackMoveToPosition(attackPos, 100, CMD_FROM_SCRIPT);
+	theGroup->groupAttackMoveToPosition(attackPos, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -10477,7 +10466,7 @@ void ScriptActions::doTeamAttackMoveType(const AsciiString& teamName, const Asci
 	if (!bestObj) return;
 
 	const Coord3D* attackPos = bestObj->getPosition();
-	theGroup->groupAttackPosition(attackPos, 100, CMD_FROM_SCRIPT);
+	theGroup->groupAttackMoveToPosition(attackPos, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -10562,7 +10551,7 @@ void ScriptActions::doTeamAttackMoveTypeArea(const AsciiString& teamName, const 
 	if (!bestObj) return;
 
 	const Coord3D* attackPos = bestObj->getPosition();
-	theGroup->groupAttackPosition(attackPos, 100, CMD_FROM_SCRIPT);
+	theGroup->groupAttackMoveToPosition(attackPos, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -10640,7 +10629,7 @@ void ScriptActions::doTeamAttackMoveSeenUnit(const AsciiString& teamName)
 	if (!bestObj) return;
 
 	const Coord3D* attackPos = bestObj->getPosition();
-	theGroup->groupAttackMoveToPosition(attackPos, 100, CMD_FROM_SCRIPT);
+	theGroup->groupAttackMoveToPosition(attackPos, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -10722,7 +10711,7 @@ void ScriptActions::doTeamAttackMoveSeenType(const AsciiString& teamName, const 
 	if (!bestObj) return;
 
 	const Coord3D* attackPos = bestObj->getPosition();
-	theGroup->groupAttackMoveToPosition(attackPos, 100, CMD_FROM_SCRIPT);
+	theGroup->groupAttackMoveToPosition(attackPos, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -10774,7 +10763,7 @@ void ScriptActions::doTeamAttackMoveSeenArea(const AsciiString& teamName, const 
 	if (!bestObj) return;
 
 	const Coord3D* attackPos = bestObj->getPosition();
-	theGroup->groupAttackMoveToPosition(attackPos, 100, CMD_FROM_SCRIPT);
+	theGroup->groupAttackMoveToPosition(attackPos, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -10861,9 +10850,52 @@ void ScriptActions::doTeamAttackMoveSeenTypeArea(const AsciiString& teamName, co
 	if (!bestObj) return;
 
 	const Coord3D* attackPos = bestObj->getPosition();
-	theGroup->groupAttackMoveToPosition(attackPos, 100, CMD_FROM_SCRIPT);
+	theGroup->groupAttackMoveToPosition(attackPos, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT);
 }
 
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamAttackMovePath(const AsciiString& teamName, const AsciiString& waypointPath)
+{
+	Team* theTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!theTeam) {
+		return;
+	}
+
+	AIGroupPtr theGroup = TheAI->createGroup();
+	if (!theGroup) {
+		return;
+	}
+#if RETAIL_COMPATIBLE_AIGROUP
+	theTeam->getTeamAsAIGroup(theGroup);
+#else
+	theTeam->getTeamAsAIGroup(theGroup.Peek());
+#endif
+	Int count = 0;
+	Coord3D pos;
+	pos.x = pos.y = pos.z = 0;
+
+	// Get the center point for the team
+	for (DLINK_ITERATOR<Object> iter = theTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		Coord3D objPos = *obj->getPosition();
+		pos.x += objPos.x;
+		pos.y += objPos.y;
+		pos.z += objPos.z;
+		count++;
+	}
+	if (count == 0) return;
+	pos.x /= count;
+	pos.y /= count;
+	pos.z /= count;
+
+	Waypoint* way = TheTerrainLogic->getClosestWaypointOnPath(&pos, waypointPath);
+	if (!way) {
+		return;
+	}
+
+	theGroup->groupAttackMoveToPosition(way->getLocation(), NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT);
+}
 //-------------------------------------------------------------------------------------------------
 //----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 //-------------------------------------------------------------------------------------------------
@@ -12270,6 +12302,9 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			return;
 		case ScriptAction::TEAM_ATTACKMOVE_SEEN_TYPE_AREA:
 			doTeamAttackMoveSeenTypeArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::TEAM_ATTACKMOVE_PATH:
+			doTeamAttackMovePath(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
 			return;
 
 	}

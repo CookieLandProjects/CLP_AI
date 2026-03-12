@@ -417,7 +417,7 @@ public:  // ********************************************************************
 	virtual void hideObjectSuperweaponDisplayByScript(const Object *obj);
 	virtual void showObjectSuperweaponDisplayByScript(const Object *obj);
 
-	void addNamedTimer( const AsciiString& timerName, const UnicodeString& text, Bool isCountdown );
+	void addNamedTimer( const AsciiString& timerName, const UnicodeString& text, Bool isCountdown, Color color );
 	void removeNamedTimer( const AsciiString& timerName );
 	void showNamedTimerDisplay( Bool show );
 

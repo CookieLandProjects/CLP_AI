@@ -122,7 +122,7 @@ public:
 	TSkillSet		m_skillSet6;
 	TSkillSet		m_skillSet7;
 	AsciiString m_baseDefenseStructure1;
-  std::vector<AsciiString> m_baseDefenseStructures; // @-TanSo-: why not be able to let the user of the World Builder specify more than one base defense structure?
+  std::vector<AsciiString> m_baseDefenseStructures; // @-TanSo-: why not be able to let the user in the World Builder specify more than one base defense structure?
 	AISideInfo *m_next;
 };
 EMPTY_DTOR(AISideInfo)

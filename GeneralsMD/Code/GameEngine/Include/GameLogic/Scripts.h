@@ -659,6 +659,7 @@ public:
 			TEAM_ATTACKMOVE_SEEN_TYPE,										///< Set a team to attack move towards units of a type the player sees.
 			TEAM_ATTACKMOVE_SEEN_AREA,										///< Set a team to attack move towards units in an area the player sees.
 			TEAM_ATTACKMOVE_SEEN_TYPE_AREA,								///< Set a team to attack move towards units of a type in an area the player sees.
+			TEAM_ATTACKMOVE_PATH,													///< Set a team to attack move towards the beginning of a waypoint path.
 			//-------------------------------------------------------------------------------------------------
 			//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------
 			//-------------------------------------------------------------------------------------------------
@@ -1181,6 +1182,7 @@ public:
 		TEAM_BELOW_HEALTH,											// True if the entire team drops below <real> & health.
 
 		TEAM_IDLE_FRAMES,												// True if a team has been idling for at least the past <int> frames.
+		TEAM_SEEN,															// True if at least one member of a team has been seen by enemy players.
 
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
