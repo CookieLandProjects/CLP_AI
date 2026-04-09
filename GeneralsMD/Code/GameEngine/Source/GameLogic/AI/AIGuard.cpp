@@ -179,8 +179,30 @@ AIGuardMachine::AIGuardMachine( Object *owner ) :
 	//Kris: Except that guard return is more like an attack move, and will acquire targets while moving there.
 	//This breaks deployAI units because they have to completely unpack before realizing that there is a target in range.
 	//So I'm making AI_GUARD_INNER the first state.
-	defineState( AI_GUARD_INNER,						newInstance(AIGuardInnerState)( this ), AI_GUARD_OUTER, AI_GUARD_OUTER );
-	defineState( AI_GUARD_RETURN,						newInstance(AIGuardReturnState)( this ), AI_GUARD_IDLE, AI_GUARD_INNER );
+#if RETAIL_COMPATIBLE_CRC
+	defineState(AI_GUARD_INNER, newInstance(AIGuardInnerState)(this), AI_GUARD_OUTER, AI_GUARD_OUTER, attackAggressors);
+	defineState(AI_GUARD_RETURN, newInstance(AIGuardReturnState)(this), AI_GUARD_IDLE, AI_GUARD_INNER, attackAggressors);
+#else
+	// TheSuperHackers @bugfix 9/4/2026:
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// This fixes the conflicting movement and fire behavior in Guard mode when the unit is under attack
+	// (see https://github.com/TheSuperHackers/GeneralsGameCode/issues/2097).
+	//
+	// Root cause: In retail, both AI_GUARD_INNER and AI_GUARD_RETURN had the attackAggressors
+	// handler attached.
+	// While the INNER state was issuing attack orders or RETURN state was
+	// issuing movement orders back to the guard position,
+	// the aggressor handler kept firing attack commands on every shot.
+	// This resulted in confliction in orders, causing the unit to do unexpected behavior.
+	//
+	// Fix: Remove the attackAggressors handler from AI_GUARD_INNER and AI_GUARD_RETURN.
+  // The inner guard engagement logic is still handled within the AI_GUARD_INNER state,
+	// and once the unit decides to return (RETURN state), it performs a clean movement without
+	// competing attack orders (unless something enters its Inner guard range).
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	defineState(AI_GUARD_INNER, newInstance(AIGuardInnerState)(this), AI_GUARD_OUTER, AI_GUARD_OUTER);
+	defineState(AI_GUARD_RETURN, newInstance(AIGuardReturnState)(this), AI_GUARD_IDLE, AI_GUARD_INNER);
+#endif
 	defineState( AI_GUARD_IDLE,							newInstance(AIGuardIdleState)( this ), AI_GUARD_INNER, AI_GUARD_RETURN, attackAggressors );
 	defineState( AI_GUARD_OUTER,						newInstance(AIGuardOuterState)( this ), AI_GUARD_GET_CRATE, AI_GUARD_GET_CRATE );
 	defineState( AI_GUARD_GET_CRATE,				newInstance(AIGuardPickUpCrateState)( this ), AI_GUARD_RETURN, AI_GUARD_RETURN );

@@ -184,7 +184,28 @@ AIGuardRetaliateMachine::AIGuardRetaliateMachine( Object *owner ) :
 // srj sez: I made "return" the start state, so that if ordered to guard a position
 // that isn't the unit's current position, it moves to that position first.
 	defineState( AI_GUARD_RETALIATE_ATTACK_AGGRESSOR, newInstance(AIGuardRetaliateAttackAggressorState)( this ), AI_GUARD_RETALIATE_RETURN, AI_GUARD_RETALIATE_RETURN );
-	defineState( AI_GUARD_RETALIATE_RETURN,						newInstance(AIGuardRetaliateReturnState)( this ), AI_GUARD_RETALIATE_IDLE, AI_GUARD_RETALIATE_INNER );
+#if RETAIL_COMPATIBLE_CRC
+	defineState(AI_GUARD_RETALIATE_RETURN, newInstance(AIGuardRetaliateReturnState)(this), AI_GUARD_RETALIATE_IDLE, AI_GUARD_RETALIATE_INNER, attackAggressors);
+#else
+	// TheSuperHackers @bugfix 9/4/2026:
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// This fixes the conflicting movement and fire behavior in Guard mode when the unit is under attack
+	// (see https://github.com/TheSuperHackers/GeneralsGameCode/issues/2097).
+	//
+	// Root cause: In retail, both AI_GUARD_INNER and AI_GUARD_RETURN had the attackAggressors
+	// handler attached.
+	// While the INNER state was issuing attack orders or RETURN state was
+	// issuing movement orders back to the guard position,
+	// the aggressor handler kept firing attack commands on every shot.
+	// This resulted in confliction in orders, causing the unit to do unexpected behavior.
+	//
+	// Fix: Remove the attackAggressors handler from AI_GUARD_INNER and AI_GUARD_RETURN.
+	// The inner guard engagement logic is still handled within the AI_GUARD_INNER state,
+	// and once the unit decides to return (RETURN state), it performs a clean movement without
+	// competing attack orders (unless something enters its Inner guard range).
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	defineState(AI_GUARD_RETALIATE_RETURN, newInstance(AIGuardRetaliateReturnState)(this), AI_GUARD_RETALIATE_IDLE, AI_GUARD_RETALIATE_INNER);
+#endif
 	defineState( AI_GUARD_RETALIATE_IDLE,							newInstance(AIGuardRetaliateIdleState)( this ), AI_GUARD_RETALIATE_INNER, EXIT_MACHINE_WITH_SUCCESS, attackAggressors );
 	defineState( AI_GUARD_RETALIATE_INNER,						newInstance(AIGuardRetaliateInnerState)( this ), AI_GUARD_RETALIATE_OUTER, AI_GUARD_RETALIATE_OUTER );
 	defineState( AI_GUARD_RETALIATE_OUTER,						newInstance(AIGuardRetaliateOuterState)( this ), AI_GUARD_RETALIATE_GET_CRATE, AI_GUARD_RETALIATE_GET_CRATE );
