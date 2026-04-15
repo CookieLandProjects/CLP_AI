@@ -5268,7 +5268,7 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[3] = " .";
 
 	curTemplate = &m_actionTemplates[ScriptAction::SET_KD_RATIO];
-	curTemplate->m_internalName = "SET_KD_RATIOR";
+	curTemplate->m_internalName = "SET_KD_RATIO";
 	curTemplate->m_uiName = "Scripting - KD-Ratio/Set KD Ratio to a value";
 	curTemplate->m_numParameters = 3;
 	curTemplate->m_parameters[0] = Parameter::KD_RATIO;
@@ -5783,15 +5783,17 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[1] = " garrisons ";
 	curTemplate->m_uiStrings[2] = " nearby buildings equally.";
 
-	curTemplate = &m_actionTemplates[ScriptAction::SKIRMISH_FIRE_SPECIAL_POWER_AT_MOST_COST_ECONOMY];
-	curTemplate->m_internalName = "SKIRMISH_FIRE_SPECIAL_POWER_AT_MOST_COST_ECONOMY";
-	curTemplate->m_uiName = "Player/Special power/Special power -- fire at enemy's highest cost area, computed with secondary economy.";
-	curTemplate->m_numParameters = 2;
+	curTemplate = &m_actionTemplates[ScriptAction::SKIRMISH_FIRE_SPECIAL_POWER_AT_MOST_COST_TYPE];
+	curTemplate->m_internalName = "SKIRMISH_FIRE_SPECIAL_POWER_AT_MOST_COST_TYPE";
+	curTemplate->m_uiName = "Player/Special power/Special power -- fire at enemy's highest cost area, computed with a focus on an object type.";
+	curTemplate->m_numParameters = 3;
 	curTemplate->m_parameters[0] = Parameter::SIDE;
 	curTemplate->m_parameters[1] = Parameter::SPECIAL_POWER;
-	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " fire ";
+	curTemplate->m_uiStrings[2] = " at the highest cost area, computed with a focus on ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TEAM_ROTATED];
 	curTemplate->m_internalName = "AI_PLAYER_BUILD_TYPE_NEAREST_TEAM_ROTATED";
@@ -6055,20 +6057,25 @@ void ScriptEngine::init()
 	curTemplate = &m_actionTemplates[ScriptAction::UPDATE_KD_RATIO_KILLS_BUILDCOST];
 	curTemplate->m_internalName = "UPDATE_KD_RATIO_KILLS_BUILDCOST";
 	curTemplate->m_uiName = "Scripting - KD-Ratio/Update KD-Ratio kills by build cost.";
-	curTemplate->m_numParameters = 1;
+	curTemplate->m_numParameters = 2;
 	curTemplate->m_parameters[0] = Parameter::KD_RATIO;
-	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_parameters[1] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = "Update ";
-	curTemplate->m_uiStrings[1] = "'s kills by build cost.";
+	curTemplate->m_uiStrings[1] = "'s kills of ";
+	curTemplate->m_uiStrings[2] = " by build cost.";
 
 	curTemplate = &m_actionTemplates[ScriptAction::UPDATE_KD_RATIO_DEATHS_BUILDCOST];
 	curTemplate->m_internalName = "UPDATE_KD_RATIO_DEATHS_BUILDCOST";
 	curTemplate->m_uiName = "Scripting - KD-Ratio/Update KD-Ratio deaths by build cost.";
-	curTemplate->m_numParameters = 1;
+	curTemplate->m_numParameters = 2;
 	curTemplate->m_parameters[0] = Parameter::KD_RATIO;
-	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_parameters[1] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = "Update ";
-	curTemplate->m_uiStrings[1] = "'s deaths by build cost.";
+	curTemplate->m_uiStrings[1] = "'s deaths of ";
+	curTemplate->m_uiStrings[2] = " by build cost.";
+
 
 	curTemplate = &m_actionTemplates[ScriptAction::COPY_KD_RATIO_ONTO_COUNTERS];
 	curTemplate->m_internalName = "COPY_KD_RATIO_ONTO_COUNTERS";
@@ -6954,6 +6961,156 @@ void ScriptEngine::init()
 	curTemplate->m_numUiStrings = 2;
 	curTemplate->m_uiStrings[0] = " At least one of ";
 	curTemplate->m_uiStrings[1] = "'s members has been spotted by an enemy player.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_CAPTURED];
+	curTemplate->m_internalName = "TEAM_MOVE_CAPTURED";
+	curTemplate->m_uiName = "Team/Move/Capture/ Move -- closest allied building in the process of being captured.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " moves to the closest building in the process of being captured.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_CAPTURED_TYPE];
+	curTemplate->m_internalName = "TEAM_MOVE_CAPTURED_TYPE";
+	curTemplate->m_uiName = "Team/Move/Capture/ Move -- closest allied building of a type in the process of being captured.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " moves to the closest building of type ";
+	curTemplate->m_uiStrings[2] = " in the process of being captured.";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_COMPARISON_TEAM_INSTANCES];
+	curTemplate->m_internalName = "PLAYER_COMPARISON_TEAM_INSTANCES";
+	curTemplate->m_uiName = "Player/Owns/Player owns an amount of a specific team";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::INT;
+	curTemplate->m_parameters[3] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " owns ";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = " instances of team ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_TYPE_UNDER_FOG];
+	curTemplate->m_internalName = "TEAM_MOVE_TYPE_UNDER_FOG";
+	curTemplate->m_uiName = "Team/Move/Fog Of War/ Move -- closest object of a type under the fog of war.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " moves to the closest object of type ";
+	curTemplate->m_uiStrings[2] = " under the fog of war.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_TYPE_AREA_UNDER_FOG];
+	curTemplate->m_internalName = "TEAM_MOVE_TYPE_AREA_UNDER_FOG";
+	curTemplate->m_uiName = "Team/Move/Fog Of War/ Move -- closest object of a type in an area under the fog of war.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " moves to the closest object of type ";
+	curTemplate->m_uiStrings[2] = " in area ";
+	curTemplate->m_uiStrings[3] = " under the fog of war.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_TYPE_NOT_UNDER_FOG];
+	curTemplate->m_internalName = "TEAM_MOVE_TYPE_NOT_UNDER_FOG";
+	curTemplate->m_uiName = "Team/Move/Fog Of War/ Move -- closest object of a type NOT under the fog of war.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " moves to the closest object of type ";
+	curTemplate->m_uiStrings[2] = " NOT under the fog of war.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_TYPE_AREA_NOT_UNDER_FOG];
+	curTemplate->m_internalName = "TEAM_MOVE_TYPE_AREA_NOT_UNDER_FOG";
+	curTemplate->m_uiName = "Team/Move/Fog Of War/ Move -- closest object of a type in an area NOT under the fog of war.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " moves to the closest object of type ";
+	curTemplate->m_uiStrings[2] = " in area ";
+	curTemplate->m_uiStrings[3] = " NOT under the fog of war.";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_CONTAINS_COMPARISON_RATIO_SIGHTED];
+	curTemplate->m_internalName = "TEAM_CONTAINS_COMPARISON_RATIO_SIGHTED";
+	curTemplate->m_uiName = "Team/Contains/Ratio/Team contains comparison ratio times the units compared to enemy units in sight.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " contains ";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = " times the units compared to enemy units in sight (shroud clearing range). ";
+	curTemplate->m_uiStrings[4] = ".\n\nNOTE: if the ratio is 1.00f, you simply ask without a ratio.";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_CONTAINS_COMPARISON_TYPE_RATIO_SIGHTED];
+	curTemplate->m_internalName = "TEAM_CONTAINS_COMPARISON_TYPE_RATIO_SIGHTED";
+	curTemplate->m_uiName = "Team/Contains/Ratio/Team contains comparison ratio times the units of a type compared to enemy units of a type in sight.";
+	curTemplate->m_numParameters = 5;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::REAL;
+	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[4] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 7;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " contains ";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = " times the units of type ";
+	curTemplate->m_uiStrings[4] = " compared to enemy units of type "; 
+	curTemplate->m_uiStrings[5] = " in sight (shroud clearing range). ";
+	curTemplate->m_uiStrings[6] = ".\n\nNOTE: if the ratio is 1.00f, you simply ask without a ratio.";
+
+	curTemplate = &m_conditionTemplates[Condition::SPOT_NEIGHBOURING_RELATION];
+	curTemplate->m_internalName = "SPOT_NEIGHBOURING_RELATION";
+	curTemplate->m_uiName = "Skirmish/Spot/Check whether spot is neighbouring a relation player.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::INT;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = "One of ";
+	curTemplate->m_uiStrings[1] = "'s ";
+	curTemplate->m_uiStrings[2] = " co-players is neighbouring spot Player_";
+	curTemplate->m_uiStrings[3] = "_Start";
+
+	curTemplate = &m_actionTemplates[ScriptAction::UNIT_TELEPORT_TO_LOCATION];
+	curTemplate->m_internalName = "UNIT_TELEPORT_TO_LOCATION";
+	curTemplate->m_uiName = "Unit/Move/Teleport/ Teleport -- location.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::UNIT;
+	curTemplate->m_parameters[1] = Parameter::WAYPOINT;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " teleports to ";
+	curTemplate->m_uiStrings[2] = ".\n\nNOTE: This will not stop the execution of current actions. If desired, combine this with 'Unit xyz stops.'.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_TELEPORT_TO_LOCATION];
+	curTemplate->m_internalName = "TEAM_TELEPORT_TO_LOCATION";
+	curTemplate->m_uiName = "Team/Move/Teleport/ Teleport -- location.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::WAYPOINT;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " teleports to ";
+	curTemplate->m_uiStrings[2] = ".\n\nNOTE: This will not stop the execution of current actions. If desired, combine this with 'Team xyz stops.'.";
+
 
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
@@ -7961,15 +8118,20 @@ const TCounter *ScriptEngine::getCounter(const AsciiString& counterName)
 
 Int ScriptEngine::allocateKDRatio(const AsciiString& name)
 {
+	// Manually put in the Index
+	Int ndx = m_currentPlayer->getPlayerIndex();
+	AsciiString pName;
+	pName.format("%s%d", name, ndx);
+
 	Int i;
 	// Note - KDRatios start at 1.  0 means not assigned.
 	for (i = 1; i < m_numKDRatios; i++) {
-		if (name == m_KDRatios[i].name) {
+		if (pName == m_KDRatios[i].name) {
 			return i;
 		}
 	}
 	if (m_numKDRatios < MAX_KD_RATIOS) {
-		m_KDRatios[m_numKDRatios].name = name;
+		m_KDRatios[m_numKDRatios].name = pName;
 		i = m_numKDRatios;
 		m_numKDRatios++;
 		return(i);
@@ -8372,7 +8534,7 @@ void ScriptEngine::updateKDRatioKills(ScriptAction* pAction)
 		pAction->getParameter(0)->friend_setInt(counterNdx);
 	}
 
-	Player* player = m_currentPlayer;
+	Player* player = getPlayerFromAsciiString(pAction->getParameter(1)->getString());
 	if (!player)
 		return;
 
@@ -8402,7 +8564,7 @@ void ScriptEngine::updateKDRatioDeaths(ScriptAction* pAction)
 		pAction->getParameter(0)->friend_setInt(counterNdx);
 	}
 
-	Player* player = m_currentPlayer;
+	Player* player = getPlayerFromAsciiString(pAction->getParameter(1)->getString());
 	if (!player)
 		return;
 

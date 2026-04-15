@@ -620,7 +620,7 @@ public:
 			CREATE_TEAM_FROM_TEAMLESS_TYPE,								///< Create a team from units with <objectType> that are owned by the default team.
 			CREATE_TEAM_FROM_TEAMLESS_KINDOF,							///< Create a team from units with <kindOf> that are owned by the default team.
 
-			SKIRMISH_FIRE_SPECIAL_POWER_AT_MOST_COST_ECONOMY,///< The player fires their special power at the highest cost area, computed with heavy focus on secondary eco.
+			SKIRMISH_FIRE_SPECIAL_POWER_AT_MOST_COST_TYPE,///< The player fires their special power at the highest cost area, computed with heavy focus on an object type.
 
 			/*TODO*/SWITCH_BUILDLIST_ID,													///< The player switches to BuildList ID <int> for its main base.
 			/*TODO*/SWITCH_BUILDLIST_ID_AT_SPOT,									///< The player switches to BuildList ID <int> at a specified spot.
@@ -660,6 +660,17 @@ public:
 			TEAM_ATTACKMOVE_SEEN_AREA,										///< Set a team to attack move towards units in an area the player sees.
 			TEAM_ATTACKMOVE_SEEN_TYPE_AREA,								///< Set a team to attack move towards units of a type in an area the player sees.
 			TEAM_ATTACKMOVE_PATH,													///< Set a team to attack move towards the beginning of a waypoint path.
+
+			TEAM_MOVE_CAPTURED,														///< Set a team to move to the closest building currently being captured.
+			TEAM_MOVE_CAPTURED_TYPE,											///< Set a team to move to the closest building of a type currently being captured.
+			TEAM_MOVE_TYPE_UNDER_FOG,											///< Set a team to move to the closest object of a type under the fog of war.
+			TEAM_MOVE_TYPE_AREA_UNDER_FOG,								///< Set a team to move to the closest object of a type in an area under the fog of war.
+			TEAM_MOVE_TYPE_NOT_UNDER_FOG,									///< Set a team to move to the closest object of a type NOT under the fog of war.
+			TEAM_MOVE_TYPE_AREA_NOT_UNDER_FOG,						///< Set a team to move to the closest object of a type in an area NOT under the fog of war.
+
+			UNIT_TELEPORT_TO_LOCATION,											///< Teleport a unit to a waypoint.
+			TEAM_TELEPORT_TO_LOCATION,											///< Teleport a team to a waypoint.
+
 			//-------------------------------------------------------------------------------------------------
 			//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------
 			//-------------------------------------------------------------------------------------------------
@@ -1183,6 +1194,13 @@ public:
 
 		TEAM_IDLE_FRAMES,												// True if a team has been idling for at least the past <int> frames.
 		TEAM_SEEN,															// True if at least one member of a team has been seen by enemy players.
+
+		PLAYER_COMPARISON_TEAM_INSTANCES,				// True if a player has <comparison> <int> instances of a team.
+
+		TEAM_CONTAINS_COMPARISON_RATIO_SIGHTED,		// True if a team has <comparison> <Real> times as many units as there are units the team sees.
+		TEAM_CONTAINS_COMPARISON_TYPE_RATIO_SIGHTED,// True if a team has <comparison> <Real> times as many units of a type as there are units of a type the team sees.
+
+		SPOT_NEIGHBOURING_RELATION,							// True if a spot is neighbouring <relation> players.
 
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------

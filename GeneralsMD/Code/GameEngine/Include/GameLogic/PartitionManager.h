@@ -1261,6 +1261,41 @@ protected:
 
 //=====================================
 /**
+ * @ -TanSo: Accept all buildings that are currently being captured
+ */
+class PartitionFilterCaptured : public PartitionFilter
+{
+private:
+	Bool m_match;
+public:
+	PartitionFilterCaptured(Bool match) : m_match(match) {}
+protected:
+	virtual Bool allow(Object* other);
+#if defined(RTS_DEBUG)
+	virtual const char* debugGetName() { return "PartitionFilterCaptured"; }
+#endif
+};
+
+//=====================================
+/**
+ * @ -TanSo: Accept all objects that are currently in the fog of war
+ */
+class PartitionFilterUnderFog : public PartitionFilter
+{
+private:
+	Player* pPlayer;
+	Bool m_match;
+public:
+	PartitionFilterUnderFog(Player* pPlayer, Bool match) : pPlayer(pPlayer), m_match(match) {}
+protected:
+	virtual Bool allow(Object* other);
+#if defined(RTS_DEBUG)
+	virtual const char* debugGetName() { return "PartitionFilterUnderFog"; }
+#endif
+};
+
+//=====================================
+/**
 	PartitionManager is the singleton class that manages the entire partition/collision
 	system. It maintains the set of PartitionCells that correspond to the world system,
 	and updates the PartitionDatas as needed during update phase.

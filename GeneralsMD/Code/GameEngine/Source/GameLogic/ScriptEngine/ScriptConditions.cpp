@@ -2944,6 +2944,11 @@ Bool ScriptConditions::evaluateNeighbouringSpotsRelation(Parameter* pPlayerParm,
 			}
 		}
 	}
+	//@-TanSo-: if the closest distance still is FLT_MAX, then this is no skirmish map.
+	if (minDist == FLT_MAX) { return false; }
+
+	//@-TanSo-: consider neighbouring if within 1.5 times the closest distance.
+	minDist *= 1.5f;
 
 	int count = 0;
 
@@ -2987,9 +2992,76 @@ Bool ScriptConditions::evaluateNeighbouringSpotsRelation(Parameter* pPlayerParm,
 }
 
 //-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateSpotNeighbouringRelation(Parameter* pPlayerParm, Int relationType, Int pStartNdx)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer) return false;
+
+	AsciiString pSpot;
+	pSpot.format("Player_%d_Start", pStartNdx);
+	Waypoint* pWay = TheTerrainLogic->getWaypointByName(pSpot);
+	if (!pWay) return false;
+
+	Coord3D pCoords = *pWay->getLocation();
+	Real minDist = FLT_MAX;
+	//@-TanSo-: iterate through all player start waypoints to find the closest one
+	for (Waypoint* iWay = TheTerrainLogic->getFirstWaypoint(); iWay; iWay = iWay->getNext())
+	{
+		const AsciiString& name = iWay->getName();
+		if (name.startsWith("Player_") && name.endsWith("_Start"))
+		{
+			if (iWay != pWay)
+			{
+				Coord3D cCoords = *iWay->getLocation();
+				Real dx = pCoords.x - cCoords.x;
+				Real dy = pCoords.y - cCoords.y;
+				Real dist = sqrtf(dx * dx + dy * dy);
+				if (dist < minDist)
+				{
+					minDist = dist;
+				}
+			}
+		}
+	}
+
+	//@-TanSo-: if the closest distance still is FLT_MAX, then this is no skirmish map.
+	if (minDist == FLT_MAX) { return false; }
+
+	//@-TanSo-: consider neighbouring if within 1.5 times the closest distance.
+	minDist *= 1.5f;
+
+	for (int i = 2; i < ThePlayerList->getPlayerCount() - 1; i++)
+	{
+		Player* other = ThePlayerList->getNthPlayer(i);
+		if (!other) continue;
+
+		Int startIndex = other->getMpStartIndex();
+		if (startIndex < 0) continue;
+
+		AsciiString name;
+		name.format("Player_%d_Start", startIndex + 1);
+
+		Waypoint* w = TheTerrainLogic->getWaypointByName(name);
+		if (!w || w == pWay) continue;
+
+		Coord3D c = *w->getLocation();
+		Real dx = pCoords.x - c.x;
+		Real dy = pCoords.y - c.y;
+		Real dist = sqrtf(dx * dx + dy * dy);
+		if (dist > minDist)
+			continue;
+
+
+		if (other != pPlayer && other->getRelationship(pPlayer->getDefaultTeam()) == relationType || other == pPlayer && relationType == ALLIES)
+			return true;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
 Bool ScriptConditions::evaluateStartingCash(Parameter* pComparisonParm, Int pAmount)
 {
-	//@-TanSo-: ThePlayerList->getPlayerCount() - 1 = Last (Dummy) Player. Also receives the starting cash value
+	//@-TanSo-: ThePlayerList->getPlayerCount() - 1 = Last (Observer) Player. Also receives the starting cash value
 	Player* player = ThePlayerList->getNthPlayer(ThePlayerList->getPlayerCount() - 1);
   if (!player) { return false; }
 	Int startingCash = player->getMoney()->countMoney();
@@ -5320,7 +5392,7 @@ Bool ScriptConditions::evaluateTeamContainsComparisonType(Parameter* pTeamParm, 
 	{
 	case Parameter::LESS_THAN:			return value < count; break;
 	case Parameter::LESS_EQUAL:			return value <= count; break;
-	case Parameter::EQUAL:					return value = count; break;
+	case Parameter::EQUAL:					return value == count; break;
 	case Parameter::GREATER_EQUAL:	return value >= count; break;
 	case Parameter::GREATER:				return value > count; break;
 	case Parameter::NOT_EQUAL:			return value != count; break;
@@ -5366,7 +5438,7 @@ Bool ScriptConditions::evaluateTeamIdleFrames(Parameter* pTeamParm, Int value)
 	return pTeam->m_idleFrames >= value;
 }
 
-
+//-------------------------------------------------------------------------------------------------
 Bool ScriptConditions::evaluateTeamSeen(Parameter* pTeamParm)
 {
 	Team* pTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
@@ -5383,6 +5455,230 @@ Bool ScriptConditions::evaluateTeamSeen(Parameter* pTeamParm)
 	}
 	return false;
 }
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluatePlayerTeamInstances(Parameter* pPlayerParm, Parameter* pComparisonParm, Int value, Parameter* pTeamParm)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer) return false;
+
+	Team* pTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
+	if (!pTeam) return false;
+
+	Int count = 0;
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			if (team->getName() != pTeam->getName())
+				continue;
+
+			count++;
+		}
+	}
+
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:			return count < 3; break;
+	case Parameter::LESS_EQUAL:			return count <= 3; break;
+	case Parameter::EQUAL:					return count == 3; break;
+	case Parameter::GREATER_EQUAL:	return count >= 3; break;
+	case Parameter::GREATER:				return count > 3; break;
+	case Parameter::NOT_EQUAL:			return count != 3; break;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateTeamHasComparisonRatioSighted(Parameter* pTeamParm, Parameter* pComparisonParm, Real ratio)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
+	if (!pTeam) return false;
+
+	Real count = 0.00f;
+	Real countOther = 0.00f;
+	Real maxVision = 0.00f;
+
+	for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
+		Object* pObj = iter.cur();
+		if (!pObj)
+			continue;
+
+		if ((pObj->isEffectivelyDead() || pObj->isKindOf(KINDOF_INERT)) && !pObj->isKindOf(KINDOF_CRATE))
+			continue;
+
+		Real vision = pObj->getShroudClearingRange();
+		if ( vision > maxVision) maxVision = vision;
+
+		count++;
+	}
+
+	if (!pTeam->getFirstItemIn_TeamMemberList())
+		return false;
+
+	PartitionFilterSameMapStatus filterMapStatus(pTeam->getFirstItemIn_TeamMemberList());
+	PartitionFilterPlayerAffiliation filterAffiliation(pTeam->getControllingPlayer(), ALLOW_ENEMIES, true);
+	PartitionFilter* filters[] = { &filterAffiliation, &filterMapStatus, nullptr };
+	SimpleObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(pTeam->getEstimateTeamPosition(), maxVision, FROM_CENTER_2D, filters);
+	MemoryPoolObjectHolder hold(iter);
+
+	countOther = (Real) iter->getCount();
+
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:			return count < countOther / ratio; break;
+	case Parameter::LESS_EQUAL:			return count <= countOther / ratio; break;
+	case Parameter::EQUAL:					return count == countOther * ratio; break;
+	case Parameter::GREATER_EQUAL:	return count >= countOther * ratio; break;
+	case Parameter::GREATER:				return count > countOther * ratio; break;
+	case Parameter::NOT_EQUAL:			return count != countOther * ratio; break;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateTeamHasComparisonRatioTypeSighted(Parameter* pTeamParm, Parameter* pComparisonParm, Real ratio, Parameter* objectType, Parameter* otherObjectType)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
+	if (!pTeam) return false;
+
+	Real count = 0.00f;
+	Real countOther = 0.00f;
+	Real maxVision = 0.00f;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType->getString());
+
+	if (templ)
+	{
+		for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
+			Object* pObj = iter.cur();
+			if (!pObj)
+				continue;
+
+			if ((pObj->isEffectivelyDead() || pObj->isKindOf(KINDOF_INERT)) && !pObj->isKindOf(KINDOF_CRATE))
+				continue;
+
+			Real vision = pObj->getShroudClearingRange();
+			if (vision > maxVision) maxVision = vision;
+
+			if (pObj->getTemplate() != templ)
+				continue;
+
+			count++;
+		}
+
+		if (!pTeam->getFirstItemIn_TeamMemberList())
+			return false;
+
+		PartitionFilterSameMapStatus filterMapStatus(pTeam->getFirstItemIn_TeamMemberList());
+		PartitionFilterPlayerAffiliation filterAffiliation(pTeam->getControllingPlayer(), ALLOW_ENEMIES, true);
+
+		const ThingTemplate* otherTempl = TheThingFactory->findTemplate(otherObjectType->getString());
+		if (otherTempl)
+		{
+			PartitionFilterThing otherThingsToAccept(otherTempl, true);
+			PartitionFilter* filters[] = { &otherThingsToAccept, &filterAffiliation, &filterMapStatus, nullptr };
+			SimpleObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(pTeam->getEstimateTeamPosition(), maxVision, FROM_CENTER_2D, filters);
+			MemoryPoolObjectHolder hold(iter);
+			countOther = (Real) iter->getCount();
+		}
+		else
+		{
+			ObjectTypes* otherObjectTypes = TheScriptEngine->getObjectTypes(otherObjectType->getString());
+			if (otherObjectTypes)
+			{
+				std::vector<const ThingTemplate*> otherTemplates;
+				for (size_t i = 0; i < otherObjectTypes->getListSize(); ++i)
+				{
+					const ThingTemplate* t = TheThingFactory->findTemplate(otherObjectTypes->getNthInList(i));
+					if (t) otherTemplates.push_back(t);
+				}
+
+				PartitionFilterObjectTypes otherTypesToAccept(otherTemplates, true);
+				PartitionFilter* filters[] = { &otherTypesToAccept, &filterAffiliation, &filterMapStatus, nullptr };
+				SimpleObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(pTeam->getEstimateTeamPosition(), maxVision, FROM_CENTER_2D, filters);
+				MemoryPoolObjectHolder hold(iter);
+				countOther = (Real) iter->getCount();
+			}
+		}
+	}
+	else
+	{
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType->getString());
+		if (objectTypes)
+		{
+			for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
+				Object* pObj = iter.cur();
+				if (!pObj)
+					continue;
+
+				if ((pObj->isEffectivelyDead() || pObj->isKindOf(KINDOF_INERT)) && !pObj->isKindOf(KINDOF_CRATE))
+					continue;
+
+				Real vision = pObj->getShroudClearingRange();
+				if (vision > maxVision) maxVision = vision;
+
+				if (!objectTypes->isInSet(pObj->getTemplate()))
+					continue;
+
+				count++;
+			}
+
+			if (!pTeam->getFirstItemIn_TeamMemberList())
+				return false;
+
+			PartitionFilterSameMapStatus filterMapStatus(pTeam->getFirstItemIn_TeamMemberList());
+			PartitionFilterPlayerAffiliation filterAffiliation(pTeam->getControllingPlayer(), ALLOW_ENEMIES, true);
+
+			const ThingTemplate* otherTempl = TheThingFactory->findTemplate(otherObjectType->getString());
+			if (otherTempl)
+			{
+				PartitionFilterThing otherThingsToAccept(otherTempl, true);
+				PartitionFilter* filters[] = { &otherThingsToAccept, &filterAffiliation, &filterMapStatus, nullptr };
+				SimpleObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(pTeam->getEstimateTeamPosition(), maxVision, FROM_CENTER_2D, filters);
+				MemoryPoolObjectHolder hold(iter);
+				countOther = (Real) iter->getCount();
+			}
+			else
+			{
+				ObjectTypes* otherObjectTypes = TheScriptEngine->getObjectTypes(otherObjectType->getString());
+				if (otherObjectTypes)
+				{
+					std::vector<const ThingTemplate*> otherTemplates;
+					for (size_t i = 0; i < otherObjectTypes->getListSize(); ++i)
+					{
+						const ThingTemplate* t = TheThingFactory->findTemplate(otherObjectTypes->getNthInList(i));
+						if (t) otherTemplates.push_back(t);
+					}
+
+					PartitionFilterObjectTypes otherTypesToAccept(otherTemplates, true);
+					PartitionFilter* filters[] = { &otherTypesToAccept, &filterAffiliation, &filterMapStatus, nullptr };
+					SimpleObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(pTeam->getEstimateTeamPosition(), maxVision, FROM_CENTER_2D, filters);
+					MemoryPoolObjectHolder hold(iter);
+					countOther = (Real) iter->getCount();
+				}
+			}
+		}
+	}
+
+	// @-TanSo-: Well that looks scarier than it really is; we criss cross applesauce the possibility of ThingTemplates and ObjectTypes being in either parameter.
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:			return count < countOther / ratio; break;
+	case Parameter::LESS_EQUAL:			return count <= countOther / ratio; break;
+	case Parameter::EQUAL:					return count == countOther * ratio; break;
+	case Parameter::GREATER_EQUAL:	return count >= countOther * ratio; break;
+	case Parameter::GREATER:				return count > countOther * ratio; break;
+	case Parameter::NOT_EQUAL:			return count != countOther * ratio; break;
+	}
+
+	return false;
+}
+
+
 //-------------------------------------------------------------------------------------------------
 //---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 //-------------------------------------------------------------------------------------------------
@@ -5752,5 +6048,14 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 			return evaluateTeamIdleFrames(pCondition->getParameter(0), pCondition->getParameter(1)->getInt());
 		case Condition::TEAM_SEEN:
 			return evaluateTeamSeen(pCondition->getParameter(0));
+		case Condition::PLAYER_COMPARISON_TEAM_INSTANCES:
+			return evaluatePlayerTeamInstances(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getInt(), pCondition->getParameter(3));
+		case Condition::TEAM_CONTAINS_COMPARISON_RATIO_SIGHTED:
+			return evaluateTeamHasComparisonRatioSighted(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getReal());
+		case Condition::TEAM_CONTAINS_COMPARISON_TYPE_RATIO_SIGHTED:
+			return evaluateTeamHasComparisonRatioTypeSighted(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getReal(), pCondition->getParameter(3), pCondition->getParameter(4));
+		case Condition::SPOT_NEIGHBOURING_RELATION:
+			return evaluateSpotNeighbouringRelation(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2)->getInt());
+
 	}
 }

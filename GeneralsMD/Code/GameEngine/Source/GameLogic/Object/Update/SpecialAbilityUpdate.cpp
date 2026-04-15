@@ -1443,6 +1443,7 @@ void SpecialAbilityUpdate::triggerAbilityEffect()
       if (target->getTeam() == object->getTeam())
       {
         // it's been captured by a colleague! we should stop.
+        target->setIsBeingCaptured(false);
         return;
       }
 
@@ -1450,6 +1451,7 @@ void SpecialAbilityUpdate::triggerAbilityEffect()
       ContainModuleInterface * contain =  target->getContain();
       if ( contain && contain->isGarrisonable() )
       {
+        target->setIsBeingCaptured(false);
         contain->removeAllContained( TRUE );
         break; // we do not want to set a neutral building to our team if we are not in it, that would be confusing!
       }
@@ -1460,6 +1462,7 @@ void SpecialAbilityUpdate::triggerAbilityEffect()
         TheEva->setShouldPlay( EVA_BuildingStolen );
       }
 
+      target->setIsBeingCaptured(false);
       target->defect( object->getControllingPlayer()->getDefaultTeam(), 1); // one frame of flash!
 
       SpecialPowerModuleInterface *spmInterface = getMySPM();

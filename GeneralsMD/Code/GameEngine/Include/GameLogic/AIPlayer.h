@@ -159,7 +159,7 @@ public:
 //---------------------------------- @CLP_AI AIPLAYER ADDITIONS -----------------------------------
 //-------------------------------------------------------------------------------------------------
 
-	virtual Bool computeSuperweaponTargetEconomy(const SpecialPowerTemplate* power, Coord3D* pos, Int playerNdx, Real weaponRadius);
+	virtual Bool computeSuperweaponTargetType(const SpecialPowerTemplate* power, Coord3D* pos, Int playerNdx, Real weaponRadius, const AsciiString& objectType);
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------
@@ -266,7 +266,7 @@ protected:
 	//---------------------------------- @CLP_AI AIPLAYER ADDITIONS -----------------------------------
 	//-------------------------------------------------------------------------------------------------
 
-	static Int getPlayerSuperweaponValueEconomy(Coord3D* center, Int playerNdx, Real radius, Bool includeMilitaryUnits = TRUE);
+	static Int getPlayerSuperweaponValueType(Coord3D* center, Int playerNdx, Real radius, const AsciiString& objectType, Bool includeMilitaryUnits = TRUE);
 
 	//-------------------------------------------------------------------------------------------------
 	//-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------

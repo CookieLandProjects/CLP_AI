@@ -6127,7 +6127,20 @@ void ScriptActions::doNamedEmoticon(const AsciiString& unitName, const AsciiStri
 //-------------------------------------------------------------------------------------------------
 void ScriptActions::doObjectTypeListMaintenance(const AsciiString& objectList, const AsciiString& objectType, Bool addObject)
 {
-	TheScriptEngine->doObjectTypeListMaintenance( objectList, objectType, addObject );
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+	if (templ)
+	{
+		TheScriptEngine->doObjectTypeListMaintenance(objectList, objectType, addObject);
+	}
+	else {
+		ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+		if (!types) return;
+
+		for (size_t i = 0; i < types->getListSize(); ++i)
+		{
+			TheScriptEngine->doObjectTypeListMaintenance(objectList, types->getNthInList(i), addObject);
+		}
+	}
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -8510,7 +8523,7 @@ void ScriptActions::doTeamGarrisonEqually(const AsciiString& teamName, Int amoun
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doSkirmishFireSpecialPowerAtMostCostEconomy(const AsciiString& player, const AsciiString& specialPower)
+void ScriptActions::doSkirmishFireSpecialPowerAtMostCostType(const AsciiString& player, const AsciiString& specialPower, const AsciiString& objectType)
 {
 	Int enemyNdx;
 	Player* enemyPlayer = TheScriptEngine->getSkirmishEnemyPlayer();
@@ -8556,7 +8569,7 @@ void ScriptActions::doSkirmishFireSpecialPowerAtMostCostEconomy(const AsciiStrin
 					Coord3D location;
 					Bool locationFound = FALSE;
 
-					locationFound = pPlayer->computeSuperweaponTargetEconomy(power, &location, enemyNdx, radius);
+					locationFound = pPlayer->computeSuperweaponTargetType(power, &location, enemyNdx, radius, objectType);
 
 					if (locationFound && power->getSpecialPowerType() == SPECIAL_SNEAK_ATTACK)
 					{
@@ -8569,7 +8582,7 @@ void ScriptActions::doSkirmishFireSpecialPowerAtMostCostEconomy(const AsciiStrin
 						}
 					}
 
-					DEBUG_ASSERTCRASH(locationFound, ("ScriptActions::doSkirmishFireSpecialPowerAtMostCost() could not find a valid (costly) location."));
+					DEBUG_ASSERTCRASH(locationFound, ("ScriptActions::doSkirmishFireSpecialPowerAtMostCostType() could not find a valid (costly) location."));
 
 					if (locationFound && location.lengthSqr() > 0.0f)
 					{
@@ -10896,6 +10909,472 @@ void ScriptActions::doTeamAttackMovePath(const AsciiString& teamName, const Asci
 
 	theGroup->groupAttackMoveToPosition(way->getLocation(), NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT);
 }
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMoveCaptured(const AsciiString & teamName)
+{
+	Team* team = TheScriptEngine->getTeamNamed(teamName);
+	if (!team) return;
+
+	//Get the first object (to use in the partition filter checks).
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj)
+	{
+		return;
+	}
+
+	AIGroupPtr theGroup = TheAI->createGroup();
+	if (!theGroup) {
+		return;
+	}
+#if RETAIL_COMPATIBLE_AIGROUP
+	team->getTeamAsAIGroup(theGroup);
+#else
+	team->getTeamAsAIGroup(theGroup.Peek());
+#endif
+
+	Coord3D teamPos = *team->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), ALLOW_ALLIES, true);
+	PartitionFilterCaptured filterCaptured(true);
+	Object* bestObj = nullptr;
+
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, &filterCaptured, nullptr };
+	bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	if (!bestObj)
+	{
+		return;
+	}
+
+	const Coord3D* pos = bestObj->getPosition();
+	theGroup->groupMoveToPosition(pos, false, CMD_FROM_SCRIPT);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMoveCapturedType(const AsciiString& teamName, const AsciiString objectType)
+{
+	Team* team = TheScriptEngine->getTeamNamed(teamName);
+	if (!team) return;
+
+	//Get the first object (to use in the partition filter checks).
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj)
+	{
+		return;
+	}
+
+	AIGroupPtr theGroup = TheAI->createGroup();
+	if (!theGroup) {
+		return;
+	}
+#if RETAIL_COMPATIBLE_AIGROUP
+	team->getTeamAsAIGroup(theGroup);
+#else
+	team->getTeamAsAIGroup(theGroup.Peek());
+#endif
+
+	Coord3D teamPos = *team->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), ALLOW_ALLIES, true);
+	PartitionFilterCaptured filterCaptured(true);
+	Object* bestObj = nullptr;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		//Find the closest specified template.
+		PartitionFilterThing thingsToAccept(templ, true);
+		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterAffiliation, &filterCaptured, nullptr };
+		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+		if (!bestObj)
+		{
+			return;
+		}
+	}
+	else
+	{
+		//Find the closest object within the object template list.
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			std::vector<const ThingTemplate*> templates;
+			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
+			{
+				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
+				if (t) templates.push_back(t);
+			}
+
+			if (!templates.empty())
+			{
+				PartitionFilterObjectTypes typesToAccept(templates, true);
+				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterAffiliation, &filterCaptured, nullptr };
+				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+			}
+		}
+	}
+	if (!bestObj) return;
+
+	const Coord3D* pos = bestObj->getPosition();
+	theGroup->groupMoveToPosition(pos, false, CMD_FROM_SCRIPT);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMoveNearestUnderFog(const AsciiString& teamName, const AsciiString& objectType)
+{
+	Team* team = TheScriptEngine->getTeamNamed(teamName);
+	if (!team) return;
+
+	//Get the first object (to use in the partition filter checks).
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj) return;
+
+	Coord3D teamPos = *team->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	Object* bestObj = nullptr;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		//Find the closest specified template.
+		PartitionFilterThing thingsToAccept(templ, true);
+		PartitionFilterUnderFog filterFog(team->getControllingPlayer(), true);
+		PartitionFilter* filters[] = { &filterFog, &thingsToAccept, &filterMapStatus, nullptr };
+		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+
+		if (!bestObj)return;
+	}
+	else
+	{
+		//Find the closest object within the object template list.
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			std::vector<const ThingTemplate*> templates;
+			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
+			{
+				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
+				if (t) templates.push_back(t);
+			}
+
+			if (!templates.empty())
+			{
+				PartitionFilterObjectTypes typesToAccept(templates, true);
+				PartitionFilterUnderFog filterFog(team->getControllingPlayer(), true);
+				PartitionFilter* filters[] = { &filterFog, &typesToAccept, &filterMapStatus, nullptr };
+				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+			}
+		}
+	}
+	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) return;
+
+		AIUpdateInterface* ai = obj->getAI();
+		if (!ai) return;
+
+		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+		ai->aiMoveToObject(bestObj, CMD_FROM_SCRIPT);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMoveNearestUnderFogInArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea)
+{
+	Team* team = TheScriptEngine->getTeamNamed(teamName);
+	if (!team) return;
+
+	//Get the first object (to use in the partition filter checks).
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj) return;
+
+	PolygonTrigger* pArea = TheScriptEngine->getQualifiedTriggerAreaByName(pTriggerArea);
+	if (!pArea) return;
+
+	Coord3D teamPos = *team->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	PartitionFilterPolygonTrigger filterArea(pArea);
+	Object* bestObj = nullptr;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		//Find the closest specified template.
+		PartitionFilterThing thingsToAccept(templ, true);
+		PartitionFilterUnderFog filterFog(team->getControllingPlayer(), true);
+		PartitionFilter* filters[] = { &filterArea, &filterFog, &thingsToAccept, &filterMapStatus, nullptr };
+		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+
+		if (!bestObj)return;
+	}
+	else
+	{
+		//Find the closest object within the object template list.
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			std::vector<const ThingTemplate*> templates;
+			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
+			{
+				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
+				if (t) templates.push_back(t);
+			}
+
+			if (!templates.empty())
+			{
+				PartitionFilterObjectTypes typesToAccept(templates, true);
+				PartitionFilterUnderFog filterFog(team->getControllingPlayer(), true);
+				PartitionFilter* filters[] = { &filterArea, &filterFog, &typesToAccept, &filterMapStatus, nullptr };
+				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+			}
+		}
+	}
+	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) return;
+
+		AIUpdateInterface* ai = obj->getAI();
+		if (!ai) return;
+
+		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+		ai->aiMoveToObject(bestObj, CMD_FROM_SCRIPT);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMoveNearestNotUnderFog(const AsciiString& teamName, const AsciiString& objectType)
+{
+	Team* team = TheScriptEngine->getTeamNamed(teamName);
+	if (!team) return;
+
+	//Get the first object (to use in the partition filter checks).
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj) return;
+
+	Coord3D teamPos = *team->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	Object* bestObj = nullptr;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		//Find the closest specified template.
+		PartitionFilterThing thingsToAccept(templ, true);
+		PartitionFilterUnderFog filterFog(team->getControllingPlayer(), false);
+		PartitionFilter* filters[] = { &filterFog, &thingsToAccept, &filterMapStatus, nullptr };
+		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+
+		if (!bestObj)return;
+	}
+	else
+	{
+		//Find the closest object within the object template list.
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			std::vector<const ThingTemplate*> templates;
+			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
+			{
+				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
+				if (t) templates.push_back(t);
+			}
+
+			if (!templates.empty())
+			{
+				PartitionFilterObjectTypes typesToAccept(templates, true);
+				PartitionFilterUnderFog filterFog(team->getControllingPlayer(), false);
+				PartitionFilter* filters[] = { &filterFog, &typesToAccept, &filterMapStatus, nullptr };
+				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+			}
+		}
+	}
+	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) return;
+
+		AIUpdateInterface* ai = obj->getAI();
+		if (!ai) return;
+
+		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+		ai->aiMoveToObject(bestObj, CMD_FROM_SCRIPT);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamMoveNearestNotUnderFogInArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea)
+{
+	Team* team = TheScriptEngine->getTeamNamed(teamName);
+	if (!team) return;
+
+	//Get the first object (to use in the partition filter checks).
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj) return;
+
+	PolygonTrigger* pArea = TheScriptEngine->getQualifiedTriggerAreaByName(pTriggerArea);
+	if (!pArea) return;
+
+	Coord3D teamPos = *team->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	PartitionFilterPolygonTrigger filterArea(pArea);
+	Object* bestObj = nullptr;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		//Find the closest specified template.
+		PartitionFilterThing thingsToAccept(templ, true);
+		PartitionFilterUnderFog filterFog(team->getControllingPlayer(), false);
+		PartitionFilter* filters[] = { &filterArea, &filterFog, &thingsToAccept, &filterMapStatus, nullptr };
+		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+
+		if (!bestObj)return;
+	}
+	else
+	{
+		//Find the closest object within the object template list.
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			std::vector<const ThingTemplate*> templates;
+			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
+			{
+				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
+				if (t) templates.push_back(t);
+			}
+
+			if (!templates.empty())
+			{
+				PartitionFilterObjectTypes typesToAccept(templates, true);
+				PartitionFilterUnderFog filterFog(team->getControllingPlayer(), false);
+				PartitionFilter* filters[] = { &filterArea, &filterFog, &typesToAccept, &filterMapStatus, nullptr };
+				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+			}
+		}
+	}
+	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) return;
+
+		AIUpdateInterface* ai = obj->getAI();
+		if (!ai) return;
+
+		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+		ai->aiMoveToObject(bestObj, CMD_FROM_SCRIPT);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doUnitTeleportLocation(const AsciiString& unitName, const AsciiString& waypointName)
+{
+	Object* pUnit = TheScriptEngine->getUnitNamed(unitName);
+	if (!pUnit) return;
+
+	Waypoint* pWay = TheTerrainLogic->getWaypointByName(waypointName);
+	if (!pWay) return;
+
+	pUnit->setPosition(pWay->getLocation());
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamTeleportLocation(const AsciiString& teamName, const AsciiString& waypointName)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam) return;
+
+	Waypoint* pWay = TheTerrainLogic->getWaypointByName(waypointName);
+	if (!pWay) return;
+
+	for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) {
+			continue;
+		}
+		obj->setPosition(pWay->getLocation());
+	}
+}
+
 //-------------------------------------------------------------------------------------------------
 //----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 //-------------------------------------------------------------------------------------------------
@@ -12159,8 +12638,8 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 		case ScriptAction::TEAM_GARRISON_NUMBER_BUILDINGS:
 			doTeamGarrisonEqually(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
 			return;
-		case ScriptAction::SKIRMISH_FIRE_SPECIAL_POWER_AT_MOST_COST_ECONOMY:
-			doSkirmishFireSpecialPowerAtMostCostEconomy(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+		case ScriptAction::SKIRMISH_FIRE_SPECIAL_POWER_AT_MOST_COST_TYPE:
+			doSkirmishFireSpecialPowerAtMostCostType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
 			return;
 		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TEAM_ROTATED:
 			doBuildObjectNearestTeamAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getReal());
@@ -12305,6 +12784,24 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			return;
 		case ScriptAction::TEAM_ATTACKMOVE_PATH:
 			doTeamAttackMovePath(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::TEAM_MOVE_CAPTURED:
+			doTeamMoveCaptured(pAction->getParameter(0)->getString());
+			return;
+		case ScriptAction::TEAM_MOVE_CAPTURED_TYPE:
+			doTeamMoveCapturedType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::TEAM_MOVE_TYPE_UNDER_FOG:
+			doTeamMoveNearestUnderFog(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::TEAM_MOVE_TYPE_AREA_UNDER_FOG:
+			doTeamMoveNearestUnderFogInArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::UNIT_TELEPORT_TO_LOCATION:
+			doUnitTeleportLocation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::TEAM_TELEPORT_TO_LOCATION:
+			doTeamTeleportLocation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
 			return;
 
 	}

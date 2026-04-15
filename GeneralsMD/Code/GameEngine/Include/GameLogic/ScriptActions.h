@@ -439,7 +439,7 @@ protected:
 	void doTeamGarrisonEqually(const AsciiString& teamName, Int amount);
 	void doTeamLoadAllTransportsEvenly(const AsciiString& teamName);
 
-	void doSkirmishFireSpecialPowerAtMostCostEconomy(const AsciiString& player, const AsciiString& specialPower);
+	void doSkirmishFireSpecialPowerAtMostCostType(const AsciiString& player, const AsciiString& specialPower, const AsciiString& objectType);
 
   void doPlayerCancelAllConstructions(const AsciiString& playerName);
 	void doPlayerCancelAllConstructionsType(const AsciiString& playerName, const AsciiString& objectType);
@@ -477,8 +477,17 @@ protected:
 
 	void doTeamEvacuateDestroyedPercent(const AsciiString& teamName, Real value);
 
+	void doTeamMoveCaptured(const AsciiString& teamName);
+	void doTeamMoveCapturedType(const AsciiString& teamName, const AsciiString objectType);
+	void doTeamMoveNearestUnderFog(const AsciiString& teamName, const AsciiString& objectType);
+	void doTeamMoveNearestUnderFogInArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea);
+	void doTeamMoveNearestNotUnderFog(const AsciiString& teamName, const AsciiString& objectType);
+	void doTeamMoveNearestNotUnderFogInArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea);
 
-	// @-TanSo-: 74 additions
+	void doUnitTeleportLocation(const AsciiString& unitName, const AsciiString& waypointName);
+	void doTeamTeleportLocation(const AsciiString& teamName, const AsciiString& waypointName);
+
+	// @-TanSo-: 82 additions
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 	//-------------------------------------------------------------------------------------------------

@@ -4578,10 +4578,10 @@ void Player::xfer( Xfer *xfer )
 //----------------------------------- @CLP_AI PLAYER ADDITIONS ------------------------------------
 //-------------------------------------------------------------------------------------------------
 
-Bool Player::computeSuperweaponTargetEconomy(const SpecialPowerTemplate* power, Coord3D* retPos, Int playerNdx, Real weaponRadius)
+Bool Player::computeSuperweaponTargetType(const SpecialPowerTemplate* power, Coord3D* retPos, Int playerNdx, Real weaponRadius, const AsciiString& objectType)
 {
 	if (m_ai) {
-		return m_ai->computeSuperweaponTargetEconomy(power, retPos, playerNdx, weaponRadius);
+		return m_ai->computeSuperweaponTargetType(power, retPos, playerNdx, weaponRadius, objectType);
 	}
 
 	return FALSE;

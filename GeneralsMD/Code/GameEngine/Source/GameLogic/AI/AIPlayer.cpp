@@ -61,6 +61,7 @@
 #include "GameLogic/Module/SupplyTruckAIUpdate.h"
 #include "GameLogic/Module/SupplyWarehouseDockUpdate.h"
 #include "GameLogic/PartitionManager.h"
+#include "GameLogic/ObjectTypes.h" //@-TanSo-: we need this thanks.
 
 
 #define SUPPLY_CENTER_CLOSE_DIST (20*PATHFIND_CELL_SIZE_F)
@@ -3966,7 +3967,7 @@ void AIPlayer::getPlayerStructureBounds( Region2D *bounds, Int playerNdx, Bool c
 //-------------------------------------------------------------------------------------------------
 //---------------------------------- @CLP_AI AIPLAYER ADDITIONS -----------------------------------
 //-------------------------------------------------------------------------------------------------
-Bool AIPlayer::computeSuperweaponTargetEconomy(const SpecialPowerTemplate* power, Coord3D* retPos, Int playerNdx, Real weaponRadius)
+Bool AIPlayer::computeSuperweaponTargetType(const SpecialPowerTemplate* power, Coord3D* retPos, Int playerNdx, Real weaponRadius, const AsciiString& objectType)
 {
 
 	Bool success = FALSE;
@@ -4059,7 +4060,7 @@ Bool AIPlayer::computeSuperweaponTargetEconomy(const SpecialPowerTemplate* power
 			pos.x = bounds.lo.x + (bounds.width() * xIndex) / xCount;
 			pos.y = bounds.lo.y + (bounds.height() * yIndex) / yCount;
 			pos.z = 0;
-			Int curCash = getPlayerSuperweaponValueEconomy(&pos, playerNdx, 2 * weaponRadius, targetMilitaryUnits);
+			Int curCash = getPlayerSuperweaponValueType(&pos, playerNdx, 2 * weaponRadius, objectType, targetMilitaryUnits);
 			if (curCash > cash)
 			{
 				cash = curCash;
@@ -4085,7 +4086,7 @@ Bool AIPlayer::computeSuperweaponTargetEconomy(const SpecialPowerTemplate* power
 			pos.x = bestPos.x + (x - 5) * (weaponRadius / 10);
 			pos.y = bestPos.y + (x - 5) * (weaponRadius / 10);
 			pos.z = 0;
-			Int curCash = getPlayerSuperweaponValueEconomy(&pos, playerNdx, weaponRadius, targetMilitaryUnits);
+			Int curCash = getPlayerSuperweaponValueType(&pos, playerNdx, weaponRadius, objectType, targetMilitaryUnits);
 			if (curCash > cash)
 			{
 				cash = curCash;
@@ -4116,7 +4117,7 @@ Bool AIPlayer::computeSuperweaponTargetEconomy(const SpecialPowerTemplate* power
 }
 
 //-------------------------------------------------------------------------------------------------
-Int AIPlayer::getPlayerSuperweaponValueEconomy(Coord3D* center, Int playerNdx, Real radius, Bool includeMilitaryUnits)
+Int AIPlayer::getPlayerSuperweaponValueType(Coord3D* center, Int playerNdx, Real radius, const AsciiString& objectType, Bool includeMilitaryUnits)
 {
 	if (radius < 4 * PATHFIND_CELL_SIZE_F)
 	{
@@ -4187,10 +4188,21 @@ Int AIPlayer::getPlayerSuperweaponValueEconomy(Coord3D* center, Int playerNdx, R
 						else
 							value = value / 10; // Superweapons cannot be killed by any superweapon, so we don't want to target them as highly. jba.
 					}
-					if (pObj->isKindOf(KINDOF_FS_BLACK_MARKET) || pObj->isKindOf(KINDOF_FS_SUPPLY_DROPZONE) || pObj->isKindOf(KINDOF_MONEY_HACKER))
+					// @-TanSo-: focus on the specified templates!
+					const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+					if (templ)
 					{
-							value = value * 10.0f; // Definitely prefer secondary eco
+						if (pObj->getTemplate() == templ) value = value * 5.0f;
 					}
+					else
+					{
+						ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+						if (types)
+						{
+							if (types->isInSet(pObj->getTemplate())) value = value * 5.0f;
+						}
+					}
+
 					if (applyNegValue)
 					{
 						cash -= factor * value * 5.0f; //Extremely undesired

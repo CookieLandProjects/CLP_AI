@@ -177,7 +177,7 @@ AsciiString DebugDescribeObject(const Object *obj)
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
-Object::Object( const ThingTemplate *tt, const ObjectStatusMaskType &objectStatusMask, Team *team ) :
+Object::Object(const ThingTemplate* tt, const ObjectStatusMaskType& objectStatusMask, Team* team) :
 	Thing(tt),
 	m_indicatorColor(0),
 	m_ai(nullptr),
@@ -189,7 +189,7 @@ Object::Object( const ThingTemplate *tt, const ObjectStatusMaskType &objectStatu
 	m_behaviors(nullptr),
 	m_body(nullptr),
 	m_contain(nullptr),
-  m_stealth(nullptr),
+	m_stealth(nullptr),
 	m_partitionData(nullptr),
 	m_radarData(nullptr),
 	m_drawable(nullptr),
@@ -217,8 +217,9 @@ Object::Object( const ThingTemplate *tt, const ObjectStatusMaskType &objectStatu
 	m_singleUseCommandUsed(FALSE),
 	m_scriptStatus(0),
 	m_enteredOrExitedFrame(0),
-	m_visionSpiedMask (PLAYERMASK_NONE),
+	m_visionSpiedMask(PLAYERMASK_NONE),
 	m_numTriggerAreasActive(0),
+	m_isBeingCaptured(false),
 	m_seenByEnemy(false),
 	m_lastSeenFrame(0)
 {

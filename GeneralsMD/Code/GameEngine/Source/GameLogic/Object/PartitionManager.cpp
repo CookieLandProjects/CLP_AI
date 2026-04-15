@@ -5951,3 +5951,15 @@ Bool PartitionFilterObjectTypes::allow(Object* other)
 	}
 	return !m_match;
 }
+
+// ------------------------------------------------------------------------------------------------
+Bool PartitionFilterCaptured::allow(Object* other)
+{
+	return other->isBeingCaptured() ? m_match : !m_match;
+}
+
+// ------------------------------------------------------------------------------------------------
+Bool PartitionFilterUnderFog::allow(Object* other)
+{
+	return other->getShroudedStatus(pPlayer->getPlayerIndex()) != OBJECTSHROUD_CLEAR ? m_match : !m_match;
+}

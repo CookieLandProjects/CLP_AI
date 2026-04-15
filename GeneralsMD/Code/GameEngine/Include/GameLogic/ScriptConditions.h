@@ -192,6 +192,7 @@ protected:
 	Bool evaluateNeighbouringSpot(Parameter* pPlayerParm, Parameter* pStartNdx);
 	Bool evaluateNeighbouringSpotsEmpty(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pCount);
   Bool evaluateNeighbouringSpotsRelation(Parameter* pPlayerParm, Parameter* pComparisonParm, Int pCount, Int relationType);
+	Bool evaluateSpotNeighbouringRelation(Parameter* pPlayerParm, Int relationType, Int pStartNdx);
 
 	Bool evaluateMapSize(Parameter* pComparisonParm, Int pMapSize);
 	Bool evaluateStartingCash(Parameter* pComparisonParm, Int pAmount);
@@ -238,6 +239,7 @@ protected:
 
 	Bool evaluateTeamIdle(Parameter* pTeamParm);
 	Bool evaluateTeamIdleFrames(Parameter* pTeam, Int value);
+	Bool evaluateTeamSeen(Parameter* pTeamParm);
 
 	Bool evaluatePlayerHasComparisonRatioOther(Condition* pCondition, Parameter* pPlayerParm, Parameter* pComparisonParm, Real ratio, Parameter* pOther);
 	Bool evaluatePlayerHasComparisonRatioTypeOther(Condition* pCondition, Parameter* pPlayerParm, Parameter* pComparisonParm, Real ratio, Parameter* objectType, Parameter* pOther, Parameter* otherObjectType);
@@ -254,9 +256,12 @@ protected:
 	Bool evaluateTeamSingleBelowHealth(Parameter* pTeamParm, Real value);
 	Bool evaluateTeamBelowHealth(Parameter* pTeamParm, Real value);
 
-	Bool evaluateTeamSeen(Parameter* pTeamParm);
+	Bool evaluatePlayerTeamInstances(Parameter* pPlayerParm, Parameter* pComparisonParm, Int value, Parameter* pTeamParm);
 
-	// @-TanSo-: 50 additions, 1 helper method
+	Bool evaluateTeamHasComparisonRatioSighted(Parameter* pTeamParm, Parameter* pComparisonParm, Real ratio);
+	Bool evaluateTeamHasComparisonRatioTypeSighted(Parameter* pTeamParm, Parameter* pComparisonParm, Real ratio, Parameter* objectType, Parameter* otherObjectType);
+
+	// @-TanSo-: 52 additions, 1 helper method
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 	//-------------------------------------------------------------------------------------------------
