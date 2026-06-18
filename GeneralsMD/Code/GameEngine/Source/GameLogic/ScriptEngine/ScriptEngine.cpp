@@ -7111,6 +7111,46 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[1] = " teleports to ";
 	curTemplate->m_uiStrings[2] = ".\n\nNOTE: This will not stop the execution of current actions. If desired, combine this with 'Team xyz stops.'.";
 
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_SPECIFIC_FROM_ID];
+	curTemplate->m_internalName = "AI_PLAYER_BUILD_SPECIFIC_FROM_ID";
+	curTemplate->m_uiName = "Skirmish Only/ID BuildList/Build a building from an ID";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " Build a building of type";
+	curTemplate->m_uiStrings[1] = " from ID ";
+	curTemplate->m_uiStrings[2] = ".\n\nNOTE: Tied to IDs. In order to have separate BuildLists, add 'ID XYZ' after your faction declaration";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_INSERT_BUILDLIST_FROM_ID];
+	curTemplate->m_internalName = "AI_PLAYER_INSERT_BUILDLIST_FROM_ID";
+	curTemplate->m_uiName = "Skirmish Only/ID BuildList/Insert a build list from an ID into the main build list.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::INT;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " Insert build list with ID";
+	curTemplate->m_uiStrings[1] = " into the main build list.\n\nNOTE: Tied to IDs. In order to have separate BuildLists, add 'ID XYZ' after your faction declaration";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_NORMALIZE_BUILDLIST_FROM_ID];
+	curTemplate->m_internalName = "AI_PLAYER_NORMALIZE_BUILDLIST_FROM_ID";
+	curTemplate->m_uiName = "Skirmish Only/ID BuildList/Normalize a build list to another spot.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::INT;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " Normalize build list with ID ";
+	curTemplate->m_uiStrings[1] = " to spot 'Player_";
+	curTemplate->m_uiStrings[2] = "_Start.\n\nNOTE: Tied to IDs. In order to have separate BuildLists, add 'ID XYZ' after your faction declaration";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_SET_DEFAULT_BUILDLIST_FROM_ID];
+	curTemplate->m_internalName = "AI_PLAYER_SET_DEFAULT_BUILDLIST_FROM_ID";
+	curTemplate->m_uiName = "Skirmish Only/ID BuildList/Replace the current build list with another.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::INT;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " Replace the current build list with the build list with ID ";
+	curTemplate->m_uiStrings[1] = " .\n\nNOTE: Tied to IDs. In order to have separate BuildLists, add 'ID XYZ' after your faction declaration\n\nTHIS WILL GET RID OF THE ORIGINAL NON-ID BUILDLIST ONCE AND FOR ALL IN THIS MATCH!";
+
 
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------

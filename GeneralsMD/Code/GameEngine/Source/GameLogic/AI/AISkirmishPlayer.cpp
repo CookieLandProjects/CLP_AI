@@ -198,6 +198,12 @@ void AISkirmishPlayer::processBaseBuilding()
 				continue;
 			}
 			if (info->isPriorityBuild()) {
+
+				DEBUG_LOG((
+					"FOUND PRIORITY %s",
+					info->getTemplateName().str()
+					));
+
 				// Always take priority build, unless we already have priority build.
 				if (!isPriority) {
 					bldgPlan = curPlan;
@@ -216,7 +222,14 @@ void AISkirmishPlayer::processBaseBuilding()
 			if (!info->isAutomaticBuild()) {
 				continue; // marked to not build automatically.
 			}
-			Object *dozer = findDozer(info->getLocation());
+
+			Object* dozer = findDozer(info->getLocation());
+
+			DEBUG_LOG((
+				"DOZER=%p",
+				dozer
+				));
+
 			if (dozer==nullptr) {
 				if (isUnderPowered) {
 					queueDozer();
@@ -248,9 +261,29 @@ void AISkirmishPlayer::processBaseBuilding()
 			}
 		}
 		if (bldgPlan && bldgInfo) {
+
+			DEBUG_LOG((
+				"FINAL BUILD %s priority=%d",
+				bldgInfo->getTemplateName().str(),
+				bldgInfo->isPriorityBuild()
+				));
+			DEBUG_LOG(("PLAN=%s buildable=%d", bldgPlan->getName().str(), bldgPlan->isBuildableItem()));
+			DEBUG_LOG(("BUILD ATTEMPT: %s", bldgPlan->getName().str()));
+
 #ifdef USE_DOZER
 			// dozer-construct the building
+
+			DEBUG_LOG(("NAME=%s LOC=(%f,%f,%f)",
+				bldgInfo->getTemplateName().str(),
+				bldgInfo->getLocation()->x,
+				bldgInfo->getLocation()->y,
+				bldgInfo->getLocation()->z));
+
 			bldg = buildStructureWithDozer(bldgPlan, bldgInfo);
+
+			DEBUG_LOG(("BUILD RESULT: %p", bldg));
+
+
 			// store the object with the build order
 			if (bldg)
 			{
@@ -1087,6 +1120,15 @@ void AISkirmishPlayer::newMap()
 		}
 		build = build->m_next;
 	}
+	for (AISideBuildList* list : TheAI->getAiData()->m_IDBuildLists)
+	{
+		if (list->m_side == mySide)
+		{
+			m_player->addIDBuildList(list);
+			adjustBuildList(list->m_buildList);
+			list->m_tiedSpot = m_player->getMpStartIndex() + 1;
+		}
+	}
 	DEBUG_ASSERTLOG(build!=nullptr, ("Couldn't find build list for skirmish player."));
 
 	// Build any with the initially built flag.
@@ -1240,7 +1282,7 @@ void AISkirmishPlayer::loadPostProcess()
 //-------------------------------------------------------------------------------------------------
 
 Int AISkirmishPlayer::getCurrentFrontBaseDefense() { return m_curFrontBaseDefense; }
-Int AISkirmishPlayer::getCurrentFlankBaseDefense() { return m_curFrontBaseDefense; }
+Int AISkirmishPlayer::getCurrentFlankBaseDefense() { return m_curFlankBaseDefense; }
 Real AISkirmishPlayer::getCurrentFrontLeftDefenseAngle() { return m_curFrontLeftDefenseAngle; }
 Real AISkirmishPlayer::getCurrentFrontRightDefenseAngle() { return m_curFrontRightDefenseAngle; }
 Real AISkirmishPlayer::getCurrentLeftFlankLeftDefenseAngle() { return m_curLeftFlankLeftDefenseAngle; }
@@ -1540,7 +1582,7 @@ void AISkirmishPlayer::buildAIBaseDefenseStructureFromVectorAtPlayer(const Ascii
 		Bool canBuild;
 		Real placeAngle = rotation;
 
-		//@-TanSo-: Give us the option to make random angles possible to bring some spice to the AI's building placement.
+		// @-TanSo-: Give us the option to make random angles possible to bring some spice to the AI's building placement.
 		// If the angle is 361, we'll random between the 4 diagonal angles (45, -45, 135, -135).
 		// If the angle is 362, we'll random between any integer angle (0 - 359).
 
@@ -1555,7 +1597,8 @@ void AISkirmishPlayer::buildAIBaseDefenseStructureFromVectorAtPlayer(const Ascii
 			}
 		}
 
-		if (placeAngle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
+		if (placeAngle == 362.0f)
+			angle = (Real)GameLogicRandomValue(0, 359);
 
 		placeAngle = placeAngle * (PI / 180.0f);
 
@@ -1644,6 +1687,244 @@ void AISkirmishPlayer::removeAIBaseDefenseFromVector(const AsciiString& thingNam
 			}
 		}
 	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void AISkirmishPlayer::insertBuildListFromID(Int id)
+{
+	AISideBuildList* list = m_player->findIDBuildList(id);
+
+	if (!list)
+		return;
+
+	for (BuildListInfo* info = list->m_buildList; info; info = info->getNext())
+	{
+		BuildListInfo* copy = info->duplicate();
+
+		if (copy)
+			m_player->insertBuildListInfo(copy, false);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void AISkirmishPlayer::buildSpecificAIBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority)
+{
+	AISideBuildList* list = m_player->findIDBuildList(id);
+	if (!list)
+	{
+		DEBUG_LOG(("BuildList ID %d not found.", id));
+		return;
+	}
+
+	for (BuildListInfo* info = list->m_buildList; info; info = info->getNext())
+	{
+		if (info->getTemplateName() != thingName)
+			continue;
+
+		BuildListInfo* copy = info->duplicateSingle();
+		copy->setNextBuildList(nullptr);
+
+		if (copy)
+		{
+			DEBUG_LOG(("Adding %s from BuildList %d", thingName.str(), id));
+			m_player->insertBuildListInfo(copy, isPriority);
+		}
+		break;
+	}
+
+	DEBUG_LOG(("HEAD CHECK:"));
+	DEBUG_LOG(("HEAD=%p", m_player->getBuildList()));
+
+	BuildListInfo* head = m_player->getBuildList();
+
+	DEBUG_LOG(("HEAD=%p template=%s",
+		head,
+		head ? head->getTemplateName().str() : "NULL"));
+
+	for (BuildListInfo* cur = m_player->getBuildList(); cur; cur = cur->getNext())
+	{
+		DEBUG_LOG((
+			"CUR ptr=%p next=%p template=%s obj=%d priority=%d",
+			cur,
+			cur->getNext(),
+			cur->getTemplateName().str(),
+			cur->getObjectID(),
+			cur->isPriorityBuild()
+			));
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void AISkirmishPlayer::normalizeBuildListFromID(Int id, Int spot)
+{
+
+	BuildListInfo* list = nullptr;
+
+	if (id == -1) {
+		list = m_player->getBuildList();
+	}
+	else {
+		list = m_player->findIDBuildList(id)->m_buildList;
+	}
+
+	if (!list) {
+		DEBUG_LOG(("AISkirmishPlayer::normalizeBuildListFromID - BuildList with this ID doesn't exist!"));
+		return;
+	}
+
+	AISideBuildList* aiList = m_player->findIDBuildList(id);
+
+	if (aiList->m_tiedSpot == spot) {
+		DEBUG_LOG(("AISkirmishPlayer::normalizeBuildListFromID - Old and new spots are the same!"));
+		return;
+	}
+
+	AsciiString oldSpot;
+	AsciiString newSpot;
+	oldSpot.format("Player_%d_Start", aiList->m_tiedSpot);
+	newSpot.format("Player_%d_Start", spot);
+	Waypoint* oWay = TheTerrainLogic->getWaypointByName(oldSpot);
+	Waypoint* nWay = TheTerrainLogic->getWaypointByName(newSpot);
+
+	if (!oWay || !nWay)
+		return;
+
+	const Coord3D oPos = *oWay->getLocation();
+	const Coord3D nPos = *nWay->getLocation();
+
+
+	// ------------------------------------------------------------
+	// ------------------------------------------------------------
+
+	Region3D bounds;
+	TheTerrainLogic->getMaximumPathfindExtent(&bounds);
+
+	// old spot rotation
+	Int oldGrid = 0;
+
+	if (oPos.x > bounds.lo.x + bounds.width() / 3.0f)
+		oldGrid++;
+
+	if (oPos.x > bounds.lo.x + 2.0f * bounds.width() / 3.0f)
+		oldGrid++;
+
+	if (oPos.y > bounds.lo.y + bounds.height() / 3.0f)
+		oldGrid += 3;
+
+	if (oPos.y > bounds.lo.y + 2.0f * bounds.height() / 3.0f)
+		oldGrid += 3;
+
+
+	// new spot rotation
+	Int newGrid = 0;
+
+	if (nPos.x > bounds.lo.x + bounds.width() / 3.0f)
+		newGrid++;
+
+	if (nPos.x > bounds.lo.x + 2.0f * bounds.width() / 3.0f)
+		newGrid++;
+
+	if (nPos.y > bounds.lo.y + bounds.height() / 3.0f)
+		newGrid += 3;
+
+	if (nPos.y > bounds.lo.y + 2.0f * bounds.height() / 3.0f)
+		newGrid += 3;
+
+
+	Real oldAngle = 0;
+	Real newAngle = 0;
+
+	if (TheAI->getAiData()->m_rotateSkirmishBases)
+	{
+		switch (oldGrid)
+		{
+		case 0: oldAngle = 0; break;
+		case 1: oldAngle = PI / 4; break;
+		case 2: oldAngle = PI / 2; break;
+
+		case 3: oldAngle = -PI / 4; break;
+		case 4: oldAngle = 0; break;
+		case 5: oldAngle = 3 * PI / 4; break;
+
+		case 6: oldAngle = -PI / 2; break;
+		case 7: oldAngle = -3 * PI / 4; break;
+		case 8: oldAngle = PI; break;
+		}
+
+		switch (newGrid)
+		{
+		case 0: newAngle = 0; break;
+		case 1: newAngle = PI / 4; break;
+		case 2: newAngle = PI / 2; break;
+
+		case 3: newAngle = -PI / 4; break;
+		case 4: newAngle = 0; break;
+		case 5: newAngle = 3 * PI / 4; break;
+
+		case 6: newAngle = -PI / 2; break;
+		case 7: newAngle = -3 * PI / 4; break;
+		case 8: newAngle = PI; break;
+		}
+	}
+
+	oldAngle += 3 * PI / 4;
+	newAngle += 3 * PI / 4;
+
+
+	// the actual angle
+	Real angle = newAngle - oldAngle;
+
+	Real s = sin(angle);
+	Real c = cos(angle);
+
+
+	// ------------------------------------------------------------
+	// ------------------------------------------------------------
+	Coord3D pos;
+
+	while (list)
+	{
+		 Real defaultAngle = TheThingFactory->findTemplate(list->getTemplateName())->getPlacementViewAngle();
+
+		 pos.x = list->getLocation()->x - oPos.x;
+		 pos.y = list->getLocation()->y - oPos.y;
+		 pos.z = 0.0f;
+
+		Real newX = pos.x * c - pos.y * s;
+		Real newY = pos.x * s + pos.y * c;
+
+		pos.x = newX + nPos.x;
+		pos.y = newY + nPos.y;
+
+		// terrain snap
+		pos.z = TheTerrainLogic->getGroundHeight(pos.x, pos.y);
+
+		list->setLocation(pos);
+
+		// angle stays consistent
+		list->setAngle(defaultAngle + angle);
+
+		list = list->getNext();
+	}
+
+	m_player->findIDBuildList(id)->m_tiedSpot = spot;
+}
+
+//-------------------------------------------------------------------------------------------------
+void AISkirmishPlayer::setDefaultBuildList(Int id)
+{
+	AISideBuildList* src = m_player->findIDBuildList(id);
+	if (!src)
+		return;
+
+	if (m_player->getBuildList())
+	{
+		m_player->setBuildList(nullptr);
+	}
+
+	m_player->setBuildList(src->m_buildList->duplicate());
+
+	normalizeBuildListFromID(id, m_player->getMpStartIndex() + 1);
 }
 
 //-------------------------------------------------------------------------------------------------

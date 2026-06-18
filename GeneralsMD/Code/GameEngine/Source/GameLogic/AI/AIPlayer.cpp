@@ -542,6 +542,7 @@ Object *AIPlayer::buildStructureWithDozer(const ThingTemplate *bldgPlan, BuildLi
 																								 dozer, m_player ) != LBC_OK ) {
 		// If there's enemy units or structures, don't build/rebuild.
 		TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
+		DEBUG_LOG(("=====ILLEGAL TO BUILD!====="));
 		return nullptr;
 	}
 
@@ -3359,13 +3360,17 @@ Object * AIPlayer::findDozer( const Coord3D *pos )
 					if (dozerAI->isTaskPending(DOZER_TASK_BUILD)) {
 						continue; // already building.
 					}
-					if (!dozerAI->isAnyTaskPending()) {
-						dozer = obj; // prefer an idle dozer
+					if (!dozerAI->isAnyTaskPending())
+					{
+						if (!dozer)
+							dozer = obj;
 					}
-					if (dozer==nullptr) {
-						dozer = obj; // but we'll take one doing stuff.
+					else
+					{
+						if (!dozer)
+							dozer = obj;
 					}
-					if (dozer && !dozerAI->isAnyTaskPending()) {
+					if (obj && !dozerAI->isAnyTaskPending()) {
 						// Got a good one, track closest.
 						Real distSqr;
 						Real dx, dy;
@@ -4581,6 +4586,43 @@ void AIPlayer::removeAIBaseDefenseFromVector(const AsciiString& objectType)
 
 Coord3D AIPlayer::getSkirmishBuildListBaseCenter() { return m_baseCenter; }
 Real AIPlayer::getSkirmishBuildListBaseRadius() { return m_baseRadius; }
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::buildSpecificAIBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority)
+{
+	AsciiString teamStr = "Error : Solo ai doesn't support BuildSpecificBuildingFromID. '";
+	teamStr.concat(thingName);
+	teamStr.concat("' not built.");
+	TheScriptEngine->AppendDebugMessage(teamStr, false);
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::insertBuildListFromID(Int id)
+{
+	AsciiString teamStr = "Error : Solo ai doesn't support insertBuildListFromID. '";
+	teamStr.concat(id);
+	teamStr.concat("' not inserted.");
+	TheScriptEngine->AppendDebugMessage(teamStr, false);
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::normalizeBuildListFromID(Int id, Int spot)
+{
+	AsciiString teamStr = "Error : Solo ai doesn't support normalizeBuildListFromID. '";
+	teamStr.concat(id);
+	teamStr.concat("' not inserted.");
+	TheScriptEngine->AppendDebugMessage(teamStr, false);
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::setDefaultBuildList(Int id)
+{
+	AsciiString teamStr = "Error : Solo ai doesn't support setDefaultBuildList. '";
+	teamStr.concat(id);
+	teamStr.concat("' not inserted.");
+	TheScriptEngine->AppendDebugMessage(teamStr, false);
+}
+
 //-------------------------------------------------------------------------------------------------
 //-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------
 //-------------------------------------------------------------------------------------------------

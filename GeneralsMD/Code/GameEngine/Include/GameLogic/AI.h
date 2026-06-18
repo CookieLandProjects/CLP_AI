@@ -134,12 +134,15 @@ public:
 	AISideBuildList( AsciiString side );
 	//~AISideBuildList();
 
-	void addInfo(BuildListInfo *info);
+	void addInfo(BuildListInfo *info); 
 
 public:
 	AsciiString				m_side;						///< Name of the faction.
-	BuildListInfo*		m_buildList;				///< Build list for the faction.
+	BuildListInfo*		m_buildList;			///< Build list for the faction.
 	AISideBuildList*	m_next;
+
+	Int								m_buildListID;		///< @-TanSo-: Expansion for more than just BuildList per AI player.
+	Int								m_tiedSpot;				///< @-TanSo: Remember what spot we are tied to for later transpositions.
 };
 
 
@@ -242,6 +245,14 @@ public:
 	AISideBuildList *m_sideBuildLists;
 
 	TAiData *m_next;
+
+
+	//@CLP_AI Additions
+	std::vector<AISideBuildList*> m_IDBuildLists;
+
+	void							addIDBuildList(AISideBuildList* build) { m_IDBuildLists.push_back(build); }
+	AISideBuildList*	findIDBuildList(const AsciiString& side,Int id) const;
+
 } ;
 
 //------------------------------------------------------------------------------------------------------------

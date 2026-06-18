@@ -487,6 +487,10 @@ protected:
 	void doUnitTeleportLocation(const AsciiString& unitName, const AsciiString& waypointName);
 	void doTeamTeleportLocation(const AsciiString& teamName, const AsciiString& waypointName);
 
+	void doBuildBuildingFromBuildListID(const AsciiString& objectType, Int buildListID);
+	void doInsertBuildListFromID(Int buildListID);
+	void doNormalizeBuildListIDToSpot(Int buildListID, Int spot);
+	void doSetDefaultBuildList(Int buildListID);
 	// @-TanSo-: 82 additions
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------

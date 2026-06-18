@@ -987,7 +987,7 @@ void BuildListInfo::parseStructure(INI *ini, void *instance, void* /*store*/, co
 */
 BuildListInfo *BuildListInfo::duplicate()
 {
-	BuildListInfo *first = newInstance( BuildListInfo );
+	/*BuildListInfo* first = newInstance(BuildListInfo);
 	*first = *this;
 	first->m_nextBuildList = nullptr;
 	BuildListInfo *next = this->m_nextBuildList;
@@ -1000,6 +1000,63 @@ BuildListInfo *BuildListInfo::duplicate()
 		cur = link;
 		next = next->m_nextBuildList;
 	}
+	return first;*/
+
+	//-TanSo-: this looks a bit safer to me
+	BuildListInfo* first = newInstance(BuildListInfo);
+
+	// COPY ONLY DESIGN DATA
+	first->setBuildingName(m_buildingName);
+	first->setTemplateName(m_templateName);
+	first->setLocation(m_location);
+	first->setAngle(m_angle);
+	first->setInitiallyBuilt(m_isInitiallyBuilt);
+	first->setNumRebuilds(m_numRebuilds);
+	first->setScript(m_script);
+	first->setHealth(m_health);
+	first->setWhiner(m_whiner);
+	first->setUnsellable(m_unsellable);
+	first->setRepairable(m_repairable);
+	first->m_automaticallyBuild = m_automaticallyBuild;
+
+	// RESET RUNTIME STATE
+	first->setObjectID(INVALID_ID);
+	first->setObjectTimestamp(0);
+	first->setUnderConstruction(false);
+
+	first->setNextBuildList(nullptr);
+
+	BuildListInfo* cur = first;
+	BuildListInfo* next = m_nextBuildList;
+
+	while (next)
+	{
+		BuildListInfo* link = newInstance(BuildListInfo);
+
+		link->setBuildingName(next->m_buildingName);
+		link->setTemplateName(next->m_templateName);
+		link->setLocation(*next->getLocation());
+		link->setAngle(next->getAngle());
+		link->setInitiallyBuilt(next->isInitiallyBuilt());
+		link->setNumRebuilds(next->getNumRebuilds());
+		link->setScript(next->getScript());
+		link->setHealth(next->getHealth());
+		link->setWhiner(next->getWhiner());
+		link->setUnsellable(next->getUnsellable());
+		link->setRepairable(next->getRepairable());
+		link->m_automaticallyBuild = m_automaticallyBuild;
+
+		link->setObjectID(INVALID_ID);
+		link->setObjectTimestamp(0);
+		link->setUnderConstruction(false);
+
+		link->setNextBuildList(nullptr);
+
+		cur->setNextBuildList(link);
+		cur = link;
+		next = next->getNext();
+	}
+
 	return first;
 }
 
@@ -1159,4 +1216,35 @@ void TeamsInfoRec::removeTeam(Int i)
 		m_teams[i] = m_teams[i+1];
 
 	m_teams[m_numTeams].clear();
+}
+
+// @CLP_AI Additions
+BuildListInfo* BuildListInfo::duplicateSingle()
+{
+	BuildListInfo* copy = newInstance(BuildListInfo);
+
+	//*copy = *this;
+
+	// COPY ONLY DESIGN DATA
+	copy->setBuildingName(m_buildingName);
+	copy->setTemplateName(m_templateName);
+	copy->setLocation(m_location);
+	copy->setAngle(m_angle);
+	copy->setInitiallyBuilt(m_isInitiallyBuilt);
+	copy->setNumRebuilds(m_numRebuilds);
+	copy->setScript(m_script);
+	copy->setHealth(m_health);
+	copy->setWhiner(m_whiner);
+	copy->setUnsellable(m_unsellable);
+	copy->setRepairable(m_repairable);
+	copy->m_automaticallyBuild = m_automaticallyBuild;
+
+	// RESET RUNTIME STATE
+	copy->setObjectID(INVALID_ID);
+	copy->setObjectTimestamp(0);
+	copy->setUnderConstruction(false);
+
+	copy->setNextBuildList(nullptr);
+
+	return copy;
 }

@@ -72,12 +72,17 @@ public:	// AIPlayer interface methods.
 
 	virtual Player *getAiEnemy();	///< Solo AI attacks based on scripting.  Only skirmish auto-acquires an enemy at this point.  jba.
 
+	// @CLP_AI Additions
   virtual void buildAIBaseDefenseFromVector(Bool flank, Real rotation, Real percent); ///< Do the same as buildAIBaseDefense, but use the vector and randomize the outcome.
 	virtual void buildAIBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName);
 	virtual void buildAIBaseDefenseStructureFromVector(const AsciiString& thingName, Bool flank, Real rotation, Real percent);
 	virtual void buildAIBaseDefenseStructureFromVectorAtPlayer(const AsciiString& thingName, Bool flank, Real rotation, Real percent, const AsciiString& playerName);
 	virtual void addAIBaseDefenseToVector(const AsciiString &thingName);
 	virtual void removeAIBaseDefenseFromVector(const AsciiString& thingName);
+	virtual void insertBuildListFromID(Int id);
+	virtual void buildSpecificAIBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority);
+	virtual void normalizeBuildListFromID(Int id, Int spot);
+	virtual void setDefaultBuildList(Int id);
 
 	Int getCurrentFrontBaseDefense();
 	Int getCurrentFlankBaseDefense();

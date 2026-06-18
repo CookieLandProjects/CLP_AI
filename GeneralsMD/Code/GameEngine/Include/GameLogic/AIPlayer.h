@@ -185,6 +185,11 @@ public: // AIPlayer interface, may be overridden by AISkirmishPlayer.  jba.
 	virtual void buildAIBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName);
 	virtual void addAIBaseDefenseToVector(const AsciiString& objectType);
 	virtual void removeAIBaseDefenseFromVector(const AsciiString& objectType);
+	virtual void buildSpecificAIBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority);
+	virtual void insertBuildListFromID(Int id);
+	virtual void normalizeBuildListFromID(Int id, Int spot);
+	virtual void setDefaultBuildList(Int id);
+
 
 	virtual void buildAIBaseDefenseStructure(const AsciiString &thingName, Bool flank); ///< Builds base defense on front or flank of base.
 

@@ -59,10 +59,12 @@ void TAiData::addSideInfo(AISideInfo *infoToAdd)
 
 void TAiData::addFactionBuildList(AISideBuildList *buildList)
 {
-
+	DEBUG_LOG(("FACTION LIST ADD side=%s id=%d",
+		buildList->m_side.str(),
+		buildList->m_buildListID));
 	AISideBuildList *info = m_sideBuildLists;
 	while (info) {
-		if (buildList->m_side == info->m_side) {
+		if (buildList->m_side == info->m_side && buildList->m_buildListID == info->m_buildListID) {
 			deleteInstance(info->m_buildList);
 			info->m_buildList = buildList->m_buildList;
 			buildList->m_buildList = nullptr;
@@ -74,6 +76,10 @@ void TAiData::addFactionBuildList(AISideBuildList *buildList)
 	}
 	buildList->m_next = m_sideBuildLists;
 	m_sideBuildLists = buildList;
+	DEBUG_LOG(("BUILDING: %s, X: %f, Y: %f"),
+		m_sideBuildLists->m_buildList->getBuildingName().str(),
+		m_sideBuildLists->m_buildList->getLocation()->x,
+		m_sideBuildLists->m_buildList->getLocation()->y);
 }
 
 TAiData::~TAiData()
@@ -102,12 +108,15 @@ TAiData::~TAiData()
 AISideBuildList::AISideBuildList( AsciiString side ) :
 	m_side(side),
 	m_buildList(nullptr),
-	m_next(nullptr)
+	m_next(nullptr),
+	m_buildListID(-1),
+	m_tiedSpot(0)
 {
 }
 
 AISideBuildList::~AISideBuildList()
 {
+	m_buildListID = 0;
 	deleteInstance(m_buildList); // note - deletes all in the list.
 	m_buildList = nullptr;
 }
@@ -283,16 +292,32 @@ void AI::parseSkirmishBuildList(INI *ini, void *instance, void* /*store*/, const
 	const char* c = ini->getNextToken();
 	AsciiString faction(c);
 
+	// -TanSo-: IDs for separate BuildLists.
 	static const FieldParse myFieldParse[] =
-		{
-			{ "Structure",			BuildListInfo::parseStructure,			nullptr, 0 },
-			{ nullptr,							nullptr,											nullptr, 0 }
-		};
+	{
+			{ "ID", INI::parseInt, nullptr, offsetof(AISideBuildList, m_buildListID) },
+			{ "Structure", BuildListInfo::parseStructure, nullptr, 0 },
+			{ nullptr, nullptr, nullptr, 0 }
+	};
 
 	AISideBuildList *build = newInstance(AISideBuildList)(faction);
 	ini->initFromINI(build, myFieldParse);
-	((TAiData*)instance)->addFactionBuildList(build);
 
+	// -TanSo-: Make sure that if there is no ID, stay in the default BuildList
+	DEBUG_LOG(("PARSED side=%s id=%d",
+		build->m_side.str(),
+		build->m_buildListID));
+	if (build->m_buildListID < 0)
+	{
+		((TAiData*)instance)->addFactionBuildList(build);
+	}
+	else
+	{
+		DEBUG_LOG(("ID LIST ADD side=%s id=%d",
+			build->m_side.str(),
+			build->m_buildListID));
+		((TAiData*)instance)->addIDBuildList(build);
+	}
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -1051,4 +1076,19 @@ void AI::loadPostProcess()
 
 }
 
+//-----------------------------------------------------------------------------
+AISideBuildList* TAiData::findIDBuildList(const AsciiString& side, Int id) const
+{
+	for (AISideBuildList* list : m_IDBuildLists)
+	{
+		if (!list)
+			continue;
+
+		if (list->m_side == side && list->m_buildListID == id)
+		{
+			return list;
+		}
+	}
+	return nullptr;
+}
 

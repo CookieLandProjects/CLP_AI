@@ -366,6 +366,8 @@ public:
 	void setCurrentGatherers(Int cur) {m_currentGatherers = cur;}
 
 	BuildListInfo *duplicate();
+	// -TanSo-: Also be able to duplicate a single entry, please!
+	BuildListInfo* duplicateSingle();
 };
 
 inline void BuildListInfo::decrementNumRebuilds()

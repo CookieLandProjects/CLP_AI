@@ -82,6 +82,9 @@ class SpecialPowerModule;
 
 class BattlePlanBonuses;
 
+// -TanSo-: we need this as well, thanks!
+class AISideBuildList;
+
 enum BattlePlanStatus CPP_11(: Int);
 enum UpgradeStatusType CPP_11(: Int);
 enum CommandSourceType CPP_11(: Int);
@@ -448,9 +451,24 @@ public:
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------------- @CLP_AI PLAYER ADDITIONS ------------------------------------
 	//-------------------------------------------------------------------------------------------------
-	std::vector<const ThingTemplate*> m_lastFrameKills;
-	std::vector<const ThingTemplate*> m_lastFrameDeaths;
-	Bool m_lostUnitThisFrame;
+
+	std::vector<const ThingTemplate*>		m_lastFrameKills;
+	std::vector<const ThingTemplate*>		m_lastFrameDeaths;
+	Bool																m_lostUnitThisFrame;
+	std::vector<AISideBuildList*>				m_IDBuildLists;
+
+	// Internal setup for BuildLists
+	void addIDBuildList(AISideBuildList* list);
+	AISideBuildList* findIDBuildList(Int id);
+
+	// The only place that actually messes with m_pBuildList
+	void insertBuildListInfo(BuildListInfo* info, Bool isPriority);
+
+	// Script executions
+	void buildSpecificBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority);
+	void insertBuildListFromID(Int id);
+	void normalizeBuildListFromID(Int id, Int spot);
+	void setDefaultBuildList(Int buildListID);
 
 	virtual Bool computeSuperweaponTargetType(const SpecialPowerTemplate* power, Coord3D* retPos, Int playerNdx, Real weaponRadius, const AsciiString& objectType);
 	void buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real angle);
@@ -459,8 +477,6 @@ public:
 	void updateLastFrameSeen();
 	void countObjectsByThingTemplateArea(Int numTmplates, const ThingTemplate* const* things, Bool ignoreDead, Int* counts, Bool ignoreUnderConstruction, const PolygonTrigger* triggerArea) const;
 
-	void sendChatMessage(const AsciiString& message);
-	void sendPrivateChatMessage(const AsciiString& message);
 	//-------------------------------------------------------------------------------------------------
 	//--------------------------------- @CLP_AI PLAYER ADDITIONS END ----------------------------------
 	//-------------------------------------------------------------------------------------------------

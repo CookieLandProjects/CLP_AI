@@ -11376,6 +11376,42 @@ void ScriptActions::doTeamTeleportLocation(const AsciiString& teamName, const As
 }
 
 //-------------------------------------------------------------------------------------------------
+void ScriptActions::doBuildBuildingFromBuildListID(const AsciiString& objectType, Int buildListID)
+{
+	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
+	if (!pPlayer) return;
+
+	pPlayer->buildSpecificBuildingFromID(objectType, buildListID, true);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doInsertBuildListFromID(Int buildListID)
+{
+	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
+	if (!pPlayer) return;
+
+	pPlayer->insertBuildListFromID(buildListID);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doNormalizeBuildListIDToSpot(Int buildListID, Int spot)
+{
+	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
+	if (!pPlayer) return;
+
+	pPlayer->normalizeBuildListFromID(buildListID, spot);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doSetDefaultBuildList(Int buildListID)
+{
+	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
+	if (!pPlayer) return;
+
+	pPlayer->setDefaultBuildList(buildListID);
+}
+
+//-------------------------------------------------------------------------------------------------
 //----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 //-------------------------------------------------------------------------------------------------
 
@@ -12802,6 +12838,18 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			return;
 		case ScriptAction::TEAM_TELEPORT_TO_LOCATION:
 			doTeamTeleportLocation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::AI_PLAYER_BUILD_SPECIFIC_FROM_ID:
+			doBuildBuildingFromBuildListID(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+		case ScriptAction::AI_PLAYER_INSERT_BUILDLIST_FROM_ID:
+			doInsertBuildListFromID(pAction->getParameter(0)->getInt());
+			return;
+		case ScriptAction::AI_PLAYER_NORMALIZE_BUILDLIST_FROM_ID:
+			doNormalizeBuildListIDToSpot(pAction->getParameter(0)->getInt(), pAction->getParameter(1)->getInt());
+			return;
+		case ScriptAction::AI_PLAYER_SET_DEFAULT_BUILDLIST_FROM_ID:
+			doSetDefaultBuildList(pAction->getParameter(0)->getInt());
 			return;
 
 	}

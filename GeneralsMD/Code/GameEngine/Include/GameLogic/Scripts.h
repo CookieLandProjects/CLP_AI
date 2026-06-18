@@ -563,7 +563,7 @@ public:
 			UPDATE_KD_RATIO_DEATHS_BUILDCOST,							///< Updates the deaths of a KD ratio by the build cost of whatever is in m_lastFrameKills.
 			COPY_KD_RATIO_ONTO_COUNTERS,									///< Copies a KD-Ratio's kills to counter A and deaths to Counter B.
 			
-			AI_PLAYER_BUILDS_UNNAMED,                     ///< Tell the ai to produce a new unnamed unit.
+			AI_PLAYER_BUILDS_UNNAMED,                     ///< AI pllayer adds a new unnamed unit to the production queue.
 			AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED,		///< AI player builds a structure near an object type rotated <Real> degrees.
 			AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED,	///< AI player builds a structure near a kindOf rotated <Real> degrees.
 			AI_PLAYER_BUILD_TYPE_NEAREST_TEAM_ROTATED,		///< AI player builds a structure near a team rotated <Real> degrees.
@@ -668,8 +668,14 @@ public:
 			TEAM_MOVE_TYPE_NOT_UNDER_FOG,									///< Set a team to move to the closest object of a type NOT under the fog of war.
 			TEAM_MOVE_TYPE_AREA_NOT_UNDER_FOG,						///< Set a team to move to the closest object of a type in an area NOT under the fog of war.
 
-			UNIT_TELEPORT_TO_LOCATION,											///< Teleport a unit to a waypoint.
-			TEAM_TELEPORT_TO_LOCATION,											///< Teleport a team to a waypoint.
+			UNIT_TELEPORT_TO_LOCATION,										///< Teleport a unit to a waypoint.
+			TEAM_TELEPORT_TO_LOCATION,										///< Teleport a team to a waypoint.
+
+			AI_PLAYER_BUILD_SPECIFIC_FROM_ID,							///< Set a player to build from a buildlist with a specific ID.
+			AI_PLAYER_INSERT_BUILDLIST_FROM_ID,						///< Set a player to insert an IDBuildList-Template into the main BuildList (Player::m_pBuildList).
+			AI_PLAYER_NORMALIZE_BUILDLIST_FROM_ID,				///< Set a player to readjust the positioning from an IDBuildList to another player's base.
+			AI_PLAYER_SET_DEFAULT_BUILDLIST_FROM_ID,			///< Set a player to exchange the default BuildList with an IDBuildList.
+
 
 			//-------------------------------------------------------------------------------------------------
 			//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------

@@ -641,6 +641,13 @@ Bool Player::removeTeamRelationship(const Team *that)
 //=============================================================================
 void Player::setBuildList(BuildListInfo *pBuildList)
 {
+	DEBUG_LOG(("setBuildList old=%p new=%p",
+		m_pBuildList,
+		pBuildList));
+
+
+	if (m_pBuildList == pBuildList)
+		return;
 
 	deleteInstance(m_pBuildList);
 	m_pBuildList = pBuildList;
@@ -4738,6 +4745,139 @@ void Player::countObjectsByThingTemplateArea(Int numTmplates, const ThingTemplat
 	{
 		(*it)->countObjectsByThingTemplateArea(numTmplates, things, ignoreDead, counts, ignoreUnderConstruction, triggerArea);
 	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void Player::addIDBuildList(AISideBuildList* list)
+{
+	if (list)
+		m_IDBuildLists.push_back(list);
+}
+
+//-------------------------------------------------------------------------------------------------
+AISideBuildList* Player::findIDBuildList(Int id)
+{
+	for (AISideBuildList* list : m_IDBuildLists)
+	{
+		if (list->m_buildListID == id)
+			return list;
+	}
+	return nullptr;
+}
+
+//-------------------------------------------------------------------------------------------------
+void Player::insertBuildListInfo(BuildListInfo* info, Bool isPriority)
+{
+	DEBUG_LOG(("========Player::insertBuildListInfo========"));
+	// Make sure we actually have a list to work with
+	if (!info)
+		return;
+
+	if (isPriority)
+	{
+		DEBUG_LOG(("-> Priority"));
+		info->markPriorityBuild();
+	}
+		
+	BuildListInfo* head = m_pBuildList;
+
+	if (!head)
+	{
+		m_pBuildList = info;
+		return;
+	}
+
+	for (BuildListInfo* cur = head;
+		cur;
+		cur = cur->getNext())
+	{
+		DEBUG_LOG((
+			"VERIFY ptr=%p next=%p template=%s",
+			cur,
+			cur->getNext(),
+			cur->getTemplateName().str()
+			));
+	}
+
+	// check for duplicates
+	for (BuildListInfo* cur = head; cur; cur = cur->getNext())
+	{
+		if (cur->getTemplateName() == info->getTemplateName() && cur->getLocation() == info->getLocation())
+		{
+			DEBUG_LOG(("-> Duplicate - Canceling insertion..."));
+			DEBUG_LOG((
+				"     DUPLICATE: %s (%f,%f)",
+				info->getTemplateName().str(),
+				info->getLocation()->x,
+				info->getLocation()->y
+				));
+			return;
+		}
+	}
+
+	// insert after already-built and before not-yet-built structures
+	BuildListInfo* prev = nullptr;
+	BuildListInfo* cur = head;
+
+	while (cur)
+	{
+		if (cur->getObjectTimestamp() == 0)
+		{
+			DEBUG_LOG(("-> Found To insert after %d, %s"), cur->getObjectID(), cur->getTemplateName().str());
+			break;
+		}
+
+		prev = cur;
+		cur = cur->getNext();
+	}
+
+	if (info->getNext())
+		info->setNextBuildList(nullptr);
+
+	if (prev)
+	{
+		info->setNextBuildList(cur);
+		prev->setNextBuildList(info);
+	}
+	else
+	{
+		info->setNextBuildList(head);
+		m_pBuildList = info;
+	}
+
+	DEBUG_LOG(("INFO ptr=%p next=%p template=%s obj=%d",
+		info,
+		info ? info->getNext() : nullptr,
+		info ? info->getTemplateName().str() : "NULL",
+		info ? info->getObjectID() : -1));
+}
+
+//-------------------------------------------------------------------------------------------------
+void Player::buildSpecificBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority)
+{
+	if (m_ai)
+		m_ai->buildSpecificAIBuildingFromID(thingName, id, isPriority);
+}
+
+//-------------------------------------------------------------------------------------------------
+void Player::insertBuildListFromID(Int id)
+{
+	if (m_ai)
+		m_ai->insertBuildListFromID(id);
+}
+
+//-------------------------------------------------------------------------------------------------
+void Player::normalizeBuildListFromID(Int id, Int spot)
+{
+	if (m_ai)
+		m_ai->normalizeBuildListFromID(id, spot);
+}
+
+//-------------------------------------------------------------------------------------------------
+void Player::setDefaultBuildList(Int id)
+{
+	if (m_ai)
+		m_ai->setDefaultBuildList(id);
 }
 
 //-------------------------------------------------------------------------------------------------
