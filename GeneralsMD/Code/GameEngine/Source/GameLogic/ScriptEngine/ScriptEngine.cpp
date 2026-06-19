@@ -5314,7 +5314,7 @@ void ScriptEngine::init()
 	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = "Subtract ";
 	curTemplate->m_uiStrings[1] = " from ratio ";
-	curTemplate->m_uiStrings[2] = " 's deaths. ";
+	curTemplate->m_uiStrings[2] = " 's kills. ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::INCREMENT_KD_RATIO_DEATHS];
 	curTemplate->m_internalName = "INCREMENT_KD_RATIO_DEATHS";
@@ -5336,7 +5336,7 @@ void ScriptEngine::init()
 	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = "Subtract ";
 	curTemplate->m_uiStrings[1] = " from ratio ";
-	curTemplate->m_uiStrings[2] = " 's kills. ";
+	curTemplate->m_uiStrings[2] = " 's deaths. ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_SURRENDER];
 	curTemplate->m_internalName = "PLAYER_SURRENDER";
@@ -8471,7 +8471,7 @@ Bool ScriptEngine::evaluateCounterDivisible(Condition* pCondition)
 {
 	Int counterNdx = pCondition->getParameter(0)->getInt();
 	if (counterNdx == 0) {
-		counterNdx = allocateKDRatio(pCondition->getParameter(0)->getString());
+		counterNdx = allocateCounter(pCondition->getParameter(0)->getString());
 		pCondition->getParameter(0)->friend_setInt(counterNdx);
 	}
 
@@ -8490,7 +8490,7 @@ Bool ScriptEngine::evaluateKDRatio(Condition* pCondition)
 	}
 	if (m_KDRatios[counterNdx].valueKills == 0.0 || m_KDRatios[counterNdx].valueDeaths == 0.0) return false;
 
-	Int value = pCondition->getParameter(2)->getReal();
+	Real value = pCondition->getParameter(2)->getReal();
 	switch (pCondition->getParameter(1)->getInt()) {
 	case Parameter::LESS_THAN:			return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths < value;
 	case Parameter::LESS_EQUAL:			return m_KDRatios[counterNdx].valueKills / m_KDRatios[counterNdx].valueDeaths <= value;
@@ -8537,7 +8537,7 @@ void ScriptEngine::addKDRatioDeaths(ScriptAction* pAction)
 		counterNdx = allocateKDRatio(pAction->getParameter(1)->getString());
 		pAction->getParameter(1)->friend_setInt(counterNdx);
 	}
-	m_KDRatios[counterNdx].valueKills += valueDeaths;
+	m_KDRatios[counterNdx].valueDeaths += valueDeaths;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -8561,7 +8561,7 @@ void ScriptEngine::subKDRatioDeaths(ScriptAction* pAction)
 		counterNdx = allocateKDRatio(pAction->getParameter(1)->getString());
 		pAction->getParameter(1)->friend_setInt(counterNdx);
 	}
-	m_KDRatios[counterNdx].valueKills -= valueDeaths;
+	m_KDRatios[counterNdx].valueDeaths -= valueDeaths;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -9176,7 +9176,7 @@ void ScriptEngine::disableScript( ScriptAction *pAction )
 	}
 	else
 	{
-		DEBUG_LOG(("WARNING: Script '%s' not found for enabling.", scriptName.str()));
+		DEBUG_LOG(("WARNING: Script '%s' not found for disabling.", scriptName.str()));
 	}
 }
 
@@ -9999,9 +9999,9 @@ void ScriptEngine::executeActions( ScriptAction *pActionHead )
 			case ScriptAction::COPY_COUNTER: copyCounter(pCurAction); break;
 			case ScriptAction::SET_KD_RATIO: setKDRatio(pCurAction); break;
 			case ScriptAction::INCREMENT_KD_RATIO_KILLS: addKDRatioKills(pCurAction); break;
-			case ScriptAction::INCREMENT_KD_RATIO_DEATHS: addKDRatioKills(pCurAction); break;
+			case ScriptAction::INCREMENT_KD_RATIO_DEATHS: addKDRatioDeaths(pCurAction); break;
 			case ScriptAction::DECREMENT_KD_RATIO_KILLS: subKDRatioKills(pCurAction); break;
-			case ScriptAction::DECREMENT_KD_RATIO_DEATHS: subKDRatioKills(pCurAction); break;
+			case ScriptAction::DECREMENT_KD_RATIO_DEATHS: subKDRatioDeaths(pCurAction); break;
 			case ScriptAction::UPDATE_KD_RATIO_KILLS_BUILDCOST: updateKDRatioKills(pCurAction); break;
 			case ScriptAction::UPDATE_KD_RATIO_DEATHS_BUILDCOST: updateKDRatioDeaths(pCurAction); break;
 			case ScriptAction::COPY_KD_RATIO_ONTO_COUNTERS: copyKDRatioOntoCounters(pCurAction); break;
