@@ -7120,7 +7120,7 @@ void ScriptEngine::init()
 	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = " Build a building of type";
 	curTemplate->m_uiStrings[1] = " from ID ";
-	curTemplate->m_uiStrings[2] = ".\n\nNOTE: Tied to IDs. In order to have separate BuildLists, add 'ID XYZ' after your faction declaration";
+	curTemplate->m_uiStrings[2] = ".\n\nNOTE: Tied to IDs. In order to have separate BuildLists, add 'ID XYZ' after your faction declaration.\n -> SkirmishBuildList AmericaAirForceGeneral\n        ID 3\n        Structure AirF_AmericaCommandCenter\n[...]";
 
 	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_INSERT_BUILDLIST_FROM_ID];
 	curTemplate->m_internalName = "AI_PLAYER_INSERT_BUILDLIST_FROM_ID";
@@ -7129,7 +7129,7 @@ void ScriptEngine::init()
 	curTemplate->m_parameters[0] = Parameter::INT;
 	curTemplate->m_numUiStrings = 2;
 	curTemplate->m_uiStrings[0] = " Insert build list with ID";
-	curTemplate->m_uiStrings[1] = " into the main build list.\n\nNOTE: Tied to IDs. In order to have separate BuildLists, add 'ID XYZ' after your faction declaration";
+	curTemplate->m_uiStrings[1] = " into the main build list.\n\nNOTE: Tied to IDs. In order to have separate BuildLists, add 'ID XYZ' after your faction declaration.\n -> SkirmishBuildList AmericaAirForceGeneral\n        ID 3\n        Structure AirF_AmericaCommandCenter\n[...]";
 
 	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_NORMALIZE_BUILDLIST_FROM_ID];
 	curTemplate->m_internalName = "AI_PLAYER_NORMALIZE_BUILDLIST_FROM_ID";
@@ -7140,7 +7140,7 @@ void ScriptEngine::init()
 	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = " Normalize build list with ID ";
 	curTemplate->m_uiStrings[1] = " to spot 'Player_";
-	curTemplate->m_uiStrings[2] = "_Start.\n\nNOTE: Tied to IDs. In order to have separate BuildLists, add 'ID XYZ' after your faction declaration";
+	curTemplate->m_uiStrings[2] = "_Start.\n\nNOTE: Tied to IDs. In order to have separate BuildLists, add 'ID XYZ' after your faction declaration.\n -> SkirmishBuildList AmericaAirForceGeneral\n        ID 3\n        Structure AirF_AmericaCommandCenter\n[...]";
 
 	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_SET_DEFAULT_BUILDLIST_FROM_ID];
 	curTemplate->m_internalName = "AI_PLAYER_SET_DEFAULT_BUILDLIST_FROM_ID";
@@ -7149,7 +7149,7 @@ void ScriptEngine::init()
 	curTemplate->m_parameters[0] = Parameter::INT;
 	curTemplate->m_numUiStrings = 2;
 	curTemplate->m_uiStrings[0] = " Replace the current build list with the build list with ID ";
-	curTemplate->m_uiStrings[1] = " .\n\nNOTE: Tied to IDs. In order to have separate BuildLists, add 'ID XYZ' after your faction declaration\n\nTHIS WILL GET RID OF THE ORIGINAL NON-ID BUILDLIST ONCE AND FOR ALL IN THIS MATCH!";
+	curTemplate->m_uiStrings[1] = " .\n\nNOTE: Tied to IDs. In order to have separate BuildLists, add 'ID XYZ' after your faction declaration.\n -> SkirmishBuildList AmericaAirForceGeneral\n        ID 3\n        Structure AirF_AmericaCommandCenter\n[...]\n\nTHIS WILL GET RID OF THE ORIGINAL NON-ID BUILDLIST ONCE AND FOR ALL IN THIS MATCH!";
 
 
 	//-------------------------------------------------------------------------------------------------
@@ -9128,6 +9128,13 @@ void ScriptEngine::enableScript(ScriptAction* pAction)
 		}
 	}
 
+	// ScriptGroups cannot be inside the team generic section.
+	ScriptGroup* pGroup = findGroup(pAction->getParameter(0)->getString());
+	if (pGroup)
+	{
+		pGroup->setActive(true);
+	}
+
 	pScript = findScript(scriptName);
 	if (pScript)
 	{
@@ -9140,7 +9147,7 @@ void ScriptEngine::enableScript(ScriptAction* pAction)
 }
 
 //-------------------------------------------------------------------------------------------------
-/** Enables a script or group. */
+/** Disables a script or group. */
 //-------------------------------------------------------------------------------------------------
 void ScriptEngine::disableScript( ScriptAction *pAction )
 {
@@ -9167,6 +9174,13 @@ void ScriptEngine::disableScript( ScriptAction *pAction )
 			pScript->setActive(false);
 			return;
 		}
+	}
+
+	// ScriptGroups cannot be inside the team generic section.
+	ScriptGroup* pGroup = findGroup(pAction->getParameter(0)->getString());
+	if (pGroup)
+	{
+		pGroup->setActive(true);
 	}
 
 	pScript = findScript(scriptName);

@@ -5929,6 +5929,7 @@ SightingInfo::~SightingInfo()
 // ------------------------------------------------------------------------------------------------
 Bool PartitionFilterLastFrameSeen::allow(Object* other)
 {
+	// we will create this short term memory, allowing a player to "remember" seen units for up to 300 frames.
 	const int MEMORY_FRAMES = 300;
 
 	if (!other->m_seenByEnemy)

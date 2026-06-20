@@ -4768,16 +4768,11 @@ AISideBuildList* Player::findIDBuildList(Int id)
 //-------------------------------------------------------------------------------------------------
 void Player::insertBuildListInfo(BuildListInfo* info, Bool isPriority)
 {
-	DEBUG_LOG(("========Player::insertBuildListInfo========"));
-	// Make sure we actually have a list to work with
 	if (!info)
 		return;
 
 	if (isPriority)
-	{
-		DEBUG_LOG(("-> Priority"));
 		info->markPriorityBuild();
-	}
 		
 	BuildListInfo* head = m_pBuildList;
 
@@ -4787,30 +4782,13 @@ void Player::insertBuildListInfo(BuildListInfo* info, Bool isPriority)
 		return;
 	}
 
-	for (BuildListInfo* cur = head;
-		cur;
-		cur = cur->getNext())
-	{
-		DEBUG_LOG((
-			"VERIFY ptr=%p next=%p template=%s",
-			cur,
-			cur->getNext(),
-			cur->getTemplateName().str()
-			));
-	}
-
 	// check for duplicates
 	for (BuildListInfo* cur = head; cur; cur = cur->getNext())
 	{
 		if (cur->getTemplateName() == info->getTemplateName() && cur->getLocation() == info->getLocation())
 		{
 			DEBUG_LOG(("-> Duplicate - Canceling insertion..."));
-			DEBUG_LOG((
-				"     DUPLICATE: %s (%f,%f)",
-				info->getTemplateName().str(),
-				info->getLocation()->x,
-				info->getLocation()->y
-				));
+			DEBUG_LOG(("   DUPLICATE: %s (%f,%f)", info->getTemplateName().str(), info->getLocation()->x, info->getLocation()->y));
 			return;
 		}
 	}
@@ -4844,12 +4822,6 @@ void Player::insertBuildListInfo(BuildListInfo* info, Bool isPriority)
 		info->setNextBuildList(head);
 		m_pBuildList = info;
 	}
-
-	DEBUG_LOG(("INFO ptr=%p next=%p template=%s obj=%d",
-		info,
-		info ? info->getNext() : nullptr,
-		info ? info->getTemplateName().str() : "NULL",
-		info ? info->getObjectID() : -1));
 }
 
 //-------------------------------------------------------------------------------------------------

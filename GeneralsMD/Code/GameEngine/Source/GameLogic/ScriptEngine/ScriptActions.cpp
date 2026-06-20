@@ -8474,7 +8474,6 @@ void ScriptActions::doTeamGarrisonEqually(const AsciiString& teamName, Int amoun
 		if (!obj) break;
 		if(obj->isKindOf(KINDOF_INFANTRY)) teamSize++;
 	}
-	DEBUG_LOG(("\n\n\nTEAM SIZE: %d\n\n\n", teamSize));
 	// here's what we do. Find out how many slots each building has open, and tell each unit individually to
 	// garrison a specific building. We won't use the partition solver because we've already done most of the work
 	int base = teamSize / amount;

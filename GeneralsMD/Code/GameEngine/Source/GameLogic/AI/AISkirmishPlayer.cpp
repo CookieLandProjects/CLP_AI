@@ -199,11 +199,6 @@ void AISkirmishPlayer::processBaseBuilding()
 			}
 			if (info->isPriorityBuild()) {
 
-				DEBUG_LOG((
-					"FOUND PRIORITY %s",
-					info->getTemplateName().str()
-					));
-
 				// Always take priority build, unless we already have priority build.
 				if (!isPriority) {
 					bldgPlan = curPlan;
@@ -224,11 +219,6 @@ void AISkirmishPlayer::processBaseBuilding()
 			}
 
 			Object* dozer = findDozer(info->getLocation());
-
-			DEBUG_LOG((
-				"DOZER=%p",
-				dozer
-				));
 
 			if (dozer==nullptr) {
 				if (isUnderPowered) {
@@ -262,27 +252,9 @@ void AISkirmishPlayer::processBaseBuilding()
 		}
 		if (bldgPlan && bldgInfo) {
 
-			DEBUG_LOG((
-				"FINAL BUILD %s priority=%d",
-				bldgInfo->getTemplateName().str(),
-				bldgInfo->isPriorityBuild()
-				));
-			DEBUG_LOG(("PLAN=%s buildable=%d", bldgPlan->getName().str(), bldgPlan->isBuildableItem()));
-			DEBUG_LOG(("BUILD ATTEMPT: %s", bldgPlan->getName().str()));
-
 #ifdef USE_DOZER
 			// dozer-construct the building
-
-			DEBUG_LOG(("NAME=%s LOC=(%f,%f,%f)",
-				bldgInfo->getTemplateName().str(),
-				bldgInfo->getLocation()->x,
-				bldgInfo->getLocation()->y,
-				bldgInfo->getLocation()->z));
-
 			bldg = buildStructureWithDozer(bldgPlan, bldgInfo);
-
-			DEBUG_LOG(("BUILD RESULT: %p", bldg));
-
 
 			// store the object with the build order
 			if (bldg)
@@ -1757,7 +1729,6 @@ void AISkirmishPlayer::buildSpecificAIBuildingFromID(const AsciiString& thingNam
 //-------------------------------------------------------------------------------------------------
 void AISkirmishPlayer::normalizeBuildListFromID(Int id, Int spot)
 {
-
 	BuildListInfo* list = nullptr;
 
 	if (id == -1) {
@@ -1872,19 +1843,19 @@ void AISkirmishPlayer::normalizeBuildListFromID(Int id, Int spot)
 
 
 	// the actual angle
-	Real angle = newAngle - oldAngle;
+	Real futureAngle = newAngle - oldAngle;
 
-	Real s = sin(angle);
-	Real c = cos(angle);
-
+	Real s = sin(futureAngle);
+	Real c = cos(futureAngle);
 
 	// ------------------------------------------------------------
 	// ------------------------------------------------------------
-	Coord3D pos;
+
+	Coord3D pos = {0, 0, 0};
 
 	while (list)
 	{
-		 Real defaultAngle = TheThingFactory->findTemplate(list->getTemplateName())->getPlacementViewAngle();
+		 Real currentAngle = list->getAngle();
 
 		 pos.x = list->getLocation()->x - oPos.x;
 		 pos.y = list->getLocation()->y - oPos.y;
@@ -1895,14 +1866,10 @@ void AISkirmishPlayer::normalizeBuildListFromID(Int id, Int spot)
 
 		pos.x = newX + nPos.x;
 		pos.y = newY + nPos.y;
-
-		// terrain snap
 		pos.z = TheTerrainLogic->getGroundHeight(pos.x, pos.y);
 
 		list->setLocation(pos);
-
-		// angle stays consistent
-		list->setAngle(defaultAngle + angle);
+		list->setAngle(currentAngle + futureAngle);
 
 		list = list->getNext();
 	}
@@ -1923,6 +1890,20 @@ void AISkirmishPlayer::setDefaultBuildList(Int id)
 	}
 
 	m_player->setBuildList(src->m_buildList->duplicate());
+
+	// RE-REGISTER FACTORY BUILDINGS
+	for (Object* obj = TheGameLogic->getFirstObject();obj ; obj = obj->getNextObject())
+	{
+		if (obj->getControllingPlayer() != m_player)
+			continue;
+
+		ProductionUpdateInterface* pInterface = obj->getProductionUpdateInterface();
+
+		if (!pInterface)
+			continue;
+
+		m_player->addToBuildList(obj);
+	}
 
 	normalizeBuildListFromID(id, m_player->getMpStartIndex() + 1);
 }
