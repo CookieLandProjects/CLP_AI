@@ -355,14 +355,18 @@ public:
 	void countObjectsByThingTemplateArea(Int numTmplates, const ThingTemplate* const* things, Bool ignoreDead, Int* counts, Bool ignoreUnderConstruction, const PolygonTrigger* triggerArea) const;
 	Script* m_genericScriptsToRun[MAX_GENERIC_SCRIPTS];			// @-TanSo-: Every team instance should be able to get its own set of generic scripts, and not only the first!
 
-	Int m_ownedUnits;																				// Much like m_curUnits, but we update it regardless of a script being present in "On % destroyed".
+	Int	 m_ownedUnits;																			// Much like m_curUnits, but we update it regardless of a script being present in "On % destroyed".
 	Real m_maxHealth;																				// Adds max Health of alive and dead units. Only updates if the unit count changed. Used to measure strength loss of a team later on after units potentially died. Counts 'obj->getBodyModule->getMaxHealth();'.
 	Real m_ghostHealth;																			// Save max health of our dead team members so we can add them back in m_maxHealth.
 	Real getCurrentHealth();
 	void updateHealth();
 
 	Int m_idleFrames;																				// How long has our team been idling for?
-
+	Int m_allClear;																					// Keeps track of whether the team has left combat. Saves it 300 frames.
+	Bool getPrevSeeEnemy() { return m_prevSeeEnemy; }
+	void setPrevSeeEnemy(Bool b) { m_prevSeeEnemy = b; }
+	Bool getSeeEnemy() { return m_seeEnemy; }
+	void setSeeEnemy(Bool b) { m_seeEnemy = b; }
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------------- @CLP_AI TEAM ADDITIONS END -----------------------------------
 	//-------------------------------------------------------------------------------------------------

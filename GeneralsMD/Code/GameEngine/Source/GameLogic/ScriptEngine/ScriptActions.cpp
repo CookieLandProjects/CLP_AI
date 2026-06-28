@@ -45,7 +45,9 @@
 #include "Common/Team.h"
 #include "Common/Upgrade.h"
 
-#include "Common/BuildAssistant.h"			//  @-TanSo-: we need it for scripts, thanks.
+// @-TanSo-: we need it for scripts, thanks.
+#include "Common/BuildAssistant.h"			
+#include "GameLogic/SidesList.h"
 
 #include "GameClient/Anim2D.h"
 #include "GameClient/CampaignManager.h"
@@ -11411,6 +11413,19 @@ void ScriptActions::doSetDefaultBuildList(Int buildListID)
 }
 
 //-------------------------------------------------------------------------------------------------
+void ScriptActions::doResetBuildListID(Int id)
+{
+	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
+	if (!pPlayer) return;
+
+	pPlayer->normalizeBuildListFromID(id, 0);
+
+	for (BuildListInfo* info = pPlayer->getBuildList(); info; info = info->getNext())
+	{
+		info->setConsumedInIDList(FALSE);
+	}
+}
+//-------------------------------------------------------------------------------------------------
 //----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 //-------------------------------------------------------------------------------------------------
 
@@ -12849,6 +12864,9 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			return;
 		case ScriptAction::AI_PLAYER_SET_DEFAULT_BUILDLIST_FROM_ID:
 			doSetDefaultBuildList(pAction->getParameter(0)->getInt());
+			return;
+		case ScriptAction::AI_PLAYER_RESET_BUILDLIST_FROM_ID:
+			doResetBuildListID(pAction->getParameter(0)->getInt());
 			return;
 
 	}

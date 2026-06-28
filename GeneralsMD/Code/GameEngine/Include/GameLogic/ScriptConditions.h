@@ -261,7 +261,12 @@ protected:
 	Bool evaluateTeamHasComparisonRatioSighted(Parameter* pTeamParm, Parameter* pComparisonParm, Real ratio);
 	Bool evaluateTeamHasComparisonRatioTypeSighted(Parameter* pTeamParm, Parameter* pComparisonParm, Real ratio, Parameter* objectType, Parameter* otherObjectType);
 
-	// @-TanSo-: 52 additions, 1 helper method
+	Bool evaluateTeamClosestRelationType(Parameter* pTeamParm, Int pRelation, Parameter* objectType, Parameter* pComparisonParm, Real value);
+	Bool evaluateUnitClosestRelationType(Parameter* pUnitParm, Int pRelation, Parameter* objectType, Parameter* pComparisonParm, Real value);
+
+	Bool evaluateTeamAllClear(Parameter* pTeamParm);
+
+	// @-TanSo-: 55 additions, 1 helper method
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 	//-------------------------------------------------------------------------------------------------

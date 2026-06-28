@@ -926,7 +926,8 @@ m_desiredGatherers(0),
 m_currentGatherers(0),
 m_automaticallyBuild(true),
 m_priorityBuild(false),
-m_buildingName(AsciiString::TheEmptyString)
+m_buildingName(AsciiString::TheEmptyString),
+m_consumedInIDList(false)
 {
 	m_location.zero();
 	m_rallyPointOffset.x = 0.0f;
@@ -987,7 +988,8 @@ void BuildListInfo::parseStructure(INI *ini, void *instance, void* /*store*/, co
 */
 BuildListInfo *BuildListInfo::duplicate()
 {
-	/*BuildListInfo* first = newInstance(BuildListInfo);
+	/*
+	BuildListInfo* first = newInstance(BuildListInfo);
 	*first = *this;
 	first->m_nextBuildList = nullptr;
 	BuildListInfo *next = this->m_nextBuildList;
@@ -1000,8 +1002,8 @@ BuildListInfo *BuildListInfo::duplicate()
 		cur = link;
 		next = next->m_nextBuildList;
 	}
-	return first;*/
-
+	return first;
+	*/
 	//-TanSo-: this looks a bit safer to me
 	BuildListInfo* first = newInstance(BuildListInfo);
 
@@ -1058,6 +1060,7 @@ BuildListInfo *BuildListInfo::duplicate()
 	}
 
 	return first;
+	
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -1077,7 +1080,7 @@ void BuildListInfo::xfer( Xfer *xfer )
 {
 
 	// version
-	XferVersion currentVersion = 2;
+	XferVersion currentVersion = 3;
 	XferVersion version = currentVersion;
 	xfer->xferVersion( &version, currentVersion );
 
@@ -1107,7 +1110,9 @@ void BuildListInfo::xfer( Xfer *xfer )
 	if (version>=2) {
 		xfer->xferInt(&m_currentGatherers);
 	}
-
+	if (version >= 3) {
+		xfer->xferBool(&m_consumedInIDList);
+	}
 }
 
 // ------------------------------------------------------------------------------------------------

@@ -110,7 +110,8 @@ AISideBuildList::AISideBuildList( AsciiString side ) :
 	m_buildList(nullptr),
 	m_next(nullptr),
 	m_buildListID(-1),
-	m_tiedSpot(0)
+	m_tiedSpot(0),
+	m_fixedOrientation(FALSE)
 {
 }
 
@@ -1092,3 +1093,27 @@ AISideBuildList* TAiData::findIDBuildList(const AsciiString& side, Int id) const
 	return nullptr;
 }
 
+//-----------------------------------------------------------------------------
+AISideBuildList::AISideBuildList() :
+	m_side(AsciiString::TheEmptyString),
+	m_buildList(nullptr),
+	m_next(nullptr),
+	m_buildListID(-1),
+	m_tiedSpot(0),
+	m_fixedOrientation(FALSE)
+{}
+
+//-----------------------------------------------------------------------------
+AISideBuildList* AISideBuildList::duplicate()
+{
+	AISideBuildList* copy = newInstance(AISideBuildList);
+
+	copy->m_side = m_side;
+	copy->m_buildList = m_buildList->duplicate();
+	copy->m_next = m_next;
+	copy->m_buildListID = m_buildListID;
+	copy->m_tiedSpot = m_tiedSpot;
+	copy->m_fixedOrientation = m_fixedOrientation;
+
+	return copy;
+}

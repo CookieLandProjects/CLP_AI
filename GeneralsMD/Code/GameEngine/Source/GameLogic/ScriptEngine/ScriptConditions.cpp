@@ -5678,6 +5678,254 @@ Bool ScriptConditions::evaluateTeamHasComparisonRatioTypeSighted(Parameter* pTea
 	return false;
 }
 
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateTeamClosestRelationType(Parameter* pTeamParm, Int pRelation, Parameter* objectType, Parameter* pComparisonParm, Real value)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
+	if (!pTeam) return false;
+
+	Real cDist = FLT_MAX;
+	const Coord3D* teamPos = pTeam->getEstimateTeamPosition();
+	if (!teamPos) return false;
+
+	Player::PlayerTeamList::const_iterator it;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType->getString());
+	if (templ)
+	{
+		for (int i = 0; i < ThePlayerList->getPlayerCount() - 1; i++) {
+			if (ThePlayerList->getNthPlayer(i)->getRelationship(pTeam->getControllingPlayer()->getDefaultTeam()) == pRelation)
+			{
+				if (ThePlayerList->getNthPlayer(i) == pTeam->getControllingPlayer() && pRelation != ALLIES) // Count me in if ALLIES!
+					continue;
+
+				for (it = ThePlayerList->getNthPlayer(i)->getPlayerTeams()->begin(); it != ThePlayerList->getNthPlayer(i)->getPlayerTeams()->end(); ++it)
+				{
+					for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+						Team* team = iter.cur();
+						if (!team) continue;
+
+						for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
+							Object* pObj = iter.cur();
+							if (!pObj) continue;
+
+							if (pObj->getTemplate() != templ)
+								continue;
+
+							Coord3D oCoords = *pObj->getPosition();
+							Real dist = oCoords.lengthSqr() - teamPos->lengthSqr();
+
+							// Only possible if inside a garrison or unit, and then not desirable.
+							if (dist < 10.0f) continue;
+
+							if (dist < cDist) { cDist = dist; }
+
+						}
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		ObjectTypes* type = TheScriptEngine->getObjectTypes(objectType->getString());
+		if (type)
+		{
+			for (int i = 0; i < ThePlayerList->getPlayerCount() - 1; i++) {
+				if (ThePlayerList->getNthPlayer(i)->getRelationship(pTeam->getControllingPlayer()->getDefaultTeam()) == pRelation)
+				{
+					if (ThePlayerList->getNthPlayer(i) == pTeam->getControllingPlayer() && pRelation != ALLIES) // Count me in if ALLIES!
+						continue;
+
+					for (it = ThePlayerList->getNthPlayer(i)->getPlayerTeams()->begin(); it != ThePlayerList->getNthPlayer(i)->getPlayerTeams()->end(); ++it)
+					{
+						for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+							Team* team = iter.cur();
+							if (!team) continue;
+
+							for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
+								Object* pObj = iter.cur();
+								if (!pObj) continue;
+
+								if (!type->isInSet(pObj->getTemplate()))
+									continue;
+
+								Coord3D oCoords = *pObj->getPosition();
+								Real dist = oCoords.length() - teamPos->length();
+
+								// Only possible if inside a garrison or unit, and then not desirable.
+								if (dist < 10.0f) continue;
+
+								if (dist < cDist) { cDist = dist; }
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	if (cDist == FLT_MAX)	return false;
+
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:			return cDist < value;
+	case Parameter::LESS_EQUAL:			return cDist <= value;
+	case Parameter::EQUAL:					return fabs(cDist - value) < 0.01f;
+	case Parameter::GREATER_EQUAL:	return cDist >= value;
+	case Parameter::GREATER:				return cDist > value;
+	case Parameter::NOT_EQUAL:			return fabs(cDist - value) > 0.01f;
+	}
+
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateUnitClosestRelationType(Parameter* pUnitParm, Int pRelation, Parameter* objectType, Parameter* pComparisonParm, Real value)
+{
+	Object* pUnit = TheScriptEngine->getUnitNamed(pUnitParm->getString());
+	if (!pUnit) return false;
+
+	Real cDist = FLT_MAX;
+	const Coord3D* unitPos = pUnit->getPosition();
+	if (!unitPos) return false;
+
+	Player::PlayerTeamList::const_iterator it;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType->getString());
+	if (templ)
+	{
+		for (int i = 0; i < ThePlayerList->getPlayerCount() - 1; i++) {
+			if (ThePlayerList->getNthPlayer(i)->getRelationship(pUnit->getControllingPlayer()->getDefaultTeam()) == pRelation)
+			{
+				if (ThePlayerList->getNthPlayer(i) == pUnit->getControllingPlayer() && pRelation != ALLIES) // Count me in if ALLIES!
+					continue;
+
+				for (it = ThePlayerList->getNthPlayer(i)->getPlayerTeams()->begin(); it != ThePlayerList->getNthPlayer(i)->getPlayerTeams()->end(); ++it)
+				{
+					for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+						Team* team = iter.cur();
+						if (!team) continue;
+
+						for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
+							Object* pObj = iter.cur();
+							if (!pObj) continue;
+
+							if (pObj->getTemplate() != templ)
+								continue;
+
+							Coord3D oCoords = *pObj->getPosition();
+							Real dist = oCoords.lengthSqr() - unitPos->lengthSqr();
+
+							// Only possible if inside a garrison or unit, and then not desirable.
+							if (dist < 10.0f) continue;
+
+							if (dist < cDist) { cDist = dist; }
+
+						}
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		ObjectTypes* type = TheScriptEngine->getObjectTypes(objectType->getString());
+		if (type)
+		{
+			for (int i = 0; i < ThePlayerList->getPlayerCount() - 1; i++) {
+				if (ThePlayerList->getNthPlayer(i)->getRelationship(pUnit->getControllingPlayer()->getDefaultTeam()) == pRelation)
+				{
+					if (ThePlayerList->getNthPlayer(i) == pUnit->getControllingPlayer() && pRelation != ALLIES) // Count me in if ALLIES!
+						continue;
+
+					for (it = ThePlayerList->getNthPlayer(i)->getPlayerTeams()->begin(); it != ThePlayerList->getNthPlayer(i)->getPlayerTeams()->end(); ++it)
+					{
+						for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+							Team* team = iter.cur();
+							if (!team) continue;
+
+							for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
+								Object* pObj = iter.cur();
+								if (!pObj) continue;
+
+								if (!type->isInSet(pObj->getTemplate()))
+									continue;
+
+								Coord3D oCoords = *pObj->getPosition();
+								Real dist = oCoords.lengthSqr() - unitPos->lengthSqr();
+
+								// Only possible if inside a garrison or unit, and then not desirable.
+								if (dist < 10.0f) continue;
+
+								if (dist < cDist) { cDist = dist; }
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	if (cDist == FLT_MAX)	return false;
+
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:			return cDist < value;
+	case Parameter::LESS_EQUAL:			return cDist <= value;
+	case Parameter::EQUAL:					return fabs(cDist - value) < 0.01f;
+	case Parameter::GREATER_EQUAL:	return cDist >= value;
+	case Parameter::GREATER:				return cDist > value;
+	case Parameter::NOT_EQUAL:			return fabs(cDist - value) > 0.01f;
+	}
+
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateTeamAllClear(Parameter* pTeamParm)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
+	if (!pTeam) return false;
+
+	pTeam->setPrevSeeEnemy(pTeam->getSeeEnemy());
+	pTeam->setSeeEnemy(false);
+
+	Bool anyAliveInTeam = false;
+	// only consider enemies.
+	for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		if (iter.cur()->isEffectivelyDead())
+			continue;
+
+		PartitionFilterRelationship	filterTeam(iter.cur(), PartitionFilterRelationship::ALLOW_ENEMIES);
+
+		// and only stuff that is not dead
+		PartitionFilterAlive filterAlive;
+		PartitionFilterSameMapStatus filterMapStatus(iter.cur());
+
+		PartitionFilter* filters[] = { &filterTeam, &filterAlive, &filterMapStatus, nullptr };
+		Real visionRange = iter.cur()->getVisionRange();
+		anyAliveInTeam = true;
+		Object* pObj = ThePartitionManager->getClosestObject(iter.cur(), visionRange,
+			FROM_CENTER_2D, filters);
+		if (pObj) {
+			pTeam->setSeeEnemy(true);
+			break;
+		}
+	}
+	if (anyAliveInTeam) {
+		if (pTeam->getPrevSeeEnemy() != pTeam->getSeeEnemy())
+		{
+			if (!pTeam->getSeeEnemy())
+			{
+				// all clear.
+				pTeam->m_allClear = 300;
+				return true;
+			}
+		}
+		return pTeam->m_allClear > 0;
+	}
+	return false;
+}
 
 //-------------------------------------------------------------------------------------------------
 //---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
@@ -6056,6 +6304,12 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 			return evaluateTeamHasComparisonRatioTypeSighted(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getReal(), pCondition->getParameter(3), pCondition->getParameter(4));
 		case Condition::SPOT_NEIGHBOURING_RELATION:
 			return evaluateSpotNeighbouringRelation(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2)->getInt());
+		case Condition::TEAM_CLOSEST_RELATION_TYPE:
+			return evaluateTeamClosestRelationType(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2), pCondition->getParameter(3), pCondition->getParameter(4)->getReal());
+		case Condition::UNIT_CLOSEST_RELATION_TYPE:
+			return evaluateUnitClosestRelationType(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2), pCondition->getParameter(3), pCondition->getParameter(4)->getReal());
+		case Condition::TEAM_ALL_CLEAR:
+			return evaluateTeamAllClear(pCondition->getParameter(0));
 
 	}
 }

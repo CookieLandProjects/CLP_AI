@@ -1335,7 +1335,9 @@ Team::Team(TeamPrototype *proto, TeamID id ) :
 	m_wasIdle(false),
 	m_maxHealth(0),
 	m_ownedUnits(0),
-	m_ghostHealth(0)
+	m_ghostHealth(0),
+	m_idleFrames(0),
+	m_allClear(0)
 {
 	m_created = FALSE;
 	m_commonAttackTarget = INVALID_ID;
@@ -2762,6 +2764,8 @@ void Team::xfer( Xfer *xfer )
 		xfer->xferReal(&m_ghostHealth);
 		// idle frames
 		xfer->xferInt(&m_idleFrames);
+		// all clear check
+		xfer->xferInt(&m_allClear);
 	}
 }
 

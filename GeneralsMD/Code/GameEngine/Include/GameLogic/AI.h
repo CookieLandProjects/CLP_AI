@@ -131,10 +131,12 @@ class AISideBuildList : public MemoryPoolObject
 {
 	MEMORY_POOL_GLUE_WITH_USERLOOKUP_CREATE(AISideBuildList, "AISideBuildList")
 public:
+	AISideBuildList();									///< -TanSo-: Additional constructor for the use of newInstance() in duplicate()
 	AISideBuildList( AsciiString side );
 	//~AISideBuildList();
 
 	void addInfo(BuildListInfo *info); 
+	AISideBuildList* duplicate();				///< -TanSo-: deep copy so two AIs of the same army wont share the same build list.
 
 public:
 	AsciiString				m_side;						///< Name of the faction.
@@ -142,7 +144,12 @@ public:
 	AISideBuildList*	m_next;
 
 	Int								m_buildListID;		///< @-TanSo-: Expansion for more than just BuildList per AI player.
-	Int								m_tiedSpot;				///< @-TanSo: Remember what spot we are tied to for later transpositions.
+	Int								m_tiedSpot;				///< @-TanSo-: Remember what spot we are tied to for later transpositions.
+
+	///< @-TanSo-:
+	///< Convert the INI-coordinate system into the ingame-coordinate system. The coordinate system would
+	///< otherwise apply the base rotation from spot 7 onto 0. Therefore correct by -135° once.
+	Bool							m_fixedOrientation; 
 };
 
 

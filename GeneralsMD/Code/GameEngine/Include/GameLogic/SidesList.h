@@ -304,6 +304,8 @@ protected:
 	Int			 m_currentGatherers;				///< Number of gatherers available.
 	Bool		 m_priorityBuild;						///< Is priority build.
 
+	Bool		m_consumedInIDList;					///< -TanSo-: Make sure we do not build the same building twice in an ID list.
+
 public:
 	// srj sez: naughty public access to avoid 'friend' -- should be friend for JUST THESE, but hey
 	void setNumRebuilds(UnsignedInt numRebuilds) {m_numRebuilds = numRebuilds;}
@@ -368,6 +370,8 @@ public:
 	BuildListInfo *duplicate();
 	// -TanSo-: Also be able to duplicate a single entry, please!
 	BuildListInfo* duplicateSingle();
+	Bool isConsumedInIDList() { return m_consumedInIDList; }
+	void setConsumedInIDList(Bool b) { m_consumedInIDList = b; }
 };
 
 inline void BuildListInfo::decrementNumRebuilds()
