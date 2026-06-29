@@ -6547,10 +6547,13 @@ void ScriptActions::doPlayerSurrender(const AsciiString& playerName)
 
 	for (int i = 2; i < ThePlayerList->getPlayerCount() - 1; i++)
 	{
-		if (ThePlayerList->getNthPlayer(i)->getRelationship(pPlayer->getDefaultTeam()) == ALLIES)
+		if(ThePlayerList->getNthPlayer(i))
 		{
-			ThePlayerList->getNthPlayer(i)->transferAssetsFromThat(pPlayer);
-			break;
+			if (ThePlayerList->getNthPlayer(i)->getRelationship(pPlayer->getDefaultTeam()) == ALLIES)
+			{
+				ThePlayerList->getNthPlayer(i)->transferAssetsFromThat(pPlayer);
+				break;
+			}
 		}
 	}
 	pPlayer->killPlayer();
@@ -8677,7 +8680,13 @@ void ScriptActions::doBuildObjectNearestTypeAngle(const AsciiString& playerName,
 		return;
 	}
 
-	Coord3D teamPos = *thePlayer->getDefaultTeam()->getEstimateTeamPosition();
+	AsciiString teamSpot;
+	teamSpot.format("Player_%d_Start", thePlayer->getMpStartIndex() + 1);
+	Waypoint* teamWay = TheTerrainLogic->getWaypointByName(teamSpot);
+	if (!teamWay) return;
+
+	Coord3D teamPos = *teamWay->getLocation();
+
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	Object* bestObj = nullptr;
 
@@ -8770,7 +8779,12 @@ void ScriptActions::doBuildObjectNearestKindOfAngle(const AsciiString& playerNam
 		return;
 	}
 
-	Coord3D teamPos = *thePlayer->getDefaultTeam()->getEstimateTeamPosition();
+	AsciiString teamSpot;
+	teamSpot.format("Player_%d_Start", thePlayer->getMpStartIndex() + 1);
+	Waypoint* teamWay = TheTerrainLogic->getWaypointByName(teamSpot);
+	if (!teamWay) return;
+
+	Coord3D teamPos = *teamWay->getLocation();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	Object* bestObj = nullptr;
 
@@ -8831,7 +8845,12 @@ void ScriptActions::doBuildObjectNearestTypeAngleArea(const AsciiString& playerN
 		return;
 	}
 
-	Coord3D teamPos = *thePlayer->getDefaultTeam()->getEstimateTeamPosition();
+	AsciiString teamSpot;
+	teamSpot.format("Player_%d_Start", thePlayer->getMpStartIndex() + 1);
+	Waypoint* teamWay = TheTerrainLogic->getWaypointByName(teamSpot);
+	if (!teamWay) return;
+
+	Coord3D teamPos = *teamWay->getLocation();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	Object* bestObj = nullptr;
 
@@ -8929,7 +8948,12 @@ void ScriptActions::doBuildObjectNearestKindOfAngleArea(const AsciiString& playe
 		return;
 	}
 
-	Coord3D teamPos = *thePlayer->getDefaultTeam()->getEstimateTeamPosition();
+	AsciiString teamSpot;
+	teamSpot.format("Player_%d_Start", thePlayer->getMpStartIndex() + 1);
+	Waypoint* teamWay = TheTerrainLogic->getWaypointByName(teamSpot);
+	if (!teamWay) return;
+
+	Coord3D teamPos = *teamWay->getLocation();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	Object* bestObj = nullptr;
 

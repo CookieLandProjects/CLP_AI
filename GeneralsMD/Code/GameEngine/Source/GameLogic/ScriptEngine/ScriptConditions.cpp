@@ -3744,8 +3744,7 @@ Bool ScriptConditions::evaluateTeamLostType(Parameter* pTeamParm, Parameter* obj
 
 		for (size_t i = 0; i < objectTypes->getListSize(); i++)
 		{
-			const ThingTemplate* type =
-				TheThingFactory->findTemplate(objectTypes->getNthInList(i), FALSE);
+			const ThingTemplate* type = TheThingFactory->findTemplate(objectTypes->getNthInList(i), FALSE);
 
 			if (!type)
 				continue;
@@ -5905,8 +5904,7 @@ Bool ScriptConditions::evaluateTeamAllClear(Parameter* pTeamParm)
 		PartitionFilter* filters[] = { &filterTeam, &filterAlive, &filterMapStatus, nullptr };
 		Real visionRange = iter.cur()->getVisionRange();
 		anyAliveInTeam = true;
-		Object* pObj = ThePartitionManager->getClosestObject(iter.cur(), visionRange,
-			FROM_CENTER_2D, filters);
+		Object* pObj = ThePartitionManager->getClosestObject(iter.cur(), visionRange, FROM_CENTER_2D, filters);
 		if (pObj) {
 			pTeam->setSeeEnemy(true);
 			break;
