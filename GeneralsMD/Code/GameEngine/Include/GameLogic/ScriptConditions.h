@@ -261,6 +261,12 @@ protected:
 	Bool evaluateTeamHasComparisonRatioSighted(Parameter* pTeamParm, Parameter* pComparisonParm, Real ratio);
 	Bool evaluateTeamHasComparisonRatioTypeSighted(Parameter* pTeamParm, Parameter* pComparisonParm, Real ratio, Parameter* objectType, Parameter* otherObjectType);
 
+	Bool evaluateTeamClosestRelationType(Parameter* pTeamParm, Int pRelation, Parameter* objectType, Parameter* pComparisonParm, Real value);
+	Bool evaluateUnitClosestRelationType(Parameter* pUnitParm, Int pRelation, Parameter* objectType, Parameter* pComparisonParm, Real value);
+
+	Bool evaluateTeamAllClear(Parameter* pTeamParm);
+
+
 	Bool AIPlaystyleEvaluation(Parameter* pPlayerParm, Parameter* pPlaystyleParm);
 
 	// @n0ttws: AI playstyle evaluation

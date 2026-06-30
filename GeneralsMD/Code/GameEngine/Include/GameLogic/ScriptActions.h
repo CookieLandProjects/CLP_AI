@@ -491,7 +491,9 @@ protected:
 	void doInsertBuildListFromID(Int buildListID);
 	void doNormalizeBuildListIDToSpot(Int buildListID, Int spot);
 	void doSetDefaultBuildList(Int buildListID);
-	// @-TanSo-: 82 additions
+	void doResetBuildListID(Int id);
+
+	// @-TanSo-: 87 additions
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 	//-------------------------------------------------------------------------------------------------

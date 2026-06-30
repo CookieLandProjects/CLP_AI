@@ -7118,7 +7118,7 @@ void ScriptEngine::init()
 	curTemplate->m_parameters[0] = Parameter::OBJECT_TYPE;
 	curTemplate->m_parameters[1] = Parameter::INT;
 	curTemplate->m_numUiStrings = 3;
-	curTemplate->m_uiStrings[0] = " Build a building of type";
+	curTemplate->m_uiStrings[0] = " Build a building of type ";
 	curTemplate->m_uiStrings[1] = " from ID ";
 	curTemplate->m_uiStrings[2] = ".\n\nNOTE: Tied to IDs. In order to have separate BuildLists, add 'ID XYZ' after your faction declaration.\n -> SkirmishBuildList AmericaAirForceGeneral\n        ID 3\n        Structure AirF_AmericaCommandCenter\n[...]";
 
@@ -7128,7 +7128,7 @@ void ScriptEngine::init()
 	curTemplate->m_numParameters = 1;
 	curTemplate->m_parameters[0] = Parameter::INT;
 	curTemplate->m_numUiStrings = 2;
-	curTemplate->m_uiStrings[0] = " Insert build list with ID";
+	curTemplate->m_uiStrings[0] = " Insert build list with ID ";
 	curTemplate->m_uiStrings[1] = " into the main build list.\n\nNOTE: Tied to IDs. In order to have separate BuildLists, add 'ID XYZ' after your faction declaration.\n -> SkirmishBuildList AmericaAirForceGeneral\n        ID 3\n        Structure AirF_AmericaCommandCenter\n[...]";
 
 	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_NORMALIZE_BUILDLIST_FROM_ID];
@@ -7150,6 +7150,58 @@ void ScriptEngine::init()
 	curTemplate->m_numUiStrings = 2;
 	curTemplate->m_uiStrings[0] = " Replace the current build list with the build list with ID ";
 	curTemplate->m_uiStrings[1] = " .\n\nNOTE: Tied to IDs. In order to have separate BuildLists, add 'ID XYZ' after your faction declaration.\n -> SkirmishBuildList AmericaAirForceGeneral\n        ID 3\n        Structure AirF_AmericaCommandCenter\n[...]\n\nTHIS WILL GET RID OF THE ORIGINAL NON-ID BUILDLIST ONCE AND FOR ALL IN THIS MATCH!";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_RESET_BUILDLIST_FROM_ID];
+	curTemplate->m_internalName = "AI_PLAYER_RESET_BUILDLIST_FROM_ID";
+	curTemplate->m_uiName = "Skirmish Only/ID BuildList/Reset a build list.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::INT;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " Reset build list with ID ";
+	curTemplate->m_uiStrings[1] = " .\n\nNOTE: Tied to IDs. In order to have separate BuildLists, add 'ID XYZ' after your faction declaration.\n -> SkirmishBuildList AmericaAirForceGeneral\n        ID 3\n        Structure AirF_AmericaCommandCenter\n[...]\n\nTHIS WILL GET RID OF THE ORIGINAL NON-ID BUILDLIST ONCE AND FOR ALL IN THIS MATCH!";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_CLOSEST_RELATION_TYPE];
+	curTemplate->m_internalName = "TEAM_CLOSEST_RELATION_TYPE";
+	curTemplate->m_uiName = "Team/Distance to the closest unit of a type with a relation.";
+	curTemplate->m_numParameters = 5;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[3] = Parameter::COMPARISON;
+	curTemplate->m_parameters[4] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 6;
+	curTemplate->m_uiStrings[0] = "Team ";
+	curTemplate->m_uiStrings[1] = " 's distance to the closest ";
+	curTemplate->m_uiStrings[2] = " unit of type ";
+	curTemplate->m_uiStrings[3] = " is ";
+	curTemplate->m_uiStrings[4] = " ";
+	curTemplate->m_uiStrings[5] = " feet.";
+
+	curTemplate = &m_conditionTemplates[Condition::UNIT_CLOSEST_RELATION_TYPE];
+	curTemplate->m_internalName = "UNIT_CLOSEST_RELATION_TYPE";
+	curTemplate->m_uiName = "Unit/Distance to the closest unit of a type with a relation.";
+	curTemplate->m_numParameters = 5;
+	curTemplate->m_parameters[0] = Parameter::UNIT;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[3] = Parameter::COMPARISON;
+	curTemplate->m_parameters[4] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 6;
+	curTemplate->m_uiStrings[0] = "Unit ";
+	curTemplate->m_uiStrings[1] = " 's distance to the closest ";
+	curTemplate->m_uiStrings[2] = " unit of type ";
+	curTemplate->m_uiStrings[3] = " is ";
+	curTemplate->m_uiStrings[4] = " ";
+	curTemplate->m_uiStrings[5] = " feet.";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_ALL_CLEAR];
+	curTemplate->m_internalName = "TEAM_ALL_CLEAR";
+	curTemplate->m_uiName = "Team/Sighted/A team has just left combat.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = "Team ";
+	curTemplate->m_uiStrings[1] = " has just left combat and is now on 'all clear' (similar to the behaviour tab). ";
 
 	curTemplate = &m_conditionTemplates[Condition::AI_PLAYSTYLE];
 	curTemplate->m_internalName = "AI_PLAYSTYLE";
@@ -7602,6 +7654,8 @@ void ScriptEngine::update()
 				Team* team = teamIter.cur();
 				team->m_lastFrameDeaths.clear();
 				team->m_lostUnitThisFrame = FALSE;
+
+				if (team->m_allClear > 0) team->m_allClear--;
 			}
 		}
 	}

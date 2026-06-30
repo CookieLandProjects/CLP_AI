@@ -245,9 +245,12 @@ void AISkirmishPlayer::processBaseBuilding()
 		}
 		if (powerInfo && powerPlan && !powerPlan->isEquivalentTo(bldgPlan)) {
 			if (!powerUnderConstruction) {
-				bldgPlan = powerPlan;
-				bldgInfo = powerInfo;
-				DEBUG_LOG(("Forcing build of power plant."));
+				// -TanSo-: Checking this at game start is posing problems. Our AI shouldn't have it AT ALL.
+				if (TheGameLogic->getFrame() < 0 && m_player->getPlayerDifficulty() < DIFFICULTY_BRUTAL) {
+					bldgPlan = powerPlan;
+					bldgInfo = powerInfo;
+					DEBUG_LOG(("Forcing build of power plant."));
+				}
 			}
 		}
 		if (bldgPlan && bldgInfo) {
@@ -1041,7 +1044,7 @@ void AISkirmishPlayer::adjustBuildList(BuildListInfo *list)
 			case 8 : angle = PI; break; // 180 degrees.
 		}
 	}
-
+	
 	angle += 3*PI/4;
 
 	Real s = sin(angle);
@@ -1095,12 +1098,12 @@ void AISkirmishPlayer::newMap()
 	for (AISideBuildList* list : TheAI->getAiData()->m_IDBuildLists)
 	{
 		if (list->m_side == mySide)
-		{
-			m_player->addIDBuildList(list);
-			adjustBuildList(list->m_buildList);
-			list->m_tiedSpot = m_player->getMpStartIndex() + 1;
-		}
+			m_player->addIDBuildList(list->duplicate());
 	}
+	DEBUG_LOG(("Player %d: ID9 = %p",
+		m_player->getMpStartIndex() + 1,
+		m_player->findIDBuildList(9)));
+
 	DEBUG_ASSERTLOG(build!=nullptr, ("Couldn't find build list for skirmish player."));
 
 	// Build any with the initially built flag.
@@ -1665,16 +1668,24 @@ void AISkirmishPlayer::removeAIBaseDefenseFromVector(const AsciiString& thingNam
 void AISkirmishPlayer::insertBuildListFromID(Int id)
 {
 	AISideBuildList* list = m_player->findIDBuildList(id);
-
 	if (!list)
+	{
+		DEBUG_LOG(("BuildList ID %d not found.", id));
 		return;
+	}
 
 	for (BuildListInfo* info = list->m_buildList; info; info = info->getNext())
 	{
+		if (info->isConsumedInIDList())
+			continue;
+
 		BuildListInfo* copy = info->duplicate();
 
 		if (copy)
+		{
 			m_player->insertBuildListInfo(copy, false);
+			info->setConsumedInIDList(TRUE);
+		}
 	}
 }
 
@@ -1693,188 +1704,182 @@ void AISkirmishPlayer::buildSpecificAIBuildingFromID(const AsciiString& thingNam
 		if (info->getTemplateName() != thingName)
 			continue;
 
+		if (info->isConsumedInIDList())
+			continue;
+
 		BuildListInfo* copy = info->duplicateSingle();
-		copy->setNextBuildList(nullptr);
 
 		if (copy)
 		{
-			DEBUG_LOG(("Adding %s from BuildList %d", thingName.str(), id));
 			m_player->insertBuildListInfo(copy, isPriority);
+			info->setConsumedInIDList(TRUE);
+			return;
 		}
-		break;
-	}
-
-	//DEBUG_LOG(("HEAD CHECK:"));
-	//DEBUG_LOG(("HEAD=%p", m_player->getBuildList()));
-
-	//BuildListInfo* head = m_player->getBuildList();
-
-	//DEBUG_LOG(("HEAD=%p template=%s",
-	//	head,
-	//	head ? head->getTemplateName().str() : "NULL"));
-
-	for (BuildListInfo* cur = m_player->getBuildList(); cur; cur = cur->getNext())
-	{
-		DEBUG_LOG((
-			"CUR ptr=%p next=%p template=%s obj=%d priority=%d",
-			cur,
-			cur->getNext(),
-			cur->getTemplateName().str(),
-			cur->getObjectID(),
-			cur->isPriorityBuild()
-			));
 	}
 }
 
 //-------------------------------------------------------------------------------------------------
 void AISkirmishPlayer::normalizeBuildListFromID(Int id, Int spot)
 {
-	BuildListInfo* list = nullptr;
-
-	if (id == -1) {
-		list = m_player->getBuildList();
-	}
-	else {
-		list = m_player->findIDBuildList(id)->m_buildList;
-	}
-
-	if (!list) {
-		DEBUG_LOG(("AISkirmishPlayer::normalizeBuildListFromID - BuildList with this ID doesn't exist!"));
-		return;
-	}
-
 	AISideBuildList* aiList = m_player->findIDBuildList(id);
-
-	if (aiList->m_tiedSpot == spot) {
-		DEBUG_LOG(("AISkirmishPlayer::normalizeBuildListFromID - Old and new spots are the same!"));
+	if (!aiList)
 		return;
-	}
+
+	BuildListInfo* list = aiList->m_buildList;
+	if (!list)
+		return;
+
+	Int tiedSpot = aiList->m_tiedSpot;
 
 	AsciiString oldSpot;
 	AsciiString newSpot;
-	oldSpot.format("Player_%d_Start", aiList->m_tiedSpot);
+	oldSpot.format("Player_%d_Start", tiedSpot);
 	newSpot.format("Player_%d_Start", spot);
-	Waypoint* oWay = TheTerrainLogic->getWaypointByName(oldSpot);
-	Waypoint* nWay = TheTerrainLogic->getWaypointByName(newSpot);
 
-	if (!oWay || !nWay)
+	Coord3D oPos = { 0, 0, 0 };
+	Coord3D nPos = { 0, 0, 0 };
+	Waypoint* oWay = nullptr;
+	Waypoint* nWay = nullptr;
+
+	if (tiedSpot != 0)
+	{
+		oWay = TheTerrainLogic->getWaypointByName(oldSpot);
+		if (!oWay)
+			return;
+
+		oPos = *oWay->getLocation();
+	}
+
+	if (spot != 0)
+	{
+		nWay = TheTerrainLogic->getWaypointByName(newSpot);
+		if (!nWay)
+			return;
+
+		nPos = *nWay->getLocation();
+	}
+	
+	if (tiedSpot == spot) {
+		DEBUG_LOG(("AISkirmishPlayer::normalizeBuildListFromID - Spots are identical. Nothing to normalize."));
 		return;
-
-	const Coord3D oPos = *oWay->getLocation();
-	const Coord3D nPos = *nWay->getLocation();
-
-
+	}
 	// ------------------------------------------------------------
 	// ------------------------------------------------------------
 
 	Region3D bounds;
 	TheTerrainLogic->getMaximumPathfindExtent(&bounds);
+	/* calculate section of 3x3 grid:
+		6 7 8
+		3 4 5
+		0 1 2 */
 
-	// old spot rotation
-	Int oldGrid = 0;
+	Int gridIndexOld = 0;
+	if (oPos.x > bounds.lo.x + bounds.width() / 3) {
+		gridIndexOld++;
+	}
+	if (oPos.x > bounds.lo.x + 2 * bounds.width() / 3) {
+		gridIndexOld++;
+	}
 
-	if (oPos.x > bounds.lo.x + bounds.width() / 3.0f)
-		oldGrid++;
+	if (oPos.y > bounds.lo.y + bounds.height() / 3) {
+		gridIndexOld += 3;
+	}
+	if (oPos.y > bounds.lo.y + 2 * bounds.height() / 3) {
+		gridIndexOld += 3;
+	}
 
-	if (oPos.x > bounds.lo.x + 2.0f * bounds.width() / 3.0f)
-		oldGrid++;
+	Int gridIndexNew = 0;
+	if (nPos.x > bounds.lo.x + bounds.width() / 3) {
+		gridIndexNew++;
+	}
+	if (nPos.x > bounds.lo.x + 2 * bounds.width() / 3) {
+		gridIndexNew++;
+	}
 
-	if (oPos.y > bounds.lo.y + bounds.height() / 3.0f)
-		oldGrid += 3;
+	if (nPos.y > bounds.lo.y + bounds.height() / 3) {
+		gridIndexNew += 3;
+	}
+	if (nPos.y > bounds.lo.y + 2 * bounds.height() / 3) {
+		gridIndexNew += 3;
+	}
 
-	if (oPos.y > bounds.lo.y + 2.0f * bounds.height() / 3.0f)
-		oldGrid += 3;
+	Real angleNew = 0;
+	Real angleOld = 0;
+	Real placementAngleOld = 0;
+	Real placementAngleNew = 0;
 
-
-	// new spot rotation
-	Int newGrid = 0;
-
-	if (nPos.x > bounds.lo.x + bounds.width() / 3.0f)
-		newGrid++;
-
-	if (nPos.x > bounds.lo.x + 2.0f * bounds.width() / 3.0f)
-		newGrid++;
-
-	if (nPos.y > bounds.lo.y + bounds.height() / 3.0f)
-		newGrid += 3;
-
-	if (nPos.y > bounds.lo.y + 2.0f * bounds.height() / 3.0f)
-		newGrid += 3;
-
-
-	Real oldAngle = 0;
-	Real newAngle = 0;
-
-	if (TheAI->getAiData()->m_rotateSkirmishBases)
-	{
-		switch (oldGrid)
-		{
-		case 0: oldAngle = 0; break;
-		case 1: oldAngle = PI / 4; break;
-		case 2: oldAngle = PI / 2; break;
-
-		case 3: oldAngle = -PI / 4; break;
-		case 4: oldAngle = 0; break;
-		case 5: oldAngle = 3 * PI / 4; break;
-
-		case 6: oldAngle = -PI / 2; break;
-		case 7: oldAngle = -3 * PI / 4; break;
-		case 8: oldAngle = PI; break;
+	// No need to check another time for tiedSpot != 0, because coordinate 0,0,0 is in case 0 anyways.
+	// Also, we don't want placement angles outside of the 45/135 space, so we treat middle spots as if
+	// they were one base further clockwise
+	if (TheAI->getAiData()->m_rotateSkirmishBases) {
+		switch (gridIndexOld) {
+		case 0: angleOld = 0;							placementAngleOld = 0; break;
+		case 1: angleOld = PI / 4;				placementAngleOld = 0; break; // 45 degrees.
+		case 2: angleOld = PI / 2;				placementAngleOld = (PI / 180.0f) * 90; break; // 90 degrees;
+		case 3: angleOld = -PI / 4;				placementAngleOld = (PI / 180.0f) * 270; break; // -45 degrees.
+		case 4: angleOld = 0;							placementAngleOld = 0; break;
+		case 5: angleOld = 3 * PI / 4;		placementAngleOld = (PI / 180.0f) * 90; break; // 135 degrees.
+		case 6: angleOld = -PI / 2;				placementAngleOld = (PI / 180.0f) * 270;  break; // -90 degrees;
+		case 7: angleOld = -3 * PI / 4;		placementAngleOld = PI; break; // -135 degrees.
+		case 8: angleOld = PI;						placementAngleOld = PI; break; // 180 degrees.
 		}
 
-		switch (newGrid)
+		switch (gridIndexNew) {
+		case 0: angleNew = 0;							placementAngleNew = 0; break;
+		case 1: angleNew = PI / 4;				placementAngleNew = 0; break; // 45 degrees.
+		case 2: angleNew = PI / 2;				placementAngleNew = (PI / 180.0f) * 90; break; // 90 degrees;
+		case 3: angleNew = -PI / 4;				placementAngleNew = (PI / 180.0f) * 270; break; // -45 degrees.
+		case 4: angleNew = 0;							placementAngleNew = 0; break;
+		case 5: angleNew = 3 * PI / 4;		placementAngleNew = (PI / 180.0f) * 90; break; // 135 degrees.
+		case 6: angleNew = -PI / 2;				placementAngleNew = (PI / 180.0f) * 270;  break; // -90 degrees;
+		case 7: angleNew = -3 * PI / 4;		placementAngleNew = PI; break; // -135 degrees.
+		case 8: angleNew = PI;						placementAngleNew = PI; break; // 180 degrees.
+		}
+
+		// Convert the INI-coordinate system into the ingame-coordinate system.
+		// The coordinate system would otherwise apply the base rotation from spot 7 onto 0
+		// in the 3x3 grid mentioned above. Therefore correct by -135° once.
+		if (!aiList->m_fixedOrientation)
 		{
-		case 0: newAngle = 0; break;
-		case 1: newAngle = PI / 4; break;
-		case 2: newAngle = PI / 2; break;
-
-		case 3: newAngle = -PI / 4; break;
-		case 4: newAngle = 0; break;
-		case 5: newAngle = 3 * PI / 4; break;
-
-		case 6: newAngle = -PI / 2; break;
-		case 7: newAngle = -3 * PI / 4; break;
-		case 8: newAngle = PI; break;
+			angleOld -= 3 * PI / 4;
+			aiList->m_fixedOrientation = TRUE;
 		}
 	}
 
-	oldAngle += 3 * PI / 4;
-	newAngle += 3 * PI / 4;
-
-
-	// the actual angle
-	Real futureAngle = newAngle - oldAngle;
-
-	Real s = sin(futureAngle);
-	Real c = cos(futureAngle);
+	Real os = sin(-angleOld);
+	Real oc = cos(-angleOld);
+	Real ns = sin(angleNew);
+	Real nc = cos(angleNew);
 
 	// ------------------------------------------------------------
 	// ------------------------------------------------------------
 
-	Coord3D pos = {0, 0, 0};
+	Coord3D pos = { 0, 0, 0 };
 
 	while (list)
 	{
-		 Real currentAngle = list->getAngle();
+		Real currentAngle = list->getAngle();
+		pos.x = list->getLocation()->x - oPos.x;
+		pos.y = list->getLocation()->y - oPos.y;
+		pos.z = 0.0f;
 
-		 pos.x = list->getLocation()->x - oPos.x;
-		 pos.y = list->getLocation()->y - oPos.y;
-		 pos.z = 0.0f;
+		Real oldX = pos.x * oc - pos.y * os;
+		Real oldY = pos.x * os + pos.y * oc;
 
-		Real newX = pos.x * c - pos.y * s;
-		Real newY = pos.x * s + pos.y * c;
+		Real newX = oldX * nc - oldY * ns;
+		Real newY = oldX * ns + oldY * nc;
 
 		pos.x = newX + nPos.x;
 		pos.y = newY + nPos.y;
 		pos.z = TheTerrainLogic->getGroundHeight(pos.x, pos.y);
 
 		list->setLocation(pos);
-		list->setAngle(currentAngle + futureAngle);
+		list->setAngle(currentAngle - placementAngleOld + placementAngleNew);
 
 		list = list->getNext();
 	}
 
-	m_player->findIDBuildList(id)->m_tiedSpot = spot;
+	aiList->m_tiedSpot = spot;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -1889,6 +1894,8 @@ void AISkirmishPlayer::setDefaultBuildList(Int id)
 		m_player->setBuildList(nullptr);
 	}
 
+	normalizeBuildListFromID(id, m_player->getMpStartIndex() + 1);
+	
 	m_player->setBuildList(src->m_buildList->duplicate());
 
 	// RE-REGISTER FACTORY BUILDINGS
@@ -1904,8 +1911,6 @@ void AISkirmishPlayer::setDefaultBuildList(Int id)
 
 		m_player->addToBuildList(obj);
 	}
-
-	normalizeBuildListFromID(id, m_player->getMpStartIndex() + 1);
 }
 
 //-------------------------------------------------------------------------------------------------

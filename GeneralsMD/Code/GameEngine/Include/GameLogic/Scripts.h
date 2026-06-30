@@ -675,7 +675,7 @@ public:
 			AI_PLAYER_INSERT_BUILDLIST_FROM_ID,						///< Set a player to insert an IDBuildList-Template into the main BuildList (Player::m_pBuildList).
 			AI_PLAYER_NORMALIZE_BUILDLIST_FROM_ID,				///< Set a player to readjust the positioning from an IDBuildList to another player's base.
 			AI_PLAYER_SET_DEFAULT_BUILDLIST_FROM_ID,			///< Set a player to exchange the default BuildList with an IDBuildList.
-
+			AI_PLAYER_RESET_BUILDLIST_FROM_ID,						///< Set a player to reset a buildlist with a specific ID, so that entries are not consumed, and the rotation is back to standard.
 
 			//-------------------------------------------------------------------------------------------------
 			//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------
@@ -1209,7 +1209,11 @@ public:
 
 		SPOT_NEIGHBOURING_RELATION,							// True if a spot is neighbouring <relation> players.
 
-    AI_PLAYSTYLE,														// True if a player has a specific AI playstyle.
+		TEAM_CLOSEST_RELATION_TYPE,							// True if a(n) <relation> object of a type is <comparison> <Real> feet away from a team.
+		UNIT_CLOSEST_RELATION_TYPE,							// True if a(n) <relation> object of a type is <comparison> <Real> feet away from a unit.
+
+		TEAM_ALL_CLEAR,													// True if a team just left combat. Utilizes the check from the behaviour tab.
+        AI_PLAYSTYLE,													// True if a player has a specific AI playstyle.
 		
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
