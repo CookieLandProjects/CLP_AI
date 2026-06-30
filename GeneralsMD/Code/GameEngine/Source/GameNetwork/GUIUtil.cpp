@@ -366,7 +366,8 @@ void PopulateStartingCashComboBox(GameWindow *comboBox, GameInfo *myGame)
 void UpdateSlotList( GameInfo *myGame, GameWindow *comboPlayer[],
 										GameWindow *comboColor[], GameWindow *comboPlayerTemplate[],
 										GameWindow *comboTeam[], GameWindow *buttonAccept[],
-										GameWindow *buttonStart, GameWindow *buttonMapStartPosition[] )
+										GameWindow *buttonStart, GameWindow *buttonMapStartPosition[],
+										GameWindow* comboPlaystyle[] )
 {
 	if(!AreSlotListUpdatesEnabled())
 		return;
@@ -388,6 +389,64 @@ void UpdateSlotList( GameInfo *myGame, GameWindow *comboPlayer[],
 		for( int i =0; i < MAX_SLOTS; i++ )
 		{
 			GameSlot * slot = myGame->getSlot(i);
+
+			if (comboPlaystyle != nullptr && comboPlaystyle[i] != nullptr)
+			{
+				// hide the menu if not new AIs
+				comboPlaystyle[i]->winHide(TRUE);
+
+				if (slot && slot->isAI())
+				{
+					SlotState st = slot->getState();
+					if (st == SLOT_MOD_BRUTAL_AI ||
+						st == SLOT_MOD_ABSURD_AI ||
+						st == SLOT_MOD_INHUMANE_AI)
+					{
+						// if new AIs, show the menu and enable it
+						comboPlaystyle[i]->winHide(FALSE);
+						comboPlaystyle[i]->winEnable(TRUE);
+
+						if (GadgetComboBoxGetLength(comboPlaystyle[i]) > 0)
+						{
+							Int len = GadgetComboBoxGetLength(comboPlaystyle[i]);
+							Int desiredPlaystyle = slot ? slot->getPlayStyle() : PLAYSTYLE_RANDOM;
+							Int foundIndex = -1;
+							for (Int k = 0; k < len; ++k)
+							{
+								Int itemData = (Int)GadgetComboBoxGetItemData(comboPlaystyle[i], k);
+								if (itemData == desiredPlaystyle)
+								{
+									foundIndex = k;
+									break;
+								}
+							}
+
+							if (foundIndex >= 0)
+							{
+								GadgetComboBoxSetSelectedPos(comboPlaystyle[i], foundIndex, TRUE);
+							}
+							else
+							{
+								// keep whatever host selected otherwise default to 0
+								Int cur = -1;
+								GadgetComboBoxGetSelectedPos(comboPlaystyle[i], &cur);
+								if (cur < 0)
+									GadgetComboBoxSetSelectedPos(comboPlaystyle[i], 0, TRUE);
+							}
+						}
+					}
+					else
+					{
+						// hide for easy, medium and hard
+						comboPlaystyle[i]->winHide(TRUE);
+					}
+				}
+				else
+				{
+					// hide if player, open or closed
+					comboPlaystyle[i]->winHide(TRUE);
+				}
+			}
 
 			// if i'm host, enable the controls for AI
 			if(myGame->amIHost() && slot->isAI())
@@ -511,5 +570,154 @@ void UpdateSlotList( GameInfo *myGame, GameWindow *comboPlayer[],
 		}
 	}
 }
+//void UpdateSlotList( GameInfo *myGame, GameWindow *comboPlayer[],
+//										GameWindow *comboColor[], GameWindow *comboPlayerTemplate[],
+//										GameWindow *comboTeam[], GameWindow *buttonAccept[],
+//										GameWindow *buttonStart, GameWindow *buttonMapStartPosition[],
+//										GameWindow* comboPlaystyle[] )
+//{
+//	if(!AreSlotListUpdatesEnabled())
+//		return;
+//	//LANGameInfo *myGame = TheLAN->GetMyGame();
+//
+//	const MapMetaData *mapData = TheMapCache->findMap( myGame->getMap() );
+//	Bool willTransfer = TRUE;
+//	if (mapData)
+//	{
+//		willTransfer = !mapData->m_isOfficial;
+//	}
+//	else
+//	{
+//		willTransfer = WouldMapTransfer(myGame->getMap());
+//	}
+//
+//	if (myGame)
+//	{
+//		for( int i =0; i < MAX_SLOTS; i++ )
+//		{
+//			GameSlot * slot = myGame->getSlot(i);
+//
+//			// if i'm host, enable the controls for AI
+//			if(myGame->amIHost() && slot->isAI())
+//			{
+//				EnableAcceptControls(TRUE, myGame, comboPlayer, comboColor, comboPlayerTemplate,
+//					comboTeam, buttonAccept, buttonStart, buttonMapStartPosition, i);
+//			}
+//			else if (myGame->getLocalSlotNum() == i)
+//			{
+//				if(slot->isAccepted() && !myGame->amIHost())
+//				{
+//					EnableAcceptControls(FALSE, myGame, comboPlayer, comboColor, comboPlayerTemplate,
+//						comboTeam, buttonAccept, buttonStart, buttonMapStartPosition);
+//				}
+//				else
+//				{
+//					if (slot->hasMap()) {
+//						EnableAcceptControls(TRUE, myGame, comboPlayer, comboColor, comboPlayerTemplate,
+//							comboTeam, buttonAccept, buttonStart, buttonMapStartPosition);
+//					}
+//					else
+//					{
+//						EnableAcceptControls(willTransfer, myGame, comboPlayer, comboColor, comboPlayerTemplate,
+//							comboTeam, buttonAccept, buttonStart, buttonMapStartPosition);
+//					}
+//				}
+//
+//			}
+//			else if(myGame->amIHost())
+//			{
+//				EnableAcceptControls(FALSE, myGame, comboPlayer, comboColor, comboPlayerTemplate,
+//					comboTeam, buttonAccept, buttonStart, buttonMapStartPosition, i);
+//			}
+//			if(slot->isHuman())
+//			{
+//				UnicodeString newName = slot->getName();
+//				UnicodeString oldName = GadgetComboBoxGetText(comboPlayer[i]);
+//				if (comboPlayer[i] && newName.compare(oldName))
+//				{
+//					GadgetComboBoxSetText(comboPlayer[i], newName);
+//				}
+//				if(i!= 0 && buttonAccept && buttonAccept[i])
+//				{
+//					buttonAccept[i]->winHide(FALSE);
+//				//Color In the little accepted boxes
+//					if(slot->isAccepted())
+//					{
+//						if(BitIsSet(buttonAccept[i]->winGetStatus(), WIN_STATUS_IMAGE	))
+//							buttonAccept[i]->winEnable(TRUE);
+//						else
+//							GadgetButtonSetEnabledColor(buttonAccept[i], acceptTrueColor );
+//					}
+//					else
+//					{
+//						if(BitIsSet(buttonAccept[i]->winGetStatus(), WIN_STATUS_IMAGE	))
+//							buttonAccept[i]->winEnable(FALSE);
+//						else
+//							GadgetButtonSetEnabledColor(buttonAccept[i], acceptFalseColor );
+//					}
+//				}
+//			}
+//			else
+//			{
+//				GadgetComboBoxSetSelectedPos(comboPlayer[i], slot->getState(), TRUE);
+//        if( buttonAccept &&  buttonAccept[i] )
+//				  buttonAccept[i]->winHide(TRUE);
+//			}
+///*
+//			if (myGame->getLocalSlotNum() == i && i!=0)
+//			{
+//				if (comboPlayer[i])
+//					comboPlayer[i]->winEnable( TRUE );
+//			}
+//			else*/ if (!myGame->amIHost())
+//			{
+//				if (comboPlayer[i])
+//					comboPlayer[i]->winEnable( FALSE );
+//			}
+//			//if( i == myGame->getLocalSlotNum())
+//      if((comboColor[i] != nullptr) && BitIsSet(comboColor[i]->winGetStatus(), WIN_STATUS_ENABLED))
+//				PopulateColorComboBox(i, comboColor, myGame, myGame->getConstSlot(i)->getPlayerTemplate() == PLAYERTEMPLATE_OBSERVER);
+//			Int max, idx;
+//			if (comboColor[i] != nullptr) {
+//				max = GadgetComboBoxGetLength(comboColor[i]);
+//				for (idx=0; idx<max; ++idx)
+//				{
+//					Int color = (Int)GadgetComboBoxGetItemData(comboColor[i], idx);
+//					if (color == slot->getColor())
+//					{
+//						GadgetComboBoxSetSelectedPos(comboColor[i], idx, TRUE);
+//						break;
+//					}
+//				}
+//			}
+//
+//			if (comboTeam[i] != nullptr) {
+//				max = GadgetComboBoxGetLength(comboTeam[i]);
+//				for (idx=0; idx<max; ++idx)
+//				{
+//					Int team = (Int)GadgetComboBoxGetItemData(comboTeam[i], idx);
+//					if (team == slot->getTeamNumber())
+//					{
+//						GadgetComboBoxSetSelectedPos(comboTeam[i], idx, TRUE);
+//						break;
+//					}
+//				}
+//			}
+//
+//			if (comboPlayerTemplate[i] != nullptr) {
+//				max = GadgetComboBoxGetLength(comboPlayerTemplate[i]);
+//				for (idx=0; idx<max; ++idx)
+//				{
+//					Int playerTemplate = (Int)GadgetComboBoxGetItemData(comboPlayerTemplate[i], idx);
+//					if (playerTemplate == slot->getPlayerTemplate())
+//					{
+//						GadgetComboBoxSetSelectedPos(comboPlayerTemplate[i], idx, TRUE);
+//						break;
+//					}
+//				}
+//			}
+//		}
+//	}
+//}
 
 // -----------------------------------------------------------------------------

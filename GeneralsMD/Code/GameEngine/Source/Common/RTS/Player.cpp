@@ -338,6 +338,7 @@ Player::Player( Int playerIndex )
 	m_sciencePurchasePoints = 0;
 	m_side = nullptr;
 	m_baseSide = nullptr;
+	m_playstyle = PLAYSTYLE_RANDOM;
 	m_skillPoints = 0;
 	Int i;
 	m_upgradeList = nullptr;

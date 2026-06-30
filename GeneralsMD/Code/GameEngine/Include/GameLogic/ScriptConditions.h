@@ -261,6 +261,9 @@ protected:
 	Bool evaluateTeamHasComparisonRatioSighted(Parameter* pTeamParm, Parameter* pComparisonParm, Real ratio);
 	Bool evaluateTeamHasComparisonRatioTypeSighted(Parameter* pTeamParm, Parameter* pComparisonParm, Real ratio, Parameter* objectType, Parameter* otherObjectType);
 
+	Bool AIPlaystyleEvaluation(Parameter* pPlayerParm, Parameter* pPlaystyleParm);
+
+	// @n0ttws: AI playstyle evaluation
 	// @-TanSo-: 52 additions, 1 helper method
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------

@@ -95,6 +95,11 @@ static NameKeyType comboBoxTeamID[MAX_SLOTS] = { NAMEKEY_INVALID,NAMEKEY_INVALID
 																										NAMEKEY_INVALID,NAMEKEY_INVALID,
 																										NAMEKEY_INVALID,NAMEKEY_INVALID };
 
+static NameKeyType comboBoxPlaystyleID[MAX_SLOTS] = { NAMEKEY_INVALID,NAMEKEY_INVALID,
+																											NAMEKEY_INVALID,NAMEKEY_INVALID,
+																											NAMEKEY_INVALID,NAMEKEY_INVALID,
+																											NAMEKEY_INVALID,NAMEKEY_INVALID };
+
 //static NameKeyType buttonStartPositionID[MAX_SLOTS] = { NAMEKEY_INVALID,NAMEKEY_INVALID,
 //																										NAMEKEY_INVALID,NAMEKEY_INVALID,
 //																										NAMEKEY_INVALID,NAMEKEY_INVALID,
@@ -135,6 +140,8 @@ static GameWindow *comboBoxColor[MAX_SLOTS] = {0};
 static GameWindow *comboBoxPlayerTemplate[MAX_SLOTS] = {0};
 
 static GameWindow *comboBoxTeam[MAX_SLOTS] = {0};
+
+static GameWindow *comboBoxPlaystyle[MAX_SLOTS] = { 0 };
 
 //static GameWindow *buttonStartPosition[MAX_SLOTS] = {0};
 //
@@ -961,6 +968,28 @@ static void handleStartPositionSelection(int index, Int position)
 	}
 }
 
+static void handlePlaystyleSelection(int index)
+{
+	GameWindow* combo = comboBoxPlaystyle[index];
+	if (!combo)
+		return;
+
+	Int selIndex;
+	GadgetComboBoxGetSelectedPos(combo, &selIndex);
+	Int playstyle = (Int)GadgetComboBoxGetItemData(combo, selIndex);
+
+	GameInfo* myGame = TheSkirmishGameInfo;
+	if (myGame)
+	{
+		GameSlot* slot = myGame->getSlot(index);
+		if (!slot)
+			return;
+		if (playstyle == slot->getPlayStyle())
+			return;
+		slot->setPlayStyle(playstyle);
+	}
+}
+
 static void handleTeamSelection(int index)
 {
 	GameWindow *combo = comboBoxTeam[index];
@@ -1134,6 +1163,47 @@ void InitSkirmishGameGadgets()
 		comboBoxTeam[i] = TheWindowManager->winGetWindowFromId( parentSkirmishGameOptions, comboBoxTeamID[i] );
 		DEBUG_ASSERTCRASH(comboBoxTeam[i], ("Could not find the comboBoxTeam[%d]",i ));
 
+		tmpString.format("SkirmishGameOptionsMenu.wnd:ComboBoxPlaystyle%d", i);
+		comboBoxPlaystyleID[i] = TheNameKeyGenerator->nameToKey(tmpString);
+		comboBoxPlaystyle[i] = TheWindowManager->winGetWindowFromId(parentSkirmishGameOptions, comboBoxPlaystyleID[i]);
+
+
+if (comboBoxPlaystyle[i] != nullptr)
+{
+	// first entry is "???" (random)
+	GadgetComboBoxReset(comboBoxPlaystyle[i]);
+	UnicodeString entry;
+	entry.translate(AsciiString("???"));
+	GadgetComboBoxAddEntry(comboBoxPlaystyle[i], entry, white);
+	GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 0, (void *)PLAYSTYLE_RANDOM);
+
+	entry.translate(AsciiString("Reckless"));
+	GadgetComboBoxAddEntry(comboBoxPlaystyle[i], entry, white);
+	GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 1, (void *)PLAYSTYLE_RECKLESS);
+
+	entry.translate(AsciiString("Strategic"));
+	GadgetComboBoxAddEntry(comboBoxPlaystyle[i], entry, white);
+	GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 2, (void *)PLAYSTYLE_STRATEGIC);
+
+	entry.translate(AsciiString("Loyal"));
+	GadgetComboBoxAddEntry(comboBoxPlaystyle[i], entry, white);
+	GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 3, (void *)PLAYSTYLE_LOYAL);
+
+	entry.translate(AsciiString("Evolving"));
+	GadgetComboBoxAddEntry(comboBoxPlaystyle[i], entry, white);
+	GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 4, (void *)PLAYSTYLE_EVOLVING);
+
+	entry.translate(AsciiString("Independent"));
+	GadgetComboBoxAddEntry(comboBoxPlaystyle[i], entry, white);
+	GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 5, (void *)PLAYSTYLE_INDEPENDENT);
+
+	// default is "???"
+	GadgetComboBoxSetSelectedPos(comboBoxPlaystyle[i], 0, TRUE);
+
+	// hide by default, UpdateSlotList will show when needed
+	comboBoxPlaystyle[i]->winHide(TRUE);
+}
+
 
 //		tmpString.format("SkirmishGameOptionsMenu.wnd:ButtonStartPosition%d", i);
 //		buttonStartPositionID[i] = TheNameKeyGenerator->nameToKey( tmpString );
@@ -1176,7 +1246,10 @@ void skirmishUpdateSlotList()
     GadgetTextEntrySetText( textEntryPlayerName, TheSkirmishGameInfo->getSlot(0)->getName() );
     UpdateSlotList( TheSkirmishGameInfo, comboBoxPlayer,
 										comboBoxColor, comboBoxPlayerTemplate,
-									  comboBoxTeam, nullptr, buttonStart, buttonMapStartPosition );
+									  comboBoxTeam, nullptr, buttonStart, buttonMapStartPosition, comboBoxPlaystyle );
+    //UpdateSlotList( TheSkirmishGameInfo, comboBoxPlayer,
+				//						comboBoxColor, comboBoxPlayerTemplate,
+				//					  comboBoxTeam, nullptr, buttonStart, buttonMapStartPosition );
 		updateMapStartSpots(TheSkirmishGameInfo, buttonMapStartPosition, FALSE);
     doUpdateSlotList = TRUE;
   }
@@ -1586,6 +1659,10 @@ WindowMsgHandledType SkirmishGameOptionsMenuSystem( GameWindow *window, Unsigned
             {
               handlePlayerSelection(i);
             }
+						else if (controlID == comboBoxPlaystyleID[i])
+						{
+							handlePlaystyleSelection(i);
+						}
 				  }
         }
 				sandboxOk = FALSE;

@@ -925,6 +925,7 @@ public:
 		//-------------------------------------------------------------------------------------------------
 
 		KD_RATIO,						// String, Int index into KD ratio array at runtime.
+    PLAYSTYLE,          // Check for Player Playstyle
 
 		//-------------------------------------------------------------------------------------------------
 		//----------------------------- @CLP_AI PARAMETER TYPE ADDITIONS END ------------------------------
@@ -1208,6 +1209,8 @@ public:
 
 		SPOT_NEIGHBOURING_RELATION,							// True if a spot is neighbouring <relation> players.
 
+    AI_PLAYSTYLE,														// True if a player has a specific AI playstyle.
+		
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 		//-------------------------------------------------------------------------------------------------

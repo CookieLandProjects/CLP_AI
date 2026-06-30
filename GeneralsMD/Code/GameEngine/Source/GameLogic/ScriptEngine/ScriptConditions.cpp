@@ -5678,6 +5678,24 @@ Bool ScriptConditions::evaluateTeamHasComparisonRatioTypeSighted(Parameter* pTea
 	return false;
 }
 
+//-------------------------------------------------------------------------------------------------
+// n0ttws: Evaluates if a player's AI playstyle matches the specified value.
+// Playstyles: 0=Reckless, 1=Strategic, 2=Loyal, 3=Evolving, 4=Independent
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::AIPlaystyleEvaluation(Parameter* pPlayerParm, Parameter* pPlaystyleParm)
+{
+	if (!pPlayerParm || !pPlaystyleParm)
+		return false;
+
+	DEBUG_ASSERTCRASH(Parameter::PLAYSTYLE == pPlaystyleParm->getParameterType(), ("Wrong parameter type. Expected PLAYSTYLE parameter."));
+
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer)
+		return false;
+
+	Int expectedPlaystyle = pPlaystyleParm->getInt();
+	return (pPlayer->getPlaystyle() == expectedPlaystyle);
+}
 
 //-------------------------------------------------------------------------------------------------
 //---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
@@ -6056,6 +6074,7 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 			return evaluateTeamHasComparisonRatioTypeSighted(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getReal(), pCondition->getParameter(3), pCondition->getParameter(4));
 		case Condition::SPOT_NEIGHBOURING_RELATION:
 			return evaluateSpotNeighbouringRelation(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2)->getInt());
-
+		case Condition::AI_PLAYSTYLE:
+      return AIPlaystyleEvaluation(pCondition->getParameter(0), pCondition->getParameter(1));
 	}
 }

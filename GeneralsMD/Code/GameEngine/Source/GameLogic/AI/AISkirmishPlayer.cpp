@@ -1704,14 +1704,14 @@ void AISkirmishPlayer::buildSpecificAIBuildingFromID(const AsciiString& thingNam
 		break;
 	}
 
-	DEBUG_LOG(("HEAD CHECK:"));
-	DEBUG_LOG(("HEAD=%p", m_player->getBuildList()));
+	//DEBUG_LOG(("HEAD CHECK:"));
+	//DEBUG_LOG(("HEAD=%p", m_player->getBuildList()));
 
-	BuildListInfo* head = m_player->getBuildList();
+	//BuildListInfo* head = m_player->getBuildList();
 
-	DEBUG_LOG(("HEAD=%p template=%s",
-		head,
-		head ? head->getTemplateName().str() : "NULL"));
+	//DEBUG_LOG(("HEAD=%p template=%s",
+	//	head,
+	//	head ? head->getTemplateName().str() : "NULL"));
 
 	for (BuildListInfo* cur = m_player->getBuildList(); cur; cur = cur->getNext())
 	{

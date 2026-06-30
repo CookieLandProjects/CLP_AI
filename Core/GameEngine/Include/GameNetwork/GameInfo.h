@@ -53,6 +53,17 @@ enum
 	PLAYERTEMPLATE_MIN = PLAYERTEMPLATE_OBSERVER
 };
 
+enum PlayStyle CPP_11(: Int)
+{
+	PLAYSTYLE_RANDOM = -1,
+		PLAYSTYLE_RECKLESS = 0,
+		PLAYSTYLE_STRATEGIC,
+		PLAYSTYLE_LOYAL,
+		PLAYSTYLE_EVOLVING,
+		PLAYSTYLE_INDEPENDENT,
+		PLAYSTYLE_COUNT
+};
+
 /**
   * GameSlot class - maintains information about the contents of a
 	* game slot.  This persists throughout the game.
@@ -80,6 +91,9 @@ public:
 
 	void setStartPos( Int startPos ) { m_startPos = startPos; }
 	Int getStartPos() const { return m_startPos; }
+
+	void setPlayStyle(Int playstyle) { m_playstyle = playstyle; }
+	Int getPlayStyle() const { return m_playstyle; }
 
 	void setPlayerTemplate( Int playerTemplate )
 	{ m_playerTemplate = playerTemplate;
@@ -140,6 +154,7 @@ protected:
 	Int m_origColor;																			///< color, or -1 for random
 	Int m_origStartPos;																		///< start position, or -1 for random
 	Int m_origPlayerTemplate;															///< PlayerTemplate
+	Int m_playstyle;
 	UnicodeString m_name;															///< Only valid for human players
 	UnsignedInt m_IP;																	///< Only valid for human players in LAN/WOL
 	UnsignedShort m_port;															///< Only valid for human players in LAN/WOL
