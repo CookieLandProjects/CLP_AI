@@ -229,6 +229,9 @@ public:
 	AsciiString getSide() const { return m_side; }
 	AsciiString getBaseSide() const { return m_baseSide; }
 
+	void setPlaystyle(Int ps) { m_playstyle = ps; }
+	Int getPlaystyle() const { return m_playstyle; }
+
 	const PlayerTemplate* getPlayerTemplate() const { return m_playerTemplate;	}
 	/// return the Player's Handicap sub-object
 	const Handicap *getHandicap() const { return &m_handicap; }
@@ -790,6 +793,7 @@ private:
 	NameKeyType									m_playerNameKey;							///< This player's internal name (for matching map objects)
 	PlayerIndex									m_playerIndex;								///< player unique index.
 	AsciiString									m_side;												///< the "side" this player is on
+	Int m_playstyle;                                          ///< the playstyle of this player.
 	AsciiString									m_baseSide;											///< the base side, GLA, USA, or China
 	PlayerType									m_playerType;									///< human/computer control
 	Money												m_money;											///< Player's current wealth

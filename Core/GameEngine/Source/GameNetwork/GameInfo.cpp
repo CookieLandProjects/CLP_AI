@@ -73,6 +73,7 @@ void GameSlot::reset()
 	m_origPlayerTemplate = -1;
 	m_origStartPos = -1;
 	m_origColor = -1;
+	m_playstyle = PLAYSTYLE_RANDOM;
 }
 
 void GameSlot::saveOffOriginalInfo()
@@ -947,13 +948,24 @@ AsciiString GameInfoToAsciiString( const GameInfo *game )
 		if (slot && slot->isHuman())
 		{
 			AsciiString tmp;  //all this data goes after name
-			tmp.format( ",%X,%d,%c%c,%d,%d,%d,%d,%d:",
-				slot->getIP(), slot->getPort(),
-				(slot->isAccepted()?'T':'F'),
-				(slot->hasMap()?'T':'F'),
-				slot->getColor(), slot->getPlayerTemplate(),
-				slot->getStartPos(), slot->getTeamNumber(),
-				slot->getNATBehavior() );
+			tmp.format(",%X,%d,%d,%c%c,%d,%d,%d,%d,%d:",
+				slot->getIP(),
+				slot->getPort(),
+				slot->getPlayStyle(),
+				(slot->isAccepted() ? 'T' : 'F'),
+				(slot->hasMap() ? 'T' : 'F'),
+				slot->getColor(),
+				slot->getPlayerTemplate(),
+				slot->getStartPos(),
+				slot->getTeamNumber(),
+				slot->getNATBehavior());
+			//tmp.format( ",%X,%d,%c%c,%d,%d,%d,%d,%d:",
+			//	slot->getIP(), slot->getPort(),
+			//	(slot->isAccepted()?'T':'F'),
+			//	(slot->hasMap()?'T':'F'),
+			//	slot->getColor(), slot->getPlayerTemplate(),
+			//	slot->getStartPos(), slot->getTeamNumber(),
+			//	slot->getNATBehavior() );
 			//make sure name doesn't cause overflow of m_lanMaxOptionsLength
 			int lenCur = tmp.getLength() + optionsString.getLength() + 2;  //+2 for H and trailing ;
 			int lenRem = m_lanMaxOptionsLength - lenCur;  //length remaining before overflowing
@@ -979,9 +991,15 @@ AsciiString GameInfoToAsciiString( const GameInfo *game )
 				c = 'A';
 			else if (slot->getState() == SLOT_MOD_INHUMANE_AI)
         c = 'I';
-			str.format("C%c,%d,%d,%d,%d:", c,
-				slot->getColor(), slot->getPlayerTemplate(),
-				slot->getStartPos(), slot->getTeamNumber());
+			str.format("C%c,%d,%d,%d,%d,%d:", c,
+				slot->getPlayStyle(),
+				slot->getColor(),
+				slot->getPlayerTemplate(),
+				slot->getStartPos(),
+				slot->getTeamNumber());
+			//str.format("C%c,%d,%d,%d,%d:", c,
+			//	slot->getColor(), slot->getPlayerTemplate(),
+			//	slot->getStartPos(), slot->getTeamNumber());
 		}
 		else if (slot && slot->getState() == SLOT_OPEN)
 		{
@@ -1215,6 +1233,23 @@ Bool ParseAsciiStringToGameInfo(GameInfo *game, AsciiString options)
 							newSlot[i].setPort(playerPort);
 							DEBUG_LOG(("ParseAsciiStringToGameInfo - port is %d", playerPort));
 
+							slotValue = strtok_r(nullptr, ",", &slotPos); // playstyle
+							if (slotValue.isEmpty())
+							{
+								optionsOk = false;
+								DEBUG_LOG(("ParseAsciiStringToGameInfo - slotValue playstyle is empty, quitting"));
+								break;
+							}
+							Int playstyle = atoi(slotValue.str());
+							// allow -1 .. PLAYSTYLE_COUNT-1
+							if (playstyle < -1 || playstyle >= PLAYSTYLE_COUNT)
+							{
+								optionsOk = false;
+								DEBUG_LOG(("ParseAsciiStringToGameInfo - playstyle value is invalid, quitting"));
+								break;
+							}
+							newSlot[i].setPlayStyle(playstyle);
+
 							//Read if it's accepted or not
 							slotValue = strtok_r(nullptr,",",&slotPos);
 							if(slotValue.getLength() != 2)
@@ -1389,6 +1424,23 @@ Bool ParseAsciiStringToGameInfo(GameInfo *game, AsciiString options)
 								}
 								break;
 							}
+
+
+							slotValue = strtok_r(nullptr, ",", &slotPos); // playstyle
+							if (slotValue.isEmpty())
+							{
+								optionsOk = false;
+								DEBUG_LOG(("ParseAsciiStringToGameInfo - slotValue playstyle is empty, quitting"));
+								break;
+							}
+							Int playstyle = atoi(slotValue.str());
+							if (playstyle < -1 || playstyle >= PLAYSTYLE_COUNT)
+							{
+								optionsOk = false;
+								DEBUG_LOG(("ParseAsciiStringToGameInfo - playstyle value is invalid, quitting"));
+								break;
+							}
+							newSlot[i].setPlayStyle(playstyle);
 
 							//Read color index
 							slotValue = strtok_r(nullptr,",",&slotPos);
@@ -1589,6 +1641,9 @@ void SkirmishGameInfo::xfer( Xfer *xfer )
 		Int state = m_slot[slot]->getState();
 		xfer->xferInt(&state);
 
+		Int playstyle = m_slot[slot]->getPlayStyle();
+		xfer->xferInt(&playstyle);
+
 		UnicodeString name=m_slot[slot]->getName();
 		if (version >= 2)
 		{
@@ -1636,6 +1691,7 @@ void SkirmishGameInfo::xfer( Xfer *xfer )
 			m_slot[slot]->setColor(color);
 			m_slot[slot]->setStartPos(startPos);
 			m_slot[slot]->setPlayerTemplate(playerTemplate);
+			m_slot[slot]->setPlayStyle(playstyle);
 		}
 	}
 

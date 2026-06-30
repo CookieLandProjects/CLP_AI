@@ -925,6 +925,7 @@ public:
 		//-------------------------------------------------------------------------------------------------
 
 		KD_RATIO,						// String, Int index into KD ratio array at runtime.
+    PLAYSTYLE,          // Check for Player Playstyle
 
 		//-------------------------------------------------------------------------------------------------
 		//----------------------------- @CLP_AI PARAMETER TYPE ADDITIONS END ------------------------------
@@ -1212,6 +1213,8 @@ public:
 		UNIT_CLOSEST_RELATION_TYPE,							// True if a(n) <relation> object of a type is <comparison> <Real> feet away from a unit.
 
 		TEAM_ALL_CLEAR,													// True if a team just left combat. Utilizes the check from the behaviour tab.
+        AI_PLAYSTYLE,													// True if a player has a specific AI playstyle.
+		
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 		//-------------------------------------------------------------------------------------------------

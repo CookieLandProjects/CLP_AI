@@ -41,10 +41,16 @@ void PopulateStartingCashComboBox(GameWindow *comboBox, GameInfo *myGame);
 void EnableSlotListUpdates( Bool val );
 Bool AreSlotListUpdatesEnabled();
 
+//void UpdateSlotList( GameInfo *myGame, GameWindow *comboPlayer[],
+//										GameWindow *comboColor[], GameWindow *comboPlayerTemplate[],
+//										GameWindow *comboTeam[], GameWindow *buttonAccept[],
+//										GameWindow *buttonStart, GameWindow *buttonMapStartPosition[] );
+
 void UpdateSlotList( GameInfo *myGame, GameWindow *comboPlayer[],
 										GameWindow *comboColor[], GameWindow *comboPlayerTemplate[],
 										GameWindow *comboTeam[], GameWindow *buttonAccept[],
-										GameWindow *buttonStart, GameWindow *buttonMapStartPosition[] );
+										GameWindow *buttonStart, GameWindow *buttonMapStartPosition[],
+										GameWindow* comboPlaystyle[] = nullptr );
 
 void EnableAcceptControls(Bool Enabled, GameInfo *myGame, GameWindow *comboPlayer[],
 										GameWindow *comboColor[], GameWindow *comboPlayerTemplate[],

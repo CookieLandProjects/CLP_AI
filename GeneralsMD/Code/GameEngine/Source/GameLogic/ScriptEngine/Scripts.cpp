@@ -2429,6 +2429,17 @@ AsciiString Parameter::getUiText() const
 		case KD_RATIO:
 			uiText.format("K/D Ratio %s", uiString.str());
 			break;
+
+		case PLAYSTYLE:
+			switch (m_int) {
+			case 0: uiText.format("Reckless"); break;
+			case 1: uiText.format("Strategic"); break;
+			case 2: uiText.format("Loyal"); break;
+			case 3: uiText.format("Evolving"); break;
+			case 4: uiText.format("Independent"); break;
+			default: DEBUG_CRASH(("Unknown playstyle type."));
+			}
+			break;
 	}
 	return uiText;
 }

@@ -782,6 +782,24 @@ static void populateRandomSideAndColor( GameInfo *game )
 
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
+static void populateRandomPlaystyle(GameInfo* game)
+{
+	if (!game) return;
+	for (Int i = 0; i < MAX_SLOTS; ++i)
+	{
+		GameSlot* slot = game->getSlot(i);
+		if (!slot) continue;
+		if (slot->getPlayStyle() == PLAYSTYLE_RANDOM)
+		{
+			// Use the project's deterministic logic RNG
+			Int pick = GameLogicRandomValue(0, PLAYSTYLE_COUNT - 1);
+			slot->setPlayStyle(pick);
+		}
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 static const WaypointMap s_emptyWaypoints = WaypointMap();
 
 static void populateRandomStartPosition( GameInfo *game )
@@ -1257,6 +1275,7 @@ void GameLogic::startNewGame( Bool loadingSaveGame )
 
 	populateRandomSideAndColor( TheGameInfo );
 	populateRandomStartPosition( TheGameInfo );
+	populateRandomPlaystyle(TheGameInfo);
 
 	//****************************//
 	// Start the LoadScreen Now!	//
@@ -1498,6 +1517,28 @@ void GameLogic::startNewGame( Bool loadingSaveGame )
 	// update the player list to match the new map.
 	TheTeamFactory->reset();
 	ThePlayerList->newGame();
+
+	if (TheGameInfo && (TheGameEngine->isMultiplayerSession() || isSkirmishOrSkirmishReplay))
+	{
+		for (int i = 0; i < MAX_SLOTS; ++i)
+		{
+			const GameSlot* slot = TheGameInfo->getConstSlot(i);
+			if (!slot || !slot->isOccupied())
+				continue;
+
+			Int playstyle = slot->getPlayStyle();
+
+			AsciiString playerName;
+			playerName.format("player%d", i);
+			Player* pPlayer = ThePlayerList->findPlayerWithNameKey(NAMEKEY(playerName));
+
+			if (pPlayer)
+			{
+				pPlayer->setPlaystyle(playstyle);
+				DEBUG_LOG(("Set player%d playstyle to %d", i, playstyle));
+			}
+		}
+	}
 
 	// update the loadscreen
 	updateLoadProgress(LOAD_PROGRESS_POST_PLAYER_LIST_RESET);
@@ -1756,6 +1797,12 @@ void GameLogic::startNewGame( Bool loadingSaveGame )
 			AsciiString playerName;
 			playerName.format("player%d", i);
 			Player *player = ThePlayerList->findPlayerWithNameKey(TheNameKeyGenerator->nameToKey(playerName));
+			if (player && TheGameInfo)
+			{
+				GameSlot* slot = TheGameInfo->getSlot(i);
+				if (slot)
+					player->setPlaystyle(slot->getPlayStyle());
+			}
 
 			if (slot->getPlayerTemplate() == PLAYERTEMPLATE_OBSERVER)
 			{
@@ -1945,6 +1992,12 @@ void GameLogic::startNewGame( Bool loadingSaveGame )
 			AsciiString playerName;
 			playerName.format("player%d", i);
 			Player *player = ThePlayerList->findPlayerWithNameKey(TheNameKeyGenerator->nameToKey(playerName));
+			if (player && TheGameInfo)
+			{
+				GameSlot* slot = TheGameInfo->getSlot(i);
+				if (slot)
+					player->setPlaystyle(slot->getPlayStyle());
+			}
 
 			if (slot->getPlayerTemplate() == PLAYERTEMPLATE_OBSERVER)
 			{

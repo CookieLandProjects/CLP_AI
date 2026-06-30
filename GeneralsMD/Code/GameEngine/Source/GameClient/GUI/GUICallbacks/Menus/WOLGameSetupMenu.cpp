@@ -223,6 +223,13 @@ static GameWindow *comboBoxPlayerTemplate[MAX_SLOTS] = {0};
 
 static GameWindow *comboBoxTeam[MAX_SLOTS] = {0};
 
+static NameKeyType comboBoxPlaystyleID[MAX_SLOTS] = { NAMEKEY_INVALID,NAMEKEY_INVALID,
+																											NAMEKEY_INVALID,NAMEKEY_INVALID,
+																											NAMEKEY_INVALID,NAMEKEY_INVALID,
+																											NAMEKEY_INVALID,NAMEKEY_INVALID };
+
+static GameWindow* comboBoxPlaystyle[MAX_SLOTS] = { 0 };
+
 //static GameWindow *buttonStartPosition[MAX_SLOTS] = {0};
 //
 static GameWindow *buttonMapStartPosition[MAX_SLOTS] = {0};
@@ -1045,7 +1052,9 @@ void WOLDisplaySlotList()
 	DEBUG_ASSERTCRASH(!game->getConstSlot(0)->isOpen(), ("Open host!"));
 
 	UpdateSlotList( game, comboBoxPlayer, comboBoxColor,
-		comboBoxPlayerTemplate, comboBoxTeam, buttonAccept, buttonStart, buttonMapStartPosition );
+		comboBoxPlayerTemplate, comboBoxTeam, buttonAccept, buttonStart, buttonMapStartPosition, comboBoxPlaystyle );
+	//UpdateSlotList( game, comboBoxPlayer, comboBoxColor,
+	//	comboBoxPlayerTemplate, comboBoxTeam, buttonAccept, buttonStart, buttonMapStartPosition );
 
 	WOLDisplayGameOptions();
 
@@ -1243,6 +1252,33 @@ void InitWOLGameGadgets()
 		DEBUG_ASSERTCRASH(genericPingWindow[i], ("Could not find the genericPingWindow[%d]",i ));
 		genericPingWindow[i]->winSetTooltipFunc(pingTooltip);
 
+		tmpString.format("GameSpyGameOptionsMenu.wnd:ComboBoxPlaystyle%d", i);
+		comboBoxPlaystyleID[i] = TheNameKeyGenerator->nameToKey(tmpString);
+		comboBoxPlaystyle[i] = TheWindowManager->winGetWindowFromId(parentWOLGameSetup, comboBoxPlaystyleID[i]);
+		if (comboBoxPlaystyle[i])
+		{
+			GadgetComboBoxReset(comboBoxPlaystyle[i]);
+			GadgetComboBoxAddEntry(comboBoxPlaystyle[i], TheGameText->fetch("GUI:???"), GameSpyColor[GSCOLOR_PLAYER_NORMAL]);
+			GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 0, (void*)PLAYSTYLE_RANDOM);
+
+			GadgetComboBoxAddEntry(comboBoxPlaystyle[i], TheGameText->fetch("Playstyle:Reckless"), GameSpyColor[GSCOLOR_PLAYER_NORMAL]);
+			GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 1, (void*)PLAYSTYLE_RECKLESS);
+
+			GadgetComboBoxAddEntry(comboBoxPlaystyle[i], TheGameText->fetch("Playstyle:Strategic"), GameSpyColor[GSCOLOR_PLAYER_NORMAL]);
+			GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 2, (void*)PLAYSTYLE_STRATEGIC);
+
+			GadgetComboBoxAddEntry(comboBoxPlaystyle[i], TheGameText->fetch("Playstyle:Loyal"), GameSpyColor[GSCOLOR_PLAYER_NORMAL]);
+			GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 3, (void*)PLAYSTYLE_LOYAL);
+
+			GadgetComboBoxAddEntry(comboBoxPlaystyle[i], TheGameText->fetch("Playstyle:Evolving"), GameSpyColor[GSCOLOR_PLAYER_NORMAL]);
+			GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 4, (void*)PLAYSTYLE_EVOLVING);
+
+			GadgetComboBoxAddEntry(comboBoxPlaystyle[i], TheGameText->fetch("Playstyle:Independent"), GameSpyColor[GSCOLOR_PLAYER_NORMAL]);
+			GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 5, (void*)PLAYSTYLE_INDEPENDENT);
+
+			GadgetComboBoxSetSelectedPos(comboBoxPlaystyle[i], 0);
+		}
+
 //		tmpString.format("GameSpyGameOptionsMenu.wnd:ButtonStartPosition%d", i);
 //		buttonStartPositionID[i] = TheNameKeyGenerator->nameToKey( tmpString );
 //		buttonStartPosition[i] = TheWindowManager->winGetWindowFromId( parentWOLGameSetup, buttonStartPositionID[i] );
@@ -1297,6 +1333,7 @@ void DeinitWOLGameGadgets()
 		comboBoxColor[i] = nullptr;
 		comboBoxPlayerTemplate[i] = nullptr;
 		comboBoxTeam[i] = nullptr;
+		comboBoxPlaystyle[i] = nullptr;
 		buttonAccept[i] = nullptr;
 //		buttonStartPosition[i] = nullptr;
 		buttonMapStartPosition[i] = nullptr;

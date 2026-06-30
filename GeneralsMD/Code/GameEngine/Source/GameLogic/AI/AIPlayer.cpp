@@ -385,6 +385,21 @@ void AIPlayer::queueSupplyTruck()
 					}
 				}
 			}
+			Int supplyCount = 0;
+			for (BuildListInfo* inf2 = m_player->getBuildList(); inf2; inf2 = inf2->getNext())
+			{
+				if (!inf2->isSupplyBuilding()) continue;
+				Object* centerObj = TheGameLogic->findObjectByID(inf2->getObjectID());
+				if (centerObj == nullptr) continue;
+				if (centerObj->isKindOf(KINDOF_REBUILD_HOLE)) continue;
+				supplyCount++;
+			}
+			if (supplyCount <= 0) supplyCount = 1;
+
+			if (totalHarvesters >= desiredGatherers * supplyCount)
+			{
+				continue;
+			}
 			//if (totalHarvesters >= desiredGatherers*3) {
 			//	continue; // we got lotsa gatherers.
 			//}
@@ -1938,6 +1953,29 @@ void AIPlayer::buildBySupplies(Int minimumCash, const AsciiString& thingName)
 		location.x -= offset.x*radius;
 		location.y -= offset.y*radius;
 		Real angle = tTemplate->getPlacementViewAngle();
+		if (tTemplate->isKindOf(KINDOF_CASH_GENERATOR))
+		{
+			Coord3D searchCenter = location;
+			Real searchRadius = SUPPLY_CENTER_CLOSE_DIST + bestSupplyWarehouse->getGeometryInfo().getBoundingCircleRadius();
+
+			PartitionFilterAcceptByKindOf f1(MAKE_KINDOF_MASK(KINDOF_SUPPLY_SOURCE), KINDOFMASK_NONE);
+			PartitionFilterPlayer f2(m_player, false);
+			PartitionFilterOnMap f3;
+			PartitionFilter* filters[] = { &f1, &f2, &f3, nullptr };
+
+			Object* closestSupplySource = ThePartitionManager->getClosestObject(&searchCenter, searchRadius, FROM_BOUNDINGSPHERE_2D, filters);
+			if (closestSupplySource)
+			{
+				const Coord3D* srcPos = closestSupplySource->getPosition();
+				Real dx = srcPos->x - location.x;
+				Real dy = srcPos->y - location.y;
+				Real desiredAngle = atan2(dy, dx);
+
+				// desiredAngle += (Real)M_PI; // uncomment if you find it's backwards
+
+				angle = normalizeAngle(desiredAngle);
+			}
+		}
 
  		// validate the the position to build at is valid
 		Bool valid=false;

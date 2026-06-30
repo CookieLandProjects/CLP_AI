@@ -5926,6 +5926,25 @@ Bool ScriptConditions::evaluateTeamAllClear(Parameter* pTeamParm)
 }
 
 //-------------------------------------------------------------------------------------------------
+// n0ttws: Evaluates if a player's AI playstyle matches the specified value.
+// Playstyles: 0=Reckless, 1=Strategic, 2=Loyal, 3=Evolving, 4=Independent
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::AIPlaystyleEvaluation(Parameter* pPlayerParm, Parameter* pPlaystyleParm)
+{
+	if (!pPlayerParm || !pPlaystyleParm)
+		return false;
+
+	DEBUG_ASSERTCRASH(Parameter::PLAYSTYLE == pPlaystyleParm->getParameterType(), ("Wrong parameter type. Expected PLAYSTYLE parameter."));
+
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer)
+		return false;
+
+	Int expectedPlaystyle = pPlaystyleParm->getInt();
+	return (pPlayer->getPlaystyle() == expectedPlaystyle);
+}
+
+//-------------------------------------------------------------------------------------------------
 //---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 //-------------------------------------------------------------------------------------------------
 
@@ -6309,5 +6328,7 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 		case Condition::TEAM_ALL_CLEAR:
 			return evaluateTeamAllClear(pCondition->getParameter(0));
 
+		case Condition::AI_PLAYSTYLE:
+      return AIPlaystyleEvaluation(pCondition->getParameter(0), pCondition->getParameter(1));
 	}
 }

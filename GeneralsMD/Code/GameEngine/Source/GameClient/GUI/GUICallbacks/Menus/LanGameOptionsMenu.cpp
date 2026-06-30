@@ -102,6 +102,12 @@ static NameKeyType comboBoxTeamID[MAX_SLOTS] = { NAMEKEY_INVALID,NAMEKEY_INVALID
 																										NAMEKEY_INVALID,NAMEKEY_INVALID,
 																										NAMEKEY_INVALID,NAMEKEY_INVALID };
 
+static NameKeyType comboBoxPlaystyleID[MAX_SLOTS] = { NAMEKEY_INVALID,NAMEKEY_INVALID,
+																											NAMEKEY_INVALID,NAMEKEY_INVALID,
+																											NAMEKEY_INVALID,NAMEKEY_INVALID,
+																											NAMEKEY_INVALID,NAMEKEY_INVALID };
+
+
 //static NameKeyType buttonStartPositionID[MAX_SLOTS] = { NAMEKEY_INVALID,NAMEKEY_INVALID,
 //																										NAMEKEY_INVALID,NAMEKEY_INVALID,
 //																										NAMEKEY_INVALID,NAMEKEY_INVALID,
@@ -141,6 +147,8 @@ static GameWindow *comboBoxColor[MAX_SLOTS] = {0};
 static GameWindow *comboBoxPlayerTemplate[MAX_SLOTS] = {0};
 
 static GameWindow *comboBoxTeam[MAX_SLOTS] = {0};
+
+static GameWindow *comboBoxPlaystyle[MAX_SLOTS] = { 0 };
 
 //static GameWindow *buttonStartPosition[MAX_SLOTS] = {0};
 //
@@ -666,7 +674,9 @@ void lanUpdateSlotList()
 	if(!AreSlotListUpdatesEnabled() || s_isIniting)
 		return;
 	UpdateSlotList( TheLAN->GetMyGame(), comboBoxPlayer, comboBoxColor,
-		comboBoxPlayerTemplate, comboBoxTeam, buttonAccept, buttonStart, buttonMapStartPosition);
+		comboBoxPlayerTemplate, comboBoxTeam, buttonAccept, buttonStart, buttonMapStartPosition, comboBoxPlaystyle);
+	//UpdateSlotList( TheLAN->GetMyGame(), comboBoxPlayer, comboBoxColor,
+	//	comboBoxPlayerTemplate, comboBoxTeam, buttonAccept, buttonStart, buttonMapStartPosition);
 
 	updateMapStartSpots(TheLAN->GetMyGame(), buttonMapStartPosition);
 }
@@ -771,6 +781,32 @@ void InitLanGameGadgets()
 		comboBoxTeam[i] = TheWindowManager->winGetWindowFromId( parentLanGameOptions, comboBoxTeamID[i] );
 		DEBUG_ASSERTCRASH(comboBoxTeam[i], ("Could not find the comboBoxTeam[%d]",i ));
 		PopulateTeamComboBox(i, comboBoxTeam, TheLAN->GetMyGame());
+
+		tmpString.format("LanGameOptionsMenu.wnd:ComboBoxPlaystyle%d", i);
+		comboBoxPlaystyleID[i] = TheNameKeyGenerator->nameToKey(tmpString);
+		comboBoxPlaystyle[i] = TheWindowManager->winGetWindowFromId(parentLanGameOptions, comboBoxPlaystyleID[i]);
+
+
+		if (comboBoxPlaystyle[i] != nullptr)
+		{
+			GadgetComboBoxReset(comboBoxPlaystyle[i]);
+			UnicodeString entry;
+			entry.translate(AsciiString("???"));
+			GadgetComboBoxAddEntry(comboBoxPlaystyle[i], entry, white);
+			entry.translate(AsciiString("Reckless"));
+			GadgetComboBoxAddEntry(comboBoxPlaystyle[i], entry, white);
+			entry.translate(AsciiString("Strategic"));
+			GadgetComboBoxAddEntry(comboBoxPlaystyle[i], entry, white);
+			entry.translate(AsciiString("Loyal"));
+			GadgetComboBoxAddEntry(comboBoxPlaystyle[i], entry, white);
+			entry.translate(AsciiString("Evolving"));
+			GadgetComboBoxAddEntry(comboBoxPlaystyle[i], entry, white);
+			entry.translate(AsciiString("Independent"));
+			GadgetComboBoxAddEntry(comboBoxPlaystyle[i], entry, white);
+
+			GadgetComboBoxSetSelectedPos(comboBoxPlaystyle[i], 0, TRUE);
+			comboBoxPlaystyle[i]->winHide(TRUE);
+		}
 
 		tmpString.clear();
 		tmpString.format("LanGameOptionsMenu.wnd:ButtonAccept%d", i);

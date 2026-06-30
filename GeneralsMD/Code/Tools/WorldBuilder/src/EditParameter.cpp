@@ -297,6 +297,9 @@ AsciiString EditParameter::getWarningText(Parameter *pParm, Bool isAction)
 		case Parameter::COMPARISON:
 			break;
 
+		case Parameter::PLAYSTYLE:
+			break;
+
 		case Parameter::AI_MOOD:
 			break;
 
@@ -441,6 +444,7 @@ AsciiString EditParameter::getInfoText(Parameter *pParm)
 		case Parameter::REAL:
 		case Parameter::FLAG:
 		case Parameter::COMPARISON:
+		case Parameter::PLAYSTYLE:
 		case Parameter::AI_MOOD:
 		case Parameter::SKIRMISH_WAYPOINT_PATH:
 		case Parameter::RADAR_EVENT_TYPE:
@@ -1952,6 +1956,22 @@ BOOL EditParameter::OnInitDialog()
 			showList = true;
 			break;
 
+		case Parameter::PLAYSTYLE:
+		{
+			captionText = "Playstyle:";
+			pList->ResetContent();
+			pList->InsertString(-1, "Reckless");
+			pList->InsertString(-1, "Strategic");
+			pList->InsertString(-1, "Loyal");
+			pList->InsertString(-1, "Evolving");
+			pList->InsertString(-1, "Independent");
+			Int sel = m_parameter->getInt();
+			if (sel < 0 || sel >= pList->GetCount()) sel = 0;
+			pList->SetCurSel(sel);
+			showList = true;
+		}
+		break;
+
 		case Parameter::KIND_OF_PARAM:
 			captionText = "Kind of:";
 			showList = true;
@@ -2325,6 +2345,15 @@ void EditParameter::OnOK()
 		case Parameter::COMPARISON:
 			m_parameter->friend_setInt(pList->GetCurSel());
 			break;
+
+		case Parameter::PLAYSTYLE:
+			{
+				Int curSel = pList->GetCurSel();
+				if (curSel < 0) curSel = 0;
+				m_parameter->friend_setInt(curSel);
+			}
+			break;
+
 		case Parameter::KIND_OF_PARAM:
 			m_parameter->friend_setInt(pList->GetCurSel()+KINDOF_FIRST);
 			break;

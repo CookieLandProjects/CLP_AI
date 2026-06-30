@@ -7203,6 +7203,16 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[0] = "Team ";
 	curTemplate->m_uiStrings[1] = " has just left combat and is now on 'all clear' (similar to the behaviour tab). ";
 
+	curTemplate = &m_conditionTemplates[Condition::AI_PLAYSTYLE];
+	curTemplate->m_internalName = "AI_PLAYSTYLE";
+	curTemplate->m_uiName = "Player/ Check if AI is a specific playstyle.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::PLAYSTYLE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " is ";
+	curTemplate->m_uiStrings[2] = " .";
 
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
