@@ -5381,7 +5381,7 @@ void ScriptActions::doMoveTeamTowardsNearest( const AsciiString& teamName, const
 			if (!templates.empty())
 			{
 				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, nullptr };
+				PartitionFilter* filters[] = { &typesToAccept, &acceptWithin, &filterMapStatus, nullptr };
 				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
 			}
 		}

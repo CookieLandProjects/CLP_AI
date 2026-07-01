@@ -4590,7 +4590,7 @@ Bool ScriptConditions::evaluateTeamIdle(Parameter* pTeamParm)
 	Team* pTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
 	if (!pTeam) return false;
 	//@-TanSo-: how was something like this not in the game from the get-go? ^^
-	return pTeam->isIdle();
+	return pTeam->m_idleFrames > 0;
 }
 
 //-------------------------------------------------------------------------------------------------
