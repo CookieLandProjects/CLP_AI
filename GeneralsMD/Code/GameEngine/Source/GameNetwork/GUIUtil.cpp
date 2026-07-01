@@ -409,7 +409,8 @@ void UpdateSlotList( GameInfo *myGame, GameWindow *comboPlayer[],
 						if (GadgetComboBoxGetLength(comboPlaystyle[i]) > 0)
 						{
 							Int len = GadgetComboBoxGetLength(comboPlaystyle[i]);
-							Int desiredPlaystyle = slot ? slot->getPlayStyle() : PLAYSTYLE_RANDOM;
+							//Int desiredPlaystyle = slot ? slot->getPlayStyle() : PLAYSTYLE_RANDOM;
+							Int desiredPlaystyle = slot ? slot->getPlayStyle() : PLAYSTYLE_INFLUENCE;
 							Int foundIndex = -1;
 							for (Int k = 0; k < len; ++k)
 							{

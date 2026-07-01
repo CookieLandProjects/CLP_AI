@@ -1173,9 +1173,10 @@ if (comboBoxPlaystyle[i] != nullptr)
 	// first entry is "???" (random)
 	GadgetComboBoxReset(comboBoxPlaystyle[i]);
 	UnicodeString entry;
-	entry.translate(AsciiString("???"));
+	entry.translate(AsciiString("Random"));
 	GadgetComboBoxAddEntry(comboBoxPlaystyle[i], entry, white);
-	GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 0, (void *)PLAYSTYLE_RANDOM);
+	//GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 0, (void *)PLAYSTYLE_RANDOM);
+	GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 0, (void *)PLAYSTYLE_INFLUENCE);
 
 	entry.translate(AsciiString("Reckless"));
 	GadgetComboBoxAddEntry(comboBoxPlaystyle[i], entry, white);

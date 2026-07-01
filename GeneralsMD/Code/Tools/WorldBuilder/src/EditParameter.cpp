@@ -1960,6 +1960,7 @@ BOOL EditParameter::OnInitDialog()
 		{
 			captionText = "Playstyle:";
 			pList->ResetContent();
+			pList->InsertString(-1, "Random");
 			pList->InsertString(-1, "Reckless");
 			pList->InsertString(-1, "Strategic");
 			pList->InsertString(-1, "Loyal");

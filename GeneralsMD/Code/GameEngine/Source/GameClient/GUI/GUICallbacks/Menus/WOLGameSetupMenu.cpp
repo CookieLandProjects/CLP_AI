@@ -1258,8 +1258,9 @@ void InitWOLGameGadgets()
 		if (comboBoxPlaystyle[i])
 		{
 			GadgetComboBoxReset(comboBoxPlaystyle[i]);
-			GadgetComboBoxAddEntry(comboBoxPlaystyle[i], TheGameText->fetch("GUI:???"), GameSpyColor[GSCOLOR_PLAYER_NORMAL]);
-			GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 0, (void*)PLAYSTYLE_RANDOM);
+			GadgetComboBoxAddEntry(comboBoxPlaystyle[i], TheGameText->fetch("GUI:Random"), GameSpyColor[GSCOLOR_PLAYER_NORMAL]);
+			//GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 0, (void*)PLAYSTYLE_RANDOM);
+			GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 0, (void*)PLAYSTYLE_INFLUENCE);
 
 			GadgetComboBoxAddEntry(comboBoxPlaystyle[i], TheGameText->fetch("Playstyle:Reckless"), GameSpyColor[GSCOLOR_PLAYER_NORMAL]);
 			GadgetComboBoxSetItemData(comboBoxPlaystyle[i], 1, (void*)PLAYSTYLE_RECKLESS);

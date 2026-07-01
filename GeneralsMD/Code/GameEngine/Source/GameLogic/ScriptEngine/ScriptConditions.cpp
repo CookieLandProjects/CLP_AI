@@ -5927,7 +5927,9 @@ Bool ScriptConditions::evaluateTeamAllClear(Parameter* pTeamParm)
 
 //-------------------------------------------------------------------------------------------------
 // n0ttws: Evaluates if a player's AI playstyle matches the specified value.
-// Playstyles: 0=Reckless, 1=Strategic, 2=Loyal, 3=Evolving, 4=Independent
+// Playstyles: 0=Influence, 1=Reckless, 2=Strategic, 3=Loyal, 4=Evolving, 5=Independent
+// Influence is a special case, its not random, its picked via the influence system scripted
+// in worldbuilder.
 //-------------------------------------------------------------------------------------------------
 Bool ScriptConditions::AIPlaystyleEvaluation(Parameter* pPlayerParm, Parameter* pPlaystyleParm)
 {
