@@ -4333,7 +4333,7 @@ void AIPlayer::buildSpecificBuildingNearestTeamAngle(const AsciiString& thingNam
 				newPos.x = xPos;
 				newPos.y = yPos;
 				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
-					BuildAssistant::CLEAR_PATH |
+					BuildAssistant::CLEAR_PATH | 
 					BuildAssistant::TERRAIN_RESTRICTIONS |
 					BuildAssistant::NO_OBJECT_OVERLAP,
 					nullptr, m_player) == LBC_OK;
