@@ -61,6 +61,9 @@
 // TheSuperHackers @fix Mirelle 04/02/2026: Raised from 500.0f so that
 // enormous camera heights cannot see above the laser origin.
 constexpr const Real ORBITAL_BEAM_Z_OFFSET = 3500.0f;
+// TheSuperHackers @fix The positional audio is now decoupled from the beam origin.
+// 500 units represent the height of the original audio emitter.
+constexpr const Real ORBITAL_BEAM_AUDIO_Z_OFFSET = 500.0f;
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
@@ -250,8 +253,8 @@ void ParticleUplinkCannonUpdate::onObjectCreated()
 	}
 
 	m_specialPowerModule = obj->getSpecialPowerModule( data->m_specialPowerTemplate );
-	m_connectorNodePosition.set( obj->getPosition() );
-	m_laserOriginPosition.set( obj->getPosition() );
+	m_connectorNodePosition.set( *obj->getPosition() );
+	m_laserOriginPosition.set( *obj->getPosition() );
 
 	//Create instances of the sounds required.
 	m_powerupSound.setEventName( data->m_powerupSoundName );
@@ -286,9 +289,9 @@ Bool ParticleUplinkCannonUpdate::initiateIntentToDoSpecialPower(const SpecialPow
 #if !RETAIL_COMPATIBLE_CRC
 		m_scriptedWaypointMode = FALSE;
 #endif
-		m_initialTargetPosition.set( targetPos );
-		m_overrideTargetDestination.set( targetPos );
-		m_currentTargetPosition.set( targetPos );
+		m_initialTargetPosition.set( *targetPos );
+		m_overrideTargetDestination.set( *targetPos );
+		m_currentTargetPosition.set( *targetPos );
 	}
 	else if( way )
 	{
@@ -296,7 +299,7 @@ Bool ParticleUplinkCannonUpdate::initiateIntentToDoSpecialPower(const SpecialPow
 		UnsignedInt now = TheGameLogic->getFrame();
 
 		Coord3D pos;
-		pos.set( way->getLocation() );
+		pos.set( *way->getLocation() );
 
 		m_startAttackFrame = max( now, (UnsignedInt)1 );
 #if !RETAIL_COMPATIBLE_CRC
@@ -306,8 +309,8 @@ Bool ParticleUplinkCannonUpdate::initiateIntentToDoSpecialPower(const SpecialPow
 		m_laserStatus = LASERSTATUS_NONE;
 		setLogicalStatus( STATUS_READY_TO_FIRE );
 		m_specialPowerModule->setReadyFrame( now );
-		m_initialTargetPosition.set( &pos );
-		m_currentTargetPosition.set( &pos );
+		m_initialTargetPosition.set( pos );
+		m_currentTargetPosition.set( pos );
 
 		Int linkCount = way->getNumLinks();
 		Int which = GameLogicRandomValue( 0, linkCount-1 );
@@ -315,7 +318,7 @@ Bool ParticleUplinkCannonUpdate::initiateIntentToDoSpecialPower(const SpecialPow
 		if( next )
 		{
 			m_nextDestWaypointID = next->getID();
-			m_overrideTargetDestination.set( next->getLocation() );
+			m_overrideTargetDestination.set( *next->getLocation() );
 		}
 		else
 		{
@@ -332,17 +335,17 @@ Bool ParticleUplinkCannonUpdate::initiateIntentToDoSpecialPower(const SpecialPow
 		Coord3D pos;
 		if( targetPos )
 		{
-			pos.set( targetPos );
+			pos.set( *targetPos );
 		}
 		else if( targetObj )
 		{
-			pos.set( targetObj->getPosition() );
+			pos.set( *targetObj->getPosition() );
 		}
 #if !RETAIL_COMPATIBLE_CRC
 		m_manualTargetMode = FALSE;
 		m_scriptedWaypointMode = FALSE;
 #endif
-		m_initialTargetPosition.set( &pos );
+		m_initialTargetPosition.set( pos );
 		m_startAttackFrame = max( now, (UnsignedInt)1 );
 		m_laserStatus = LASERSTATUS_NONE;
 		setLogicalStatus( STATUS_READY_TO_FIRE );
@@ -532,8 +535,8 @@ UpdateSleepTime ParticleUplinkCannonUpdate::update()
 				Real cxHeight = height * data->m_swathOfDeathAmplitude;
 
 				Coord3D buildingToInitialTargetVector;
-				buildingToInitialTargetVector.set( &m_initialTargetPosition );
-				buildingToInitialTargetVector.sub( me->getPosition() );
+				buildingToInitialTargetVector.set( m_initialTargetPosition );
+				buildingToInitialTargetVector.sub( *me->getPosition() );
 				Real targetDistance = buildingToInitialTargetVector.length();
 
 				//Calculate the point position assuming the target position is on the x axis relative to the building.
@@ -581,7 +584,7 @@ UpdateSleepTime ParticleUplinkCannonUpdate::update()
 
 				//Calculate the distance from our current position to our target dest.
 				Coord3D vector = m_overrideTargetDestination;
-				vector.sub( &m_currentTargetPosition );
+				vector.sub( m_currentTargetPosition );
 				Real distance = vector.length();
 				if( distance < speed )
 				{
@@ -603,7 +606,7 @@ UpdateSleepTime ParticleUplinkCannonUpdate::update()
 							if ( way )
 							{
 								m_nextDestWaypointID = way->getID();
-								m_overrideTargetDestination.set(way->getLocation());
+								m_overrideTargetDestination.set(*way->getLocation());
 							}
 							else
 							{
@@ -626,7 +629,7 @@ UpdateSleepTime ParticleUplinkCannonUpdate::update()
 			m_currentTargetPosition.z = TheTerrainLogic->getGroundHeight( m_currentTargetPosition.x, m_currentTargetPosition.y );
 
 			Coord3D orbitPosition;
-			orbitPosition.set( &m_currentTargetPosition );
+			orbitPosition.set( m_currentTargetPosition );
 			orbitPosition.z += ORBITAL_BEAM_Z_OFFSET;
 
 			Real scorchRadius = 0.0f;
@@ -648,6 +651,9 @@ UpdateSleepTime ParticleUplinkCannonUpdate::update()
 					templateLaserRadius = update->getTemplateLaserRadius();
 					visualLaserRadius = update->getCurrentLaserRadius();
 				}
+				Coord3D audioPos = m_currentTargetPosition;
+				audioPos.z += ORBITAL_BEAM_AUDIO_Z_OFFSET;
+				beam->setPosition( &audioPos );
 			}
 			// TheSuperHackers @refactor helmutbuhler/xezon 17/05/2025
 			// Originally the damageRadius was calculated with a value updated by LaserUpdate::clientUpdate.
@@ -928,15 +934,11 @@ void ParticleUplinkCannonUpdate::createConnectorFlare( IntensityTypes intensity 
 	if( str.isNotEmpty() )
 	{
 		const ParticleSystemTemplate *tmp = TheParticleSystemManager->findTemplate( str );
-		ParticleSystem *system;
-		if( tmp )
+		ParticleSystem *system = TheParticleSystemManager->createParticleSystem( tmp );
+		if( system )
 		{
-			system = TheParticleSystemManager->createParticleSystem( tmp );
-			if( system )
-			{
-				m_connectorSystemID = system->getSystemID();
-				system->setPosition( &m_connectorNodePosition );
-			}
+			m_connectorSystemID = system->getSystemID();
+			system->setPosition( &m_connectorNodePosition );
 		}
 	}
 }
@@ -964,14 +966,11 @@ void ParticleUplinkCannonUpdate::createLaserBaseFlare( IntensityTypes intensity 
 	if( str.isNotEmpty() )
 	{
 		const ParticleSystemTemplate *tmp = TheParticleSystemManager->findTemplate( str );
-		if( tmp )
+		ParticleSystem *system = TheParticleSystemManager->createParticleSystem( tmp );
+		if( system )
 		{
-			ParticleSystem *system = TheParticleSystemManager->createParticleSystem( tmp );
-			if( system )
-			{
-				m_laserBaseSystemID = system->getSystemID();
-				system->setPosition( &m_laserOriginPosition );
-			}
+			m_laserBaseSystemID = system->getSystemID();
+			system->setPosition( &m_laserOriginPosition );
 		}
 	}
 }
@@ -1004,7 +1003,7 @@ void ParticleUplinkCannonUpdate::createGroundToOrbitLaser( UnsignedInt growthFra
 				if( update )
 				{
 					Coord3D orbitPosition;
-					orbitPosition.set( &m_laserOriginPosition );
+					orbitPosition.set( m_laserOriginPosition );
 					orbitPosition.z += ORBITAL_BEAM_Z_OFFSET;
 					update->initLaser( nullptr, nullptr, &m_laserOriginPosition, &orbitPosition, "", growthFrames );
 				}
@@ -1043,10 +1042,13 @@ void ParticleUplinkCannonUpdate::createOrbitToTargetLaser( UnsignedInt growthFra
 				if( update )
 				{
 					Coord3D orbitPosition;
-					orbitPosition.set( &m_initialTargetPosition );
+					orbitPosition.set( m_initialTargetPosition );
 					orbitPosition.z += ORBITAL_BEAM_Z_OFFSET;
 					update->initLaser( nullptr, nullptr, &orbitPosition, &m_initialTargetPosition, "", growthFrames );
 				}
+				Coord3D audioPos = m_initialTargetPosition;
+				audioPos.z += ORBITAL_BEAM_AUDIO_Z_OFFSET;
+				beam->setPosition( &audioPos );
 			}
 		}
 		if( m_annihilationSound.getEventName().isNotEmpty() )
@@ -1557,6 +1559,37 @@ void ParticleUplinkCannonUpdate::loadPostProcess()
 				DEBUG_CRASH(( "ParticleUplinkCannonUpdate::loadPostProcess - Unable to find drawable for m_orbitToTargetBeamID" ));
 			}
 		}
-	}
 
+		// TheSuperHackers @bugfix stephanmeesters 13/02/2026
+		// For retail game compatibility, this fixes an issue where particle cannon sounds are not audible after saveload.
+		if( (m_status == STATUS_CHARGING || m_status == STATUS_PREPARING || m_status == STATUS_ALMOST_READY) &&
+			m_powerupSound.getEventName().isNotEmpty() )
+		{
+			m_powerupSound.setObjectID( getObject()->getID() );
+			m_powerupSound.setPlayingHandle( TheAudio->addAudioEvent( &m_powerupSound ) );
+		}
+
+		if( (m_status == STATUS_PREPARING || m_status == STATUS_ALMOST_READY || m_status == STATUS_READY_TO_FIRE || m_status == STATUS_PREFIRE) &&
+			m_unpackToReadySound.getEventName().isNotEmpty() )
+		{
+			m_unpackToReadySound.setObjectID( getObject()->getID() );
+			m_unpackToReadySound.setPlayingHandle( TheAudio->addAudioEvent( &m_unpackToReadySound ) );
+		}
+
+		if( m_status == STATUS_FIRING || m_status == STATUS_POSTFIRE ||
+			(m_status == STATUS_PACKING && (m_laserStatus == LASERSTATUS_DECAYING || m_laserStatus == LASERSTATUS_DEAD)) )
+		{
+			if( m_firingToIdleSound.getEventName().isNotEmpty() )
+			{
+				m_firingToIdleSound.setObjectID( getObject()->getID() );
+				m_firingToIdleSound.setPlayingHandle( TheAudio->addAudioEvent( &m_firingToIdleSound ) );
+			}
+
+			if( m_orbitToTargetBeamID != INVALID_DRAWABLE_ID && m_annihilationSound.getEventName().isNotEmpty() )
+			{
+				m_annihilationSound.setDrawableID( m_orbitToTargetBeamID );
+				m_annihilationSound.setPlayingHandle( TheAudio->addAudioEvent( &m_annihilationSound ) );
+			}
+		}
+	}
 }

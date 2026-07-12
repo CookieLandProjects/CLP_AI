@@ -44,7 +44,7 @@ class Object;
 class Drawable;
 class INI;
 
-typedef std::hash_map<AsciiString, ThingTemplate*, rts::hash<AsciiString>, rts::equal_to<AsciiString> > ThingTemplateHashMap;
+typedef std::hash_map<AsciiString, ThingTemplate*, rts::hash<AsciiString>, rts::equal_to<AsciiString>/**/> ThingTemplateHashMap;
 typedef ThingTemplateHashMap::iterator ThingTemplateHashMapIt;
 //-------------------------------------------------------------------------------------------------
 /** Implementation of the thing manager interface singleton */
@@ -54,13 +54,13 @@ class ThingFactory : public SubsystemInterface
 public:
 
 	ThingFactory();
-	virtual ~ThingFactory();
+	virtual ~ThingFactory() override;
 
 	// From the subsystem interface =================================================================
-	virtual void init();
-	virtual void postProcessLoad();
-	virtual void reset();
-	virtual void update();
+	virtual void init() override;
+	virtual void postProcessLoad() override;
+	virtual void reset() override;
+	virtual void update() override;
 	//===============================================================================================
 
 	/// create a new template with name 'name' and add to template list

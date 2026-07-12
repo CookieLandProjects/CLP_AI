@@ -93,37 +93,38 @@ class BaseHeightMapRenderObjClass : public RenderObjClass, public DX8_CleanupHoo
 public:
 
 	BaseHeightMapRenderObjClass();
-	virtual ~BaseHeightMapRenderObjClass();
+	virtual ~BaseHeightMapRenderObjClass() override;
 
 	// DX8_CleanupHook methods
-	virtual void ReleaseResources();	///< Release all dx8 resources so the device can be reset.
-	virtual void ReAcquireResources();  ///< Reacquire all resources after device reset.
+	virtual void ReleaseResources() override;	///< Release all dx8 resources so the device can be reset.
+	virtual void ReAcquireResources() override;  ///< Reacquire all resources after device reset.
 
 
 	/////////////////////////////////////////////////////////////////////////////
 	// Render Object Interface (W3D methods)
 	/////////////////////////////////////////////////////////////////////////////
-	virtual RenderObjClass *	Clone() const;
-	virtual int						Class_ID() const;
-	virtual void					Render(RenderInfoClass & rinfo) = 0;
-	virtual bool					Cast_Ray(RayCollisionTestClass & raytest); // This CANNOT be Bool, as it will not inherit properly if you make Bool == Int
-	virtual void					Get_Obj_Space_Bounding_Sphere(SphereClass & sphere) const;
-	virtual void					Get_Obj_Space_Bounding_Box(AABoxClass & aabox) const;
+	virtual RenderObjClass *	Clone() const override;
+	virtual int						Class_ID() const override;
+	virtual void					Render(RenderInfoClass & rinfo) override = 0;
+	virtual bool					Cast_Ray(RayCollisionTestClass & raytest) override; // This CANNOT be Bool, as it will not inherit properly if you make Bool == Int
+	virtual void					Get_Obj_Space_Bounding_Sphere(SphereClass & sphere) const override;
+	virtual void					Get_Obj_Space_Bounding_Box(AABoxClass & aabox) const override;
 
 
-	virtual void					On_Frame_Update();
-	virtual void					Notify_Added(SceneClass * scene);
+	virtual void					On_Frame_Update() override;
+	virtual void					Notify_Added(SceneClass * scene) override;
 
   // Other VIRTUAL methods. [3/20/2003]
 
 	///allocate resources needed to render heightmap
 	virtual int initHeightData(Int width, Int height, WorldHeightMap *pMap, RefRenderObjListIterator *pLightsIterator, Bool updateExtraPassTiles=TRUE);
 	virtual Int freeMapResources();	///< free resources used to render heightmap
-	virtual void updateCenter(CameraClass *camera, RefRenderObjListIterator *pLightsIterator);
+	virtual void updateCenter(CameraClass *camera, const Vector3 *cameraPivot, RefRenderObjListIterator *pLightsIterator);
  	virtual void adjustTerrainLOD(Int adj);
 	virtual void doPartialUpdate(const IRegion2D &partialRange, WorldHeightMap *htMap, RefRenderObjListIterator *pLightsIterator) = 0;
 	virtual void staticLightingChanged();
-	virtual void oversizeTerrain(Int tilesToOversize);
+	virtual void oversizeTerrain(Int tilesToOversize) = 0; ///< Oversize the visible terrain area.
+	virtual void setTerrainDrawSize(Int width, Int height) = 0; ///< Resize the visible terrain area. Always defaults to oversize dimensions when oversize is set.
 	virtual void reset();
 
   void redirectToHeightmap( WorldHeightMap *pMap )
@@ -229,9 +230,9 @@ public:
 
 protected:
 	// snapshot methods
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 protected:
 	Int	m_x;	///< dimensions of heightmap

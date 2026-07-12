@@ -312,7 +312,7 @@ Bool StealthUpdate::allowedToStealth( Object *stealthOwner ) const
 
 	if( flags & STEALTH_NOT_WHILE_TAKING_DAMAGE && self->getBodyModule()->getLastDamageTimestamp() >= now - 1 )
 	{
-#if PRESERVE_RETAIL_BEHAVIOR
+#if RETAIL_COMPATIBLE_CRC || PRESERVE_STRUCTURE_STEALTH_DURING_REPAIR
 		//Only if it's not healing damage.
 		if( self->getBodyModule()->getLastDamageInfo()->in.m_damageType != DAMAGE_HEALING )
 #endif
@@ -327,8 +327,7 @@ Bool StealthUpdate::allowedToStealth( Object *stealthOwner ) const
 	}
 
 	//We need all required status or else we fail
-	// If we have any requirements
-	if( data->m_requiredStatus.any()  &&  !self->getStatusBits().testForAll( data->m_requiredStatus ) )
+	if( !self->getStatusBits().testForAll( data->m_requiredStatus ) )
 		return FALSE;
 
 	//If we have any forbidden statii, then fail
@@ -847,7 +846,7 @@ void setWakeupIfInRange( Object *obj, void *userData)
 	Coord3D srcpos = *obj->getPosition();
 	Coord3D dstpos = *victim->getPosition();
 
-	srcpos.sub(&dstpos);
+	srcpos.sub(dstpos);
 	if (srcpos.length() > vision)
 		return;
 

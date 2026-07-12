@@ -3924,7 +3924,7 @@ Bool PartitionManager::tryPosition( const Coord3D *center,
 		const AIUpdateInterface *ai = options->sourceToPathToDest->getAIUpdateInterface();
 
 		// check for path existence
-		if( ai && TheAI->pathfinder()->quickDoesPathExist( ai->getLocomotorSet(),
+		if( ai && TheAI->pathfinder()->clientSafeQuickDoesPathExist( ai->getLocomotorSet(),
 																									options->sourceToPathToDest->getPosition(),
 																									&pos ) == FALSE )
 				return FALSE;
@@ -3964,7 +3964,7 @@ Bool PartitionManager::findPositionAround( const Coord3D *center,
 	TheTerrainLogic->getMaximumPathfindExtent(&extent);
 	// If the goal is off the map, it is a scripted setup, so just
 	// use the center.
-	if (!extent.isInRegionNoZ(center)) {
+	if (!extent.isInRegionNoZ(*center)) {
 		*result = *center;
 		return true;
 	}

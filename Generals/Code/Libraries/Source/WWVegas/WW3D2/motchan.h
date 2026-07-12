@@ -56,9 +56,9 @@ class Quaternion;
 
 ******************************************************************************/
 
-class MotionChannelClass : public W3DMPO
+class MotionChannelClass
 {
-	W3DMPO_GLUE(MotionChannelClass)
+	W3DMPO_CODE(MotionChannelClass)
 
 public:
 
@@ -147,9 +147,9 @@ WWINLINE void MotionChannelClass::Get_Vector_As_Quat(int frame, Quaternion& quat
 
 ******************************************************************************/
 
-class BitChannelClass : public W3DMPO
+class BitChannelClass
 {
-	W3DMPO_GLUE(BitChannelClass)
+	W3DMPO_CODE(BitChannelClass)
 
 public:
 
@@ -203,9 +203,9 @@ WWINLINE int BitChannelClass::Get_Bit(int frame) const
 
 ******************************************************************************/
 
-class TimeCodedMotionChannelClass : public W3DMPO
+class TimeCodedMotionChannelClass
 {
-	W3DMPO_GLUE(TimeCodedMotionChannelClass)
+	W3DMPO_CODE(TimeCodedMotionChannelClass)
 
 public:
 
@@ -241,9 +241,9 @@ private:
 	friend class HCompressedAnimClass;
 };
 
-class AdaptiveDeltaMotionChannelClass : public W3DMPO
+class AdaptiveDeltaMotionChannelClass
 {
-	W3DMPO_GLUE(AdaptiveDeltaMotionChannelClass)
+	W3DMPO_CODE(AdaptiveDeltaMotionChannelClass)
 
 public:
 
@@ -290,9 +290,9 @@ private:
 
 ******************************************************************************/
 
-class TimeCodedBitChannelClass : public W3DMPO
+class TimeCodedBitChannelClass
 {
-	W3DMPO_GLUE(TimeCodedBitChannelClass)
+	W3DMPO_CODE(TimeCodedBitChannelClass)
 
 public:
 

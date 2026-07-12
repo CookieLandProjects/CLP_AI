@@ -652,9 +652,9 @@ protected:
 
 
 	// snapshot methods
-	void crc( Xfer *xfer );
-	void xfer( Xfer *xfer );
-	void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 	void handleShroud();
 	void handleValueMap();
@@ -668,10 +668,10 @@ protected:
 	Bool didEnterOrExit() const;
 
 	void setID( ObjectID id );
-	virtual Object *asObjectMeth() { return this; }
-	virtual const Object *asObjectMeth() const { return this; }
+	virtual Object *asObjectMeth() override { return this; }
+	virtual const Object *asObjectMeth() const override { return this; }
 
-	virtual Real calculateHeightAboveTerrain() const;		// Calculates the actual height above terrain.  Doesn't use cache.
+	virtual Real calculateHeightAboveTerrain() const override;		// Calculates the actual height above terrain.  Doesn't use cache.
 
 	void updateTriggerAreaFlags();
 	void setTriggerAreaFlagsForChangeInPosition();
@@ -689,7 +689,7 @@ protected:
 	void addThreat();
 	void removeThreat();
 
-	virtual void reactToTransformChange(const Matrix3D* oldMtx, const Coord3D* oldPos, Real oldAngle);
+	virtual void reactToTransformChange(const Matrix3D* oldMtx, const Coord3D* oldPos, Real oldAngle) override;
 
 private:
 
@@ -767,7 +767,7 @@ private:
 
 	Object*												m_containedBy;					/**< an object can only be contained by at most one
 																	other object, this is that object (if present) */
-	ObjectID											m_xferContainedByID;	///< xfer uses IDs to store pointers and looks them up after
+	ObjectID											m_containedByID;	///< ID of the object we're contained by; only to be used when m_containedBy cannot be used
 	UnsignedInt										m_containedByFrame;	///< frame we were contained by m_containedBy
 
 	Real													m_constructionPercent;			///< for objects being built ... this is the amount completed (0.0 to 100.0)

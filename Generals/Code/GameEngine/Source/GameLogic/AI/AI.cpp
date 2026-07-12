@@ -494,6 +494,11 @@ AIGroup *AI::findGroup( UnsignedInt id )
 	return nullptr;
 }
 
+Bool AI::doesGroupExist(AIGroup* group) const
+{
+	return std::find(m_groupList.begin(), m_groupList.end(), group) != m_groupList.end();
+}
+
 //--------------------------------------------------------------------------------------------------------
 /**
  * Get the next formation id.
@@ -513,7 +518,7 @@ private:
 public:
 	PartitionFilterLiveMapEnemies(const Object *obj) : m_obj(obj) { }
 
-	virtual Bool allow(Object *objOther)
+	virtual Bool allow(Object *objOther) override
 	{
 		// this is way fast (bit test) so do it first.
 		if (objOther->isEffectivelyDead())
@@ -531,7 +536,7 @@ public:
 	}
 
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterLiveMapEnemies"; }
+	virtual const char* debugGetName() override { return "PartitionFilterLiveMapEnemies"; }
 #endif
 };
 
@@ -543,7 +548,7 @@ private:
 public:
 	PartitionFilterWithinAttackRange(const Object* obj) : m_obj(obj) { }
 
-	virtual Bool allow(Object* objOther)
+	virtual Bool allow(Object* objOther) override
 	{
 		for (Int i = 0; i < WEAPONSLOT_COUNT;	i++ )
 		{
@@ -561,7 +566,7 @@ public:
 	}
 
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterWithinAttackRange"; }
+	virtual const char* debugGetName() override { return "PartitionFilterWithinAttackRange"; }
 #endif
 };
 

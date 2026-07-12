@@ -92,7 +92,7 @@ enum
 
 static Bool raiseMessageBoxes = TRUE;
 static Bool campaignSelected = FALSE;
-#if defined(RTS_DEBUG) || defined RTS_PROFILE
+#if defined(RTS_DEBUG) || defined RTS_PROFILE_LEGACY
 static NameKeyType campaignID = NAMEKEY_INVALID;
 static GameWindow *buttonCampaign = nullptr;
 #ifdef TEST_COMPRESSION
@@ -529,7 +529,7 @@ void MainMenuInit( WindowLayout *layout, void *userData )
 
 	showSelectiveButtons(SHOW_NONE);
 	// Set up the version number
-#if defined(RTS_DEBUG) || defined RTS_PROFILE
+#if defined(RTS_DEBUG) || defined RTS_PROFILE_LEGACY
 	WinInstanceData instData;
 #ifdef TEST_COMPRESSION
 	instData.init();
@@ -932,47 +932,30 @@ void MainMenuUpdate( WindowLayout *layout, void *userData )
 WindowMsgHandledType MainMenuInput( GameWindow *window, UnsignedInt msg,
 																		WindowMsgData mData1, WindowMsgData mData2 )
 {
-
 	if(!notShown)
 		return MSG_IGNORED;
 
 	switch( msg )
 	{
-
 		// --------------------------------------------------------------------------------------------
 		case GWM_MOUSE_POS:
 		{
-			ICoord2D mouse;
-			mouse.x = mData1 & 0xFFFF;
-			mouse.y = mData1 >> 16;
+			// TheSuperHackers @tweak 26/02/2026 Show mouse and menu immediately when shellmap is disabled.
+			Bool doShow = !TheGlobalData->m_shellMapOn;
 
-			// TheSuperHackers @tweak 20/08/2025 Show mouse and menu immediately when shellmap is disabled.
-			if (TheGlobalData->m_shellMapOn && mouse.x == 0 && mouse.y == 0)
-				break;
-
-			static Int mousePosX = mouse.x;
-			static Int mousePosY = mouse.y;
-			if(abs(mouse.x - mousePosX) > 20 || abs(mouse.y - mousePosY) > 20)
+			if (!doShow)
 			{
+				ICoord2D mouse;
+				mouse.x = mData1 & 0xFFFF;
+				mouse.y = mData1 >> 16;
 
-				DEBUG_LOG(("Mouse X:%d, Y:%d", mouse.x, mouse.y));
-				if(notShown)
-				{
-					initialGadgetDelay = 1;
-					dropDownWindows[DROPDOWN_MAIN]->winHide(FALSE);
-					TheTransitionHandler->setGroup("MainMenuFade", TRUE);
-					TheTransitionHandler->setGroup("MainMenuDefaultMenu");
-					TheMouse->setVisibility(TRUE);
-					notShown = FALSE;
-					return MSG_HANDLED;
-				}
+				static Int mousePosX = mouse.x;
+				static Int mousePosY = mouse.y;
+
+				doShow = abs(mouse.x - mousePosX) > 20 || abs(mouse.y - mousePosY) > 20;
 			}
 
-		}
-		break;
-		case GWM_CHAR:
-		{
-			if(notShown)
+			if (doShow)
 			{
 				initialGadgetDelay = 1;
 				dropDownWindows[DROPDOWN_MAIN]->winHide(FALSE);
@@ -983,14 +966,25 @@ WindowMsgHandledType MainMenuInput( GameWindow *window, UnsignedInt msg,
 				return MSG_HANDLED;
 			}
 
+			break;
 		}
 
+		// --------------------------------------------------------------------------------------------
+		case GWM_CHAR:
+		{
+			initialGadgetDelay = 1;
+			dropDownWindows[DROPDOWN_MAIN]->winHide(FALSE);
+			TheTransitionHandler->setGroup("MainMenuFade", TRUE);
+			TheTransitionHandler->setGroup("MainMenuDefaultMenu");
+			TheMouse->setVisibility(TRUE);
+			notShown = FALSE;
+			return MSG_HANDLED;
+		}
 	}
 
-
 	return MSG_IGNORED;
-
 }
+
 void PrintOffsetsFromControlBarParent();
 //-------------------------------------------------------------------------------------------------
 /** Main menu window system callback */
@@ -1261,7 +1255,7 @@ WindowMsgHandledType MainMenuSystem( GameWindow *window, UnsignedInt msg,
 
 			if(buttonPushed)
 				break;
-#if defined(RTS_DEBUG) || defined RTS_PROFILE
+#if defined(RTS_DEBUG) || defined RTS_PROFILE_LEGACY
 			if( control == buttonCampaign )
 			{
 				buttonPushed = TRUE;

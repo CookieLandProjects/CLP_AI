@@ -42,8 +42,6 @@
 #include "GameNetwork/GameSpyOverlay.h"
 #include "GameNetwork/GameSpy/PeerDefsImplementation.h"
 
-#include <rts/profile.h>
-
 // PUBLIC DATA ////////////////////////////////////////////////////////////////////////////////////
 Shell *TheShell = nullptr;  ///< the shell singleton definition
 
@@ -518,7 +516,7 @@ void Shell::showShell( Bool runInit )
 
 	if (!TheGlobalData->m_shellMapOn && m_screenCount == 0)
   {
-#ifdef RTS_PROFILE
+#ifdef RTS_PROFILE_LEGACY
     Profile::StopRange("init");
 #endif
 	//else
@@ -542,7 +540,7 @@ void Shell::showShellMap(Bool useShellMap )
 			TheGameLogic->exitGame();
 
 		TheWritableGlobalData->m_pendingFile = TheGlobalData->m_shellMapName;
-		InitGameLogicRandom(0);
+		InitRandom(0);
 		GameMessage *msg = TheMessageStream->appendMessage( GameMessage::MSG_NEW_GAME );
 		msg->appendIntegerArgument(GAME_SHELL);
 		m_shellMapOn = TRUE;

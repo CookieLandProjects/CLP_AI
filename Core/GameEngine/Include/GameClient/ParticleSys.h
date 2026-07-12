@@ -157,9 +157,9 @@ public:
 protected:
 
 	// snapshot methods
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 };
 
@@ -206,9 +206,9 @@ public:
 protected:
 
 	// snapshot methods
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 	void computeAlphaRate();							///< compute alpha rate to get to next key
 	void computeColorRate();							///< compute color change to get to next key
@@ -264,9 +264,9 @@ public:
 	ParticleSystemInfo();												///< to set defaults.
 
 	// snapshot methods
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 	Bool m_isOneShot;														///< if true, destroy system after one burst has occurred
 
@@ -662,9 +662,9 @@ public:
 protected:
 
 	// snapshot methods
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 	virtual Particle *createParticle( const ParticleInfo *data,
 																		ParticlePriorityType priority,
@@ -743,15 +743,17 @@ public:
 
 	typedef std::list<ParticleSystem*> ParticleSystemList;
 	typedef ParticleSystemList::iterator ParticleSystemListIt;
-	typedef std::hash_map<ParticleSystemID, ParticleSystem *, rts::hash<ParticleSystemID>, rts::equal_to<ParticleSystemID> > ParticleSystemIDMap;
-	typedef std::hash_map<AsciiString, ParticleSystemTemplate *, rts::hash<AsciiString>, rts::equal_to<AsciiString> > TemplateMap;
+	typedef std::hash_map<ParticleSystemID, ParticleSystem *, rts::hash<ParticleSystemID>, rts::equal_to<ParticleSystemID>/**/> ParticleSystemIDMap;
+	typedef std::hash_map<AsciiString, ParticleSystemTemplate *, rts::hash<AsciiString>, rts::equal_to<AsciiString>/**/> TemplateMap;
 
 	ParticleSystemManager();
-	virtual ~ParticleSystemManager();
+	virtual ~ParticleSystemManager() override;
 
-	virtual void init();									///< initialize the manager
-	virtual void reset();									///< reset the manager and all particle systems
-	virtual void update();								///< update all particle systems
+	virtual void init() override;									///< initialize the manager
+	virtual void reset() override;									///< reset the manager and all particle systems
+	virtual void update() override;								///< update all particle systems
+
+	virtual Bool isDummy() const { return false; }
 
 	virtual Int getOnScreenParticleCount() = 0;   ///< returns the number of particles on screen
   virtual void setOnScreenParticleCount(int count);
@@ -761,8 +763,7 @@ public:
 	ParticleSystemTemplate *newTemplate( const AsciiString &name );
 
 	/// given a template, instantiate a particle system
-	ParticleSystem *createParticleSystem( const ParticleSystemTemplate *sysTemplate,
-																				Bool createSlaves = TRUE );
+	ParticleSystem *createParticleSystem( const ParticleSystemTemplate *sysTemplate, Bool createSlaves = TRUE );
 
 	/** given a template, instantiate a particle system.
 		if attachTo is not null, attach the particle system to the given object.
@@ -812,9 +813,9 @@ public:
 protected:
 
 	// snapshot methods
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 	Particle *m_allParticlesHead[ NUM_PARTICLE_PRIORITIES ];
 	Particle *m_allParticlesTail[ NUM_PARTICLE_PRIORITIES ];
@@ -833,6 +834,34 @@ protected:
 private:
 	TemplateMap m_templateMap;		///< a hash map of all particle system templates
 	ParticleSystemIDMap m_systemMap; ///< a hash map of all particle systems
+};
+
+
+// TheSuperHackers @feature bobtista 31/01/2026
+// ParticleSystemManager that does nothing. Used for Headless Mode.
+// Generally does not load particle system templates. Certainly does not create particle systems.
+class ParticleSystemManagerDummy : public ParticleSystemManager
+{
+public:
+#if RETAIL_COMPATIBLE_CRC
+	// Must not overload init to keep loading the particle system templates,
+	// which are unfortunately needed to preserve the correct logic crc.
+#else
+	virtual void init() override {}
+	virtual void reset() override {}
+#endif
+	virtual void update() override {}
+
+	virtual Bool isDummy() const override { return true; }
+
+	virtual Int getOnScreenParticleCount() override { return 0; }
+	virtual void doParticles(RenderInfoClass &rinfo) override {}
+	virtual void queueParticleRender() override {}
+
+protected:
+	virtual void crc( Xfer *xfer ) override {}
+	virtual void xfer( Xfer *xfer ) override {}
+	virtual void loadPostProcess() override {}
 };
 
 /// The particle system manager singleton

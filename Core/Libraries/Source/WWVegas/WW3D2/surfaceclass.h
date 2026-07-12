@@ -53,9 +53,9 @@ class Vector3;
 ** Hector Yee 2/12/01 - added in fills, blits etc for font3d class
 **
 *************************************************************************/
-class SurfaceClass : public W3DMPO, public RefCountClass
+class SurfaceClass : public RefCountClass
 {
-	W3DMPO_GLUE(SurfaceClass)
+	W3DMPO_CODE(SurfaceClass)
 	public:
 		typedef void *LockedSurfacePtr;
 
@@ -74,7 +74,7 @@ class SurfaceClass : public W3DMPO, public RefCountClass
 		// Create the surface from a D3D pointer
 		SurfaceClass(IDirect3DSurface8 *d3d_surface);
 
-		~SurfaceClass();
+		virtual ~SurfaceClass() override;
 
 		// Get surface description
 		void Get_Description(SurfaceDescription &surface_desc);

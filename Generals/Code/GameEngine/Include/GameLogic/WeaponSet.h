@@ -189,9 +189,9 @@ private:
 
 protected:
 	// snapshot methods
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 public:
 
@@ -211,6 +211,7 @@ public:
 	WeaponSlotType getCurWeaponSlot() const { return m_curWeapon; }
 	Weapon* findWaypointFollowingCapableWeapon();
 	const Weapon* findAmmoPipShowingWeapon() const;
+	UnsignedInt getMostPercentReadyToFireAnyWeapon() const;
 
 	Bool setWeaponLock( WeaponSlotType weaponSlot, WeaponLockType lockType );
 	void releaseWeaponLock(WeaponLockType lockType);

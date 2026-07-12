@@ -116,6 +116,8 @@ static const FieldParse audioSettingsFieldParseTable[] =
 	{ "Default3DSpeakerType",		 parseSpeakerType,							nullptr,							offsetof( AudioSettings, m_defaultSpeakerType3D) },
 
 	{ "MinSampleVolume",			INI::parsePercentToReal,						nullptr,							offsetof( AudioSettings, m_minVolume) },
+	{ "Use3DSoundRangeVolumeFade", INI::parseBool,								nullptr,							offsetof( AudioSettings, m_use3DSoundRangeVolumeFade) },
+	{ "3DSoundRangeVolumeFadeExponent", INI::parseReal,						nullptr,							offsetof( AudioSettings, m_3DSoundRangeVolumeFadeExponent) },
 	{ "GlobalMinRange",				INI::parseInt,											nullptr,							offsetof( AudioSettings, m_globalMinRange) },
 	{ "GlobalMaxRange",				INI::parseInt,											nullptr,							offsetof( AudioSettings, m_globalMaxRange) },
 	{ "TimeBetweenDrawableSounds", INI::parseDurationUnsignedInt, nullptr,							offsetof( AudioSettings, m_drawableAmbientFrames) },
@@ -280,16 +282,16 @@ void AudioManager::reset()
 //-------------------------------------------------------------------------------------------------
 void AudioManager::update()
 {
-	Coord3D groundPos, microphonePos;
-	TheTacticalView->getPosition( &groundPos );
+	Coord3D cameraPivot = TheTacticalView->getPosition();
 	Real angle = TheTacticalView->getAngle();
 	Matrix3D rot = Matrix3D::Identity;
 	rot.Rotate_Z( angle );
 	Vector3 forward( 0, 1, 0 );
 	rot.mulVector3( forward );
 
-	Real desiredHeight = m_audioSettings->m_microphoneDesiredHeightAboveTerrain;
-	Real maxPercentage = m_audioSettings->m_microphoneMaxPercentageBetweenGroundAndCamera;
+	const Real desiredHeightRel = m_audioSettings->m_microphoneDesiredHeightAboveTerrain;
+	const Real desiredHeightAbs = desiredHeightRel + cameraPivot.z;
+	const Real maxPercentage = m_audioSettings->m_microphoneMaxPercentageBetweenGroundAndCamera;
 
 	Coord3D lookTo;
 	lookTo.set(forward.X, forward.Y, forward.Z);
@@ -300,11 +302,11 @@ void AudioManager::update()
 	//of making sure we only go a certain percentage towards the camera or the desired height, whichever occurs first.
 	Coord3D cameraPos = TheTacticalView->get3DCameraPosition();
 	Coord3D groundToCameraVector;
-	groundToCameraVector.set( &cameraPos );
-	groundToCameraVector.sub( &groundPos );
+	groundToCameraVector.set( cameraPos );
+	groundToCameraVector.sub( cameraPivot );
 	Real bestScaleFactor;
 
-	if( cameraPos.z <= desiredHeight || groundToCameraVector.z <= 0.0f )
+	if( cameraPos.z <= desiredHeightAbs || groundToCameraVector.z <= 0.0f )
 	{
 		//Use the percentage calculation!
 		bestScaleFactor = maxPercentage;
@@ -312,7 +314,7 @@ void AudioManager::update()
 	else
 	{
 		//Calculate the stopping position of the groundToCameraVector when we force z to be m_microphoneDesiredHeightAboveTerrain
-		Real zScale = desiredHeight / groundToCameraVector.z;
+		Real zScale = desiredHeightRel / groundToCameraVector.z;
 
 		//Use the smallest of the two scale calculations
 		bestScaleFactor = MIN( maxPercentage, zScale );
@@ -322,9 +324,9 @@ void AudioManager::update()
 	groundToCameraVector.scale( bestScaleFactor );
 
 	//Set the microphone to be the ground position adjusted for terrain plus the vector we just calculated.
-	groundPos.z = TheTerrainLogic->getGroundHeight( groundPos.x, groundPos.y );
-	microphonePos.set( &groundPos );
-	microphonePos.add( &groundToCameraVector );
+	Coord3D microphonePos;
+	microphonePos.set( cameraPivot );
+	microphonePos.add( groundToCameraVector );
 
 	//Viola! A properly placed microphone.
 	setListenerPosition( &microphonePos, &lookTo );
@@ -343,7 +345,7 @@ void AudioManager::update()
 	{
 		//How far away is the camera from the microphone?
 		Coord3D vector = cameraPos;
-		vector.sub( &microphonePos );
+		vector.sub( microphonePos );
 		Real dist = vector.length();
 
 		if( dist < minDist )
@@ -441,7 +443,7 @@ AudioHandle AudioManager::addAudioEvent(const AudioEventRTS *eventToAdd)
 	eventToAdd->setPlayingAudioIndex( audioEvent->getPlayingAudioIndex() );
 	audioEvent->generatePlayInfo();	// generate pitch shift and volume shift now as well
 
-	std::list<std::pair<AsciiString, Real> >::iterator it;
+	std::list<std::pair<AsciiString, Real>/**/>::iterator it;
 	for (it = m_adjustedVolumes.begin(); it != m_adjustedVolumes.end(); ++it) {
 		if (it->first == audioEvent->getEventName()) {
 			audioEvent->setVolume(it->second);
@@ -599,7 +601,7 @@ void AudioManager::setAudioEventVolumeOverride( AsciiString eventToAffect, Real 
 		adjustVolumeOfPlayingAudio(eventToAffect, newVolume);
 	}
 
-	std::list<std::pair<AsciiString, Real> >::iterator it;
+	std::list<std::pair<AsciiString, Real>/**/>::iterator it;
 	for (it = m_adjustedVolumes.begin(); it != m_adjustedVolumes.end(); ++it) {
 		if (it->first == eventToAffect) {
 			if (newVolume == -1.0f) {
@@ -940,33 +942,6 @@ Real AudioManager::getAudioLengthMS( const AudioEventRTS *event )
 	return getFileLengthMS(tmpEvent.getAttackFilename()) +
 				 getFileLengthMS(tmpEvent.getFilename()) +
 				 getFileLengthMS(tmpEvent.getDecayFilename());
-}
-
-//-------------------------------------------------------------------------------------------------
-Bool AudioManager::isMusicAlreadyLoaded() const
-{
-	const AudioEventInfo *musicToLoad = nullptr;
-	AudioEventInfoHash::const_iterator it;
-	for (it = m_allAudioEventInfo.begin(); it != m_allAudioEventInfo.end(); ++it) {
-		if (it->second) {
-			const AudioEventInfo *aet = it->second;
-			if (aet->m_soundType == AT_Music) {
-				musicToLoad = aet;
-			}
-		}
-	}
-
-	if (!musicToLoad) {
-		return FALSE;
-	}
-
-	AudioEventRTS aud;
-	aud.setAudioEventInfo(musicToLoad);
-	aud.generateFilename();
-
-	AsciiString astr = aud.getFilename();
-
-	return (TheFileSystem->doesFileExist(astr.str()));
 }
 
 //-------------------------------------------------------------------------------------------------

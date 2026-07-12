@@ -257,9 +257,9 @@ public:
 protected:
 
 	// snapshot method
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 };
 
@@ -315,9 +315,9 @@ public:
 	~PartitionCell();
 
 	// --------------- inherited from Snapshot interface --------------
-	void crc( Xfer *xfer );
-	void xfer( Xfer *xfer );
-	void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 	Int getCoiCount() const { return m_coiCount; }		///< return number of COIs touching this cell.
 	Int getCellX() const { return m_cellX; }
@@ -609,9 +609,9 @@ class PartitionFilterIsFlying : public PartitionFilter
 {
 public:
 	PartitionFilterIsFlying() { }
-	virtual Bool allow(Object *objOther);
+	virtual Bool allow(Object *objOther) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterIsFlying"; }
+	virtual const char* debugGetName() override { return "PartitionFilterIsFlying"; }
 #endif
 };
 
@@ -625,9 +625,9 @@ private:
   Bool m_desiredCollisionResult;  // collision must match this for allow to return true
 public:
 	PartitionFilterWouldCollide(const Coord3D& pos, const GeometryInfo& geom, Real angle, Bool desired);
-	virtual Bool allow(Object *objOther);
+	virtual Bool allow(Object *objOther) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterWouldCollide"; }
+	virtual const char* debugGetName() override { return "PartitionFilterWouldCollide"; }
 #endif
 };
 
@@ -641,9 +641,9 @@ private:
 	const Player *m_player;
 public:
 	PartitionFilterSamePlayer(const Player *player) : m_player(player) { }
-	virtual Bool allow(Object *objOther);
+	virtual Bool allow(Object *objOther) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterSamePlayer"; }
+	virtual const char* debugGetName() override { return "PartitionFilterSamePlayer"; }
 #endif
 };
 
@@ -667,9 +667,9 @@ public:
 		ALLOW_NEUTRAL					= (1<<NEUTRAL)		///< allow objects that m_obj considers neutral
 	};
 	PartitionFilterRelationship(const Object *obj, Int flags) : m_obj(obj), m_flags(flags) { }
-	virtual Bool allow(Object *objOther);
+	virtual Bool allow(Object *objOther) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterRelationship"; }
+	virtual const char* debugGetName() override { return "PartitionFilterRelationship"; }
 #endif
 };
 
@@ -684,9 +684,9 @@ private:
 	const Team *m_team;
 public:
 	PartitionFilterAcceptOnTeam(const Team *team);
-	virtual Bool allow(Object *objOther);
+	virtual Bool allow(Object *objOther) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterAcceptOnTeam"; }
+	virtual const char* debugGetName() override { return "PartitionFilterAcceptOnTeam"; }
 #endif
 };
 
@@ -701,9 +701,9 @@ private:
 	const Squad *m_squad;
 public:
 	PartitionFilterAcceptOnSquad(const Squad *squad);
-	virtual Bool allow(Object *objOther);
+	virtual Bool allow(Object *objOther) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterAcceptOnSquad"; }
+	virtual const char* debugGetName() override { return "PartitionFilterAcceptOnSquad"; }
 #endif
 };
 
@@ -724,9 +724,9 @@ private:
 	const Object *m_obj;
 public:
 	PartitionFilterLineOfSight(const Object *obj);
-	virtual Bool allow(Object *objOther);
+	virtual Bool allow(Object *objOther) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterLineOfSight"; }
+	virtual const char* debugGetName() override { return "PartitionFilterLineOfSight"; }
 #endif
 };
 
@@ -742,9 +742,9 @@ private:
 	AbleToAttackType m_attackType;
 public:
 	PartitionFilterPossibleToAttack(AbleToAttackType t, const Object *obj, CommandSourceType commandSource);
-	virtual Bool allow(Object *objOther);
+	virtual Bool allow(Object *objOther) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterPossibleToAttack"; }
+	virtual const char* debugGetName() override { return "PartitionFilterPossibleToAttack"; }
 #endif
 };
 
@@ -758,9 +758,9 @@ private:
 	ObjectID m_lastAttackedBy;
 public:
 	PartitionFilterLastAttackedBy(Object *obj);
-	virtual Bool allow(Object *other);
+	virtual Bool allow(Object *other) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterLastAttackedBy"; }
+	virtual const char* debugGetName() override { return "PartitionFilterLastAttackedBy"; }
 #endif
 };
 
@@ -774,9 +774,9 @@ private:
 	ObjectStatusMaskType m_mustBeSet, m_mustBeClear;
 public:
 	PartitionFilterAcceptByObjectStatus(ObjectStatusMaskType mustBeSet, ObjectStatusMaskType mustBeClear) : m_mustBeSet(mustBeSet), m_mustBeClear(mustBeClear) { }
-	virtual Bool allow(Object *objOther);
+	virtual Bool allow(Object *objOther) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterAcceptByObjectStatus"; }
+	virtual const char* debugGetName() override { return "PartitionFilterAcceptByObjectStatus"; }
 #endif
 };
 
@@ -794,9 +794,9 @@ public:
 		: m_mustBeSet(mustBeSet), m_mustBeClear(mustBeClear)
 	{
 	}
-	virtual Bool allow(Object *objOther);
+	virtual Bool allow(Object *objOther) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterRejectByObjectStatus"; }
+	virtual const char* debugGetName() override { return "PartitionFilterRejectByObjectStatus"; }
 #endif
 };
 
@@ -811,9 +811,9 @@ private:
 	Bool m_allow;
 public:
 	PartitionFilterStealthedAndUndetected( const Object *obj, Bool allow ) { m_obj = obj; m_allow = allow; }
-	virtual Bool allow(Object *objOther);
+	virtual Bool allow(Object *objOther) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterStealthedAndUndetected"; }
+	virtual const char* debugGetName() override { return "PartitionFilterStealthedAndUndetected"; }
 #endif
 };
 
@@ -827,9 +827,9 @@ private:
 	KindOfMaskType m_mustBeSet, m_mustBeClear;
 public:
 	PartitionFilterAcceptByKindOf(const KindOfMaskType& mustBeSet, const KindOfMaskType& mustBeClear) : m_mustBeSet(mustBeSet), m_mustBeClear(mustBeClear) { }
-	virtual Bool allow(Object *objOther);
+	virtual Bool allow(Object *objOther) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterAcceptByKindOf"; }
+	virtual const char* debugGetName() override { return "PartitionFilterAcceptByKindOf"; }
 #endif
 };
 
@@ -847,9 +847,9 @@ public:
 		: m_mustBeSet(mustBeSet), m_mustBeClear(mustBeClear)
 	{
 	}
-	virtual Bool allow(Object *objOther);
+	virtual Bool allow(Object *objOther) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterRejectByKindOf"; }
+	virtual const char* debugGetName() override { return "PartitionFilterRejectByKindOf"; }
 #endif
 };
 
@@ -864,9 +864,9 @@ private:
 	Object *m_obj;
 public:
 	PartitionFilterRejectBehind( Object *obj );
-	virtual Bool allow( Object *other );
+	virtual Bool allow( Object *other ) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterRejectBehind"; }
+	virtual const char* debugGetName() override { return "PartitionFilterRejectBehind"; }
 #endif
 };
 
@@ -879,9 +879,9 @@ class PartitionFilterAlive : public PartitionFilter
 public:
 	PartitionFilterAlive() { }
 protected:
-	virtual Bool allow(Object *objOther);
+	virtual Bool allow(Object *objOther) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterAlive"; }
+	virtual const char* debugGetName() override { return "PartitionFilterAlive"; }
 #endif
 };
 
@@ -897,9 +897,9 @@ private:
 public:
 	PartitionFilterSameMapStatus(const Object *obj) : m_obj(obj) { }
 protected:
-	virtual Bool allow(Object *objOther);
+	virtual Bool allow(Object *objOther) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterSameMapStatus"; }
+	virtual const char* debugGetName() override { return "PartitionFilterSameMapStatus"; }
 #endif
 };
 
@@ -912,9 +912,9 @@ class PartitionFilterOnMap : public PartitionFilter
 public:
 	PartitionFilterOnMap() { }
 protected:
-	virtual Bool allow(Object *objOther);
+	virtual Bool allow(Object *objOther) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterOnMap"; }
+	virtual const char* debugGetName() override { return "PartitionFilterOnMap"; }
 #endif
 };
 
@@ -932,9 +932,9 @@ private:
 public:
 	PartitionFilterRejectBuildings(const Object *o);
 protected:
-	virtual Bool allow( Object *other );
+	virtual Bool allow( Object *other ) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterRejectBuildings"; }
+	virtual const char* debugGetName() override { return "PartitionFilterRejectBuildings"; }
 #endif
 };
 
@@ -952,9 +952,9 @@ public:
 	PartitionFilterInsignificantBuildings(Bool allowNonBuildings, Bool allowInsignificant) :
 			m_allowNonBuildings(allowNonBuildings), m_allowInsignificant(allowInsignificant) {}
 protected:
-	virtual Bool allow( Object *other );
+	virtual Bool allow( Object *other ) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterInsignificantBuildings"; }
+	virtual const char* debugGetName() override { return "PartitionFilterInsignificantBuildings"; }
 #endif
 };
 
@@ -970,9 +970,9 @@ public:
 	PartitionFilterFreeOfFog(Int toWhom) :
 			m_comparisonIndex(toWhom){}
 protected:
-	virtual Bool allow( Object *other );
+	virtual Bool allow( Object *other ) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterFreeOfFog"; }
+	virtual const char* debugGetName() override { return "PartitionFilterFreeOfFog"; }
 #endif
 };
 
@@ -987,9 +987,9 @@ private:
 public:
 	PartitionFilterRepulsor(const Object *o) : m_self(o) { }
 protected:
-	virtual Bool allow( Object *other );
+	virtual Bool allow( Object *other ) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterRepulsor"; }
+	virtual const char* debugGetName() override { return "PartitionFilterRepulsor"; }
 #endif
 };
 
@@ -1008,9 +1008,9 @@ private:
 public:
 	PartitionFilterIrregularArea(Coord3D* area, Int numPointsInArea) : m_area(area), m_numPointsInArea(numPointsInArea) {}
 protected:
-	virtual Bool allow( Object *other );
+	virtual Bool allow( Object *other ) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterIrregularArea"; }
+	virtual const char* debugGetName() override { return "PartitionFilterIrregularArea"; }
 #endif
 };
 
@@ -1028,9 +1028,9 @@ private:
 public:
 	PartitionFilterPolygonTrigger(const PolygonTrigger *trigger) : m_trigger(trigger) {}
 protected:
-	virtual Bool allow( Object *other );
+	virtual Bool allow( Object *other ) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterPolygonTrigger"; }
+	virtual const char* debugGetName() override { return "PartitionFilterPolygonTrigger"; }
 #endif
 };
 
@@ -1048,9 +1048,9 @@ private:
 public:
 	PartitionFilterPlayer(const Player *player, Bool match) : m_player(player), m_match(match) {}
 protected:
-	virtual Bool allow( Object *other );
+	virtual Bool allow( Object *other ) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterPlayer"; }
+	virtual const char* debugGetName() override { return "PartitionFilterPlayer"; }
 #endif
 };
 
@@ -1073,9 +1073,9 @@ public:
 	{
 	}
 protected:
-	virtual Bool allow( Object *other );
+	virtual Bool allow( Object *other ) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterPlayerAffiliation"; }
+	virtual const char* debugGetName() override { return "PartitionFilterPlayerAffiliation"; }
 #endif
 };
 
@@ -1095,9 +1095,9 @@ public:
 		DEBUG_ASSERTCRASH(m_tThing != nullptr, ("ThingTemplate for PartitionFilterThing is null"));
 	}
 protected:
-	virtual Bool allow( Object *other );
+	virtual Bool allow( Object *other ) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterThing"; }
+	virtual const char* debugGetName() override { return "PartitionFilterThing"; }
 #endif
 };
 
@@ -1117,9 +1117,9 @@ public:
 		m_player = nullptr;
 	}
 protected:
-	virtual Bool allow( Object *other );
+	virtual Bool allow( Object *other ) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterGarrisonable"; }
+	virtual const char* debugGetName() override { return "PartitionFilterGarrisonable"; }
 #endif
 };
 
@@ -1140,9 +1140,9 @@ public:
 	{
 	}
 protected:
-	virtual Bool allow( Object *other );
+	virtual Bool allow( Object *other ) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterGarrisonableByPlayer"; }
+	virtual const char* debugGetName() override { return "PartitionFilterGarrisonableByPlayer"; }
 #endif
 };
 
@@ -1158,9 +1158,9 @@ private:
 public:
 	PartitionFilterUnmannedObject( Bool match ) : m_match(match) {}
 protected:
-	virtual Bool allow( Object *other );
+	virtual Bool allow( Object *other ) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterUnmannedObject"; }
+	virtual const char* debugGetName() override { return "PartitionFilterUnmannedObject"; }
 #endif
 };
 
@@ -1180,9 +1180,9 @@ public:
 	PartitionFilterValidCommandButtonTarget( Object *source, const CommandButton *commandButton, Bool match, CommandSourceType commandSource) :
 		m_source(source), m_commandButton(commandButton), m_match(match), m_commandSource(commandSource) {}
 protected:
-	virtual Bool allow( Object *other );
+	virtual Bool allow( Object *other ) override;
 #if defined(RTS_DEBUG)
-	virtual const char* debugGetName() { return "PartitionFilterValidCommandButtonTarget"; }
+	virtual const char* debugGetName() override { return "PartitionFilterValidCommandButtonTarget"; }
 #endif
 };
 
@@ -1276,18 +1276,18 @@ protected:
 public:
 
 	PartitionManager();
-	virtual ~PartitionManager();
+	virtual ~PartitionManager() override;
 
 	// --------------- inherited from Subsystem interface -------------
-	virtual void init();			///< initialize
-	virtual void reset();			///< system reset
-	virtual void update();		///< system update
+	virtual void init() override;			///< initialize
+	virtual void reset() override;			///< system reset
+	virtual void update() override;		///< system update
 	// ----------------------------------------------------------------
 
 	// --------------- inherited from Snapshot interface --------------
-	void crc( Xfer *xfer );
-	void xfer( Xfer *xfer );
-	void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 	Bool getUpdatedSinceLastReset() const { return m_updatedSinceLastReset; }
 
@@ -1453,7 +1453,7 @@ public:
 	}
 
 	/**
-		Reveals the map for the given player, but does not override Shroud generation.  (Script)
+		virtual Reveals the map for the given player, but does not override Shroud generation.  (Script)
 		*/
 	void revealMapForPlayer( Int playerIndex );
 

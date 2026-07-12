@@ -66,6 +66,41 @@ Bool OptionPreferences::loadFromIniFile()
 	return load("Options.ini");
 }
 
+WW3D::MultiSampleModeEnum OptionPreferences::getAntiAliasing() const
+{
+	OptionPreferences::const_iterator it = find("AntiAliasing");
+	if (it == end())
+		return WW3D::MULTISAMPLE_MODE_NONE;
+
+	WW3D::MultiSampleModeEnum level = (WW3D::MultiSampleModeEnum)atoi(it->second.str());
+	level = clamp(WW3D::MULTISAMPLE_MODE_NONE, level, WW3D::MULTISAMPLE_MODE_8X);
+	level = highestBit(level);
+
+	return level;
+}
+
+TextureFilterClass::TextureFilterMode OptionPreferences::getTextureFilterMode() const
+{
+	OptionPreferences::const_iterator it = find("TextureFilter");
+	if (it == end())
+		return TextureFilterClass::TEXTURE_FILTER_BILINEAR;
+
+	return TextureFilterClass::getTextureFilterMode(it->second.str());
+}
+
+TextureFilterClass::AnisotropicFilterMode OptionPreferences::getTextureAnisotropyLevel() const
+{
+	OptionPreferences::const_iterator it = find("AnisotropyLevel");
+	if (it == end())
+		return TextureFilterClass::TEXTURE_FILTER_ANISOTROPIC_2X;
+
+	TextureFilterClass::AnisotropicFilterMode level = (TextureFilterClass::AnisotropicFilterMode)atoi(it->second.str());
+	level = clamp(TextureFilterClass::TEXTURE_FILTER_ANISOTROPIC_2X, level, TextureFilterClass::TEXTURE_FILTER_ANISOTROPIC_16X);
+	level = highestBit(level);
+
+	return level;
+}
+
 Int OptionPreferences::getCampaignDifficulty()
 {
 	OptionPreferences::const_iterator it = find("CampaignDifficulty");
@@ -161,6 +196,18 @@ Bool OptionPreferences::getAlternateMouseModeEnabled()
 	OptionPreferences::const_iterator it = find("UseAlternateMouse");
 	if (it == end())
 		return TheGlobalData->m_useAlternateMouse;
+
+	if (stricmp(it->second.str(), "yes") == 0) {
+		return TRUE;
+	}
+	return FALSE;
+}
+
+Bool OptionPreferences::getRightMouseScrollWithAlternateMouseEnabled() const
+{
+	OptionPreferences::const_iterator it = find("UseRightMouseScrollWithAlternateMouse");
+	if (it == end())
+		return TheGlobalData->m_useRightMouseScrollWithAlternateMouse;
 
 	if (stricmp(it->second.str(), "yes") == 0) {
 		return TRUE;
@@ -435,10 +482,10 @@ UnsignedShort OptionPreferences::getFirewallPortOverride()
 		return TheGlobalData->m_firewallPortOverride;
 	}
 
-	Int override = atoi(it->second.str());
-	if (override < 0 || override > 65535)
-		override = 0;
-	return override;
+	Int portOverride = atoi(it->second.str());
+	if (portOverride < 0 || portOverride > 65535)
+		portOverride = 0;
+	return portOverride;
 }
 
 Bool OptionPreferences::getFirewallNeedToRefresh()
@@ -836,4 +883,14 @@ Bool OptionPreferences::getShowMoneyPerMinute() const
 		return TRUE;
 	}
 	return FALSE;
+}
+
+Real OptionPreferences::getGameWindowTransitionSpeedMultiplier() const
+{
+	OptionPreferences::const_iterator it = find("GameWindowTransitionSpeedMultiplier");
+	if (it == end())
+		return 1.0f;
+
+	Real speed = (Real) atof(it->second.str());
+	return clamp(1.0f, speed, 1000.0f);
 }

@@ -696,6 +696,14 @@ void WorkerAIUpdate::cancelTask( DozerTask task )
 
 }
 
+void WorkerAIUpdate::cancelAllTasks()
+{
+	for (UnsignedInt task = DOZER_TASK_FIRST; task < DOZER_NUM_TASKS; ++task)
+		internalCancelTask((DozerTask)task);
+
+	m_dozerMachine->resetToDefaultState();
+}
+
 //-------------------------------------------------------------------------------------------------
 /** Attempt to resume the previous task */
 //-------------------------------------------------------------------------------------------------
@@ -1096,7 +1104,7 @@ Bool WorkerAIUpdate::gainOneBox( Int remainingStock )
 		{
 			//figure out whether the best one is considerably far from the previous one (current position)
 			Coord3D delta = *getObject()->getPosition();
-			delta.sub( bestWarehouse->getPosition() );
+			delta.sub( *bestWarehouse->getPosition() );
 			if ( delta.length() > getWarehouseScanDistance()/4)
 			playDepleted = TRUE;
 		}
@@ -1154,14 +1162,14 @@ class ActAsDozerState :  public State
 	MEMORY_POOL_GLUE_WITH_USERLOOKUP_CREATE(ActAsDozerState, "ActAsDozerState")
 protected:
 	// snapshot interface STUBBED.
-	virtual void crc( Xfer *xfer ){};
-	virtual void xfer( Xfer *xfer ){};
-	virtual void loadPostProcess(){};
+	virtual void crc( Xfer *xfer ) override {};
+	virtual void xfer( Xfer *xfer ) override {};
+	virtual void loadPostProcess() override {};
 
 public:
 	ActAsDozerState( StateMachine *machine ) :State( machine, "ActAsDozerState" ){}
-	virtual StateReturnType onEnter();
-	virtual StateReturnType update();
+	virtual StateReturnType onEnter() override;
+	virtual StateReturnType update() override;
 	virtual StateReturnType onExit();
 };
 EMPTY_DTOR(ActAsDozerState)
@@ -1173,14 +1181,14 @@ class ActAsSupplyTruckState :  public State
 	MEMORY_POOL_GLUE_WITH_USERLOOKUP_CREATE(ActAsSupplyTruckState, "ActAsSupplyTruckState")
 protected:
 	// snapshot interface STUBBED.
-	virtual void crc( Xfer *xfer ){};
-	virtual void xfer( Xfer *xfer ){};
-	virtual void loadPostProcess(){};
+	virtual void crc( Xfer *xfer ) override {};
+	virtual void xfer( Xfer *xfer ) override {};
+	virtual void loadPostProcess() override {};
 
 public:
 	ActAsSupplyTruckState( StateMachine *machine ) :State( machine, "ActAsSupplyTruckState" ){}
-	virtual StateReturnType onEnter();
-	virtual StateReturnType update();
+	virtual StateReturnType onEnter() override;
+	virtual StateReturnType update() override;
 	virtual StateReturnType onExit();
 };
 EMPTY_DTOR(ActAsSupplyTruckState)

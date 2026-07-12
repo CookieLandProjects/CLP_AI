@@ -1950,9 +1950,9 @@ public:
 
 protected:
 	// snapshot interface
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 };
 
 // ------------------------------------------------------------------------------------------------
@@ -3932,9 +3932,9 @@ void AIFollowWaypointPathState::computeGoal(Bool useGroupOffsets)
 	Region3D extent;
 	TheTerrainLogic->getMaximumPathfindExtent(&extent);
 
-	if (extent.isInRegionNoZ(&dest)) {
+	if (extent.isInRegionNoZ(dest)) {
 		// The waypoint is on the map.  Check & see if the adjusted position is off map [8/28/2003]
-		if (!extent.isInRegionNoZ(&m_goalPosition)) {
+		if (!extent.isInRegionNoZ(m_goalPosition)) {
 			// clamp to in region. [8/28/2003]
 			if (m_goalPosition.x < extent.lo.x+PATHFIND_CELL_SIZE_F) {
 				m_goalPosition.x = extent.lo.x+PATHFIND_CELL_SIZE_F;
@@ -3951,7 +3951,7 @@ void AIFollowWaypointPathState::computeGoal(Bool useGroupOffsets)
 		}
 	}
 
-	if (!extent.isInRegionNoZ(&m_goalPosition)) {
+	if (!extent.isInRegionNoZ(m_goalPosition)) {
 		setAdjustsDestination(false); // moving off the map.
 		ai->getCurLocomotor()->setAllowInvalidPosition(true); // allow it to move off the map.
 		m_appendGoalPosition = true; // Moving off the map.
@@ -5747,9 +5747,9 @@ public:
 	AIAttackThenIdleStateMachine( Object *owner, AsciiString name );
 protected:
 	// snapshot interface .
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 };
 
 // ------------------------------------------------------------------------------------------------
@@ -6522,6 +6522,12 @@ StateReturnType AIExitState::update()
 		ExitInterface* goalExitInterface = goal->getContain() ? goal->getContain()->getContainExitInterface() : nullptr;
 		if( goalExitInterface == nullptr )
 			return STATE_FAILURE;
+
+#if !RETAIL_COMPATIBLE_CRC
+		// TheSuperHackers @bugfix Stubbjax 03/05/2026 Stop trying to exit if the container is dead, as we are already ejected.
+		if (goal->isEffectivelyDead())
+			return STATE_FAILURE;
+#endif
 
 		if( goalExitInterface->isExitBusy() )
 			return STATE_CONTINUE;// Just wait a sec.

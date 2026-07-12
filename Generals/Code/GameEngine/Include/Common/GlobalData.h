@@ -80,11 +80,11 @@ class GlobalData : public SubsystemInterface
 public:
 
 	GlobalData();
-	virtual ~GlobalData();
+	virtual ~GlobalData() override;
 
-	virtual void init();
-	virtual void reset();
-	virtual void update() { }
+	virtual void init() override;
+	virtual void reset() override;
+	virtual void update() override { }
 
 	Bool setTimeOfDay( TimeOfDay tod );		///< Use this function to set the Time of day;
 
@@ -139,6 +139,7 @@ public:
 	Bool m_enableStaticLOD;
 	Int m_terrainLODTargetTimeMS;
 	Bool m_useAlternateMouse;
+	Bool m_useRightMouseScrollWithAlternateMouse; // TheSuperHackers @feature User option for RMB scroll in Alternate Mouse mode.
 	Bool m_clientRetaliationModeEnabled;
 	Bool m_doubleClickAttackMove;
 	Bool m_rightMouseAlwaysScrolls;
@@ -184,7 +185,9 @@ public:
 	Real m_viewportHeightScale; // The height scale of the tactical view ranging 0..1. Used to hide the world behind the Control Bar.
 	Real m_cameraPitch;
 	Real m_cameraYaw;
+#if PRESERVE_RETAIL_SCRIPTED_CAMERA
 	Real m_cameraHeight;
+#endif
 	Real m_maxCameraHeight;
 	Real m_minCameraHeight;
 	Real m_terrainHeightAtEdgeOfMap;
@@ -395,7 +398,10 @@ public:
 																			 units will always keep their formation. If it's <1.0, then the user must click a
 																			 smaller area within the rectangle to order the gather. */
 
-	Int m_antiAliasBoxValue;          ///< value of selected antialias from combo box in options menu
+	UnsignedInt m_antiAliasLevel;          ///< value of selected antialias level in the game options
+	UnsignedInt m_textureFilteringMode;       ///< value related to TextureFilterClass::TextureFilterModeEnum
+	UnsignedInt m_textureAnisotropyLevel;     ///< value related to TextureFilterClass::AnisotropicFilterMode
+
 	Bool m_languageFilterPref;        ///< Bool if user wants to filter language
 	Bool m_loadScreenDemo;						///< Bool if true, run the loadscreen demo movie
 	Bool m_disableRender;							///< if true, no rendering!
@@ -419,6 +425,9 @@ public:
 	// TheSuperHackers @feature L3-M 21/08/2025 toggle the money per minute display, false shows only the original current money
 	Bool m_showMoneyPerMinute;
 	Bool m_allowMoneyPerMinuteForPlayer;
+
+	// TheSuperHackers @feature bobtista 28/06/2026 user-configurable speed multiplier for game window transitions
+	Real m_gameWindowTransitionSpeedMultiplier;
 
 	Real m_shakeSubtleIntensity;			///< Intensity for shaking a camera with SHAKE_SUBTLE
 	Real m_shakeNormalIntensity;			///< Intensity for shaking a camera with SHAKE_NORMAL
@@ -571,10 +580,11 @@ private:
 	// just the "leaf name", read from INI. private because no one is ever allowed
 	// to look at it directly; they must go thru getPath_UserData(). (srj)
 	AsciiString m_userDataLeafName;
+	static AsciiString BuildUserDataPathFromIni();
 
 	static GlobalData *m_theOriginal;		///< the original global data instance (no overrides)
 	GlobalData *m_next;									///< next instance (for overrides)
-	GlobalData *newOverride();		/** create a new override, copy data from previous
+	virtual GlobalData *newOverride();		/** create a new override, copy data from previous
 																			override, and return it */
 
 #if defined(_MSC_VER) && _MSC_VER < 1300

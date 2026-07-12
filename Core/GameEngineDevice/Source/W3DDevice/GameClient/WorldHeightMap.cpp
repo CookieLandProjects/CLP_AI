@@ -73,7 +73,7 @@ protected:
 	File* m_file;
 public:
 	GDIFileStream(File* pFile):m_file(pFile) {};
-	virtual Int read(void *pData, Int numBytes) {
+	virtual Int read(void *pData, Int numBytes) override {
 			return(m_file->read(pData, numBytes));
 	};
 };
@@ -1735,10 +1735,10 @@ Bool WorldHeightMap::getUVForTileIndex(Int ndx, Short tileNdx, float U[4], float
 			}
 		}
 
-// TheSuperHackers @bugfix xezon 11/12/2025 Disables the old uv adjustment for cliffs,
-// because it produces bad uv tiles on steep terrain and is also not helping performance.
-// @todo Delete this code when we are certain we never need this again.
-//#define DO_OLD_UV
+// TheSuperHackers @info xezon 11/12/2025 The old uv adjustment for cliffs produces bad uv tiles on steep terrain
+// and is also not helping performance. But we cannot just remove it, because it is required to render smooth
+// steep diagonal slopes.
+#define DO_OLD_UV
 #ifdef DO_OLD_UV
 // old uv adjustment for cliffs
 		static Real STRETCH_LIMIT = 1.5f;	 // If it is stretching less than this, don't adjust.
@@ -2200,43 +2200,69 @@ TerrainTextureClass *WorldHeightMap::getFlatTexture(Int xCell, Int yCell, Int ce
 	return newTexture;
 }
 
+Region2D WorldHeightMap::getDrawRegion2D()
+{
+	// Get region in heightmap space
+	const Int loX = getDrawOrgX() - getBorderSize();
+	const Int loY = getDrawOrgY() - getBorderSize();
+	const Int hiX = loX + getDrawWidth();
+	const Int hiY = loY + getDrawHeight();
+
+	// Convert to world space
+	Region2D region;
+	region.lo.x = loX * MAP_XY_FACTOR;
+	region.lo.y = loY * MAP_XY_FACTOR;
+	region.hi.x = hiX * MAP_XY_FACTOR;
+	region.hi.y = hiY * MAP_XY_FACTOR;
+
+	return region;
+}
+
+WorldHeightMap::DrawArea WorldHeightMap::createDrawArea(Int xOrg, Int yOrg)
+{
+	DrawArea area;
+	area.sizeX = m_drawWidthX;
+	area.sizeY = m_drawHeightY;
+
+	if (TheGlobalData && TheGlobalData->m_stretchTerrain) {
+		area.sizeX = STRETCH_DRAW_WIDTH;
+		area.sizeY = STRETCH_DRAW_HEIGHT;
+	}
+	if (TheGlobalData && TheGlobalData->m_drawEntireTerrain) {
+		area.sizeX = m_width;
+		area.sizeY = m_height;
+	}
+	area.sizeX = std::min(area.sizeX, m_width);
+	area.sizeY = std::min(area.sizeY, m_height);
+	area.originX = clamp(0, xOrg, m_width - area.sizeX);
+	area.originY = clamp(0, yOrg, m_height - area.sizeY);
+
+	return area;
+}
+
+Bool WorldHeightMap::setDrawArea(const DrawArea& area)
+{
+	Bool anythingDifferent =
+		m_drawOriginX != area.originX ||
+		m_drawOriginY != area.originY ||
+		m_drawWidthX != area.sizeX ||
+		m_drawHeightY != area.sizeY;
+
+	if (anythingDifferent) {
+		m_drawOriginX = area.originX;
+		m_drawOriginY = area.originY;
+		m_drawWidthX = area.sizeX;
+		m_drawHeightY = area.sizeY;
+		return true;
+	}
+	return false;
+}
 
 Bool WorldHeightMap::setDrawOrg(Int xOrg, Int yOrg)
 {
-	Int newX, newY;
-	Int newWidth, newHeight;
-	newX = xOrg;
-	newY = yOrg;
-	newWidth = m_drawWidthX;
-	newHeight = m_drawHeightY;
-	if (TheGlobalData && TheGlobalData->m_stretchTerrain) {
-		newWidth=STRETCH_DRAW_WIDTH;
-		newHeight=STRETCH_DRAW_HEIGHT;
-	}
-	if (TheGlobalData && TheGlobalData->m_drawEntireTerrain) {
-		newWidth=m_width;
-		newHeight=m_height;
-	}
-	if (newWidth > m_width) newWidth = m_width;
-	if (newHeight > m_height) newHeight = m_height;
-	if (newX > m_width - newWidth) newX = m_width-newWidth;
-	if (newX<0) newX=0;
-	if (newY > m_height - newHeight) newY = m_height - newHeight;
-	if (newY<0) newY=0;
-	Bool anythingDifferent = (m_drawOriginX!=newX) ||
-										 (m_drawOriginY!=newY) ||
-										 (m_drawWidthX!=newWidth) ||
-										 (m_drawHeightY!=newHeight) ;
-
-	if (anythingDifferent) {
-		m_drawOriginX=newX;
-		m_drawOriginY=newY;
-		m_drawWidthX=newWidth;
-		m_drawHeightY=newHeight;
-		return(true);
-	}
-	return(false);
+	return setDrawArea(createDrawArea(xOrg, yOrg));
 }
+
 
 /** Gets global texture class. */
 Int WorldHeightMap::getTextureClass(Int xIndex, Int yIndex, Bool baseClass)

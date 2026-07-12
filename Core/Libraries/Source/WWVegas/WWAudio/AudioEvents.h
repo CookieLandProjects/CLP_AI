@@ -141,12 +141,12 @@ struct AUDIO_CALLBACK_STRUCT
 //	Protected structures
 /////////////////////////////////////////////////////////////////////////////////
 template <class T>
-class AudioCallbackListClass : public SimpleDynVecClass< AUDIO_CALLBACK_STRUCT<T> >
+class AudioCallbackListClass : public SimpleDynVecClass< AUDIO_CALLBACK_STRUCT<T>/**/>
 {
-	using SimpleDynVecClass< AUDIO_CALLBACK_STRUCT<T> >::Vector;
-	using SimpleDynVecClass< AUDIO_CALLBACK_STRUCT<T> >::ActiveCount;
-	using SimpleDynVecClass< AUDIO_CALLBACK_STRUCT<T> >::Delete;
-	using SimpleDynVecClass< AUDIO_CALLBACK_STRUCT<T> >::Add;
+	using SimpleDynVecClass< AUDIO_CALLBACK_STRUCT<T>/**/>::Vector;
+	using SimpleDynVecClass< AUDIO_CALLBACK_STRUCT<T>/**/>::ActiveCount;
+	using SimpleDynVecClass< AUDIO_CALLBACK_STRUCT<T>/**/>::Delete;
+	using SimpleDynVecClass< AUDIO_CALLBACK_STRUCT<T>/**/>::Add;
 
 public:
 
@@ -154,7 +154,7 @@ public:
 	//	Public constructors/destructors
 	/////////////////////////////////////////////////////////////////////////////////
 	AudioCallbackListClass ()					{ }
-	virtual ~AudioCallbackListClass ()		{ }
+	virtual ~AudioCallbackListClass () override { }
 
 	/////////////////////////////////////////////////////////////////////////////////
 	//	Public methods
@@ -172,7 +172,6 @@ template <class T> void
 AudioCallbackListClass<T>::Add_Callback (T pointer, uint32 user_data)
 {
 	Add ( AUDIO_CALLBACK_STRUCT<T> (pointer, user_data));
-	return ;
 }
 
 
@@ -201,6 +200,4 @@ AudioCallbackListClass<T>::Remove_Callback (T pointer)
 			break;
 		}
 	}
-
-	return ;
 }

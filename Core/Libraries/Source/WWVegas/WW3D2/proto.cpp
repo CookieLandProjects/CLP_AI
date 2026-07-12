@@ -86,21 +86,21 @@ RenderObjClass * PrimitivePrototypeClass::Create()
 }
 
 
-class HModelPrototypeClass : public W3DMPO, public PrototypeClass
+class HModelPrototypeClass : public PrototypeClass
 {
-	W3DMPO_GLUE(HModelPrototypeClass)
+	W3DMPO_CODE(HModelPrototypeClass)
 public:
 	HModelPrototypeClass(HModelDefClass * def)				{ HModelDef = def; assert(HModelDef); }
 
-	virtual const char *			Get_Name()	const			{ return HModelDef->Get_Name(); }
-	virtual int								Get_Class_ID() const	{ return RenderObjClass::CLASSID_HLOD; }
-	virtual RenderObjClass *	Create()					{ return NEW_REF( HLodClass, (*HModelDef) ); }
-	virtual void							DeleteSelf()										{ delete this; }
+	virtual const char *			Get_Name()	const override { return HModelDef->Get_Name(); }
+	virtual int								Get_Class_ID() const override { return RenderObjClass::CLASSID_HLOD; }
+	virtual RenderObjClass *	Create() override					{ return NEW_REF( HLodClass, (*HModelDef) ); }
+	virtual void							DeleteSelf() override { delete this; }
 
 	HModelDefClass *				HModelDef;
 
 protected:
-	virtual ~HModelPrototypeClass()							{ delete HModelDef; }
+	virtual ~HModelPrototypeClass() override { delete HModelDef; }
 
 };
 
