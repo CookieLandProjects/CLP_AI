@@ -1445,13 +1445,17 @@ Int AIPlayer::getPlayerSuperweaponValue(Coord3D *center, Int playerNdx, Real rad
 	* If busyOK is true, it will queue a unit even if one is building.  This lets
 	* script invoked teams "push" to the front of the queue. */
 // ------------------------------------------------------------------------------------------------
-Bool AIPlayer::startTraining( WorkOrder *order, Bool busyOK, AsciiString teamName)
+Bool AIPlayer::startTraining( WorkOrder *order, Bool busyOK, AsciiString teamName, Team* team)
 {
-	Object *factory = findFactory(order->m_thing, busyOK);
+	Object *factory = findFactory(order->m_thing, busyOK, team);
 	if( factory )
 	{
 		ProductionUpdateInterface *pu = factory->getProductionUpdateInterface();
 		if (pu && pu->queueCreateUnit( order->m_thing, pu->requestUniqueUnitID() )) {
+
+			FactoryReservation* reservation = getReservation(factory->getID());
+			reservation->team = team;
+
 			order->m_factoryID = factory->getID();
 			if (TheGlobalData->m_debugAI) {
 				AsciiString teamStr = "Queuing ";
@@ -1473,9 +1477,11 @@ Bool AIPlayer::startTraining( WorkOrder *order, Bool busyOK, AsciiString teamNam
 	* If busyOK is true, it will return a busy factory if there are no idle ones.  This is
 	* used for script invoked teams "push" to the front of the queue. */
 // ------------------------------------------------------------------------------------------------
-Object *AIPlayer::findFactory(const ThingTemplate *thing, Bool busyOK)
+Object *AIPlayer::findFactory(const ThingTemplate *thing, Bool busyOK, Team* team)
 {
 	Object *busyFactory = nullptr; // We prefer a factory that isn't busy.
+	FactoryReservation* reservation = nullptr; // -TanSo-: Check whether a factory is already reserved.
+
 	for( BuildListInfo *info = m_player->getBuildList(); info; info = info->getNext() )
 	{
 		Object *factory = TheGameLogic->findObjectByID( info->getObjectID() );
@@ -1494,18 +1500,38 @@ Object *AIPlayer::findFactory(const ThingTemplate *thing, Bool busyOK)
 			ProductionUpdateInterface *pu = factory->getProductionUpdateInterface();
 			// If it doesn't produce, continue.
 			if (!pu) continue;
+
+			// ignore reserved factories
+			reservation = getReservation(factory->getID());
+			if (team != nullptr)
+			{
+				// This is not the team we want to build
+				if (reservation->team != nullptr && reservation->team != team)
+					continue;
+			}
+			else
+			{
+				// No team specified->only use factories that are not reserved.
+				if (reservation->team != nullptr)
+					continue;
+			}
+
 			// if we can't create the unit do nothing
 			if( TheBuildAssistant->isPossibleToMakeUnit( factory, thing ) == FALSE )
 				continue;
 			// If the factory is not busy, return it.
 			Bool busy = pu->getProductionCount()>0;
-			if (!busy) return factory; // found a not busy factory.
-			if (busyOK) busyFactory = factory;
+			if (!busy)	// found a not busy factory.
+				return factory;
+
+			if (busyOK && reservation->team == team) busyFactory = factory;
 		}
 
 	}
 	// We didn't find an idle factory, so return the busy one.
-	if (busyOK) return busyFactory;
+	if (busyOK)
+		return busyFactory;
+
 	return nullptr;
 }
 
@@ -2986,6 +3012,8 @@ void AIPlayer::checkQueuedTeams()
 						// Move to ready queue
 						removeFrom_TeamBuildQueue(team);
 						prependTo_TeamReadyQueue(team);
+
+						releaseFactoryReservations(team->m_team); // -TanSo-: clear the team from our vector 
 					}	else {
 						continue;
 					}
@@ -2997,6 +3025,7 @@ void AIPlayer::checkQueuedTeams()
 					if (isSkirmishAI()) {
 						TheScriptEngine->clearTeamFlags();
 					}
+					releaseFactoryReservations(team->m_team); // -TanSo-: clear the team from our vector
 				}
 				iter = iterate_TeamBuildQueue();
 			}
@@ -3014,6 +3043,7 @@ void AIPlayer::checkQueuedTeams()
 				removeFrom_TeamBuildQueue(team);
 				prependTo_TeamReadyQueue(team);
 				iter = iterate_TeamBuildQueue();
+				releaseFactoryReservations(team->m_team); // -TanSo-: clear the team from our vector
 				continue;
 			}
 			Bool anyIdle = false;
@@ -3360,8 +3390,8 @@ enum GameDifficulty AIPlayer::getAIDifficulty() const
 Object * AIPlayer::findDozer( const Coord3D *pos )
 {
 	// Add any factories placed to the build list.
-	Object *obj;
-	Object *dozer = nullptr;
+	Object *obj = nullptr;
+	Object* dozer = nullptr;
 	Bool needDozer = true;
 	Object *closestDozer=nullptr;
 	Real closestDistSqr = 0;
@@ -3398,28 +3428,23 @@ Object * AIPlayer::findDozer( const Coord3D *pos )
 					if (dozerAI->isTaskPending(DOZER_TASK_BUILD)) {
 						continue; // already building.
 					}
-					if (!dozerAI->isAnyTaskPending())
-					{
-						if (!dozer)
-							dozer = obj;
-					}
-					else
-					{
-						if (!dozer)
-							dozer = obj;
-					}
+
+					// -TanSo-: keep the dozer as a fallback option only.
+					if (!dozer)
+						dozer = obj;
+
 					if (obj && !dozerAI->isAnyTaskPending()) {
 						// Got a good one, track closest.
 						Real distSqr;
 						Real dx, dy;
-						dx = pos->x - dozer->getPosition()->x;
-						dy = pos->y - dozer->getPosition()->y;
+						dx = pos->x - obj->getPosition()->x;
+						dy = pos->y - obj->getPosition()->y;
 						distSqr = dx*dx+dy*dy;
-						if (closestDozer == nullptr) {
-							closestDozer = dozer;
-							closestDistSqr = distSqr;
-						} else if (distSqr < closestDistSqr) {
-							closestDozer = dozer;
+
+						// -TanSo-: Also this is now more readable
+						if (!closestDozer|| distSqr < closestDistSqr)
+						{
+							closestDozer = obj;
 							closestDistSqr = distSqr;
 						}
 					}
@@ -3431,7 +3456,9 @@ Object * AIPlayer::findDozer( const Coord3D *pos )
 	if (needDozer) {
 		queueDozer();
 	}
-	if (closestDozer) return closestDozer;
+	if (closestDozer)
+		return closestDozer;
+
 	return dozer;
 }
 
@@ -4622,6 +4649,7 @@ void AIPlayer::removeAIBaseDefenseFromVector(const AsciiString& objectType)
 	TheScriptEngine->AppendDebugMessage(teamStr, false);
 }
 
+//-------------------------------------------------------------------------------------------------
 Coord3D AIPlayer::getSkirmishBuildListBaseCenter() { return m_baseCenter; }
 Real AIPlayer::getSkirmishBuildListBaseRadius() { return m_baseRadius; }
 
@@ -4661,6 +4689,42 @@ void AIPlayer::setDefaultBuildList(Int id)
 	TheScriptEngine->AppendDebugMessage(teamStr, false);
 }
 
+//-------------------------------------------------------------------------------------------------
+FactoryReservation* AIPlayer::findReservation(ObjectID id)
+{
+	for (FactoryReservation& r : m_factoryReservations)
+	{
+		if (r.factoryID == id)
+			return &r;
+	}
+	return nullptr;
+}
+
+//-------------------------------------------------------------------------------------------------
+FactoryReservation* AIPlayer::getReservation(ObjectID id)
+{
+	FactoryReservation* r = findReservation(id);
+	if (r)
+		return r;
+
+	FactoryReservation entry;
+	entry.factoryID = id;
+	entry.team = nullptr;
+
+	m_factoryReservations.push_back(entry);
+
+	return &m_factoryReservations.back();
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::releaseFactoryReservations(Team* team)
+{
+	for (FactoryReservation& reservation : m_factoryReservations)
+	{
+		if (reservation.team == team)
+			reservation.team = nullptr;
+	}
+}
 //-------------------------------------------------------------------------------------------------
 //-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------
 //-------------------------------------------------------------------------------------------------

@@ -624,6 +624,21 @@ void SpecialAbilityUpdate::onExit( Bool cleanup )
 // of the return value from update() anyway). just set m_active to false,
 // and we'll put ourselves to sleep.
 //  setWakeFrame(getObject(), UPDATE_SLEEP_FOREVER);
+
+  switch (data->m_specialPowerTemplate->getSpecialPowerType())
+  {
+  case SPECIAL_INFANTRY_CAPTURE_BUILDING:
+  case SPECIAL_BLACKLOTUS_CAPTURE_BUILDING:
+  {
+    Object* target = TheGameLogic->findObjectByID(m_targetID);
+    if (target)
+      target->setIsBeingCaptured(false);
+    break;
+  }
+
+  default:
+    break;
+  }
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -1020,6 +1035,7 @@ void SpecialAbilityUpdate::startPreparation()
 						return;
 					}
 				}
+        target->setIsBeingCaptured(true);
       }
 
 
@@ -1071,6 +1087,7 @@ void SpecialAbilityUpdate::startPreparation()
         }
         TheRadar->tryInfiltrationEvent( target );
 
+        target->setIsBeingCaptured(true); // -TanSo-: This technically also runs on non-captures, but I think these cases are desirable, too.
       }
       break;
     }
@@ -1200,17 +1217,13 @@ Bool SpecialAbilityUpdate::continuePreparation()
         //Target is dead, stop.
         return false;
       }
-      target->setIsBeingCaptured(false); // @-TanSo-: track whether a building is in the process of being captured. Usable for scripts.
 
       Relationship r = getObject()->getRelationship(target);
       if( r == ALLIES )
       {
         //It's been captured by a colleague, so cancel!
-        target->setIsBeingCaptured(false);
         return false;
       }
-
-      target->setIsBeingCaptured(true);
 
       if (data->m_doCaptureFX)
       {
@@ -1443,7 +1456,6 @@ void SpecialAbilityUpdate::triggerAbilityEffect()
       if (target->getTeam() == object->getTeam())
       {
         // it's been captured by a colleague! we should stop.
-        target->setIsBeingCaptured(false);
         return;
       }
 
@@ -1451,7 +1463,6 @@ void SpecialAbilityUpdate::triggerAbilityEffect()
       ContainModuleInterface * contain =  target->getContain();
       if ( contain && contain->isGarrisonable() )
       {
-        target->setIsBeingCaptured(false);
         contain->removeAllContained( TRUE );
         break; // we do not want to set a neutral building to our team if we are not in it, that would be confusing!
       }
@@ -1462,7 +1473,6 @@ void SpecialAbilityUpdate::triggerAbilityEffect()
         TheEva->setShouldPlay( EVA_BuildingStolen );
       }
 
-      target->setIsBeingCaptured(false);
       target->defect( object->getControllingPlayer()->getDefaultTeam(), 1); // one frame of flash!
 
       SpecialPowerModuleInterface *spmInterface = getMySPM();

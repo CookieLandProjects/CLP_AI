@@ -35,6 +35,12 @@ enum { INVALID_SKILLSET_SELECTION = -1 };
 
 class BuildListInfo;
 
+struct FactoryReservation
+{
+	ObjectID factoryID;
+	Team* team;
+};
+
 /**
  * When a team is selected for training, a list of these
  * "work orders" are created, one for each member of the team.
@@ -230,7 +236,7 @@ public:
 	/// Calculates the closest construction zone location based on a template.
 	Bool calcClosestConstructionZoneLocation( const ThingTemplate *constructTemplate, Coord3D *location );
 	void onCapture(Object* obj);
-	virtual Bool startTraining(WorkOrder* order, Bool busyOK, AsciiString teamName);	///< find a production building that can handle the order, and start building
+	virtual Bool startTraining(WorkOrder* order, Bool busyOK, AsciiString teamName, Team* team = nullptr);	///< find a production building that can handle the order, and start building
 
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------------- @CLP_AI AIPLAYER ADDITIONS -----------------------------------
@@ -273,6 +279,9 @@ protected:
 
 	static Int getPlayerSuperweaponValueType(Coord3D* center, Int playerNdx, Real radius, const AsciiString& objectType, Bool includeMilitaryUnits = TRUE);
 
+	FactoryReservation* findReservation(ObjectID id);
+	FactoryReservation* getReservation(ObjectID id);
+	void releaseFactoryReservations(Team* team);
 	//-------------------------------------------------------------------------------------------------
 	//-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------
 	//-------------------------------------------------------------------------------------------------
@@ -290,7 +299,7 @@ protected:
 	Object *buildStructureWithDozer(const ThingTemplate *bldgPlan, BuildListInfo *info );		///< Build a base buiding.
 	void clearTeamsInQueue();			///< Delete all teams in the build queue.
 	void computeCenterAndRadiusOfBase(Coord3D *center, Real *radius);
-	Object *findFactory(const ThingTemplate *thing, Bool busyOK); ///< Find a factory to build a unit.  If force is true, may return a busy factory.
+	Object *findFactory(const ThingTemplate *thing, Bool busyOK, Team* team = nullptr); ///< Find a factory to build a unit.  If force is true, may return a busy factory.
 	void queueUnits();						///< Check the team build list, & queue up units at any idle factories.
 	void checkForSupplyCenter( BuildListInfo *info, Object *bldg);
  	void queueSupplyTruck();
@@ -336,4 +345,16 @@ protected:
 	ObjectID m_attackedSupplyCenter;
 
 	ObjectID m_curWarehouseID;
+
+	// -TanSo-: Use of the factory reservation. Before this, team builds would be blended, which means
+	// that teams would be left halfway-built throughout the match. Suppose we have two teams,
+	// A with 5, and B with 3 units. The production line would look like this:
+	// -> Factory 1: A, B, A
+	// -> Factory 2: B, A, A
+	// -> Factory 3: A, B
+	// With the reservation, teams now block factories for their own production like this:
+	// -> Factory 1: A, A, B
+	// -> Factory 2: A, A, B
+	// -> Factory 3: A, B
+	std::vector<FactoryReservation> m_factoryReservations;
 };

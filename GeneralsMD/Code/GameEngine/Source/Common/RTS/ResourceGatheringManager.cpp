@@ -136,26 +136,26 @@ static Real computeRelativeCost( Object *queryObject, Object *destObject, Real *
 	return distSquared;
 }
 
-Object *ResourceGatheringManager::findBestSupplyWarehouse( Object *queryObject )
+Object* ResourceGatheringManager::findBestSupplyWarehouse(Object* queryObject)
 {
-	Object *bestWarehouse = nullptr;
+	Object* bestWarehouse = nullptr;
 	Real maxDistanceSquared = 100000;
 
-	if( ( queryObject == nullptr ) || ( queryObject->getAI() == nullptr ) )
+	if ((queryObject == nullptr) || (queryObject->getAI() == nullptr))
 		return nullptr;
 
-	SupplyTruckAIInterface *supplyTruckAI = queryObject->getAI()->getSupplyTruckAIInterface();
-	if( supplyTruckAI )
+	SupplyTruckAIInterface* supplyTruckAI = queryObject->getAI()->getSupplyTruckAIInterface();
+	if (supplyTruckAI)
 	{
 		// Check for a dock override being set.
 		ObjectID dockID = supplyTruckAI->getPreferredDockID();
-		Object *dock = TheGameLogic->findObjectByID(dockID);
-		if( dock )
+		Object* dock = TheGameLogic->findObjectByID(dockID);
+		if (dock)
 		{
 			static const NameKeyType key_warehouseUpdate = NAMEKEY("SupplyWarehouseDockUpdate");
-			SupplyWarehouseDockUpdate *warehouseModule = (SupplyWarehouseDockUpdate*)dock->findUpdateModule( key_warehouseUpdate );
+			SupplyWarehouseDockUpdate* warehouseModule = (SupplyWarehouseDockUpdate*)dock->findUpdateModule(key_warehouseUpdate);
 			//If remotely okay, let User win.
-			if( warehouseModule && computeRelativeCost( queryObject, dock, nullptr ) != FLT_MAX )
+			if (warehouseModule && computeRelativeCost(queryObject, dock, nullptr) != FLT_MAX)
 				return dock;
 		}
 		// Please note, there is not a separate Warehouse and Center memory by Design.  Because
@@ -171,20 +171,21 @@ Object *ResourceGatheringManager::findBestSupplyWarehouse( Object *queryObject )
 	Real bestCost = FLT_MAX;
 
 	objectIDListIterator iterator = m_supplyWarehouses.begin();
-	while( iterator != m_supplyWarehouses.end() )
+
+	while (iterator != m_supplyWarehouses.end())
 	{
 		ObjectID currentID = *iterator;
-		Object *currentWarehouse =TheGameLogic->findObjectByID(currentID);
+		Object* currentWarehouse = TheGameLogic->findObjectByID(currentID);
 
-		if( currentWarehouse == nullptr )
+		if (currentWarehouse == nullptr)
 		{
-			iterator = m_supplyWarehouses.erase( iterator );
+			iterator = m_supplyWarehouses.erase(iterator);
 		}
 		else
 		{
 			Real distanceSquared;
-			Real currentCost = computeRelativeCost( queryObject, currentWarehouse, &distanceSquared );
-			if( (currentCost < bestCost) && (distanceSquared < maxDistanceSquared) )
+			Real currentCost = computeRelativeCost(queryObject, currentWarehouse, &distanceSquared);
+			if ((currentCost < bestCost) && (distanceSquared < maxDistanceSquared))
 			{
 				bestWarehouse = currentWarehouse;
 				bestCost = currentCost;

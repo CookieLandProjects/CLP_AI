@@ -563,7 +563,7 @@ public:
 			UPDATE_KD_RATIO_DEATHS_BUILDCOST,							///< Updates the deaths of a KD ratio by the build cost of whatever is in m_lastFrameKills.
 			COPY_KD_RATIO_ONTO_COUNTERS,									///< Copies a KD-Ratio's kills to counter A and deaths to Counter B.
 			
-			AI_PLAYER_BUILDS_UNNAMED,                     ///< AI pllayer adds a new unnamed unit to the production queue.
+			AI_PLAYER_BUILDS_UNNAMED,                     ///< AI player adds a new unnamed unit to the production queue.
 			AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED,		///< AI player builds a structure near an object type rotated <Real> degrees.
 			AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED,	///< AI player builds a structure near a kindOf rotated <Real> degrees.
 			AI_PLAYER_BUILD_TYPE_NEAREST_TEAM_ROTATED,		///< AI player builds a structure near a team rotated <Real> degrees.

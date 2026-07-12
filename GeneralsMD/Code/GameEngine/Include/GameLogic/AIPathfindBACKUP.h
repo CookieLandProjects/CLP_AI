@@ -177,9 +177,9 @@ public:
 
 protected:
 	// snapshot interface
-	virtual void crc( Xfer *xfer ) override;
-	virtual void xfer( Xfer *xfer ) override;
-	virtual void loadPostProcess() override;
+	virtual void crc( Xfer *xfer );
+	virtual void xfer( Xfer *xfer );
+	virtual void loadPostProcess();
 
 protected:
 	enum {MAX_CPOP=20};			///< Max times we will return the cached cpop.
@@ -254,23 +254,16 @@ class PathfindCellList
 	friend class PathfindCell;
 
 public:
-	PathfindCellList() : m_head(nullptr), m_tail(nullptr) {}
+	PathfindCellList() : m_head(nullptr) {}
 
-#if RETAIL_COMPATIBLE_PATHFINDING
-	void reset(PathfindCell* newHead = nullptr) { m_head = newHead; m_tail = nullptr; }
-#else
-	void reset() { m_head = nullptr; m_tail = nullptr; }
-#endif
+	void reset(PathfindCell* newHead = nullptr) { m_head = newHead; }
 
 	PathfindCell* getHead() const { return m_head; }
 
 	Bool empty() const { return m_head == nullptr; }
 
-	Bool canReverseSort(PathfindCell& currentCell) const;
-
 private:
 	PathfindCell* m_head;
-	PathfindCell* m_tail;
 };
 
 /**
@@ -333,17 +326,6 @@ public:
 
 	UnsignedInt costSoFar( PathfindCell *parent );
 
-#if RETAIL_COMPATIBLE_PATHFINDING
-	// Forward insertion sort that is 100% retail compatible
-	void forwardInsertionSortRetailCompatible(PathfindCellList& list);
-#endif
-
-	// Forward insertion sort, in ascending cost order
-	void forwardInsertionSort(PathfindCellList& list);
-
-	// Reverse insertion sort, in ascending cost order
-	void reverseInsertionSort(PathfindCellList& list);
-
 	/// put self on "open" list in ascending cost order
 	void putOnSortedOpenList( PathfindCellList &list );
 
@@ -363,7 +345,6 @@ public:
 	static Int releaseOpenList( PathfindCellList &list );
 
 	inline PathfindCell *getNextOpen() {return m_info->m_nextOpen?m_info->m_nextOpen->m_cell: nullptr;}
-	inline PathfindCell *getPrevOpen() {return m_info->m_prevOpen?m_info->m_prevOpen->m_cell: nullptr;}
 
 	inline UnsignedShort getXIndex() const {return m_info->m_pos.x;}
 	inline UnsignedShort getYIndex() const {return m_info->m_pos.y;}
@@ -375,8 +356,6 @@ public:
 	inline Bool getClosed() const {return m_info->m_closed;}
 	inline UnsignedInt getCostSoFar() const {return m_info->m_costSoFar;}
 	inline UnsignedInt getTotalCost() const {return m_info->m_totalCost;}
-
-	inline UnsignedInt getTotalCostDifference(PathfindCell& other) const;
 
 	inline void setCostSoFar(UnsignedInt cost) { if( m_info ) m_info->m_costSoFar = cost;}
 	inline void setTotalCost(UnsignedInt cost) { if( m_info ) m_info->m_totalCost = cost;}
@@ -504,6 +483,7 @@ struct TCheckMovementInfo;
 class ZoneBlock
 {
 public:
+
 	ZoneBlock();
 	~ZoneBlock();  // not virtual, please don't override without making virtual.  jba.
 
@@ -527,6 +507,7 @@ protected:
 	zoneStorageType m_firstZone; // First zone in this block.
 	UnsignedShort m_numZones;	 // Number of zones in this block.  If == 1, there is only one zone, and
 														 // no zone equivalency arrays will be allocated.
+
 
 	UnsignedShort m_zonesAllocated;
 	zoneStorageType *m_groundCliffZones;
@@ -559,11 +540,13 @@ public:
 	void reset();
 
 	Bool needToCalculateZones() const {return m_nextFrameToCalculateZones <= TheGameLogic->getFrame() ;} ///< Returns true if the zones need to be recalculated.
-	void markZonesDirty() ; ///< Called when the zones need to be recalculated.
-	void updateZonesForModify( PathfindCell **map,  PathfindLayer layers[], const IRegion2D &structureBounds, const IRegion2D &globalBounds ) ; ///< Called to recalculate an area when a structure has been removed.
+ 	void markZonesDirty( Bool insert ) ; ///< Called when the zones need to be recalculated.
+ 	void updateZonesForModify( PathfindCell **map,  PathfindLayer layers[], const IRegion2D &structureBounds, const IRegion2D &globalBounds ) ; ///< Called to recalculate an area when a structure has been removed.
 	void calculateZones(	PathfindCell **map, PathfindLayer layers[], const IRegion2D &bounds);	///< Does zone calculations.
 	zoneStorageType getEffectiveZone(LocomotorSurfaceTypeMask acceptableSurfaces, Bool crusher, zoneStorageType zone) const;
 	zoneStorageType getEffectiveTerrainZone(zoneStorageType zone) const;
+
+	zoneStorageType getNextZone();
 
 	void getExtent(ICoord2D &extent) const {extent = m_zoneBlockExtent;}
 
@@ -592,7 +575,7 @@ private:
 	ICoord2D			m_zoneBlockExtent;				///< Zone block extents. Not the same scale as the pathfind extents.
 
 	UnsignedShort m_maxZone;								///< Max zone used.
-	UnsignedInt		m_nextFrameToCalculateZones;		///< When should I recalculate, next?.
+	UnsignedInt		m_nextFrameToCalculateZones;		///< WHen should I recalculate, next?.
 	UnsignedShort m_zonesAllocated;
 	zoneStorageType *m_groundCliffZones;
 	zoneStorageType *m_groundWaterZones;
@@ -641,25 +624,25 @@ class Pathfinder : PathfindServicesInterface, public Snapshot
 {
 // The following routines are private, but available through the doPathfind callback to aiInterface. jba.
 private:
-	virtual Path *findPath( Object *obj, const LocomotorSet& locomotorSet, const Coord3D *from, const Coord3D *to) override;	///< Find a short, valid path between given locations
+	virtual Path *findPath( Object *obj, const LocomotorSet& locomotorSet, const Coord3D *from, const Coord3D *to);	///< Find a short, valid path between given locations
 	/** Find a short, valid path to a location NEAR the to location.
 		This succeeds when the destination is unreachable (like inside a building).
 		If the destination is unreachable, it will adjust the to point.  */
 	virtual Path *findClosestPath( Object *obj, const LocomotorSet& locomotorSet, const Coord3D *from,
-		Coord3D *to, Bool blocked, Real pathCostMultiplier, Bool moveAllies ) override;
+		Coord3D *to, Bool blocked, Real pathCostMultiplier, Bool moveAllies );
 
 	/** Find a short, valid path to a location that obj can attack victim from.  */
 	virtual Path *findAttackPath( const Object *obj, const LocomotorSet& locomotorSet, const Coord3D *from,
-		const Object *victim, const Coord3D* victimPos, const Weapon *weapon ) override;
+		const Object *victim, const Coord3D* victimPos, const Weapon *weapon );
 
 	/** Find a short, valid path to a location that is away from the repulsors.  */
 	virtual Path *findSafePath( const Object *obj, const LocomotorSet& locomotorSet,
-		const Coord3D *from, const Coord3D* repulsorPos1, const Coord3D* repulsorPos2, Real repulsorRadius ) override;
+		const Coord3D *from, const Coord3D* repulsorPos1, const Coord3D* repulsorPos2, Real repulsorRadius );
 
 	/** Patch to the exiting path from the current position, either because we became blocked,
   or because we had to move off the path to avoid other units. */
 	virtual Path *patchPath( const Object *obj, const LocomotorSet& locomotorSet,
-		Path *originalPath, Bool blocked ) override;
+		Path *originalPath, Bool blocked );
 
 public:
 	Pathfinder();
@@ -668,12 +651,12 @@ public:
 	void reset();														///< Reset system in preparation for new map
 
 	// --------------- inherited from Snapshot interface --------------
-	virtual void crc( Xfer *xfer ) override;
-	virtual void xfer( Xfer *xfer ) override;
-	virtual void loadPostProcess() override;
+	void crc( Xfer *xfer );
+	void xfer( Xfer *xfer );
+	void loadPostProcess();
 
 	Bool clientSafeQuickDoesPathExist( const LocomotorSet& locomotorSet, const Coord3D *from, const Coord3D *to );  ///< Can we build any path at all between the locations	(terrain & buildings check - fast)
-	Bool clientSafeQuickDoesPathExistForUI( const LocomotorSet& locomotorSet, const Coord3D *from, const Coord3D *to );  ///< Can we build any path at all between the locations	(terrain only - fast)
+	Bool clientSafeQuickDoesPathExistForUI( const LocomotorSet& locomotorSet, const Coord3D *from, const Coord3D *to );  ///< Can we build any path at all between the locations	(terrain onlyk - fast)
 	Bool slowDoesPathExist( Object *obj, const Coord3D *from,
 		const Coord3D *to, ObjectID ignoreObject=INVALID_ID );  ///< Can we build any path at all between the locations	(terrain, buildings & units check - slower)
 
@@ -917,11 +900,6 @@ private:
 	Int						m_queuePRHead;
 	Int						m_queuePRTail;
 	Int						m_cumulativeCellsAllocated;
-
-#if RTS_ZEROHOUR && RETAIL_COMPATIBLE_CRC
-public:
-	Bool					m_classifyFenceZeroInit;
-#endif
 };
 
 

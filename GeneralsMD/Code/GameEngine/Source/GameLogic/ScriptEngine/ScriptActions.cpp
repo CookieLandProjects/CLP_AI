@@ -9548,7 +9548,7 @@ void ScriptActions::doPlayerSellAllBuildingsInCaptureProcessPercentage(const Asc
 				Object* pObj = objIter.cur();
 				if (!pObj) continue;
 
-				if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured() && !pObj->isKindOf(KINDOF_TECH_BUILDING));
+				if (pObj->isKindOf(KINDOF_STRUCTURE) && pObj->isBeingCaptured() && !pObj->isKindOf(KINDOF_TECH_BUILDING))
 				{
 					Int randomValue = GameLogicRandomValue(0, 100);
           if (randomValue <= percentage) TheBuildAssistant->sellObject(pObj);
