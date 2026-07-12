@@ -511,6 +511,8 @@ DECLARE_PERF_TIMER(GameClient_draw)
 void GameClient::update()
 {
 	USE_PERF_TIMER(GameClient_update)
+	PROFILER_FRAME_MARK;
+	PROFILER_SECTION_COLOR(0x2196F3);
 	// create the FRAME_TICK message
 	GameMessage *frameMsg = TheMessageStream->appendMessage( GameMessage::MSG_FRAME_TICK );
 	frameMsg->appendTimestampArgument( getFrame() );
@@ -556,6 +558,11 @@ void GameClient::update()
 					Int beginTime = timeGetTime();
 					while(beginTime + 4000 > timeGetTime() )
 					{
+						if (GameClient::isMovieAbortRequested())
+						{
+							break;
+						}
+
 						TheWindowManager->update();
 						// redraw all views, update the GUI
 						TheDisplay->draw();
@@ -611,8 +618,7 @@ void GameClient::update()
     Drawable *draw = TheInGameUI->getFirstSelectedDrawable();
     if ( draw )
     {
-      const Coord3D *pos = draw->getPosition();
-      TheTacticalView->lookAt( pos );
+      TheTacticalView->userLookAt( draw->getPosition() );
     }
     else
       TheInGameUI->setCameraTrackingDrawable( FALSE );
@@ -781,16 +787,41 @@ void GameClient::step()
 	TheDisplay->step();
 }
 
-void GameClient::updateHeadless()
+Bool GameClient::isMovieAbortRequested()
 {
-	// TheSuperHackers @info helmutbuhler 03/05/2025
-	// When we play a replay back in headless mode, we want to skip the update of GameClient
-	// because it's not necessary for CRC checking.
-	// But we do reset the particles. The problem is that particles can be generated during
-	// GameLogic and are only cleaned up during rendering. If we don't clean this up here,
-	// the particles accumulate and slow things down a lot and can even cause a crash on
-	// longer replays.
-	TheParticleSystemManager->reset();
+	if (TheGameEngine)
+	{
+		TheGameEngine->serviceWindowsOS();
+	}
+
+	// TheSuperHackers @feature User can skip video by pressing ESC
+	if (TheKeyboard)
+	{
+		TheKeyboard->UPDATE();
+		KeyboardIO *io = TheKeyboard->findKey(KEY_ESC, KeyboardIO::STATUS_UNUSED);
+		if (io && BitIsSet(io->state, KEY_STATE_DOWN))
+		{
+			io->setUsed();
+			return TRUE;
+		}
+	}
+
+	if (TheGameEngine && TheGameEngine->getQuitting())
+	{
+		return TRUE;
+	}
+
+	if (TheMessageStream && TheMessageStream->containsMessageOfType(GameMessage::MSG_META_DEMO_INSTANT_QUIT))
+	{
+		return TRUE;
+	}
+
+	if (TheGameLogic && TheGameLogic->isQuitToDesktopRequested())
+	{
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 /** -----------------------------------------------------------------------------------------------

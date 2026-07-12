@@ -421,7 +421,7 @@ protected:
 public:
 	GDIFileStream2():m_file(nullptr) {};
 	GDIFileStream2(File* pFile):m_file(pFile) {};
-	virtual Int read(void *pData, Int numBytes) {
+	virtual Int read(void *pData, Int numBytes) override {
 		return(m_file?m_file->read(pData, numBytes):0);
 	};
 };
@@ -705,6 +705,10 @@ void W3DTreeBuffer::loadTreesInVertexAndIndexBuffers(RefRenderObjListIterator *p
 		m_shadow = TheW3DProjectedShadowManager->createDecalShadow(&shadowInfo);
 	}
 
+	// TheSuperHackers @bugfix Reset bufferNdx so updateVertexBuffer skips trees absent from this rebuild.
+	for (Int t = 0; t < m_numTrees; t++) {
+		m_trees[t].bufferNdx = -1;
+	}
 	m_anythingChanged = false;
 	Int curTree=0;
 	Int bNdx;
@@ -741,17 +745,14 @@ void W3DTreeBuffer::loadTreesInVertexAndIndexBuffers(RefRenderObjListIterator *p
 
 		for ( ;curTree<m_numTrees;curTree++) {
 			Int type = m_trees[curTree].treeType;
-			if (type<0) {
-				continue; // Deleted tree. [6/9/2003]
+			if (type<0 || m_treeTypes[type].m_mesh == nullptr) {
+				continue; // Deleted tree or missing mesh. [6/9/2003]
 			}
 			if (!m_trees[curTree].visible) continue;
 			Real scale = m_trees[curTree].scale;
 			Vector3 loc = m_trees[curTree].location;
 			Real theSin = m_trees[curTree].sin;
 			Real theCos = m_trees[curTree].cos;
-			if (type<0 || m_treeTypes[type].m_mesh == nullptr) {
-				continue;
-			}
 
 			Bool doVertexLighting = true;
 
@@ -991,6 +992,9 @@ void W3DTreeBuffer::updateVertexBuffer()
 		DX8VertexBufferClass::WriteLockClass lockVtxBuffer(m_vertexTree[bNdx], D3DLOCK_DISCARD);
 	#endif
 		vb=(VertexFormatXYZNDUV1*)lockVtxBuffer.Get_Vertex_Array();
+		if (!vb) {
+			continue;
+		}
 
 		VertexFormatXYZNDUV1 *curVb;
 
@@ -1000,9 +1004,6 @@ void W3DTreeBuffer::updateVertexBuffer()
 				continue;
 			}
 			Int type = m_trees[curTree].treeType;
-			if (type<0) {
-				continue; // Deleted tree. [6/9/2003]
-			}
 			if (m_trees[curTree].pushAsideDelta==0.0f && m_trees[curTree].m_toppleState == TOPPLE_UPRIGHT) {
 				continue; // not toppling or pushed, no need to update. jba [7/11/2003]
 			}
@@ -1012,9 +1013,7 @@ void W3DTreeBuffer::updateVertexBuffer()
 			Vector3 loc = m_trees[curTree].location;
 			Real theSin = m_trees[curTree].sin;
 			Real theCos = m_trees[curTree].cos;
-			if (type<0 || m_treeTypes[type].m_mesh == nullptr) {
-				type = 0;
-			}
+			DEBUG_ASSERTCRASH(type>=0 && m_treeTypes[type].m_mesh!=nullptr, ("Invalid tree type or mesh."));
 
 			Int startVertex = m_trees[curTree].firstIndex;
 			curVb = vb+startVertex;
@@ -1187,7 +1186,7 @@ void W3DTreeBuffer::unitMoved(Object *unit)
 				}
 				Coord3D delta;
 				delta.set(m_trees[treeNdx].location.X, m_trees[treeNdx].location.Y, m_trees[treeNdx].location.Z );
-				delta.sub(&pos);
+				delta.sub(pos);
 				if (radius*radius>delta.lengthSqr()) {
 					bool canTopple = unit->getCrusherLevel() > 1;
 					if (canTopple && m_treeTypes[m_trees[treeNdx].treeType].m_data->m_doTopple) {
@@ -1501,7 +1500,7 @@ void W3DTreeBuffer::pushAsideTree(DrawableID id, const Coord3D *pusherPos,
 			m_trees[i].pushAsideSource = pusherID;
 			Coord3D delta;
 			delta.set(m_trees[i].location.X, m_trees[i].location.Y, m_trees[i].location.Z);
-			delta.sub(pusherPos);
+			delta.sub(*pusherPos);
 
 			if (pusherDirection->x*delta.y - pusherDirection->y*delta.x > 0.0f) {
 				m_trees[i].pushAsideCos = -pusherDirection->y;

@@ -123,7 +123,7 @@ class DebrisDrawInterface
 {
 public:
 	virtual void setModelName(AsciiString name, Color color, ShadowType t) = 0;
-	virtual void setAnimNames(AsciiString initial, AsciiString flying, AsciiString final, const FXList* finalFX) = 0;
+	virtual void setAnimNames(AsciiString initial, AsciiString flying, AsciiString finalAnim, const FXList* finalFX) = 0;
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -203,6 +203,9 @@ public:
 	*/
 	virtual void setAnimationCompletionTime(UnsignedInt numFrames) = 0;
 	virtual Bool updateBonesForClientParticleSystems() = 0;///< this will reposition particle systems on the fly ML
+
+	//Kris: Manually set a drawable's current animation to specific frame.
+	virtual void setAnimationFrame(int frame) = 0;
 
 	/**
 	  This call is used to pause or resume an animation.

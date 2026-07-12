@@ -42,7 +42,7 @@ typedef UnsignedInt TeamPrototypeID;
 #define TEAM_PROTOTYPE_ID_INVALID 0
 
 // ------------------------------------------------------------------------------------------------
-typedef std::hash_map< TeamID, Relationship, std::hash<TeamID>, std::equal_to<TeamID> > TeamRelationMapType;
+typedef std::hash_map< TeamID, Relationship, std::hash<TeamID>, std::equal_to<TeamID>/**/> TeamRelationMapType;
 class TeamRelationMap : public MemoryPoolObject,
 												public Snapshot
 {
@@ -60,9 +60,9 @@ public:
 
 protected:
 
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 };
 
@@ -168,9 +168,9 @@ public:
 protected:
 
 	// snapshot methods
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 };
 
@@ -233,9 +233,9 @@ private:
 protected:
 
 	// snapshot methods
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 public:
 
@@ -635,9 +635,9 @@ public:
 protected:
 
 	// snapshot methods
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 private:
 
@@ -680,12 +680,12 @@ class TeamFactory : public SubsystemInterface,
 public:
 
 	TeamFactory();
-	~TeamFactory();
+	virtual ~TeamFactory() override;
 
 	// subsystem methods
-	virtual void init();
-	virtual void reset();
-	virtual void update();
+	virtual void init() override;
+	virtual void reset() override;
+	virtual void update() override;
 
 	void clear();
 	void initFromSides(SidesList *sides);
@@ -727,13 +727,13 @@ public:
 protected:
 
 	// snapshot methods
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 private:
 
-	typedef std::map< NameKeyType, TeamPrototype*, std::less<NameKeyType> > TeamPrototypeMap;
+	typedef std::map< NameKeyType, TeamPrototype*, std::less<NameKeyType>/**/> TeamPrototypeMap;
 
 	TeamPrototypeMap m_prototypes;
 	TeamPrototypeID m_uniqueTeamPrototypeID;		///< used to assign unique ids to each team prototype

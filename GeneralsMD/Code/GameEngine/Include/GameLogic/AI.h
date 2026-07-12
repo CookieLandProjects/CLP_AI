@@ -164,9 +164,9 @@ public:
 	void addFactionBuildList(AISideBuildList *buildList);
 
 	// --------------- inherited from Snapshot interface --------------
-	void crc( Xfer *xfer );
-	void xfer( Xfer *xfer );
-	void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 	Real m_structureSeconds;		// Try to build a structure every N seconds.
 	Real m_teamSeconds;					// Try to build a team every N seconds.
@@ -272,11 +272,11 @@ class AI : public SubsystemInterface, public Snapshot
 {
 public:
 	AI();
-	~AI();
+	virtual ~AI() override;
 
-	virtual void init();						///< initialize AI to default values
-	virtual void reset();						///< reset the AI system to prepare for a new map
-	virtual void update();					///< do one frame of AI computation
+	virtual void init() override;						///< initialize AI to default values
+	virtual void reset() override;						///< reset the AI system to prepare for a new map
+	virtual void update() override;					///< do one frame of AI computation
 
 	Pathfinder *pathfinder() { return m_pathfinder; }	///< public access to the pathfind system
 	enum
@@ -296,14 +296,15 @@ public:
 	Object *findClosestAlly( const Object *me, Real range, UnsignedInt qualifiers);
 
 	// --------------- inherited from Snapshot interface --------------
-	void crc( Xfer *xfer );
-	void xfer( Xfer *xfer );
-	void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 	// AI Groups -----------------------------------------------------------------------------------------------
 	AIGroupPtr createGroup(); ///< instantiate a new AI Group
 	void destroyGroup( AIGroup *group );	///< destroy the given AI Group
 	AIGroup *findGroup( UnsignedInt id );	///< return the AI Group with the given ID
+	Bool doesGroupExist(AIGroup* group) const; ///< return whether the given AI Group exists, i.e. is part of the group list
 
 	// Formation info
 	enum FormationID getNextFormationID();
@@ -916,9 +917,9 @@ private:
 public:
 
 	// --------------- inherited from Snapshot interface --------------
-	void crc( Xfer *xfer );
-	void xfer( Xfer *xfer );
-	void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 #if !RETAIL_COMPATIBLE_AIGROUP
 	void Add_Ref() const { m_refCount.Add_Ref(); }
@@ -1009,7 +1010,7 @@ public:
 	void computeIndividualDestination( Coord3D *dest, const Coord3D *groupDest,
 		Object *obj, const Coord3D *center, Bool isFormation ); ///< compute destination of individual object, based on group destination
 	Int getCount();										///< return the number of objects in the group
-	Bool isEmpty();										///< returns true if the group has no members
+	Bool isEmpty() const;										///< returns true if the group has no members
 	void queueUpgrade( const UpgradeTemplate *upgrade );	///< queue an upgrade
 
 	void add( Object *obj );								///< add object to group

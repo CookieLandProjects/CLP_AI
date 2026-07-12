@@ -81,12 +81,6 @@
 
 #include "ww3d.h"
 
-//#define KRIS_BRUTAL_HACK_FOR_AIRCRAFT_CARRIER_DEBUGGING
-#ifdef KRIS_BRUTAL_HACK_FOR_AIRCRAFT_CARRIER_DEBUGGING
-	#include "GameLogic/Module/ParkingPlaceBehavior.h"
-#endif
-
-
 #define VERY_TRANSPARENT_MATERIAL_PASS_OPACITY (0.001f)
 #define MATERIAL_PASS_OPACITY_FADE_SCALAR (0.8f)
 
@@ -122,17 +116,13 @@ static_assert(ARRAY_SIZE(TheDrawableIconNames) == MAX_ICONS + 1, "Incorrect arra
  *
  * OK, so it's a bit of a hack, but it saves memory in every Drawable
  */
-static DynamicAudioEventInfo  * getNoSoundMarker()
+class DynamicAudioEventInfoStatic : public DynamicAudioEventInfo
+{};
+static DynamicAudioEventInfoStatic s_noSoundMarker;
+
+static DynamicAudioEventInfo* getNoSoundMarker()
 {
-  static DynamicAudioEventInfo  * marker = nullptr;
-
-  if ( marker == nullptr )
-  {
-    // Initialize first time function is called
-    marker = newInstance( DynamicAudioEventInfo  );
-  }
-
-  return marker;
+	return &s_noSoundMarker;
 }
 
 
@@ -1747,8 +1737,8 @@ void Drawable::calcPhysicsXformTreads( const Locomotor *locomotor, PhysicsXformI
 				up.normalize();
 
 				Coord3D prp;
-				prp.crossProduct( &v, &up, &prp );
-				normal.crossProduct( &prp, &v, &normal );
+				prp.crossProduct( v, up, prp );
+				normal.crossProduct( prp, v, normal );
 
 				// compute unit normal
 				normal.normalize();
@@ -2791,10 +2781,6 @@ void Drawable::drawIconUI()
 
 		//Moved this to last so that it shows up over contained and ammo icons.
 		drawVeterancy( healthBarRegion );
-
-#ifdef KRIS_BRUTAL_HACK_FOR_AIRCRAFT_CARRIER_DEBUGGING
-		drawUIText();
-#endif
 	}
 }
 
@@ -3173,48 +3159,6 @@ void Drawable::drawUIText()
 													TheDrawGroupInfo->m_dropShadowOffsetY);
 
 	}
-
-#ifdef KRIS_BRUTAL_HACK_FOR_AIRCRAFT_CARRIER_DEBUGGING
-	if( obj->testStatus( OBJECT_STATUS_DECK_HEIGHT_OFFSET ) )
-	{
-		Object *carrier = TheGameLogic->findObjectByID( obj->getProducerID() );
-		if( carrier )
-		{
-			for (BehaviorModule** i = carrier->getBehaviorModules(); *i; ++i)
-			{
-				ParkingPlaceBehaviorInterface *pp = (*i)->getParkingPlaceBehaviorInterface();
-				if( pp )
-				{
-					Int index = pp->getSpaceIndex( obj->getID() );
-
-					Int xPos = healthBarRegion->lo.x;
-					Int yPos = healthBarRegion->lo.y;
-
-					if (TheDrawGroupInfo->m_usingPixelOffsetX) {
-						xPos += TheDrawGroupInfo->m_pixelOffsetX;
-					} else {
-						xPos += (healthBarRegion->width() * TheDrawGroupInfo->m_percentOffsetX);
-					}
-
-					if (TheDrawGroupInfo->m_usingPixelOffsetY) {
-						yPos += TheDrawGroupInfo->m_pixelOffsetY;
-					} else {
-						yPos += (healthBarRegion->width() * TheDrawGroupInfo->m_percentOffsetY);
-					}
-
-					m_groupNumber = TheDisplayStringManager->getGroupNumeralString(index);
-
-
-					m_groupNumber->draw(xPos, yPos, color,
-															TheDrawGroupInfo->m_colorForTextDropShadow,
-															TheDrawGroupInfo->m_dropShadowOffsetX,
-															TheDrawGroupInfo->m_dropShadowOffsetY);
-					break;
-				}
-			}
-		}
-	}
-#endif
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -4525,7 +4469,7 @@ void Drawable::startAmbientSound(BodyDamageType dt, TimeOfDay tod, Bool onlyIfPe
 			  {
 				  //Check if it's close enough to try playing (optimization)
 				  Coord3D vector = *getPosition();
-				  vector.sub( TheAudio->getListenerPosition() );
+				  vector.sub( *TheAudio->getListenerPosition() );
 				  Real distSqr = vector.lengthSqr();
 				  if( distSqr < sqr( info->m_maxDistance ) )
 				  {

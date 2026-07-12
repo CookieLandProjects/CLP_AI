@@ -656,7 +656,7 @@ void BuildAssistant::iterateFootprint( const ThingTemplate *build,
 Bool BuildAssistant::isLocationClearOfObjects( const Coord3D *worldPos,
 																											 const ThingTemplate *build,
 																											 Real angle,
-																											 Object *builderObject,
+																											 const Object *builderObject,
 																											 UnsignedInt options,
 																											 Player *thePlayer)
 {
@@ -842,14 +842,14 @@ LegalBuildCode BuildAssistant::isLocationLegalToBuild( const Coord3D *worldPos,
 																											 const ThingTemplate *build,
 																											 Real angle,
 																											 UnsignedInt options,
-																											 Object *builderObject,
+																											 const Object *builderObject,
 																											 Player *player)
 {
 
 	/* You just can't never build off the map, regardless of options.  jba. */
 	Region3D mapExtent;
 	TheTerrainLogic->getMaximumPathfindExtent(&mapExtent);
-	if (!mapExtent.isInRegionNoZ(worldPos)) {
+	if (!mapExtent.isInRegionNoZ(*worldPos)) {
 		return LBC_RESTRICTED_TERRAIN;
 	}
 
@@ -928,7 +928,7 @@ LegalBuildCode BuildAssistant::isLocationLegalToBuild( const Coord3D *worldPos,
 	// if clear path is requested check to see if the builder object can get there
 	if( BitIsSet( options, CLEAR_PATH ) && builderObject )
 	{
-		AIUpdateInterface *ai = builderObject->getAIUpdateInterface();
+		const AIUpdateInterface *ai = builderObject->getAIUpdateInterface();
 
 		//
 		// if there is no AI interface for this object, it cannot possible pass a clear path

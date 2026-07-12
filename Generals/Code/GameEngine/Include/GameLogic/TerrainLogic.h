@@ -112,11 +112,11 @@ public:
 	/// Get the waypoint's position
 	const Coord3D *getLocation() const { return &m_location;  }
 	/// Get the waypoint's first path label
-	AsciiString getPathLabel1() const { return m_pathLabel1;  }
+	const AsciiString& getPathLabel1() const { return m_pathLabel1;  }
 	/// Get the waypoint's second path label
-	AsciiString getPathLabel2() const { return m_pathLabel2;  }
+	const AsciiString& getPathLabel2() const { return m_pathLabel2;  }
 	/// Get the waypoint's third path label
-	AsciiString getPathLabel3() const { return m_pathLabel3;  }
+	const AsciiString& getPathLabel3() const { return m_pathLabel3;  }
 	/// Get bi-directionality.
 	Bool getBiDirectional() const { return m_biDirectional; }
 
@@ -218,11 +218,11 @@ class TerrainLogic : public Snapshot,
 public:
 
 	TerrainLogic();
-	virtual ~TerrainLogic();
+	virtual ~TerrainLogic() override;
 
-	virtual void init();		///< Init
-	virtual void reset();		///< Reset
-	virtual void update();	///< Update
+	virtual void init() override;		///< Init
+	virtual void reset() override;		///< Reset
+	virtual void update() override;	///< Update
 
 	virtual Bool loadMap( AsciiString filename, Bool query );
 	virtual void newMap( Bool saveGame );	///< Initialize the logic for new map.
@@ -316,9 +316,9 @@ public:
 protected:
 
 	// snapshot methods
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 	/// Chunk parser callback.
  	static Bool parseWaypointDataChunk(DataChunkInput &file, DataChunkInfo *info, void *userData);

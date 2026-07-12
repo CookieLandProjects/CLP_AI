@@ -109,9 +109,9 @@
 ** will own the refs for the mesh.  The load context object is destroyed once
 ** loading is complete...
 */
-class MeshLoadContextClass : public W3DMPO
+class MeshLoadContextClass
 {
-	W3DMPO_GLUE(MeshLoadContextClass)
+	W3DMPO_CODE(MeshLoadContextClass)
 private:
 	MeshLoadContextClass();
 	~MeshLoadContextClass();

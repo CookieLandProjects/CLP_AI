@@ -80,6 +80,7 @@ class Upgrade;
 class UpgradeTemplate;
 class SpecialPowerModule;
 
+struct BattlePlanBonusesData;
 class BattlePlanBonuses;
 
 // -TanSo-: we need this as well, thanks!
@@ -150,7 +151,7 @@ struct SpecialPowerReadyTimerType
 
 
 // ------------------------------------------------------------------------------------------------
-typedef std::hash_map< PlayerIndex, Relationship, std::hash<PlayerIndex>, std::equal_to<PlayerIndex> > PlayerRelationMapType;
+typedef std::hash_map< PlayerIndex, Relationship, std::hash<PlayerIndex>, std::equal_to<PlayerIndex>/**/> PlayerRelationMapType;
 class PlayerRelationMap : public MemoryPoolObject,
 													public Snapshot
 {
@@ -168,9 +169,9 @@ public:
 
 protected:
 
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 };
 
@@ -376,12 +377,12 @@ public:
 	//it's possible for multiple strategy centers to have the same plan, so we need
 	//to keep track of that like radar. Keep in mind multiple strategy centers with
 	//same plan do not stack, but different strategy centers with different plans do.
-	void changeBattlePlan( BattlePlanStatus plan, Int delta, BattlePlanBonuses *bonus );
+	void changeBattlePlan( BattlePlanStatus plan, Int delta, const BattlePlanBonusesData *bonus );
 	Int getNumBattlePlansActive() const { return m_bombardBattlePlans + m_holdTheLineBattlePlans + m_searchAndDestroyBattlePlans; }
 	Int getBattlePlansActiveSpecific( BattlePlanStatus plan ) const;
 	void applyBattlePlanBonusesForObject( Object *obj ) const;	//New object or converted object gaining our current battle plan bonuses.
 	void removeBattlePlanBonusesForObject( Object *obj ) const; //Object left team
-	void applyBattlePlanBonusesForPlayerObjects( const BattlePlanBonuses *bonus ); //Battle plan bonuses changing, so apply to all of our objects!
+	void applyBattlePlanBonusesForPlayerObjects( const BattlePlanBonusesData *bonus ); //Battle plan bonuses changing, so apply to all of our objects!
 	Bool doesObjectQualifyForBattlePlan( Object *obj ) const;
 
 	// If apply is false, then we are repealing already granted bonuses.
@@ -678,10 +679,10 @@ public:
 	void processCreateTeamGameMessage(Int hotkeyNum, const GameMessage *msg);
 
 	/// time to select a hotkey team based on this GameMessage
-	void processSelectTeamGameMessage(Int hotkeyNum, GameMessage *msg);
+	void processSelectTeamGameMessage(Int hotkeyNum);
 
 	// add to the player's current selection this hotkey team.
-	void processAddTeamGameMessage(Int hotkeyNum, GameMessage *msg);
+	void processAddTeamGameMessage(Int hotkeyNum);
 
 	// fills an AIGroup object that is the currently selected group.
 	void getCurrentSelectionAsAIGroup(AIGroup *group);
@@ -777,9 +778,9 @@ public:
 protected:
 
 	// snapshot methods
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 	void deleteUpgradeList();															///< delete all our upgrades
 

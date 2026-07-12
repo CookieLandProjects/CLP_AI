@@ -258,13 +258,10 @@ void LaserUpdate::initLaser( const Object *parent, const Coord3D *startPos, cons
 		if( data->m_particleSystemName.isNotEmpty() )
 		{
 			const ParticleSystemTemplate *tmp = TheParticleSystemManager->findTemplate( data->m_particleSystemName );
-			if( tmp )
+			system = TheParticleSystemManager->createParticleSystem( tmp );
+			if( system )
 			{
-				system = TheParticleSystemManager->createParticleSystem( tmp );
-				if( system )
-				{
-					m_particleSystemID = system->getSystemID();
-				}
+				m_particleSystemID = system->getSystemID();
 			}
 		}
 
@@ -272,13 +269,10 @@ void LaserUpdate::initLaser( const Object *parent, const Coord3D *startPos, cons
 		if( data->m_targetParticleSystemName.isNotEmpty() )
 		{
 			const ParticleSystemTemplate *tmp = TheParticleSystemManager->findTemplate( data->m_targetParticleSystemName );
-			if( tmp )
+			system = TheParticleSystemManager->createParticleSystem( tmp );
+			if( system )
 			{
-				system = TheParticleSystemManager->createParticleSystem( tmp );
-				if( system )
-				{
-					m_targetParticleSystemID = system->getSystemID();
-				}
+				m_targetParticleSystemID = system->getSystemID();
 			}
 		}
 	}
@@ -304,8 +298,8 @@ void LaserUpdate::initLaser( const Object *parent, const Coord3D *startPos, cons
 	//Important! Set the laser position to the average of both points or else
 	//it probably won't get rendered!!!
 	Coord3D avgPos;
-	avgPos.set( startPos );
-	avgPos.add( endPos );
+	avgPos.set( *startPos );
+	avgPos.add( *endPos );
 	avgPos.scale( 0.5 );
 	getDrawable()->setPosition( &avgPos );
 	Object *laser = getDrawable()->getObject();

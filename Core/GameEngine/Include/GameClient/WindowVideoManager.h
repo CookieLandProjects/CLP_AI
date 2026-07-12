@@ -120,12 +120,12 @@ class WindowVideoManager : public SubsystemInterface
 {
 public:
 	WindowVideoManager();
-	~WindowVideoManager();
+	virtual ~WindowVideoManager() override;
 
 	// Inhertited from subsystem ====================================================================
-	virtual void init();
-	virtual void reset();
-	virtual void update();
+	virtual void init() override;
+	virtual void reset() override;
+	virtual void update() override;
 	//===============================================================================================
 
 
@@ -153,7 +153,7 @@ private:
 	}
 	};
 
-	typedef std::hash_map< ConstGameWindowPtr, WindowVideo *, hashConstGameWindowPtr, std::equal_to<ConstGameWindowPtr> > WindowVideoMap;
+	typedef std::hash_map< ConstGameWindowPtr, WindowVideo *, hashConstGameWindowPtr, std::equal_to<ConstGameWindowPtr>/**/> WindowVideoMap;
 
 	WindowVideoMap m_playingVideos;								///< List of currently playin Videos
 	//WindowVideoMap m_pausedVideos;									///< List of currently paused Videos

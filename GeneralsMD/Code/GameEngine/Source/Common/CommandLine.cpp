@@ -314,7 +314,7 @@ Int parseLogObjectCRCs(char *args[], int argc)
 //=============================================================================
 Int parseNetCRCInterval(char *args[], int argc)
 {
-#ifdef DEBUG_CRC
+#if defined(DEBUG_CRC) && !RETAIL_COMPATIBLE_NETWORKING
 	if (argc > 1)
 	{
 		NET_CRC_INTERVAL = atoi(args[1]);
@@ -414,6 +414,13 @@ Int parseHeadless(char *args[], int num)
 	TheWritableGlobalData->m_playIntro = FALSE;
 	TheWritableGlobalData->m_afterIntro = TRUE;
 	TheWritableGlobalData->m_playSizzle = FALSE;
+
+	// TheSuperHackers @fix bobtista 03/02/2026 Set DX8Wrapper_IsWindowed to false in headless
+	// mode so that ignoringAsserts() works correctly throughout the entire process lifetime,
+	// including during shutdown after TheGlobalData has been destroyed.
+	extern bool DX8Wrapper_IsWindowed;
+	DX8Wrapper_IsWindowed = false;
+
 	return 1;
 }
 
@@ -861,17 +868,6 @@ Int parseSelectAll( char *args[], int num )
 
 	return 1;
 }
-
-Int parseRunAhead( char *args[], Int num )
-{
-	if (num > 2)
-	{
-		MIN_RUNAHEAD = atoi(args[1]);
-		MAX_FRAMES_AHEAD = atoi(args[2]);
-		FRAME_DATA_LENGTH = (MAX_FRAMES_AHEAD + 1)*2;
-	}
-	return 3;
-}
 #endif
 
 
@@ -1272,7 +1268,6 @@ static CommandLineParam paramsForEngineInit[] =
 	{ "-logToCon", parseLogToConsole },
 	{ "-vTune", parseVTune },
 	{ "-selectTheUnselectable", parseSelectAll },
-	{ "-RunAhead", parseRunAhead },
 #if ENABLE_CONFIGURABLE_SHROUD
 	{ "-noshroud", parseNoShroud },
 #endif

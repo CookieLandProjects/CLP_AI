@@ -52,12 +52,12 @@ class SoundManager : public SubsystemInterface
 {
 	public:
 		SoundManager();
-		virtual ~SoundManager();
+		virtual ~SoundManager() override;
 
-		virtual void init();										///< Initializes the sounds system
-		virtual void postProcessLoad();
-		virtual void update();									///< Services sounds tasks. Called by AudioInterface
-		virtual void reset();										///< Reset the sounds system
+		virtual void init() override;										///< Initializes the sounds system
+		virtual void postProcessLoad() override;
+		virtual void update() override;									///< Services sounds tasks. Called by AudioInterface
+		virtual void reset() override;										///< Reset the sounds system
 
 		virtual void loseFocus();								///< Called when application loses focus
 		virtual void regainFocus();							///< Called when application regains focus
@@ -69,15 +69,6 @@ class SoundManager : public SubsystemInterface
 
 		virtual void addAudioEvent(AudioEventRTS *&eventToAdd);	// pre-copied
 
-		virtual void notifyOf2DSampleStart();
-		virtual void notifyOf3DSampleStart();
-
-		virtual void notifyOf2DSampleCompletion();
-		virtual void notifyOf3DSampleCompletion();
-
-		virtual Int getAvailableSamples();
-		virtual Int getAvailable3DSamples();
-
 		// empty string means that this sound wasn't found or some error occurred. CHECK FOR EMPTY STRING.
 		virtual AsciiString getFilenameForPlayFromAudioEvent( const AudioEventRTS *eventToGetFrom );
 
@@ -87,12 +78,4 @@ class SoundManager : public SubsystemInterface
 	protected:
 		virtual Bool violatesVoice( AudioEventRTS *event );
 		virtual Bool isInterrupting( AudioEventRTS *event );
-
-
-	protected:
-		UnsignedInt m_num2DSamples;
-		UnsignedInt m_num3DSamples;
-
-		UnsignedInt m_numPlaying2DSamples;
-		UnsignedInt m_numPlaying3DSamples;
 };

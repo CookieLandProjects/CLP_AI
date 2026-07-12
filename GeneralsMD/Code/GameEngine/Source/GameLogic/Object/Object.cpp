@@ -59,8 +59,6 @@
 
 #include "GameLogic/AI.h"
 #include "GameLogic/AIPathfind.h"
-#include "GameLogic/AIPlayer.h"
-#include "GameLogic/AISkirmishPlayer.h"
 #include "GameLogic/ExperienceTracker.h"
 #include "GameLogic/FiringTracker.h"
 #include "GameLogic/GameLogic.h"
@@ -177,19 +175,19 @@ AsciiString DebugDescribeObject(const Object *obj)
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
-Object::Object(const ThingTemplate* tt, const ObjectStatusMaskType& objectStatusMask, Team* team) :
+Object::Object( const ThingTemplate *tt, const ObjectStatusMaskType &objectStatusMask, Team *team ) :
 	Thing(tt),
 	m_indicatorColor(0),
 	m_ai(nullptr),
 	m_physics(nullptr),
 	m_geometryInfo(tt->getTemplateGeometryInfo()),
 	m_containedBy(nullptr),
-	m_xferContainedByID(INVALID_ID),
+	m_containedByID(INVALID_ID),
 	m_containedByFrame(0),
 	m_behaviors(nullptr),
 	m_body(nullptr),
 	m_contain(nullptr),
-	m_stealth(nullptr),
+  m_stealth(nullptr),
 	m_partitionData(nullptr),
 	m_radarData(nullptr),
 	m_drawable(nullptr),
@@ -217,11 +215,8 @@ Object::Object(const ThingTemplate* tt, const ObjectStatusMaskType& objectStatus
 	m_singleUseCommandUsed(FALSE),
 	m_scriptStatus(0),
 	m_enteredOrExitedFrame(0),
-	m_visionSpiedMask(PLAYERMASK_NONE),
-	m_numTriggerAreasActive(0),
-	m_isBeingCaptured(false),
-	m_seenByEnemy(false),
-	m_lastSeenFrame(0)
+	m_visionSpiedMask (PLAYERMASK_NONE),
+	m_numTriggerAreasActive(0)
 {
 #if defined(RTS_DEBUG)
 	m_hasDiedAlready = false;
@@ -696,6 +691,22 @@ void Object::onContainedBy( Object *containedBy )
 	m_containedBy = containedBy;
 	m_containedByFrame = TheGameLogic->getFrame();
 
+#if RETAIL_COMPATIBLE_CRC
+	// TheSuperHackers @info Set INVALID_ID if the container object was destroyed
+	// to indicate that the pointer will become a dangling pointer in the next frame.
+	if (containedBy && !containedBy->isDestroyed())
+	{
+		m_containedByID = containedBy->getID();
+	}
+	else
+	{
+		m_containedByID = INVALID_ID;
+	}
+#else
+	DEBUG_ASSERTCRASH(containedBy == nullptr || !containedBy->isDestroyed(),
+		("Object::onContainedBy - Adding into a destroyed container"));
+#endif
+
   handlePartitionCellMaintenance(); // which should unlook me now that I am contained
 
 }
@@ -708,6 +719,10 @@ void Object::onRemovedFrom( Object *removedFrom )
 	clearStatus( MAKE_OBJECT_STATUS_MASK2( OBJECT_STATUS_MASKED, OBJECT_STATUS_UNSELECTABLE ) );
 	m_containedBy = nullptr;
 	m_containedByFrame = 0;
+
+#if RETAIL_COMPATIBLE_CRC
+	m_containedByID = INVALID_ID;
+#endif
 
   handlePartitionCellMaintenance(); // get a clean look, now that I am outdoors, again
 
@@ -761,9 +776,33 @@ void Object::onDestroy()
 {
 
 	// This is the old cleanUpContain safeguard.  Say goodbye so they don't try to look us up.
-	if( m_containedBy && m_containedBy->getContain() )
+	if (m_containedBy)
 	{
-		m_containedBy->getContain()->removeFromContain( this );
+#if RETAIL_COMPATIBLE_CRC
+		if (m_containedByID == INVALID_ID)
+		{
+			// TheSuperHackers @bugfix Caball009 25/05/2026 Due to a potential use-after-free bug that cannot be fixed
+			// with retail compatibility, the 'contained by' pointer of this object may point to an already destroyed object.
+			// Avoid removing this object from the contain list, because it could crash the game,
+			// as the begin / end iterator for STLPort and MSVC std::list implementations depends on dynamically allocated memory.
+			DEBUG_CRASH(("container object must be valid; this looks like use-after-free"));
+		}
+		else
+		{
+			DEBUG_ASSERTCRASH(TheGameLogic->findObjectByID(m_containedByID) == m_containedBy,
+				("contained by pointer is out of sync with contained by ID"));
+
+			if (ContainModuleInterface* contain = m_containedBy->getContain())
+			{
+				contain->removeFromContain(this);
+			}
+		}
+#else
+		if (ContainModuleInterface* contain = m_containedBy->getContain())
+		{
+			contain->removeFromContain(this);
+		}
+#endif
 	}
 
 	//
@@ -907,16 +946,6 @@ void Object::setOrRestoreTeam( Team* team, Bool restoring )
 						ai->setAttackInfo(info);
 					}
 				}
-			}
-		}
-		if (!restoring && this->isKindOf(KINDOF_STRUCTURE))
-		{
-			Player* newOwner = m_team->getControllingPlayer();
-			AIPlayer* ai = newOwner->getAi();
-			if (newOwner && newOwner->isSkirmishAIPlayer())
-			{
-				newOwner->addToBuildListTransfered(this);
-				ai->onCapture(this);
 			}
 		}
 		// emit message announcing object's new alliance
@@ -1848,7 +1877,7 @@ void Object::reactToTransformChange(const Matrix3D* oldMtx, const Coord3D* oldPo
 
 		Region3D mapExtent;
 		TheTerrainLogic->getExtent(&mapExtent);
-		if (mapExtent.isInRegionNoZ(getPosition()))
+		if (mapExtent.isInRegionNoZ(*getPosition()))
 			m_privateStatus &= ~OFF_MAP;
 		else
 			m_privateStatus |= OFF_MAP;
@@ -1897,7 +1926,7 @@ void Object::attemptDamage( DamageInfo *damageInfo )
 
 			// Set up the shockwave force to use apply on object
 			Coord3D shockWaveForce;
-			shockWaveForce.set( &damageInfo->in.m_shockWaveVector );
+			shockWaveForce.set( damageInfo->in.m_shockWaveVector );
 			shockWaveForce.normalize();
 			shockWaveForce.scale( damageInfo->in.m_shockWaveAmount * shockTaperMult );
 			shockWaveForce.z = shockWaveForce.length(); // Apply up force equal to the lateral force for dramatic effect
@@ -1931,7 +1960,7 @@ void Object::attemptDamage( DamageInfo *damageInfo )
 			getControllingPlayer() &&
 			!BitIsSet(damageInfo->in.m_sourcePlayerMask, getControllingPlayer()->getPlayerMask()) &&
 			m_radarData != nullptr &&
-			getControllingPlayer() == ThePlayerList->getLocalPlayer() )
+			isLocallyControlled() )
 		TheRadar->tryUnderAttackEvent( this );
 
 }
@@ -2877,7 +2906,7 @@ void Object::friend_notifyOfNewMapBoundary()
 
 	Region3D mapExtent;
 	TheTerrainLogic->getExtent(&mapExtent);
-	if (mapExtent.isInRegionNoZ(getPosition()))
+	if (mapExtent.isInRegionNoZ(*getPosition()))
 		m_privateStatus &= ~OFF_MAP;
 	else
 		m_privateStatus |= OFF_MAP;
@@ -3008,21 +3037,6 @@ void Object::scoreTheKill( const Object *victim )
 			Int experienceValue = victim->getExperienceTracker()->getExperienceValue( this );
 			getExperienceTracker()->addExperiencePoints( experienceValue );
 		}
-	}
-
-	const ThingTemplate* tt = victim->getTemplate();
-	if (!tt) return;
-
-	// @-TanSo-: Add the kills and deaths to our vectors so we can check on them in scripts
-	controller->m_lastFrameKills.push_back(tt);
-	victimController->m_lastFrameDeaths.push_back(tt);
-	victimController->m_lostUnitThisFrame = TRUE;
-
-	Team* team = const_cast<Team*>(victim->getTeam());
-	if (team)
-	{
-		team->m_lastFrameDeaths.push_back(tt);
-		team->m_lostUnitThisFrame = TRUE;
 	}
 }
 
@@ -3223,7 +3237,7 @@ void Object::createVeterancyLevelFX(VeterancyLevel oldLevel, VeterancyLevel newL
 			Anim2DTemplate *animTemplate = TheAnim2DCollection->findTemplate( TheGlobalData->m_levelGainAnimationName );
 
 			Coord3D pos = *getPosition();
-			pos.add(&m_healthBoxOffset);
+			pos.add(m_healthBoxOffset);
 
 			TheInGameUI->addWorldAnimation( animTemplate,
 																			&pos,
@@ -3439,7 +3453,7 @@ void Object::getHealthBoxPosition(Coord3D& pos) const
 {
 	pos = *getPosition();
 	pos.z += getGeometryInfo().getMaxHeightAbovePosition() + 10;
-	pos.add(&m_healthBoxOffset);
+	pos.add(m_healthBoxOffset);
 
 	// this needs to get moved to the mobspawnerupdate
 	if (isKindOf(KINDOF_MOB_NEXUS)) // quicker idiot test
@@ -4101,7 +4115,7 @@ void Object::xfer( Xfer *xfer )
 {
 
 	// version
-	const XferVersion currentVersion = 10;
+	const XferVersion currentVersion = 9;
 	XferVersion version = currentVersion;
 	xfer->xferVersion( &version, currentVersion );
 
@@ -4148,12 +4162,10 @@ void Object::xfer( Xfer *xfer )
 	Drawable *draw = getDrawable();
 	DrawableID drawableID = draw ? draw->getID() : INVALID_DRAWABLE_ID;
 	xfer->xferDrawableID( &drawableID );
-	if( xfer->getXferMode() == XFER_LOAD )
+	if (draw && xfer->getXferMode() == XFER_LOAD)
 	{
-
 		// change the ID of the drawable attached to be the same ID as it was when it was saved
-		draw->setID( drawableID );
-
+		draw->setID(drawableID);
 	}
 
 	// internal name
@@ -4189,19 +4201,6 @@ void Object::xfer( Xfer *xfer )
 
 	// private status
 	xfer->xferUnsignedByte( &m_privateStatus );
-
-	// OK, now that we have xferred our status bits, it's safe to set the team...
-	if( xfer->getXferMode() == XFER_LOAD )
-	{
-		Team *team = TheTeamFactory->findTeamByID( teamID );
-		if( team == nullptr )
-		{
-			DEBUG_CRASH(( "Object::xfer - Unable to load team" ));
-			throw SC_INVALID_DATA;
-		}
-		const Bool restoring = true;
-		setOrRestoreTeam( team, restoring );
-	}
 
 	// geometry info
 	xfer->xferSnapshot( &m_geometryInfo );
@@ -4254,6 +4253,20 @@ void Object::xfer( Xfer *xfer )
 	// disabled till frame
 	xfer->xferUser( m_disabledTillFrame, sizeof( UnsignedInt ) * DISABLED_COUNT );
 
+	// OK, now that we have xferred our status bits and disabled data, it's safe to set the team...
+	// TheSuperHackers @todo Refactor so that this code can be moved to loadPostProcess.
+	if( xfer->getXferMode() == XFER_LOAD )
+	{
+		Team *team = TheTeamFactory->findTeamByID( teamID );
+		if( team == nullptr )
+		{
+			DEBUG_CRASH(( "Object::xfer - Unable to load team" ));
+			throw SC_INVALID_DATA;
+		}
+		const Bool restoring = true;
+		setOrRestoreTeam( team, restoring );
+	}
+
 	// special model condition until
 	xfer->xferUnsignedInt( &m_smcUntil );
 
@@ -4277,16 +4290,18 @@ void Object::xfer( Xfer *xfer )
 		// No, the contain module is just going to friend_ reach in and set this for us.
 		// Containers more complicated than Open (like Tunnel) can't do that.  Our variable,
 		// our responsibility.
+#if !RETAIL_COMPATIBLE_CRC
+		// TheSuperHackers @tweak Contained by ID is already set with retail compatibility; don't overwrite it.
 		if( xfer->getXferMode() == XFER_SAVE )
 		{
 			if( m_containedBy != nullptr )
-				m_xferContainedByID = m_containedBy->getID();
+				m_containedByID = m_containedBy->getID();
 			else
-				m_xferContainedByID = INVALID_ID;
+				m_containedByID = INVALID_ID;
 		}
+#endif
 
-
-		xfer->xferObjectID( &m_xferContainedByID );
+		xfer->xferObjectID( &m_containedByID );
 	}
 
 	// contained by frame
@@ -4504,14 +4519,6 @@ void Object::xfer( Xfer *xfer )
 	else
 		m_isReceivingDifficultyBonus = FALSE;
 
-	if (version >= 10)
-	{
-		xfer->xferBool(&m_seenByEnemy);
-
-		xfer->xferInt(&m_lastSeenFrame);
-
-		xfer->xferBool(&m_isBeingCaptured);
-	}
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -4519,8 +4526,8 @@ void Object::xfer( Xfer *xfer )
 //-------------------------------------------------------------------------------------------------
 void Object::loadPostProcess()
 {
-	if( m_xferContainedByID != INVALID_ID )
-		m_containedBy = TheGameLogic->findObjectByID(m_xferContainedByID);
+	if( m_containedByID != INVALID_ID )
+		m_containedBy = TheGameLogic->findObjectByID(m_containedByID);
 	else
 		m_containedBy = nullptr;
 
@@ -4608,25 +4615,32 @@ void Object::removeUpgrade( const UpgradeTemplate *upgradeT )
 //-------------------------------------------------------------------------------------------------
 void Object::onCapture( Player *oldOwner, Player *newOwner )
 {
-	if (oldOwner == newOwner)
+	// Everybody chills when they captured so they don't keep doing something the new player might not want him to be doing
+	// TheSuperHackers @tweak Stubbjax 19/11/2025 Except when the new owner is an ally, so that Hackers keep on hacking, etc.
+	if( getAIUpdateInterface()  &&  (oldOwner != newOwner) )
 	{
-		return;
-	}
-	// Everybody dhills when they captured so they don't keep doing something the new player might not want him to be doing
-	if (getAIUpdateInterface() && (oldOwner != newOwner))
+#if RETAIL_COMPATIBLE_CRC
 		getAIUpdateInterface()->aiIdle(CMD_FROM_AI);
+#else
+		if (oldOwner->getRelationship(newOwner->getDefaultTeam()) != ALLIES)
+		{
+			getAIUpdateInterface()->aiIdle(CMD_FROM_AI);
+
+			DozerAIInterface* dozerAI = getAIUpdateInterface()->getDozerAIInterface();
+			if (dozerAI)
+			{
+				dozerAI->cancelAllTasks();
+			}
+		}
+#endif
+	}
 
 	// this gets the new owner some points
-	DEBUG_LOG((
-		"Captured object: id=%d template=%s",
-		this->getID(),
-		this->getTemplate()->getName()
-		));
 	newOwner->getScoreKeeper()->addObjectCaptured(this);
 
 	// rip through the behavior modules and call the onCapture for any modules that care
-	for (BehaviorModule** module = m_behaviors; *module; ++module)
-		(*module)->onCapture(oldOwner, newOwner);
+	for( BehaviorModule **module = m_behaviors; *module; ++module )
+		(*module)->onCapture( oldOwner, newOwner );
 
 	//
 	// We have to undo our look for the old team and redo it for the new.
@@ -4643,34 +4657,10 @@ void Object::onCapture( Player *oldOwner, Player *newOwner )
 	// mark the command bar to redraw
 	TheControlBar->markUIDirty();
 
-	// Notify the Dozer that it is mine now >:(
-	if (newOwner && newOwner->isSkirmishAIPlayer())
-	{
-		AIPlayer* ai = newOwner->getAi();
-		if (ai)
-		{
-			DEBUG_LOG(("Notifying AI via getAi() for capture of obj %d (ai ptr=%p)", getID(), ai));
-			ai->onCapture(this);
-		}
-		else
-		{
-			DEBUG_LOG(("isSkirmishAIPlayer() true but getAi() == nullptr – incomplete AI setup"));
-		}
-	}
-
-	// CL 17/01/2026
-	// Don't auto-sell captured faction structures.  Instead, AI players will "recognize" and use them.
-	if (oldOwner != newOwner)
-	{
-		// If the new owner is an AI, add useful captured structures
-		// to its build list so the AI can consider them as usable production buildings.
-		if (newOwner && newOwner->isSkirmishAIPlayer()) {
-			// If this object has a production interface,
-			// add it to the new owner's build list so the AI can use it as a factory.
-			ProductionUpdateInterface* pui = getProductionUpdateInterface();
-			if (pui) {
-				newOwner->addToBuildList(this);
-			}
+	if (oldOwner!=newOwner && newOwner->isSkirmishAIPlayer()) {
+		// The skirmish ai doesn't know what to do with captured faction buildings except sell them.
+		if (isFactionStructure()) {
+			TheBuildAssistant->sellObject( this );
 		}
 	}
 
@@ -6562,5 +6552,3 @@ ObjectID Object::calculateCountermeasureToDivertTo( const Object& victim )
 	}
 	return INVALID_ID;
 }
-
-void Object::setIsBeingCaptured(Bool beingCaptured) { m_isBeingCaptured = beingCaptured; }

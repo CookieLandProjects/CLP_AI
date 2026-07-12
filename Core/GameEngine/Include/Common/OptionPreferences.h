@@ -30,6 +30,9 @@
 
 #pragma once
 
+#include "ww3d.h"
+#include "texturefilter.h"
+
 #include "Common/UserPreferences.h"
 
 typedef UnsignedInt CursorCaptureMode;
@@ -42,10 +45,22 @@ class OptionPreferences : public UserPreferences
 {
 public:
 	OptionPreferences();
-	virtual ~OptionPreferences();
+	virtual ~OptionPreferences() override;
+
+	enum AntiAliasingMode CPP_11(: Int)
+	{
+		AntiAliasingMode_OFF = 0,
+		AntiAliasingMode_MSAA_2X,
+		AntiAliasingMode_MSAA_4X,
+		AntiAliasingMode_MSAA_8X,
+		AntiAliasingMode_Count
+	};
 
 	Bool loadFromIniFile();
 
+	WW3D::MultiSampleModeEnum getAntiAliasing() const;
+	TextureFilterClass::TextureFilterMode getTextureFilterMode() const;
+	TextureFilterClass::AnisotropicFilterMode getTextureAnisotropyLevel() const;
 	UnsignedInt getLANIPAddress();
 	UnsignedInt getOnlineIPAddress();
 	void setLANIPAddress(AsciiString IP);
@@ -54,6 +69,7 @@ public:
 	void setOnlineIPAddress(UnsignedInt IP);
 	Bool getArchiveReplaysEnabled() const;
 	Bool getAlternateMouseModeEnabled();
+	Bool getRightMouseScrollWithAlternateMouseEnabled() const;
 	Bool getRetaliationModeEnabled();
 	Bool getDoubleClickAttackMoveEnabled();
 	Real getScrollFactor();
@@ -113,4 +129,6 @@ public:
 	Real getResolutionFontAdjustment();
 
 	Bool getShowMoneyPerMinute() const;
+
+	Real getGameWindowTransitionSpeedMultiplier() const;
 };

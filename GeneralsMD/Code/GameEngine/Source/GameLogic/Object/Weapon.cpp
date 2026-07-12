@@ -374,13 +374,12 @@ void WeaponTemplate::reset()
 	static const char *MIN_LABEL = "Min";
 	static const char *MAX_LABEL = "Max";
 
-	const char* token = ini->getNextTokenOrNull(ini->getSepsColon());
-
+	const char* token = ini->getNextToken(ini->getSepsColon());
 	if( stricmp(token, MIN_LABEL) == 0 )
 	{
 		// Two entry min/max
 		self->m_minDelayBetweenShots = INI::scanInt(ini->getNextToken(ini->getSepsColon()));
-		token = ini->getNextTokenOrNull(ini->getSepsColon());
+		token = ini->getNextToken(ini->getSepsColon());
 		if( stricmp(token, MAX_LABEL) != 0 )
 		{
 			// Messed up double entry
@@ -903,7 +902,7 @@ UnsignedInt WeaponTemplate::fireWeaponTemplate
 		}
 		else
 		{
-			targetPos.set( victimPos );
+			targetPos.set( *victimPos );
 		}
 		Real reAngle = getWeaponRecoilAmount();
 		Real reDir = reAngle != 0.0f ? (atan2(victimPos->y - sourcePos->y, victimPos->x - sourcePos->x)) : 0.0f;
@@ -1021,7 +1020,7 @@ UnsignedInt WeaponTemplate::fireWeaponTemplate
 				//adjust the laser's position to prevent it from hitting the ground.
 				if( victimObj )
 				{
-					projectileDestination.set( victimObj->getPosition() );
+					projectileDestination.set( *victimObj->getPosition() );
 				}
 				firingWeapon->createLaser( sourceObj, victimObj, &projectileDestination );
 			}
@@ -1172,7 +1171,7 @@ UnsignedInt WeaponTemplate::fireWeaponTemplate
 }
 
 //-------------------------------------------------------------------------------------------------
-#if RETAIL_COMPATIBLE_CRC || PRESERVE_RETAIL_BEHAVIOR
+#if RETAIL_COMPATIBLE_CRC || PRESERVE_UNRELIABLE_FIRESTORMS
 void WeaponTemplate::trimOldHistoricDamage() const
 {
 	UnsignedInt expirationDate = TheGameLogic->getFrame() - TheGlobalData->m_historicDamageLimit;
@@ -1235,7 +1234,7 @@ static Bool is2DDistSquaredLessThan(const Coord3D& a, const Coord3D& b, Real dis
 }
 
 //-------------------------------------------------------------------------------------------------
-#if RETAIL_COMPATIBLE_CRC || PRESERVE_RETAIL_BEHAVIOR
+#if RETAIL_COMPATIBLE_CRC || PRESERVE_UNRELIABLE_FIRESTORMS
 void WeaponTemplate::processHistoricDamage(const Object* source, const Coord3D* pos) const
 {
 	//
@@ -1472,8 +1471,8 @@ void WeaponTemplate::dealDamageInternal(ObjectID sourceID, ObjectID victimID, co
 			damageDirection.zero();
 			if( curVictim && source )
 			{
-				damageDirection.set( curVictim->getPosition() );
-				damageDirection.sub( source->getPosition() );
+				damageDirection.set( *curVictim->getPosition() );
+				damageDirection.sub( *source->getPosition() );
 			}
 
 			Real allowedAngle = getRadiusDamageAngle();
@@ -1624,7 +1623,7 @@ const WeaponTemplate *WeaponStore::findWeaponTemplate( const AsciiString& name )
 	if (name.compareNoCase("None") == 0)
 		return nullptr;
 	const WeaponTemplate * wt = findWeaponTemplatePrivate( TheNameKeyGenerator->nameToKey( name ) );
-	DEBUG_ASSERTCRASH(wt != nullptr, ("Weapon %s not found!",name));
+	DEBUG_ASSERTCRASH(wt != nullptr, ("Weapon %s not found!", name.str()));
 	return wt;
 }
 
@@ -1729,9 +1728,9 @@ void WeaponStore::reset()
 		WeaponTemplate *wt = m_weaponTemplateVector[i];
 		if (wt->isOverride())
 		{
-			WeaponTemplate *override = wt;
+			WeaponTemplate *overrideData = wt;
 			wt = wt->friend_clearNextTemplate();
-			deleteInstance(override);
+			deleteInstance(overrideData);
 		}
 	}
 

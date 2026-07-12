@@ -32,18 +32,18 @@ class DX8IndexBufferClass;
 
 //#define USE_COPY_RECTS	1	//this was the old method that didn't render to texture. Just copied backbuffer into texture. Slow on Nvidia.
 
-class W3DSmudgeManager : public SmudgeManager
+class W3DSmudgeManager final : public SmudgeManager
 {
 public:
 	W3DSmudgeManager();
-	virtual ~W3DSmudgeManager();
+	virtual ~W3DSmudgeManager() override;
 
-	virtual void init();
-	virtual void reset ();
+	virtual void init() override;
+	virtual void reset () override;
 
 	void render (RenderInfoClass &rinfo);
-	void ReleaseResources();
-	void ReAcquireResources();
+	virtual void ReleaseResources() override;
+	virtual void ReAcquireResources() override;
 
 private:
 	Bool testHardwareSupport();		///<test if video card supports the effect.
@@ -55,9 +55,7 @@ private:
 	ShareBufferClass<unsigned int> *m_RGBABuffer;		///< array of particle color and alpha
 	ShareBufferClass<float> *m_sizeBuffer;			///< array of particle sizes
 
-#ifdef USE_COPY_RECTS
 	TextureClass *m_backgroundTexture;
-#endif
 	DX8IndexBufferClass	*m_indexBuffer;
 	Int m_backBufferWidth;
 	Int m_backBufferHeight;

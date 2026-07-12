@@ -93,9 +93,9 @@ protected:
 	void updateBounds() const;
 
 	// snapshot methods
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 public:
 	PolygonTrigger(Int initialAllocation);
@@ -137,7 +137,7 @@ public:
 	Int getID() const {return m_triggerID;}
 	PolygonTrigger *getNext() {return m_nextPolygonTrigger;}
 	const PolygonTrigger *getNext() const {return m_nextPolygonTrigger;}
-	AsciiString getTriggerName()  const {return m_triggerName;} ///< Gets the trigger name.
+	const AsciiString& getTriggerName()  const {return m_triggerName;} ///< Gets the trigger name.
 	Bool pointInTrigger(ICoord3D &point) const;
 	Bool doExportWithScripts() const {return m_exportWithScripts;}
 	void setDoExportWithScripts(Bool val) {m_exportWithScripts = val;}

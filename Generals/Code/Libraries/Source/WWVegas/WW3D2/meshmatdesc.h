@@ -57,9 +57,9 @@ class MeshModelClass;
 ** MeshMatDescClass - This class encapsulates all of the material description data for a mesh.
 ** WARNING: The vertex count and polygon count *MUST* be kept in sync with the mesh
 */
-class MeshMatDescClass : public W3DMPO
+class MeshMatDescClass
 {
-	W3DMPO_GLUE(MeshMatDescClass)
+	W3DMPO_CODE(MeshMatDescClass)
 public:
 
 	enum
@@ -230,11 +230,11 @@ protected:
 */
 class MatBufferClass : public ShareBufferClass < VertexMaterialClass * >
 {
-	W3DMPO_GLUE(MatBufferClass)
+	W3DMPO_CODE(MatBufferClass)
 public:
 	MatBufferClass(int count, const char* msg) : ShareBufferClass<VertexMaterialClass *>(count, msg) { Clear(); }
 	MatBufferClass(const MatBufferClass & that);
-	~MatBufferClass();
+	virtual ~MatBufferClass() override;
 
 	void							Set_Element(int index,VertexMaterialClass * mat);
 	VertexMaterialClass *	Get_Element(int index);
@@ -252,11 +252,11 @@ private:
 */
 class TexBufferClass : public ShareBufferClass < TextureClass * >
 {
-	W3DMPO_GLUE(TexBufferClass)
+	W3DMPO_CODE(TexBufferClass)
 public:
 	TexBufferClass(int count, const char* msg) : ShareBufferClass<TextureClass *>(count, msg) { Clear(); }
 	TexBufferClass(const TexBufferClass & that);
-	~TexBufferClass();
+	virtual ~TexBufferClass() override;
 
 	void				Set_Element(int index,TextureClass * mat);
 	TextureClass *	Get_Element(int index);
@@ -274,7 +274,7 @@ private:
 */
 class UVBufferClass : public ShareBufferClass < Vector2 >
 {
-	W3DMPO_GLUE(UVBufferClass)
+	W3DMPO_CODE(UVBufferClass)
 public:
 	UVBufferClass(int count, const char* msg) : ShareBufferClass<Vector2>(count, msg), CRC(0xFFFFFFFF) { }
 	UVBufferClass(const UVBufferClass & that);

@@ -153,9 +153,9 @@ class W3DTreeBuffer : public Snapshot
 	//-----------------------------------------------------------------------------
 	class W3DTreeTextureClass : public TextureClass
 	{
-		W3DMPO_GLUE(W3DTreeTextureClass)
+		W3DMPO_CODE(W3DTreeTextureClass)
 	protected:
-		virtual void Apply(unsigned int stage);
+		virtual void Apply(unsigned int stage) override;
 
 	public:
 			/// Create texture.
@@ -258,9 +258,9 @@ private:
 
 protected:
 	// snapshot methods
-	virtual void crc( Xfer *xfer );
-	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void crc( Xfer *xfer ) override;
+	virtual void xfer( Xfer *xfer ) override;
+	virtual void loadPostProcess() override;
 
 protected:
 	/// Updates the sway offsets.
