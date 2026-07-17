@@ -111,7 +111,8 @@ protected:
 
 	virtual Bool selectTeamToBuild() override;			///< determine the next team to build
 	virtual Bool selectTeamToReinforce( Int minPriority ) override;			///< determine the next team to reinforce
-	virtual Bool startTraining( WorkOrder *order, Bool busyOK, AsciiString teamName) override;	///< find a production building that can handle the order, and start building
+	virtual Bool startTraining( WorkOrder *order, Bool busyOK, AsciiString teamName) ;	///< find a production building that can handle the order, and start building
+	//virtual Bool startTraining( WorkOrder *order, Bool busyOK, AsciiString teamName) override;	///< find a production building that can handle the order, and start building
 
 	virtual Bool isAGoodIdeaToBuildTeam( TeamPrototype *proto ) override;		///< return true if team should be built
 	virtual void processBaseBuilding() override;		///< do base-building behaviors

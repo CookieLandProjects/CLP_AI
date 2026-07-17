@@ -278,6 +278,10 @@ void AIPlayer::queueSupplyTruck()
 	for( BuildListInfo *info = m_player->getBuildList(); info; info = info->getNext() )
 	{
 		if (info->isSupplyBuilding() == false) continue;
+
+		// Preserve the "auto" sentinel if present so we can assign factory specially later.
+		Bool wasAuto = (info->getCurrentGatherers() == -1);
+
 		Int desiredGatherers = info->getDesiredGatherers();
 		Int curGatherers = info->getCurrentGatherers();
 
@@ -289,7 +293,7 @@ void AIPlayer::queueSupplyTruck()
 				if (supplyCenter->isKindOf(KINDOF_REBUILD_HOLE)) {
 					continue; // don't consider rebuild holes.
 				}
-				// Make sure we have a supplies near it.
+				// Make sure we have supplies near it. ;p
 				Coord3D center = *supplyCenter->getPosition();
 				Real radius = SUPPLY_CENTER_CLOSE_DIST + supplyCenter->getGeometryInfo().getBoundingCircleRadius();
 
@@ -318,54 +322,52 @@ void AIPlayer::queueSupplyTruck()
 				Int curGatherers = 0;
 				// See how many harvesters we have servicing this supply src.
 				// Scan my units.
-				Player::PlayerTeamList::const_iterator it;
-				for (it = m_player->getPlayerTeams()->begin(); it != m_player->getPlayerTeams()->end(); ++it) {
-					for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
-						Team *team = iter.cur();
-						if (!team) {
+				Player::PlayerTeamList::const_iterator it2;
+				for (it2 = m_player->getPlayerTeams()->begin(); it2 != m_player->getPlayerTeams()->end(); ++it2) {
+					for (DLINK_ITERATOR<Team> iter2 = (*it2)->iterate_TeamInstanceList(); !iter2.done(); iter2.advance()) {
+						Team *team2 = iter2.cur();
+						if (!team2) {
 							continue;
 						}
-						for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance()) {
-							Object *obj = objIter.cur();
-							if (!obj)  continue;
-							if (!obj->isKindOf(KINDOF_HARVESTER)) continue;
-							if (!obj->getAI()) continue;
+						for (DLINK_ITERATOR<Object> objIter2 = team2->iterate_TeamMemberList(); !objIter2.done(); objIter2.advance()) {
+							Object *obj2 = objIter2.cur();
+							if (!obj2)  continue;
+							if (!obj2->isKindOf(KINDOF_HARVESTER)) continue;
+							if (!obj2->getAI()) continue;
 
-							SupplyTruckAIInterface* supplyTruckAI = obj->getAI()->getSupplyTruckAIInterface();
+							SupplyTruckAIInterface* supplyTruckAI = obj2->getAI()->getSupplyTruckAIInterface();
 							if( supplyTruckAI )	{
 								ObjectID dock = supplyTruckAI->getPreferredDockID();
-								if (dock == supplyCenter->getID()) {
+								if (dock == info->getObjectID()) {
 									curGatherers++;
 									if (!supplyTruckAI->isCurrentlyFerryingSupplies()) {
 										// Note - although this is the ai, we are sending in CMD_FROM_PLAYER.
 										// This causes the dock object to stick in the docking interface.
 										// The supply truck ai issues dock commands, and they become confused.
 										// Thus, player.  jba.  ;(
-										obj->getAI()->aiDock(supplyCenter, CMD_FROM_PLAYER);
+										obj2->getAI()->aiDock(supplyCenter, CMD_FROM_PLAYER);
 									}
 								}
 							}
 						}
 					}
 				}
-				//DEBUG_LOG(("Expected %d harvesters, found %d, need %d", info->getDesiredGatherers(),
-				//	curGatherers, info->getDesiredGatherers()-curGatherers) );
 				info->setCurrentGatherers(curGatherers);
 			}
 		} else {
 			/* See if we have any "loose" harvesters (cause my supply center got nuked.) */
-			Player::PlayerTeamList::const_iterator it;
-			for (it = m_player->getPlayerTeams()->begin(); it != m_player->getPlayerTeams()->end(); ++it) {
-				for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
-					Team *team = iter.cur();
-					if (!team) continue;
-					for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance()) {
-						Object *obj = objIter.cur();
-						if (!obj)  continue;
-						if (!obj->isKindOf(KINDOF_HARVESTER)) continue;
-						if (!obj->getAI()) continue;
+			Player::PlayerTeamList::const_iterator it4;
+			for (it4 = m_player->getPlayerTeams()->begin(); it4 != m_player->getPlayerTeams()->end(); ++it4) {
+				for (DLINK_ITERATOR<Team> iter4 = (*it4)->iterate_TeamInstanceList(); !iter4.done(); iter4.advance()) {
+					Team *team4 = iter4.cur();
+					if (!team4) continue;
+					for (DLINK_ITERATOR<Object> objIter4 = team4->iterate_TeamMemberList(); !objIter4.done(); objIter4.advance()) {
+						Object *obj4 = objIter4.cur();
+						if (!obj4)  continue;
+						if (!obj4->isKindOf(KINDOF_HARVESTER)) continue;
+						if (!obj4->getAI()) continue;
 
-						SupplyTruckAIInterface* supplyTruckAI = obj->getAI()->getSupplyTruckAIInterface();
+						SupplyTruckAIInterface* supplyTruckAI = obj4->getAI()->getSupplyTruckAIInterface();
 						if( supplyTruckAI )	{
 							ObjectID dock = supplyTruckAI->getPreferredDockID();
 							if (TheGameLogic->findObjectByID(dock)!=nullptr) continue;
@@ -379,7 +381,7 @@ void AIPlayer::queueSupplyTruck()
 									// This causes the dock object to stick in the docking interface.
 									// The supply truck ai issues dock commands, and they become confused.
 									// Thus, player.  jba.  ;(
-									obj->getAI()->aiDock(center, CMD_FROM_PLAYER);
+									obj4->getAI()->aiDock(center, CMD_FROM_PLAYER);
 									DEBUG_LOG(("Re-attaching supply truck to supply center."));
 									return;
 								}
@@ -388,24 +390,85 @@ void AIPlayer::queueSupplyTruck()
 					}
 				}
 			}
-			Int supplyCount = 0;
+
+			// Ensure this supply center reaches its desired gatherers:
+			// Recompute current gatherers for all supply centers.
 			for (BuildListInfo* inf2 = m_player->getBuildList(); inf2; inf2 = inf2->getNext())
 			{
 				if (!inf2->isSupplyBuilding()) continue;
 				Object* centerObj = TheGameLogic->findObjectByID(inf2->getObjectID());
-				if (centerObj == nullptr) continue;
-				if (centerObj->isKindOf(KINDOF_REBUILD_HOLE)) continue;
-				supplyCount++;
+				if (centerObj == nullptr) { inf2->setCurrentGatherers(0); continue; }
+				if (centerObj->isKindOf(KINDOF_REBUILD_HOLE)) { inf2->setCurrentGatherers(0); continue; }
+				Int cnt = 0;
+				Player::PlayerTeamList::const_iterator it5;
+				for (it5 = m_player->getPlayerTeams()->begin(); it5 != m_player->getPlayerTeams()->end(); ++it5) {
+					for (DLINK_ITERATOR<Team> iter5 = (*it5)->iterate_TeamInstanceList(); !iter5.done(); iter5.advance()) {
+						Team *team5 = iter5.cur();
+						if (!team5) continue;
+						for (DLINK_ITERATOR<Object> objIter5 = team5->iterate_TeamMemberList(); !objIter5.done(); objIter5.advance()) {
+							Object *obj5 = objIter5.cur();
+							if (!obj5) continue;
+							if (!obj5->isKindOf(KINDOF_HARVESTER)) continue;
+							if (!obj5->getAI()) continue;
+							SupplyTruckAIInterface* stai = obj5->getAI()->getSupplyTruckAIInterface();
+							if (!stai) continue;
+							if (stai->getPreferredDockID() == centerObj->getID())
+								cnt++;
+						}
+					}
+				}
+				inf2->setCurrentGatherers(cnt);
 			}
-			if (supplyCount <= 0) supplyCount = 1;
 
-			if (totalHarvesters >= desiredGatherers * supplyCount)
+			// Re-check this info after recompute.
+			if (info->getCurrentGatherers() >= desiredGatherers)
+				continue;
+
+			// Try to find a harvester assigned to another supply center that has more than needed.
+			Object* supplyCenter = TheGameLogic->findObjectByID(info->getObjectID());
+			if (!supplyCenter) continue; // can't help this entry >:(
+
+			bool movedHarvester = false;
+			Player::PlayerTeamList::const_iterator it6;
+			for (it6 = m_player->getPlayerTeams()->begin(); it6 != m_player->getPlayerTeams()->end() && !movedHarvester; ++it6) {
+				for (DLINK_ITERATOR<Team> iter6 = (*it6)->iterate_TeamInstanceList(); !iter6.done() && !movedHarvester; iter6.advance()) {
+					Team *team6 = iter6.cur();
+					if (!team6) continue;
+					for (DLINK_ITERATOR<Object> objIter6 = team6->iterate_TeamMemberList(); !objIter6.done() && !movedHarvester; objIter6.advance()) {
+						Object *obj6 = objIter6.cur();
+						if (!obj6) continue;
+						if (!obj6->isKindOf(KINDOF_HARVESTER)) continue;
+						if (!obj6->getAI()) continue;
+						SupplyTruckAIInterface* stai6 = obj6->getAI()->getSupplyTruckAIInterface();
+						if (!stai6) continue;
+						if (stai6->isCurrentlyFerryingSupplies() || stai6->isForcedIntoWantingState()) continue; // skip busy
+						ObjectID dock = stai6->getPreferredDockID();
+						if (dock == INVALID_ID) continue; // loose ones were handled earlier
+						// find the BuildListInfo for this dock
+						BuildListInfo* otherInfo = nullptr;
+						for (BuildListInfo* bi = m_player->getBuildList(); bi; bi = bi->getNext()) {
+							if (bi->getObjectID() == dock) { otherInfo = bi; break; }
+						}
+						if (!otherInfo) continue;
+						if (otherInfo->getCurrentGatherers() > otherInfo->getDesiredGatherers()) {
+							// Reassign this harvester to our supply center.
+							obj6->getAI()->aiDock(supplyCenter, CMD_FROM_PLAYER);
+							otherInfo->setCurrentGatherers(otherInfo->getCurrentGatherers() - 1);
+							info->setCurrentGatherers(info->getCurrentGatherers() + 1);
+							movedHarvester = true;
+							break;
+						}
+					}
+				}
+			}
+
+			if (movedHarvester)
 			{
+				// We reassigned an existing harvester; nothing more to do for this supply center :D.
 				continue;
 			}
-			//if (totalHarvesters >= desiredGatherers*3) {
-			//	continue; // we got lotsa gatherers.
-			//}
+
+			// No harvesters available to move. Queue a new supply truck and reserve the slot.
 			Bool canBuildUnits = m_player->getCanBuildUnits();
 			// If we need a supply truck thingy, turn on unit building for a moment.
 			m_player->setCanBuildUnits(true);
@@ -421,7 +484,7 @@ void AIPlayer::queueSupplyTruck()
 						order->m_factoryID = INVALID_ID;
 						order->m_numRequired = 1;
 						order->m_required = true;
-						order->m_isResourceGatherer =true;
+						order->m_isResourceGatherer = true;
 						// prepend to head of list
 						order->m_next = nullptr;
 						TeamInQueue *team = newInstance(TeamInQueue);
@@ -436,11 +499,15 @@ void AIPlayer::queueSupplyTruck()
 						teamName.concat(factory->getTemplate()->getName());
 						TheScriptEngine->AppendDebugMessage(teamName, false);
 						m_teamDelay = 0;
-						if (info->getCurrentGatherers()==-1) {
-							// First one is automatic. jba.
+
+						// if this was the automatic first marker (-1), assign factory so first built attaches.
+						if (wasAuto) {
 							order->m_factoryID = factory->getID();
+							// reset marker to show we handled the auto case
 							info->setCurrentGatherers(0);
-						}	else {
+						} else {
+							// reserve the gatherer slot now so other logic won't double-queue.
+							info->setCurrentGatherers(info->getCurrentGatherers() + 1);
 							startTraining( order, team->m_priorityBuild, team->m_team->getName());
 						}
 						break;
