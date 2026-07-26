@@ -262,11 +262,12 @@ protected:
 
 	Bool evaluateTeamAllClear(Parameter* pTeamParm);
 
+	Bool evaluateAIPlaystyle(Parameter* pPlayerParm, Parameter* pPlaystyleParm);
 
-	Bool AIPlaystyleEvaluation(Parameter* pPlayerParm, Parameter* pPlaystyleParm);
+	Bool evaluateNoTeams(Bool isFFA);
 
 	// @n0ttws: AI playstyle evaluation
-	// @-TanSo-: 55 additions, 1 helper method
+	// @-TanSo-: 56 additions, 1 helper method
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 	//-------------------------------------------------------------------------------------------------

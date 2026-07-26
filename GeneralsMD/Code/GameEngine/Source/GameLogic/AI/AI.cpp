@@ -59,9 +59,7 @@ void TAiData::addSideInfo(AISideInfo *infoToAdd)
 
 void TAiData::addFactionBuildList(AISideBuildList *buildList)
 {
-	DEBUG_LOG(("FACTION LIST ADD side=%s id=%d",
-		buildList->m_side.str(),
-		buildList->m_buildListID));
+
 	AISideBuildList *info = m_sideBuildLists;
 	while (info) {
 		if (buildList->m_side == info->m_side && buildList->m_buildListID == info->m_buildListID) {
@@ -76,10 +74,7 @@ void TAiData::addFactionBuildList(AISideBuildList *buildList)
 	}
 	buildList->m_next = m_sideBuildLists;
 	m_sideBuildLists = buildList;
-	DEBUG_LOG(("BUILDING: %s, X: %f, Y: %f"),
-		m_sideBuildLists->m_buildList->getBuildingName().str(),
-		m_sideBuildLists->m_buildList->getLocation()->x,
-		m_sideBuildLists->m_buildList->getLocation()->y);
+
 }
 
 TAiData::~TAiData()
@@ -305,18 +300,12 @@ void AI::parseSkirmishBuildList(INI *ini, void *instance, void* /*store*/, const
 	ini->initFromINI(build, myFieldParse);
 
 	// -TanSo-: Make sure that if there is no ID, stay in the default BuildList
-	DEBUG_LOG(("PARSED side=%s id=%d",
-		build->m_side.str(),
-		build->m_buildListID));
 	if (build->m_buildListID < 0)
 	{
 		((TAiData*)instance)->addFactionBuildList(build);
 	}
 	else
 	{
-		DEBUG_LOG(("ID LIST ADD side=%s id=%d",
-			build->m_side.str(),
-			build->m_buildListID));
 		((TAiData*)instance)->addIDBuildList(build);
 	}
 }

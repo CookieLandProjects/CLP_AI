@@ -460,6 +460,7 @@ public:
 	std::vector<const ThingTemplate*>		m_lastFrameDeaths;
 	Bool																m_lostUnitThisFrame;
 	std::vector<AISideBuildList*>				m_IDBuildLists;
+	Bool																m_crushesInfantry;
 
 	// Internal setup for BuildLists
 	void addIDBuildList(AISideBuildList* list);
@@ -467,6 +468,7 @@ public:
 
 	// The only place that actually messes with m_pBuildList
 	void insertBuildListInfo(BuildListInfo* info, Bool isPriority);
+	void clearBuildLocationBlocks();
 
 	// Script executions
 	void buildSpecificBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority);

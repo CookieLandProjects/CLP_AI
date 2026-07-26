@@ -7205,13 +7205,145 @@ void ScriptEngine::init()
 
 	curTemplate = &m_conditionTemplates[Condition::AI_PLAYSTYLE];
 	curTemplate->m_internalName = "AI_PLAYSTYLE";
-	curTemplate->m_uiName = "Skirmish/Check if AI is a specific playstyle.";
+	curTemplate->m_uiName = "Skirmish/Skirmish AI is of a specific playstyle.";
 	curTemplate->m_numParameters = 2;
 	curTemplate->m_parameters[0] = Parameter::SIDE;
 	curTemplate->m_parameters[1] = Parameter::PLAYSTYLE;
 	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " is ";
+	curTemplate->m_uiStrings[2] = ".";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_APPLY_ATTACK_PRIORITY_SET];
+	curTemplate->m_internalName = "PLAYER_APPLY_ATTACK_PRIORITY_SET";
+	curTemplate->m_uiName = "AttackPrioritySet/ApplySet/Apply a player's attack priority set.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::ATTACK_PRIORITY_SET;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " Have ";
+	curTemplate->m_uiStrings[1] = " use ";
+	curTemplate->m_uiStrings[2] = ".";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_APPLY_ATTACK_PRIORITY_SET_TYPE];
+	curTemplate->m_internalName = "PLAYER_APPLY_ATTACK_PRIORITY_SET_TYPE";
+	curTemplate->m_uiName = "AttackPrioritySet/ApplySet/Apply a player's attack priority set to a specific type.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::ATTACK_PRIORITY_SET;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " Have ";
+	curTemplate->m_uiStrings[1] = " use ";
+	curTemplate->m_uiStrings[2] = " on all objects of type ";
+	curTemplate->m_uiStrings[3] = ".";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_APPLY_ATTACK_PRIORITY_SET_TYPE];
+	curTemplate->m_internalName = "TEAM_APPLY_ATTACK_PRIORITY_SET_TYPE";
+	curTemplate->m_uiName = "AttackPrioritySet/ApplySet/Apply a team's attack priority set to a specific type.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::ATTACK_PRIORITY_SET;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " Have ";
+	curTemplate->m_uiStrings[1] = " use ";
+	curTemplate->m_uiStrings[2] = " on all objects of type ";
+	curTemplate->m_uiStrings[3] = ".";
+
+	curTemplate = &m_conditionTemplates[Condition::NO_TEAMS];
+	curTemplate->m_internalName = "NO_TEAMS";
+	curTemplate->m_uiName = "Skirmish/Match is an FFA.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::BOOLEAN;
+	curTemplate->m_numUiStrings = 1;
+	curTemplate->m_uiStrings[0] = "There are more than 2 players and neither are allied to one another.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_KEEP_DISTANCE_RELATION];
+	curTemplate->m_internalName = "TEAM_KEEP_DISTANCE_RELATION";
+	curTemplate->m_uiName = "Team/Move/Distance/Move team to keep a distance from the nearest friendly|neutral|enemy unit.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will keep a distance of ";
+	curTemplate->m_uiStrings[2] = " feet from the nearest ";
+	curTemplate->m_uiStrings[3] = " unit.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::UNIT_KEEP_DISTANCE_RELATION];
+	curTemplate->m_internalName = "TEAM_KEEP_DISTANCE_RELATION";
+	curTemplate->m_uiName = "Unit/Move/Distance/Move team to keep a distance from the nearest friendly|neutral|enemy unit.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::UNIT;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will keep a distance of ";
+	curTemplate->m_uiStrings[2] = " feet from the nearest ";
+	curTemplate->m_uiStrings[3] = " unit.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_KEEP_DISTANCE_RELATION_TYPE];
+	curTemplate->m_internalName = "TEAM_KEEP_DISTANCE_RELATION_TYPE";
+	curTemplate->m_uiName = "Team/Move/Distance/Move team to keep a distance from the nearest friendly|neutral|enemy object type.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will keep a distance of ";
+	curTemplate->m_uiStrings[2] = " feet from the nearest ";
+	curTemplate->m_uiStrings[3] = " object of type ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::UNIT_KEEP_DISTANCE_RELATION_TYPE];
+	curTemplate->m_internalName = "UNIT_KEEP_DISTANCE_RELATION_TYPE";
+	curTemplate->m_uiName = "Unit/Move/Distance/Move team to keep a distance from the nearest friendly|neutral|enemy object type.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::REAL;
+	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will keep a distance of ";
+	curTemplate->m_uiStrings[2] = " feet from the nearest ";
+	curTemplate->m_uiStrings[3] = " object of type ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::SET_WILLINGNESS_TO_CRUSH_PLAYER];
+	curTemplate->m_internalName = "SET_WILLINGNESS_TO_CRUSH_PLAYER";
+	curTemplate->m_uiName = "AIData/Crush/Set a player's willingness to crush infantry.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::BOOLEAN;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = "'s willingness to crush infantry is set to ";
+	curTemplate->m_uiStrings[2] = ".";
+
+	curTemplate = &m_actionTemplates[ScriptAction::SET_WILLINGNESS_TO_CRUSH_TEAM];
+	curTemplate->m_internalName = "SET_WILLINGNESS_TO_CRUSH_TEAM";
+	curTemplate->m_uiName = "AIData/Crush/Set a team's willingness to crush infantry.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::BOOLEAN;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = "'s willingness to crush infantry is set to ";
+	curTemplate->m_uiStrings[2] = ".";
+
+	curTemplate = &m_actionTemplates[ScriptAction::SET_WILLINGNESS_TO_CRUSH_UNIT];
+	curTemplate->m_internalName = "SET_WILLINGNESS_TO_CRUSH_UNIT";
+	curTemplate->m_uiName = "AIData/Crush/Set a unit's willingness to crush infantry.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::UNIT;
+	curTemplate->m_parameters[1] = Parameter::BOOLEAN;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = "'s willingness to crush infantry is set to ";
 	curTemplate->m_uiStrings[2] = ".";
 
 	//-------------------------------------------------------------------------------------------------

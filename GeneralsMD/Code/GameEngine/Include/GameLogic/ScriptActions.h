@@ -489,7 +489,20 @@ protected:
 	void doSetDefaultBuildList(Int buildListID);
 	void doResetBuildListID(Int id);
 
-	// @-TanSo-: 87 additions
+	void doPlayerApplyPrioritySet(const AsciiString& playerName, const AsciiString& attackPrioritySet);
+	void doPlayerApplyPrioritySetType(const AsciiString& playerName, const AsciiString& attackPrioritySet, const AsciiString& objectType);
+	void doTeamApplyPrioritySetType(const AsciiString& teamName, const AsciiString& attackPrioritySet, const AsciiString& objectType);
+
+	void doTeamKeepDistanceFromRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType);
+	void doUnitKeepDistanceFromRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType);
+	void doTeamKeepDistanceFromRelation(const AsciiString& teamName, Real feet, Int relationType);
+	void doUnitKeepDistanceFromRelation(const AsciiString& unitName, Real feet, Int relationType);
+
+	void doPlayerSetWillingnessToCrush(const AsciiString& playerName, Bool wantsToCrush);
+	void doTeamSetWillingnessToCrush(const AsciiString& teamName, Bool wantsToCrush);
+	void doUnitSetWillingnessToCrush(const AsciiString& unitName, Bool wantsToCrush);
+
+	// @-TanSo-: 97 additions
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 	//-------------------------------------------------------------------------------------------------

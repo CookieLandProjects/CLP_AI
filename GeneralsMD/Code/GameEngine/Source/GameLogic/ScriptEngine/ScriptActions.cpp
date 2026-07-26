@@ -6912,14 +6912,12 @@ void ScriptActions::doTeamMoveAwayFromRelationType(const AsciiString& teamName, 
 	{
 		Object* obj = iter.cur();
 		if (!obj)
-		{
-			return;
-		}
+			continue;
+		
 		AIUpdateInterface* ai = obj->getAI();
 		if (!ai)
-		{
-			return;
-		}
+			continue;
+
 		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
 		ai->aiMoveToPosition(&targetPos, CMD_FROM_SCRIPT);
 	}
@@ -7022,14 +7020,12 @@ void ScriptActions::doTeamMoveTowardsRelationType(const AsciiString& teamName, R
 	{
 		Object* obj = iter.cur();
 		if (!obj)
-		{
-			return;
-		}
+			continue;
+		
 		AIUpdateInterface* ai = obj->getAI();
 		if (!ai)
-		{
-			return;
-		}
+			continue;
+		
 		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
 		ai->aiMoveToPosition(&targetPos, CMD_FROM_SCRIPT);
 	}
@@ -9065,14 +9061,12 @@ void ScriptActions::doTeamMoveAwayFromRelation(const AsciiString& teamName, Real
 	{
 		Object* obj = iter.cur();
 		if (!obj)
-		{
-			return;
-		}
+			continue;
+		
 		AIUpdateInterface* ai = obj->getAI();
 		if (!ai)
-		{
-			return;
-		}
+			continue;
+		
 		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
 		ai->aiMoveToPosition(&targetPos, CMD_FROM_SCRIPT);
 	}
@@ -9149,14 +9143,12 @@ void ScriptActions::doTeamMoveTowardsRelation(const AsciiString& teamName, Real 
 	{
 		Object* obj = iter.cur();
 		if (!obj)
-		{
-			return;
-		}
+			continue;
+		
 		AIUpdateInterface* ai = obj->getAI();
 		if (!ai)
-		{
-			return;
-		}
+			continue;
+		
 		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
 		ai->aiMoveToPosition(&targetPos, CMD_FROM_SCRIPT);
 	}
@@ -11111,8 +11103,6 @@ void ScriptActions::doTeamMoveNearestUnderFog(const AsciiString& teamName, const
 		PartitionFilterUnderFog filterFog(team->getControllingPlayer(), true);
 		PartitionFilter* filters[] = { &filterFog, &thingsToAccept, &filterMapStatus, nullptr };
 		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-
-		if (!bestObj)return;
 	}
 	else
 	{
@@ -11136,6 +11126,9 @@ void ScriptActions::doTeamMoveNearestUnderFog(const AsciiString& teamName, const
 			}
 		}
 	}
+
+	if (!bestObj) return;
+
 	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object* obj = iter.cur();
@@ -11188,8 +11181,6 @@ void ScriptActions::doTeamMoveNearestUnderFogInArea(const AsciiString& teamName,
 		PartitionFilterUnderFog filterFog(team->getControllingPlayer(), true);
 		PartitionFilter* filters[] = { &filterArea, &filterFog, &thingsToAccept, &filterMapStatus, nullptr };
 		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-
-		if (!bestObj)return;
 	}
 	else
 	{
@@ -11213,6 +11204,9 @@ void ScriptActions::doTeamMoveNearestUnderFogInArea(const AsciiString& teamName,
 			}
 		}
 	}
+
+	if (!bestObj) return;
+
 	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object* obj = iter.cur();
@@ -11261,8 +11255,6 @@ void ScriptActions::doTeamMoveNearestNotUnderFog(const AsciiString& teamName, co
 		PartitionFilterUnderFog filterFog(team->getControllingPlayer(), false);
 		PartitionFilter* filters[] = { &filterFog, &thingsToAccept, &filterMapStatus, nullptr };
 		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-
-		if (!bestObj)return;
 	}
 	else
 	{
@@ -11286,6 +11278,9 @@ void ScriptActions::doTeamMoveNearestNotUnderFog(const AsciiString& teamName, co
 			}
 		}
 	}
+
+	if (!bestObj) return;
+
 	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object* obj = iter.cur();
@@ -11338,8 +11333,6 @@ void ScriptActions::doTeamMoveNearestNotUnderFogInArea(const AsciiString& teamNa
 		PartitionFilterUnderFog filterFog(team->getControllingPlayer(), false);
 		PartitionFilter* filters[] = { &filterArea, &filterFog, &thingsToAccept, &filterMapStatus, nullptr };
 		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-
-		if (!bestObj)return;
 	}
 	else
 	{
@@ -11363,6 +11356,9 @@ void ScriptActions::doTeamMoveNearestNotUnderFogInArea(const AsciiString& teamNa
 			}
 		}
 	}
+
+	if (!bestObj) return;
+
 	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object* obj = iter.cur();
@@ -11456,6 +11452,537 @@ void ScriptActions::doResetBuildListID(Int id)
 		info->setConsumedInIDList(FALSE);
 	}
 }
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerApplyPrioritySet(const AsciiString& playerName, const AsciiString& attackPrioritySet)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) 
+		return;
+
+	const AttackPriorityInfo* info = TheScriptEngine->getAttackInfo(attackPrioritySet);
+	if (info->getName().isEmpty())
+		return;
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			team->setAttackPriorityName(info->getName());
+			
+			for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+			{
+				Object* obj = iter.cur();
+
+				AIUpdateInterface* ai = obj->getAIUpdateInterface();
+				if (!ai) 
+					continue;
+
+				ai->setAttackInfo(info);
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerApplyPrioritySetType(const AsciiString& playerName, const AsciiString& attackPrioritySet, const AsciiString& objectType)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer)
+		return;
+
+	const AttackPriorityInfo* info = TheScriptEngine->getAttackInfo(attackPrioritySet);
+	if (info->getName().isEmpty())
+		return;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		Player::PlayerTeamList::const_iterator it;
+		for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+		{
+			for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+				Team* team = iter.cur();
+				if (!team) continue;
+
+				team->setAttackPriorityName(info->getName());
+
+				for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+				{
+					Object* obj = iter.cur();
+
+					AIUpdateInterface* ai = obj->getAIUpdateInterface();
+					if (!ai)
+						continue;
+
+					if (obj->getTemplate() != templ)
+						continue;
+
+					ai->setAttackInfo(info);
+				}
+			}
+		}
+	}
+	else
+	{
+		ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+		if (types)
+		{
+			Player::PlayerTeamList::const_iterator it;
+			for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+			{
+				for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+					Team* team = iter.cur();
+					if (!team) continue;
+
+					team->setAttackPriorityName(info->getName());
+
+					for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+					{
+						Object* obj = iter.cur();
+						AIUpdateInterface* ai = obj->getAIUpdateInterface();
+						if (!ai) 
+							continue;
+
+						if (!types->isInSet(obj->getTemplate()))
+							continue;
+
+						ai->setAttackInfo(info);
+					}
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamApplyPrioritySetType(const AsciiString& teamName, const AsciiString& attackPrioritySet, const AsciiString& objectType)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam)
+		return;
+
+	const AttackPriorityInfo* info = TheScriptEngine->getAttackInfo(attackPrioritySet);
+	if (info->getName().isEmpty())
+		return;
+
+	pTeam->setAttackPriorityName(info->getName());
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
+		{
+			Object* obj = iter.cur();
+
+			AIUpdateInterface* ai = obj->getAIUpdateInterface();
+			if (!ai)
+				continue;
+
+			if (obj->getTemplate() != templ)
+				continue;
+
+			ai->setAttackInfo(info);
+		}
+	}
+	else
+	{
+		ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+		if (types)
+		{
+			for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
+			{
+				Object* obj = iter.cur();
+				AIUpdateInterface* ai = obj->getAIUpdateInterface();
+				if (!ai)
+					continue;
+
+				if (!types->isInSet(obj->getTemplate()))
+					continue;
+
+				ai->setAttackInfo(info);
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamKeepDistanceFromRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType)
+{
+	Team* team = TheScriptEngine->getTeamNamed(teamName);
+	if (!team)
+	{
+		return;
+	}
+
+	//Get the first object (to use in the partition filter checks).
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj)
+	{
+		return;
+	}
+
+	UnsignedInt relation;
+	switch (relationType)
+	{
+	default: return;
+	case ENEMIES: relation = ALLOW_ENEMIES; break;
+	case NEUTRAL: relation = ALLOW_NEUTRAL; break;
+	case ALLIES: relation = ALLOW_ALLIES; break;
+	}
+
+	Coord3D teamPos = *team->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), relation, true);
+	Object* bestObj = nullptr;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		//Find the closest specified template.
+		PartitionFilterThing thingsToAccept(templ, true);
+		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterAffiliation, nullptr };
+		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+		if (!bestObj)
+		{
+			return;
+		}
+	}
+	else
+	{
+		//Find the closest object within the object template list.
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			std::vector<const ThingTemplate*> templates;
+			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
+			{
+				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
+				if (t) templates.push_back(t);
+			}
+
+			if (!templates.empty())
+			{
+				PartitionFilterObjectTypes typesToAccept(templates, true);
+				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterAffiliation, nullptr };
+				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+			}
+		}
+	}
+	if (!bestObj) return;
+	//@-TanSo-: Calculate the flee vector
+	Coord3D threatPos = *bestObj->getPosition();
+	Coord3D fleeVec;
+	fleeVec.x = teamPos.x - threatPos.x;
+	fleeVec.y = teamPos.y - threatPos.y;
+	fleeVec.z = 0.0f;
+
+	fleeVec.normalize();
+	fleeVec.x *= feet;
+	fleeVec.y *= feet;
+
+	Coord3D targetPos;
+	targetPos.x = threatPos.x + fleeVec.x;
+	targetPos.y = threatPos.y + fleeVec.y;
+	targetPos.z = threatPos.z;
+
+	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj)
+			continue;
+
+		AIUpdateInterface* ai = obj->getAI();
+		if (!ai)
+			continue;
+
+		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+		ai->aiMoveToPosition(&targetPos, CMD_FROM_SCRIPT);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doUnitKeepDistanceFromRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType)
+{
+	Object* obj = TheScriptEngine->getUnitNamed(unitName);
+	if (!obj) return;
+
+	AIUpdateInterface* ai = obj->getAIUpdateInterface();
+	if (!ai) return;
+
+	UnsignedInt relation;
+	switch (relationType)
+	{
+	default: return;
+	case ENEMIES: relation = ALLOW_ENEMIES; break;
+	case NEUTRAL: relation = ALLOW_NEUTRAL; break;
+	case ALLIES: relation = ALLOW_ALLIES; break;
+	}
+
+	Coord3D objPos = *obj->getPosition();
+	PartitionFilterSameMapStatus filterMapStatus(obj);
+	PartitionFilterPlayerAffiliation filterAffiliation(obj->getControllingPlayer(), relation, true);
+
+	Object* bestObj = nullptr;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
+	if (templ)
+	{
+		PartitionFilterThing f1(templ, true);
+		PartitionFilter* filters[] = { &f1, &filterMapStatus, &filterAffiliation, nullptr };
+
+		bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
+		if (!bestObj) return;
+	}
+	else
+	{
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
+		{
+			std::vector<const ThingTemplate*> templates;
+			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
+			{
+				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
+				if (t) templates.push_back(t);
+			}
+
+			if (!templates.empty())
+			{
+				PartitionFilterObjectTypes typesToAccept(templates, true);
+				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterAffiliation, nullptr };
+				bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
+			}
+		}
+	}
+
+	if (!bestObj) return;
+
+	//@-TanSo-: Calculate the flee vector.
+	Coord3D threatPos = *bestObj->getPosition();
+	Coord3D fleeVec;
+	fleeVec.x = objPos.x - threatPos.x;
+	fleeVec.y = objPos.y - threatPos.y;
+	fleeVec.z = 0.0f;
+
+	Real len = sqrt(fleeVec.x * fleeVec.x + fleeVec.y * fleeVec.y);
+	if (len <= 0.0f) return;
+
+	fleeVec.x /= len;
+	fleeVec.y /= len;
+	fleeVec.x *= feet;
+	fleeVec.y *= feet;
+
+	Coord3D targetPos;
+	targetPos.x = threatPos.x + fleeVec.x;
+	targetPos.y = threatPos.y + fleeVec.y;
+	targetPos.z = threatPos.z;
+
+	ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+	ai->aiMoveToPosition(&targetPos, CMD_FROM_SCRIPT);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamKeepDistanceFromRelation(const AsciiString& teamName, Real feet, Int relationType)
+{
+	Team* team = TheScriptEngine->getTeamNamed(teamName);
+	if (!team)
+	{
+		return;
+	}
+
+	//Get the first object (to use in the partition filter checks).
+	Object* teamObj = nullptr;
+	DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
+	for (; !iter.done(); iter.advance())
+	{
+		teamObj = iter.cur();
+		if (teamObj)
+		{
+			AIUpdateInterface* ai = teamObj->getAIUpdateInterface();
+			if (ai)
+			{
+				break;
+			}
+		}
+	}
+	if (!teamObj)
+	{
+		return;
+	}
+
+	UnsignedInt relation;
+	switch (relationType)
+	{
+	default: return;
+	case ENEMIES: relation = ALLOW_ENEMIES; break;
+	case NEUTRAL: relation = ALLOW_NEUTRAL; break;
+	case ALLIES: relation = ALLOW_ALLIES; break;
+	}
+
+	Coord3D teamPos = *team->getEstimateTeamPosition();
+	PartitionFilterSameMapStatus filterMapStatus(teamObj);
+	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), relation, true);
+	Object* bestObj = nullptr;
+
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
+	bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	if (!bestObj)
+	{
+		return;
+	}
+
+	if (!bestObj) return;
+	//@-TanSo-: Calculate the flee vector
+	Coord3D threatPos = *bestObj->getPosition();
+	Coord3D fleeVec;
+	fleeVec.x = teamPos.x - threatPos.x;
+	fleeVec.y = teamPos.y - threatPos.y;
+	fleeVec.z = 0.0f;
+
+	fleeVec.normalize();
+	fleeVec.x *= feet;
+	fleeVec.y *= feet;
+
+	Coord3D targetPos;
+	targetPos.x = threatPos.x + fleeVec.x;
+	targetPos.y = threatPos.y + fleeVec.y;
+	targetPos.z = threatPos.z;
+
+	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj)
+			continue;
+
+		AIUpdateInterface* ai = obj->getAI();
+		if (!ai)
+			continue;
+
+		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+		ai->aiMoveToPosition(&targetPos, CMD_FROM_SCRIPT);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doUnitKeepDistanceFromRelation(const AsciiString& unitName, Real feet, Int relationType)
+{
+	Object* obj = TheScriptEngine->getUnitNamed(unitName);
+	if (!obj) return;
+
+	AIUpdateInterface* ai = obj->getAIUpdateInterface();
+	if (!ai) return;
+
+	UnsignedInt relation;
+	switch (relationType)
+	{
+	default: return;
+	case ENEMIES: relation = ALLOW_ENEMIES; break;
+	case NEUTRAL: relation = ALLOW_NEUTRAL; break;
+	case ALLIES: relation = ALLOW_ALLIES; break;
+	}
+
+	Coord3D objPos = *obj->getPosition();
+	PartitionFilterSameMapStatus filterMapStatus(obj);
+	PartitionFilterPlayerAffiliation filterAffiliation(obj->getControllingPlayer(), relation, true);
+	Object* bestObj = nullptr;
+
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
+
+	bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	if (!bestObj) return;
+
+	//@-TanSo-: Calculate the flee vector.
+	Coord3D threatPos = *bestObj->getPosition();
+	Coord3D fleeVec;
+	fleeVec.x = objPos.x - threatPos.x;
+	fleeVec.y = objPos.y - threatPos.y;
+	fleeVec.z = 0.0f;
+
+	Real len = sqrt(fleeVec.x * fleeVec.x + fleeVec.y * fleeVec.y);
+	if (len <= 0.0f) return;
+
+	fleeVec.x /= len;
+	fleeVec.y /= len;
+	fleeVec.x *= feet;
+	fleeVec.y *= feet;
+
+	Coord3D targetPos;
+	targetPos.x = threatPos.x + fleeVec.x;
+	targetPos.y = threatPos.y + fleeVec.y;
+	targetPos.z = threatPos.z;
+
+	ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+	ai->aiMoveToPosition(&targetPos, CMD_FROM_SCRIPT);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerSetWillingnessToCrush(const AsciiString& playerName, Bool wantsToCrush)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	// All newly produced units shall now apply the same setting...
+	pPlayer->m_crushesInfantry = wantsToCrush;
+
+	//...and existing ones alike.
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+			{
+				Object* pObj = objIter.cur();
+				if (!pObj) continue;
+
+				pObj->m_crushesInfantry = wantsToCrush;
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamSetWillingnessToCrush(const AsciiString& teamName, Bool wantsToCrush)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam) return;
+
+	for (DLINK_ITERATOR<Object> objIter = pTeam->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+	{
+		Object* pObj = objIter.cur();
+		if (!pObj) continue;
+
+		pObj->m_crushesInfantry = wantsToCrush;
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doUnitSetWillingnessToCrush(const AsciiString& unitName, Bool wantsToCrush)
+{
+	Object* pObj = TheScriptEngine->getUnitNamed(unitName);
+	if (!pObj) return;
+
+	pObj->m_crushesInfantry = wantsToCrush;
+}
+
 //-------------------------------------------------------------------------------------------------
 //----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 //-------------------------------------------------------------------------------------------------
@@ -12899,6 +13426,36 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 		case ScriptAction::AI_PLAYER_RESET_BUILDLIST_FROM_ID:
 			doResetBuildListID(pAction->getParameter(0)->getInt());
 			return;
+		case ScriptAction::PLAYER_APPLY_ATTACK_PRIORITY_SET:
+			doPlayerApplyPrioritySet(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::PLAYER_APPLY_ATTACK_PRIORITY_SET_TYPE:
+			doPlayerApplyPrioritySetType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::TEAM_APPLY_ATTACK_PRIORITY_SET_TYPE:
+			doTeamApplyPrioritySetType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::TEAM_KEEP_DISTANCE_RELATION:
+			doTeamKeepDistanceFromRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt());
+			return;
+		case ScriptAction::UNIT_KEEP_DISTANCE_RELATION:
+			doUnitKeepDistanceFromRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt());
+			return;
+		case ScriptAction::TEAM_KEEP_DISTANCE_RELATION_TYPE:
+			doTeamKeepDistanceFromRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString());
+			return;
+		case ScriptAction::UNIT_KEEP_DISTANCE_RELATION_TYPE:
+			doUnitKeepDistanceFromRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString());
+			return;
 
+		case ScriptAction::SET_WILLINGNESS_TO_CRUSH_PLAYER:
+			doPlayerSetWillingnessToCrush(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+		case ScriptAction::SET_WILLINGNESS_TO_CRUSH_TEAM:
+			doTeamSetWillingnessToCrush(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+		case ScriptAction::SET_WILLINGNESS_TO_CRUSH_UNIT:
+			doUnitSetWillingnessToCrush(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
 	}
 }

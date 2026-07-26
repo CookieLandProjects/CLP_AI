@@ -355,6 +355,7 @@ Player::Player( Int playerIndex )
 	m_unitsShouldHunt = FALSE;
 	init( nullptr );
 
+	m_crushesInfantry = false;
 }
 
 //=============================================================================
@@ -505,6 +506,9 @@ void Player::init(const PlayerTemplate* pt)
 	//Always off at the beginning of a game! Only GameLogic::update has
 	//the power to turn it on. Don't want to cause desyncs!
 	m_logicalRetaliationModeEnabled = FALSE;
+
+	if (TheAI->getAiData()->m_aiCrushesInfantry)
+		m_crushesInfantry = true;
 }
 
 //=============================================================================
@@ -642,17 +646,11 @@ Bool Player::removeTeamRelationship(const Team *that)
 //=============================================================================
 void Player::setBuildList(BuildListInfo *pBuildList)
 {
-	DEBUG_LOG(("setBuildList old=%p new=%p",
-		m_pBuildList,
-		pBuildList));
-
-
 	if (m_pBuildList == pBuildList)
 		return;
 
 	deleteInstance(m_pBuildList);
 	m_pBuildList = pBuildList;
-
 }
 
 //=============================================================================
@@ -4869,6 +4867,14 @@ void Player::insertBuildListInfo(BuildListInfo* info, Bool isPriority)
 	{
 		info->setNextBuildList(head);
 		m_pBuildList = info;
+	}
+}
+//-------------------------------------------------------------------------------------------------
+void Player::clearBuildLocationBlocks()
+{
+	for (BuildListInfo* info = m_pBuildList; info; info = info->getNext())
+	{
+		info->setBuildLocationBlocked(false);
 	}
 }
 

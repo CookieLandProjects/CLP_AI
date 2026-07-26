@@ -175,7 +175,7 @@ AsciiString DebugDescribeObject(const Object *obj)
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
-Object::Object( const ThingTemplate *tt, const ObjectStatusMaskType &objectStatusMask, Team *team ) :
+Object::Object(const ThingTemplate* tt, const ObjectStatusMaskType& objectStatusMask, Team* team) :
 	Thing(tt),
 	m_indicatorColor(0),
 	m_ai(nullptr),
@@ -187,7 +187,7 @@ Object::Object( const ThingTemplate *tt, const ObjectStatusMaskType &objectStatu
 	m_behaviors(nullptr),
 	m_body(nullptr),
 	m_contain(nullptr),
-  m_stealth(nullptr),
+	m_stealth(nullptr),
 	m_partitionData(nullptr),
 	m_radarData(nullptr),
 	m_drawable(nullptr),
@@ -215,8 +215,11 @@ Object::Object( const ThingTemplate *tt, const ObjectStatusMaskType &objectStatu
 	m_singleUseCommandUsed(FALSE),
 	m_scriptStatus(0),
 	m_enteredOrExitedFrame(0),
-	m_visionSpiedMask (PLAYERMASK_NONE),
-	m_numTriggerAreasActive(0)
+	m_visionSpiedMask(PLAYERMASK_NONE),
+	m_numTriggerAreasActive(0),
+	m_seenByEnemy(false),
+	m_lastSeenFrame(0),
+	m_crushesInfantry(false)
 {
 #if defined(RTS_DEBUG)
 	m_hasDiedAlready = false;
@@ -503,6 +506,9 @@ Object::Object( const ThingTemplate *tt, const ObjectStatusMaskType &objectStatu
 	// emit message announcing object's creation
 	TheGameLogic->sendObjectCreated( this );
 
+	// -TanSo-: take m_aiCrushesInfantry from AIData that goes into the player as a default value, then save it here so we can keep it modular.
+	if (getControllingPlayer()->m_crushesInfantry)
+		m_crushesInfantry = true;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -4115,7 +4121,7 @@ void Object::xfer( Xfer *xfer )
 {
 
 	// version
-	const XferVersion currentVersion = 9;
+	const XferVersion currentVersion = 10;
 	XferVersion version = currentVersion;
 	xfer->xferVersion( &version, currentVersion );
 
@@ -4519,6 +4525,12 @@ void Object::xfer( Xfer *xfer )
 	else
 		m_isReceivingDifficultyBonus = FALSE;
 
+	if (version >= 10)
+	{
+		xfer->xferBool(&m_seenByEnemy);
+		xfer->xferInt(&m_lastSeenFrame);
+		xfer->xferBool(&m_crushesInfantry);
+	}
 }
 
 //-------------------------------------------------------------------------------------------------
