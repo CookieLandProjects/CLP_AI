@@ -1361,6 +1361,16 @@ void TerrainLogic::addWaypoint(MapObject *pMapObj)
 	pWay->setNext(m_waypointListHead);
 	m_waypointListHead = pWay;
 }
+//-------------------------------------------------------------------------------------------------
+/** Add an existing waypoint. */
+//-------------------------------------------------------------------------------------------------
+void TerrainLogic::addWaypoint(Waypoint* pWay)
+{
+	if (pWay) {
+		pWay->setNext(m_waypointListHead);
+		m_waypointListHead = pWay;
+	}
+}
 
 //-------------------------------------------------------------------------------------------------
 /** Links 2 waypoints. */

@@ -5477,7 +5477,7 @@ Bool ScriptConditions::evaluatePlayerTeamInstances(Parameter* pPlayerParm, Param
 			Team* team = iter.cur();
 			if (!team) continue;
 
-			if (team->getName() != pTeam->getName())
+			if (team->getPrototype() != pTeam->getPrototype())
 				continue;
 
 			count++;

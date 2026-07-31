@@ -1928,5 +1928,63 @@ void AISkirmishPlayer::setDefaultBuildList(Int id)
 }
 
 //-------------------------------------------------------------------------------------------------
+void AISkirmishPlayer::rotateBuildListFromID(Int id, Real angle)
+{
+	AISideBuildList* aiList = m_player->findIDBuildList(id);
+	if (!aiList)
+		return;
+
+	BuildListInfo* list = aiList->m_buildList;
+	if (!list)
+		return;
+
+	// Normalize to [0, 360).
+	angle = fmod(angle, 360.0f);
+	if (angle < 0.0f)
+		angle += 360.0f;
+
+	// Snap building placement orientation to the nearest 45 degrees.
+	Real placementAngle = floor((angle + 22.5f) / 45.0f) * 45.0f;
+
+	if (placementAngle >= 360.0f)
+		placementAngle -= 360.0f;
+
+	placementAngle *= (PI / 180.0f);
+	Real sinAngle = sin((PI / 180.0f) * angle);
+	Real cosAngle = cos((PI / 180.0f) * angle);
+
+	Coord3D pos = { 0, 0, 0 };
+	Coord3D pivot = { 0, 0, 0 };
+
+	// Make sure we rotate around its axis on the player's starting spot.
+	// If there is none, m_tiedSpot is 0 and we don't have an active pivot.
+	AsciiString spot;
+	spot.format("Player_%d_Start", aiList->m_tiedSpot);
+	Waypoint* pWay = TheTerrainLogic->getWaypointByName(spot);
+
+	if (pWay)
+		pivot = *pWay->getLocation();
+
+	while (list)
+	{
+		Real currentAngle = list->getAngle();
+		pos.x = list->getLocation()->x - pivot.x;
+		pos.y = list->getLocation()->y - pivot.y;
+		pos.z = 0.0f;
+
+		Real newX = pos.x * cosAngle - pos.y * sinAngle;
+		Real newY = pos.x * sinAngle + pos.y * cosAngle;
+
+		pos.x = newX + pivot.x;
+		pos.y = newY + pivot.y;
+		pos.z = TheTerrainLogic->getGroundHeight(pos.x, pos.y);
+
+		list->setLocation(pos);
+		list->setAngle(currentAngle + placementAngle);
+
+		list = list->getNext();
+	}
+}
+//-------------------------------------------------------------------------------------------------
 //-------------------------------- @CLP_AI AI PLAYER ADDITIONS END --------------------------------
 //-------------------------------------------------------------------------------------------------

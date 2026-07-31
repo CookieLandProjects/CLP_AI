@@ -1345,6 +1345,17 @@ protected:
 		Real *closestDistArg,
 		Coord3D *closestVecArg
 	);
+	// @CLP_AI please also the farthest. GLA Workers love running.
+	Object* getFarthestObjects(
+		const Object* obj,
+		const Coord3D* pos,
+		Real maxDist,
+		DistanceCalculationType dc,
+		PartitionFilter** filters,
+		SimpleObjectIterator* iterArg,
+		Real* farthestDistArg,
+		Coord3D* farthestVecArg
+	);
 
 	void shutdown();
 
@@ -1454,6 +1465,23 @@ public:
 		PartitionFilter **filters = nullptr,
 		Real *closestDist = nullptr,
 		Coord3D *closestDistVec = nullptr
+	);
+	// @CLP_AI copy the calls from the getClosesObject-methods.
+	Object* getFarthestObject(
+		const Object* obj,
+		Real maxDist,
+		DistanceCalculationType dc,
+		PartitionFilter** filters = nullptr,
+		Real* farthestDist = nullptr,
+		Coord3D* farthestDistVec = nullptr
+	);
+	Object* getFarthestObject(
+		const Coord3D* pos,
+		Real maxDist,
+		DistanceCalculationType dc,
+		PartitionFilter** filters = nullptr,
+		Real* farthestDist = nullptr,
+		Coord3D* farthestDistVec = nullptr
 	);
 
 	Real getRelativeAngle2D( const Object *obj, const Object *otherObj );

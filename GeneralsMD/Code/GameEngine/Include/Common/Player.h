@@ -474,7 +474,8 @@ public:
 	void buildSpecificBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority);
 	void insertBuildListFromID(Int id);
 	void normalizeBuildListFromID(Int id, Int spot);
-	void setDefaultBuildList(Int buildListID);
+	void setDefaultBuildList(Int id);
+	void rotateBuildListFromID(Int id, Real angle);
 
 	virtual Bool computeSuperweaponTargetType(const SpecialPowerTemplate* power, Coord3D* retPos, Int playerNdx, Real weaponRadius, const AsciiString& objectType);
 	void buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real angle);

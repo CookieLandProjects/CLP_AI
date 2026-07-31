@@ -98,6 +98,20 @@ public:
 		}
 	}
 
+	// @CLP_AI additions
+	void removeLink(Waypoint* pLink)
+	{
+		if (pLink)
+		{
+			for (Int i = 0; i < m_numLinks; i++)
+			{
+				// Leave a hole and don't shrink m_numLinks for now as to not screw up anything elsewhere.
+				if (m_links[i] == pLink)
+					m_links[i] = nullptr;
+			}
+		}
+	}
+
 public:
 	/// Enumerate all waypoints using getNext.
 	Waypoint *getNext() const {return m_pNext; }
@@ -122,6 +136,9 @@ public:
 
 	void setLocationZ(Real z) { m_location.z = z; }
 	void setLocation(Real x, Real y, Real z) { m_location.x = x; m_location.y = y; m_location.z = z; }
+
+	void setPathLabels(AsciiString label1, AsciiString label2, AsciiString label3) { m_pathLabel1 = label1; m_pathLabel2 = label2; m_pathLabel3 = label3; }
+	void setBiDirectional(Bool b) { m_biDirectional = b; }
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -314,6 +331,9 @@ public:
 
   void flattenTerrain(Object *obj);  ///< Flatten the terrain under a building.
   void createCraterInTerrain(Object *obj);  ///< Flatten the terrain under a building.
+
+	// @CLP_AI additions
+	void addWaypoint(Waypoint* pWay);
 
 protected:
 

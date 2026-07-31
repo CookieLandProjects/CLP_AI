@@ -83,6 +83,7 @@ public:	// AIPlayer interface methods.
 	virtual void buildSpecificAIBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority);
 	virtual void normalizeBuildListFromID(Int id, Int spot);
 	virtual void setDefaultBuildList(Int id);
+	virtual void rotateBuildListFromID(Int id, Real angle);
 
 	Int getCurrentFrontBaseDefense();
 	Int getCurrentFlankBaseDefense();

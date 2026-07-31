@@ -143,7 +143,7 @@ public:
 	BuildListInfo*		m_buildList;			///< Build list for the faction.
 	AISideBuildList*	m_next;
 
-	Int								m_buildListID;		///< @-TanSo-: Expansion for more than just BuildList per AI player.
+	Int								m_buildListID;		///< @-TanSo-: Expansion for more than just one BuildList per AI player.
 	Int								m_tiedSpot;				///< @-TanSo-: Remember what spot we are tied to for later transpositions.
 
 	///< @-TanSo-:

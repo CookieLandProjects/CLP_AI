@@ -487,7 +487,8 @@ protected:
 	void doInsertBuildListFromID(Int buildListID);
 	void doNormalizeBuildListIDToSpot(Int buildListID, Int spot);
 	void doSetDefaultBuildList(Int buildListID);
-	void doResetBuildListID(Int id);
+	void doResetBuildListID(Int buildListID);
+	void doRotateBuildListFromID(Int buildListID, Real anlge);
 
 	void doPlayerApplyPrioritySet(const AsciiString& playerName, const AsciiString& attackPrioritySet);
 	void doPlayerApplyPrioritySetType(const AsciiString& playerName, const AsciiString& attackPrioritySet, const AsciiString& objectType);
@@ -502,7 +503,29 @@ protected:
 	void doTeamSetWillingnessToCrush(const AsciiString& teamName, Bool wantsToCrush);
 	void doUnitSetWillingnessToCrush(const AsciiString& unitName, Bool wantsToCrush);
 
-	// @-TanSo-: 97 additions
+	void doPlayerHuntType(const AsciiString& playerName, const AsciiString& objectType);
+	void doTeamHuntType(const AsciiString& teamName, const AsciiString& objectType);
+	void doPlayerHuntArea(const AsciiString& playerName, const AsciiString& triggerArea);
+
+	void doTeamCustomColor(const AsciiString& teamName, Color c);
+	void doPlayerCustomColor(const AsciiString& playerName, Color c);
+
+	void doCreateWaypoint(const AsciiString& waypointName, Coord3D location, const AsciiString& label1, const AsciiString& label2, const AsciiString& label3, Bool biDirectional, Bool snapToGrid);
+	void doCreateWaypointAtUnit(const AsciiString& waypointName, const AsciiString& unitName, const AsciiString& label1, const AsciiString& label2, const AsciiString& label3, Bool biDirectional);
+	void doCreateWaypointAtTeam(const AsciiString& waypointName, const AsciiString& teamName, const AsciiString& label1, const AsciiString& label2, const AsciiString& label3, Bool biDirectional);
+	void doCreateWaypointAtType(const AsciiString& waypointName, const AsciiString& objectType, const AsciiString& label1, const AsciiString& label2, const AsciiString& label3, Bool biDirectional, Int selectionMode);
+	void doRemoveWaypoint(const AsciiString& waypointName);
+	void doConnectWaypoint(const AsciiString& waypointSource, const AsciiString& waypointTarget);
+	void doDisconnectWaypoint(const AsciiString& waypointSource, const AsciiString& waypointTarget);
+	void doSetWaypointPathLabels(const AsciiString& waypointName, const AsciiString& label1, const AsciiString& label2, const AsciiString& label3);
+	void doClearWaypointPathLabels(const AsciiString& waypointName, Bool clear1, Bool clear2, Bool clear3);
+	void doRelocateWaypoint(const AsciiString& waypointName, Coord3D location, Bool snapToGrid);
+	void doRelocateWaypointUnit(const AsciiString& waypointName, const AsciiString& unitName);
+	void doRelocateWaypointTeam(const AsciiString& waypointName, const AsciiString& teamName);
+	void doRelocateWaypointType(const AsciiString& waypointName, const AsciiString& objectType, Int selectionMode);
+	void doSetWaypointBiDirectional(const AsciiString& waypointName, Bool biDirectional);
+
+	// @-TanSo-: 116 additions
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 	//-------------------------------------------------------------------------------------------------

@@ -5964,3 +5964,285 @@ Bool PartitionFilterUnderFog::allow(Object* other)
 {
 	return other->getShroudedStatus(pPlayer->getPlayerIndex()) != OBJECTSHROUD_CLEAR ? m_match : !m_match;
 }
+
+// ------------------------------------------------------------------------------------------------
+Object* PartitionManager::getFarthestObjects(
+	const Object* obj,
+	const Coord3D* pos,
+	Real maxDist,
+	DistanceCalculationType dc,
+	PartitionFilter** filters,
+	SimpleObjectIterator* iterArg,
+	Real* farthestDistArg,
+	Coord3D* farthestVecArg
+)
+{
+	DEBUG_ASSERTCRASH((obj == nullptr) != (pos == nullptr),
+		("either obj or pos must be null"));
+
+	DistCalcProc distProc = theDistCalcProcs[dc];
+
+	const Coord3D* objPos;
+	const Object* objToUse;
+
+	if (pos)
+	{
+		objPos = pos;
+		objToUse = nullptr;
+	}
+	else
+	{
+		objPos = obj->getPosition();
+		objToUse = obj;
+	}
+
+	Int cellCenterX, cellCenterY;
+	worldToCell(objPos->x, objPos->y, &cellCenterX, &cellCenterY);
+
+	Object* farthestObj = nullptr;
+
+	// This is the actual search limit.
+	const Real maxDistSqr = maxDist * maxDist;
+
+	// The farthest object found so far.
+	Real farthestDistSqr = -1.0f;
+
+	Coord3D farthestVec;
+
+#if !RETAIL_COMPATIBLE_CRC
+	farthestVec.x = maxDist;
+	farthestVec.y = maxDist;
+	farthestVec.z = maxDist;
+#endif
+
+#ifdef FASTER_GCO
+
+	Int maxRadius = m_maxGcoRadius;
+
+	if (maxDist < HUGE_DIST)
+	{
+		// Don't search beyond the requested maximum distance.
+		maxRadius = minInt(m_maxGcoRadius, worldToCellDist(maxDist));
+	}
+
+#if defined(INTENSE_DEBUG)
+	/*
+		Note, if you ever enable this code, be forewarned that it can give
+		you "false positives" for objects that are located just off the map... (srj)
+	*/
+	Int maxRadiusLimit = maxRadius + 3;
+	if (maxRadiusLimit > m_maxGcoRadius)
+		maxRadiusLimit = m_maxGcoRadius;
+#else
+	Int maxRadiusLimit = maxRadius;
+#endif
+
+	static Int theIterFlag = 1;
+	++theIterFlag;
+
+	/*
+		Unlike getClosestObjects(), we must search the entire allowed radius.
+		We cannot terminate early after finding the first object because we
+		are looking for the farthest object.
+	*/
+	for (Int curRadius = 0; curRadius <= maxRadiusLimit; ++curRadius)
+	{
+		const OffsetVec& offsets = m_radiusVec[curRadius];
+
+		if (offsets.empty())
+			continue;
+
+		for (OffsetVec::const_iterator it = offsets.begin();
+			it != offsets.end();
+			++it)
+		{
+			PartitionCell* thisCell =
+				getCellAt(cellCenterX + it->x, cellCenterY + it->y);
+
+			if (thisCell == nullptr)
+				continue;
+
+			for (CellAndObjectIntersection* thisCoi =
+				thisCell->getFirstCoiInCell();
+				thisCoi;
+				thisCoi = thisCoi->getNextCoi())
+			{
+				PartitionData* thisMod = thisCoi->getModule();
+				Object* thisObj = thisMod->getObject();
+
+				// Never compare against ourselves.
+				if (thisObj == obj || thisObj == nullptr)
+					continue;
+
+				// An object can exist in multiple COIs.
+				if (thisMod->friend_getDoneFlag() == theIterFlag)
+					continue;
+
+				thisMod->friend_setDoneFlag(theIterFlag);
+
+				Real thisDistSqr;
+				Coord3D distVec;
+
+				/*
+					Use maxDistSqr as the distance limit.
+					Do NOT use farthestDistSqr here because we are
+					looking for increasingly larger distances.
+				*/
+				if (!(*distProc)(
+					objPos,
+					objToUse,
+					thisObj->getPosition(),
+					thisObj,
+					thisDistSqr,
+					distVec,
+					maxDistSqr))
+				{
+					continue;
+				}
+
+				if (!filtersAllow(filters, thisObj))
+					continue;
+
+				// If requested, append every satisfactory object.
+				if (iterArg)
+				{
+					iterArg->insert(thisObj, thisDistSqr);
+				}
+				else
+				{
+					// We found a new farthest object.
+					if (farthestObj == nullptr ||
+						thisDistSqr > farthestDistSqr)
+					{
+						farthestObj = thisObj;
+						farthestDistSqr = thisDistSqr;
+						farthestVec = distVec;
+					}
+				}
+			}
+		}
+	}
+
+#else // not FASTER_GCO
+
+	CellOutwardIterator iter(this, cellCenterX, cellCenterY);
+
+	if (maxDist < HUGE_DIST)
+	{
+		// Don't search beyond the requested maximum distance.
+		Int max = worldToCellDist(maxDist) + 1;
+
+		if (max < iter.getMaxRadius())
+			iter.setMaxRadius(max);
+	}
+
+	static Int theIterFlag = 1;
+	++theIterFlag;
+
+	PartitionCell* thisCell;
+
+	while ((thisCell = iter.nextNonEmpty()) != nullptr)
+	{
+		CellAndObjectIntersection* nextCoi;
+
+		for (CellAndObjectIntersection* thisCoi =
+			thisCell->getFirstCoiInCell();
+			thisCoi;
+			thisCoi = nextCoi)
+		{
+			nextCoi = thisCoi->getNextCoi();
+
+			PartitionData* thisMod = thisCoi->getModule();
+			Object* thisObj = thisMod->getObject();
+
+			// Never compare against ourselves.
+			if (thisObj == obj || thisObj == nullptr)
+				continue;
+
+			if (thisMod->friend_getDoneFlag() == theIterFlag)
+				continue;
+
+			thisMod->friend_setDoneFlag(theIterFlag);
+
+			Real thisDistSqr;
+			Coord3D distVec;
+
+			/*
+				Always use the original maximum distance as the
+				distance limit. We must continue searching for a
+				farther object.
+			*/
+			if (!(*distProc)(
+				objPos,
+				objToUse,
+				thisObj->getPosition(),
+				thisObj,
+				&thisDistSqr,
+				&distVec,
+				maxDistSqr))
+			{
+				continue;
+			}
+
+			if (!filtersAllow(filters, thisObj))
+				continue;
+
+			// If requested, append every satisfactory object.
+			if (iterArg)
+			{
+				iterArg->insert(thisObj, thisDistSqr);
+			}
+			else
+			{
+				// We found a new farthest object.
+				if (farthestObj == nullptr ||
+					thisDistSqr > farthestDistSqr)
+				{
+					farthestObj = thisObj;
+					farthestDistSqr = thisDistSqr;
+					farthestVec = distVec;
+				}
+			}
+		}
+	}
+
+#endif // not FASTER_GCO
+
+	if (farthestVecArg)
+	{
+		*farthestVecArg = farthestVec;
+	}
+
+	if (farthestDistArg)
+	{
+		*farthestDistArg = (Real)sqrtf(farthestDistSqr);
+	}
+
+	return farthestObj;
+}
+
+//-----------------------------------------------------------------------------
+Object* PartitionManager::getFarthestObject(
+	const Object* obj,
+	Real maxDist,
+	DistanceCalculationType dc,
+	PartitionFilter** filters,
+	Real* farthestDist,
+	Coord3D* farthestDistVec
+)
+{
+	return getFarthestObjects(obj, nullptr, maxDist, dc, filters, nullptr, farthestDist, farthestDistVec);
+}
+
+//-----------------------------------------------------------------------------
+Object* PartitionManager::getFarthestObject(
+	const Coord3D* pos,
+	Real maxDist,
+	DistanceCalculationType dc,
+	PartitionFilter** filters,
+	Real* farthestDist,
+	Coord3D* farthestDistVec
+)
+{
+	return getFarthestObjects(nullptr, pos, maxDist, dc, filters, nullptr, farthestDist, farthestDistVec);
+}

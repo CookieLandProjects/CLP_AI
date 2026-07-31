@@ -552,143 +552,167 @@ public:
 		//-------------------------------------------------------------------------------------------------
 		//------------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS --------------------------------
 		//-------------------------------------------------------------------------------------------------
-			SET_COUNTER_RANDOM,														///< Set a counter to a random value between x and y.
-			COPY_COUNTER,																	///< Copy counter A onto B. If B doesn't yet exist, create a counter.
-			SET_KD_RATIO,																	///< Set a real number variable as a KD ratio to x kills and y deaths.
-			INCREMENT_KD_RATIO_KILLS,											///< Adds the kills of a KD ratio by <Real> credits.
-			INCREMENT_KD_RATIO_DEATHS,										///< Adds the deaths of a KD ration by <Real> credits.
-			DECREMENT_KD_RATIO_KILLS,											///< Subtracts the kills of a KD ratio by <Real> credits.
-			DECREMENT_KD_RATIO_DEATHS,										///< Subtracts the deaths of a KD ratio by <Real> credits.
-			UPDATE_KD_RATIO_KILLS_BUILDCOST,							///< Updates the kills of a KD ratio by the build cost of whatever is in m_lastFrameKills.
-			UPDATE_KD_RATIO_DEATHS_BUILDCOST,							///< Updates the deaths of a KD ratio by the build cost of whatever is in m_lastFrameKills.
-			COPY_KD_RATIO_ONTO_COUNTERS,									///< Copies a KD-Ratio's kills to counter A and deaths to Counter B.
+		SET_COUNTER_RANDOM,														///< Set a counter to a random value between x and y.
+		COPY_COUNTER,																	///< Copy counter A onto B. If B doesn't yet exist, create a counter.
+		SET_KD_RATIO,																	///< Set a real number variable as a KD ratio to x kills and y deaths.
+		INCREMENT_KD_RATIO_KILLS,											///< Adds the kills of a KD ratio by <Real> credits.
+		INCREMENT_KD_RATIO_DEATHS,										///< Adds the deaths of a KD ration by <Real> credits.
+		DECREMENT_KD_RATIO_KILLS,											///< Subtracts the kills of a KD ratio by <Real> credits.
+		DECREMENT_KD_RATIO_DEATHS,										///< Subtracts the deaths of a KD ratio by <Real> credits.
+		UPDATE_KD_RATIO_KILLS_BUILDCOST,							///< Updates the kills of a KD ratio by the build cost of whatever is in m_lastFrameKills.
+		UPDATE_KD_RATIO_DEATHS_BUILDCOST,							///< Updates the deaths of a KD ratio by the build cost of whatever is in m_lastFrameKills.
+		COPY_KD_RATIO_ONTO_COUNTERS,									///< Copies a KD-Ratio's kills to counter A and deaths to Counter B.
 			
-			AI_PLAYER_BUILDS_UNNAMED,                     ///< AI player adds a new unnamed unit to the production queue.
-			AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED,		///< AI player builds a structure near an object type rotated <Real> degrees.
-			AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED,	///< AI player builds a structure near a kindOf rotated <Real> degrees.
-			AI_PLAYER_BUILD_TYPE_NEAREST_TEAM_ROTATED,		///< AI player builds a structure near a team rotated <Real> degrees.
-			AI_PLAYER_BUILD_TYPE_NEAREST_SUPPLY_ROTATED,	///< AI player builds a structure near a supply source rotaded <Real> degrees.
-			AI_PLAYER_BUILD_DEFENSE_FRONT_FROM_VECTOR_ROTATED_PERCENT, ///< AI player builds a defensive structure on the front from our vector, rotated <Real> degrees, and at a distance of <Real> percent of our actual base boundaries.
-			AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT, ///< AI player builds a defensive structure on the flank from our vector, rotated <Real> degrees, and at a distance of <Real> percent of our actual base boundaries.
+		AI_PLAYER_BUILDS_UNNAMED,                     ///< AI player adds a new unnamed unit to the production queue.
+		AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED,		///< AI player builds a structure near an object type rotated <Real> degrees.
+		AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED,	///< AI player builds a structure near a kindOf rotated <Real> degrees.
+		AI_PLAYER_BUILD_TYPE_NEAREST_TEAM_ROTATED,		///< AI player builds a structure near a team rotated <Real> degrees.
+		AI_PLAYER_BUILD_TYPE_NEAREST_SUPPLY_ROTATED,	///< AI player builds a structure near a supply source rotaded <Real> degrees.
+		AI_PLAYER_BUILD_DEFENSE_FRONT_FROM_VECTOR_ROTATED_PERCENT, ///< AI player builds a defensive structure on the front from our vector, rotated <Real> degrees, and at a distance of <Real> percent of our actual base boundaries.
+		AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT, ///< AI player builds a defensive structure on the flank from our vector, rotated <Real> degrees, and at a distance of <Real> percent of our actual base boundaries.
 
-      AI_PLAYER_ADD_DEFENSE_TO_VECTOR,							///< add a defensive structure to m_baseDefenseStructures.
-			AI_PLAYER_REMOVE_DEFENSE_FROM_VECTOR,					///< remove a defensive structure from m_baseDefenseStructures.
-			AI_PLAYER_BUILD_DEFENSE_FRONT_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER,///< AI player builds a defensive structure on the front from our vector, rotated <Real> degrees, and at a distance of <Real> percent of a player's actual base boundaries.
-			AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER,///< AI player builds a defensive structure on the flank from our vector, rotated <Real> degrees, and at a distance of <Real> percent of a player's actual base boundaries.
+    AI_PLAYER_ADD_DEFENSE_TO_VECTOR,							///< add a defensive structure to m_baseDefenseStructures.
+		AI_PLAYER_REMOVE_DEFENSE_FROM_VECTOR,					///< remove a defensive structure from m_baseDefenseStructures.
+		AI_PLAYER_BUILD_DEFENSE_FRONT_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER,///< AI player builds a defensive structure on the front from our vector, rotated <Real> degrees, and at a distance of <Real> percent of a player's actual base boundaries.
+		AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER,///< AI player builds a defensive structure on the flank from our vector, rotated <Real> degrees, and at a distance of <Real> percent of a player's actual base boundaries.
 
-			PLAYER_SURRENDER,															///< The player surrenders, provided that other allied players are alive; otherwise quit.
-			PLAYER_MERGE_KINDOF,													///< The player merges all units with <kindOf> into another team.
-			PLAYER_MERGE_TYPE,														///< The player merges all units with <objectType> into another team.
-			PLAYER_DISBAND_KINDOF,												///< The player disbands all units with <kindOf>.
-			PLAYER_DISBAND_TYPE,													///< The player disbands all units with <objectType>.
-			PLAYER_GARRISON_BUILDINGS_WITH_MAX_NUMBER,		///< The player garrisons nearby buildings with <int> infrantry each.
-			PLAYER_GARRISON_NUMBER_BUILDINGS,							///< The player equally garrisons <int> buildings with all available infantry.
+		PLAYER_SURRENDER,															///< The player surrenders, provided that other allied players are alive; otherwise quit.
+		PLAYER_MERGE_KINDOF,													///< The player merges all units with <kindOf> into another team.
+		PLAYER_MERGE_TYPE,														///< The player merges all units with <objectType> into another team.
+		PLAYER_DISBAND_KINDOF,												///< The player disbands all units with <kindOf>.
+		PLAYER_DISBAND_TYPE,													///< The player disbands all units with <objectType>.
+		PLAYER_GARRISON_BUILDINGS_WITH_MAX_NUMBER,		///< The player garrisons nearby buildings with <int> infrantry each.
+		PLAYER_GARRISON_NUMBER_BUILDINGS,							///< The player equally garrisons <int> buildings with all available infantry.
 
-			TEAM_MOVE_RELATIVE,														///< Set a team to move relative to its own position.
-			TEAM_MOVE_NEAREST_BELONGING_TO_PLAYER,				///< Set a team to move towards the nearest object type belonging to a player.
-			TEAM_MOVE_AWAY_FROM_RELATION,									///< A team moves <Real> feet into the opposite direction of a <relation> unit.
-			TEAM_MOVE_AWAY_FROM_RELATION_TYPE,						///< A team moves <Real> feet into the opposite direction of a <relation> <objectType>.
-			TEAM_MOVE_TOWARDS_RELATION,										///< A team moves <Real> feet towards a <relation> unit.
-			TEAM_MOVE_TOWARDS_RELATION_TYPE,							///< A team moves <Real> feet towards a <relation> <objectType>.
-			TEAM_MEET,																		///< Set a team to meet at its center point.
-			TEAM_MEET_AT_KINDOF,													///< Set a team to meet at the center point of all units with <kindOf>.
-			TEAM_MEET_AT_TYPE,														///< Set a team to meet at the center point of all units with <objectType>.
-			TEAM_USE_COMMAND_BUTTON_ABILITY_WITH_TYPE,		///< Set all units with an object type in a team to use a command button ability.
-			TEAM_USE_COMMAND_BUTTON_ABILITY_ON_TEAM,			///< Set a team to use a command button ability on another team.
-			TEAM_MERGE_KINDOF,														///< A team merges all units with <kindOf> into another team.
-			TEAM_MERGE_TYPE,															///< A team merges all units with <objectType> into another team.
-			TEAM_DISBAND_KINDOF,													///< A team disbands all units with <kindOf>.
-			TEAM_DISBAND_TYPE,														///< A team disbands all units with <objectType>.
-			/*TODO*/TEAM_USE_PRIMARY_WEAPON,											///< A team starts using their primary weapon.
-			/*TODO*/TEAM_USE_SECONDARY_WEAPON,										///< A team starts using their secondary weapon.
-			TEAM_GARRISON_BUILDINGS_WITH_MAX_NUMBER,			///< A team garrisons nearby buildings with <int> infrantry each.
-			TEAM_GARRISON_NUMBER_BUILDINGS,								///< A team equally garrisons <int> buildings with all available infantry.
-      TEAM_MOVE_TO_TEAM,														///< Set a team to move towards another team.
-      TEAM_MEET_TEAM,																///< Set a team to meet at the center point of another team.
-      TEAM_LOAD_EVENLY,															///< A team loads evenly into their transport units.
+		TEAM_MOVE_RELATIVE,														///< Set a team to move relative to its own position.
+		TEAM_MOVE_NEAREST_BELONGING_TO_PLAYER,				///< Set a team to move towards the nearest object type belonging to a player.
+		TEAM_MOVE_AWAY_FROM_RELATION,									///< A team moves <Real> feet into the opposite direction of a <relation> unit.
+		TEAM_MOVE_AWAY_FROM_RELATION_TYPE,						///< A team moves <Real> feet into the opposite direction of a <relation> <objectType>.
+		TEAM_MOVE_TOWARDS_RELATION,										///< A team moves <Real> feet towards a <relation> unit.
+		TEAM_MOVE_TOWARDS_RELATION_TYPE,							///< A team moves <Real> feet towards a <relation> <objectType>.
+		TEAM_MEET,																		///< Set a team to meet at its center point.
+		TEAM_MEET_AT_KINDOF,													///< Set a team to meet at the center point of all units with <kindOf>.
+		TEAM_MEET_AT_TYPE,														///< Set a team to meet at the center point of all units with <objectType>.
+		TEAM_USE_COMMAND_BUTTON_ABILITY_WITH_TYPE,		///< Set all units with an object type in a team to use a command button ability.
+		TEAM_USE_COMMAND_BUTTON_ABILITY_ON_TEAM,			///< Set a team to use a command button ability on another team.
+		TEAM_MERGE_KINDOF,														///< A team merges all units with <kindOf> into another team.
+		TEAM_MERGE_TYPE,															///< A team merges all units with <objectType> into another team.
+		TEAM_DISBAND_KINDOF,													///< A team disbands all units with <kindOf>.
+		TEAM_DISBAND_TYPE,														///< A team disbands all units with <objectType>.
+		/*TODO*/TEAM_USE_PRIMARY_WEAPON,											///< A team starts using their primary weapon.
+		/*TODO*/TEAM_USE_SECONDARY_WEAPON,										///< A team starts using their secondary weapon.
+		TEAM_GARRISON_BUILDINGS_WITH_MAX_NUMBER,			///< A team garrisons nearby buildings with <int> infrantry each.
+		TEAM_GARRISON_NUMBER_BUILDINGS,								///< A team equally garrisons <int> buildings with all available infantry.
+		TEAM_MOVE_TO_TEAM,														///< Set a team to move towards another team.
+		TEAM_MEET_TEAM,																///< Set a team to meet at the center point of another team.
+		TEAM_LOAD_EVENLY,															///< A team loads evenly into their transport units.
 
-			UNIT_MOVE_RELATIVE,														///< Set a unit to move relative to its own position.
-			UNIT_MOVE_NEAREST_BELONGING_TO_PLAYER,				///< Set a unit to move towards the nearest object type belonging to a player.
-			UNIT_MOVE_AWAY_FROM_RELATION,									///< A unit moves <Real> feet into the opposite direction of a <relation> unit.
-			UNIT_MOVE_AWAY_FROM_RELATION_TYPE,						///< A unit moves <Real> feet into the opposite direction of a <relation> <objectType>.
-			UNIT_MOVE_TOWARDS_RELATION,										///< A unit moves <Real> feet towards a <relation> unit.
-      UNIT_MOVE_TOWARDS_RELATION_TYPE,							///< A unit moves <Real> feet towards a <relation> <objectType>.
-			/*TODO*/UNIT_USE_PRIMARY_WEAPON,											///< A unit starts using their primary weapon.
-			/*TODO*/UNIT_USE_SECONDARY_WEAPON,										///< A unit starts using their secondary weapon.
+		UNIT_MOVE_RELATIVE,														///< Set a unit to move relative to its own position.
+		UNIT_MOVE_NEAREST_BELONGING_TO_PLAYER,				///< Set a unit to move towards the nearest object type belonging to a player.
+		UNIT_MOVE_AWAY_FROM_RELATION,									///< A unit moves <Real> feet into the opposite direction of a <relation> unit.
+		UNIT_MOVE_AWAY_FROM_RELATION_TYPE,						///< A unit moves <Real> feet into the opposite direction of a <relation> <objectType>.
+		UNIT_MOVE_TOWARDS_RELATION,										///< A unit moves <Real> feet towards a <relation> unit.
+		UNIT_MOVE_TOWARDS_RELATION_TYPE,							///< A unit moves <Real> feet towards a <relation> <objectType>.
+		/*TODO*/UNIT_USE_PRIMARY_WEAPON,											///< A unit starts using their primary weapon.
+		/*TODO*/UNIT_USE_SECONDARY_WEAPON,										///< A unit starts using their secondary weapon.
 
-			CREATE_TEAM_FROM_TEAMLESS,										///< Create a team from all units that are owned by the default team.
-			CREATE_TEAM_FROM_TEAMLESS_TYPE,								///< Create a team from units with <objectType> that are owned by the default team.
-			CREATE_TEAM_FROM_TEAMLESS_KINDOF,							///< Create a team from units with <kindOf> that are owned by the default team.
+		CREATE_TEAM_FROM_TEAMLESS,										///< Create a team from all units that are owned by the default team.
+		CREATE_TEAM_FROM_TEAMLESS_TYPE,								///< Create a team from units with <objectType> that are owned by the default team.
+		CREATE_TEAM_FROM_TEAMLESS_KINDOF,							///< Create a team from units with <kindOf> that are owned by the default team.
 
-			SKIRMISH_FIRE_SPECIAL_POWER_AT_MOST_COST_TYPE,///< The player fires their special power at the highest cost area, computed with heavy focus on an object type.
+		SKIRMISH_FIRE_SPECIAL_POWER_AT_MOST_COST_TYPE,///< The player fires their special power at the highest cost area, computed with heavy focus on an object type.
 
-			/*TODO*/SWITCH_BUILDLIST_ID,													///< The player switches to BuildList ID <int> for its main base.
-			/*TODO*/SWITCH_BUILDLIST_ID_AT_SPOT,									///< The player switches to BuildList ID <int> at a specified spot.
-			PLAYER_SELL_ALL_BUILDINGS_IN_CAPTURE_PROCESS_PERCENTAGE,///< Make an AI player sell off all buildings that are being captured with a % chance.
-			PLAYER_SELL_ALL_BUILDINGS_TYPE_IN_CAPTURE_PROCESS_PERCENTAGE,///< Make an AI player sell off all buildings of a type that are being captured with a % chance.
-			PLAYER_SELL_ALL_BUILDINGS_AREA_IN_CAPTURE_PROCESS_PERCENTAGE,///< Make an AI player sell off a building in an area that are being captured with a % chance.
-			PLAYER_SELL_ALL_BUILDINGS_TYPE_AREA_IN_CAPTURE_PROCESS_PERCENTAGE,///< Make an AI player sell off a building of a type in an area that are being captured with a % chance.
+		PLAYER_HUNT_TYPE,															///< A player's units with a type are set to hunt.
+		TEAM_HUNT_TYPE,																///< A team's units with a type are set to hunt.
 
-      PLAYER_CANCEL_ALL_CONSTRUCTIONS,							///< A player cancels the construction of all buildings.
-      PLAYER_CANCEL_ALL_CONSTRUCTIONS_TYPE,					///< A player cancels the construction of all buildings of a type.
-      PLAYER_CANCEL_ALL_CONSTRUCTIONS_AREA,					///< A player cancels the construction of all buildings in an area.
-      PLAYER_CANCEL_ALL_CONSTRUCTIONS_TYPE_AREA,		///< A player cancels the construction of all buildings of a type in an area.
+		PLAYER_SELL_ALL_BUILDINGS_IN_CAPTURE_PROCESS_PERCENTAGE,///< Make an AI player sell off all buildings that are being captured with a % chance.
+		PLAYER_SELL_ALL_BUILDINGS_TYPE_IN_CAPTURE_PROCESS_PERCENTAGE,///< Make an AI player sell off all buildings of a type that are being captured with a % chance.
+		PLAYER_SELL_ALL_BUILDINGS_AREA_IN_CAPTURE_PROCESS_PERCENTAGE,///< Make an AI player sell off a building in an area that are being captured with a % chance.
+		PLAYER_SELL_ALL_BUILDINGS_TYPE_AREA_IN_CAPTURE_PROCESS_PERCENTAGE,///< Make an AI player sell off a building of a type in an area that are being captured with a % chance.
 
-      PLAYER_SELL_ALL_BUILDINGS_TYPE,								///< Make an AI player sell off all buildings of a type.
-      PLAYER_SELL_ALL_BUILDINGS_AREA,								///< Make an AI player sell off all buildings in an area.
-      PLAYER_SELL_ALL_BUILDINGS_TYPE_AREA,					///< Make an AI player sell off all buildings of a type in an area.
+		PLAYER_CANCEL_ALL_CONSTRUCTIONS,							///< A player cancels the construction of all buildings.
+		PLAYER_CANCEL_ALL_CONSTRUCTIONS_TYPE,					///< A player cancels the construction of all buildings of a type.
+		PLAYER_CANCEL_ALL_CONSTRUCTIONS_AREA,					///< A player cancels the construction of all buildings in an area.
+		PLAYER_CANCEL_ALL_CONSTRUCTIONS_TYPE_AREA,		///< A player cancels the construction of all buildings of a type in an area.
 
-			AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED_AREA,	///< AI player builds a structure near a kindOf in an area rotated <Real> degrees.
-			AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED_AREA,	///< AI player builds a structure near a type in an area source rotated <Real> degrees.
+		PLAYER_SELL_ALL_BUILDINGS_TYPE,								///< Make an AI player sell off all buildings of a type.
+		PLAYER_SELL_ALL_BUILDINGS_AREA,								///< Make an AI player sell off all buildings in an area.
+		PLAYER_SELL_ALL_BUILDINGS_TYPE_AREA,					///< Make an AI player sell off all buildings of a type in an area.
 
-			TEAM_ATTACK_TYPE,															///< Set a team to attack units with a specific type.
-			TEAM_ATTACK_TYPE_AREA,												///< Set a team to attack unis with a specific type in an area.
-      TEAM_ATTACK_SEEN_UNIT,												///< Set a team to attack units the player sees.
-			TEAM_ATTACK_SEEN_TYPE,												///< Set a team to attack units the player sees with a specific type.
-			TEAM_ATTACK_SEEN_AREA,												///< Set a team to attack units the player sees in an area.
-			TEAM_ATTACK_SEEN_TYPE_AREA,										///< Set a team to attack unis the player sees with a specific type in an area.
+		AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED_AREA,	///< AI player builds a structure near a kindOf in an area rotated <Real> degrees.
+		AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED_AREA,	///< AI player builds a structure near a type in an area source rotated <Real> degrees.
 
-			TEAM_ATTACKMOVE_WAYPOINT,											///< Set a team to attack move towards a waypoint.
-			TEAM_ATTACKMOVE_TYPE,													///< Set a team to attack move towards an enemy object of a type.
-			TEAM_ATTACKMOVE_TYPE_AREA,										///< Set a team to attack move towards an enemy object of a type in an area.
+		TEAM_ATTACK_TYPE,															///< Set a team to attack units with a specific type.
+		TEAM_ATTACK_TYPE_AREA,												///< Set a team to attack unis with a specific type in an area.
+		TEAM_ATTACK_SEEN_UNIT,												///< Set a team to attack units the player sees.
+		TEAM_ATTACK_SEEN_TYPE,												///< Set a team to attack units the player sees with a specific type.
+		TEAM_ATTACK_SEEN_AREA,												///< Set a team to attack units the player sees in an area.
+		TEAM_ATTACK_SEEN_TYPE_AREA,										///< Set a team to attack unis the player sees with a specific type in an area.
 
-			TEAM_EVACUATE_DESTROYED_PERCENT,							///< Set a team to evacuate all transports below N%.
+		TEAM_ATTACKMOVE_WAYPOINT,											///< Set a team to attack move towards a waypoint.
+		TEAM_ATTACKMOVE_TYPE,													///< Set a team to attack move towards an enemy object of a type.
+		TEAM_ATTACKMOVE_TYPE_AREA,										///< Set a team to attack move towards an enemy object of a type in an area.
 
-			TEAM_ATTACKMOVE_AREA,													///< Set a team to attack move towards an enemy object in an area.
-			TEAM_ATTACKMOVE_SEEN_UNIT,										///< Set a team to attack move towards units the player sees .
-			TEAM_ATTACKMOVE_SEEN_TYPE,										///< Set a team to attack move towards units of a type the player sees.
-			TEAM_ATTACKMOVE_SEEN_AREA,										///< Set a team to attack move towards units in an area the player sees.
-			TEAM_ATTACKMOVE_SEEN_TYPE_AREA,								///< Set a team to attack move towards units of a type in an area the player sees.
-			TEAM_ATTACKMOVE_PATH,													///< Set a team to attack move towards the beginning of a waypoint path.
+		TEAM_EVACUATE_DESTROYED_PERCENT,							///< Set a team to evacuate all transports below N%.
 
-			TEAM_MOVE_CAPTURED,														///< Set a team to move to the closest building currently being captured.
-			TEAM_MOVE_CAPTURED_TYPE,											///< Set a team to move to the closest building of a type currently being captured.
-			TEAM_MOVE_TYPE_UNDER_FOG,											///< Set a team to move to the closest object of a type under the fog of war.
-			TEAM_MOVE_TYPE_AREA_UNDER_FOG,								///< Set a team to move to the closest object of a type in an area under the fog of war.
-			TEAM_MOVE_TYPE_NOT_UNDER_FOG,									///< Set a team to move to the closest object of a type NOT under the fog of war.
-			TEAM_MOVE_TYPE_AREA_NOT_UNDER_FOG,						///< Set a team to move to the closest object of a type in an area NOT under the fog of war.
+		TEAM_ATTACKMOVE_AREA,													///< Set a team to attack move towards an enemy object in an area.
+		TEAM_ATTACKMOVE_SEEN_UNIT,										///< Set a team to attack move towards units the player sees .
+		TEAM_ATTACKMOVE_SEEN_TYPE,										///< Set a team to attack move towards units of a type the player sees.
+		TEAM_ATTACKMOVE_SEEN_AREA,										///< Set a team to attack move towards units in an area the player sees.
+		TEAM_ATTACKMOVE_SEEN_TYPE_AREA,								///< Set a team to attack move towards units of a type in an area the player sees.
+		TEAM_ATTACKMOVE_PATH,													///< Set a team to attack move towards the beginning of a waypoint path.
 
-			UNIT_TELEPORT_TO_LOCATION,										///< Teleport a unit to a waypoint.
-			TEAM_TELEPORT_TO_LOCATION,										///< Teleport a team to a waypoint.
+		TEAM_MOVE_CAPTURED,														///< Set a team to move to the closest building currently being captured.
+		TEAM_MOVE_CAPTURED_TYPE,											///< Set a team to move to the closest building of a type currently being captured.
+		TEAM_MOVE_TYPE_UNDER_FOG,											///< Set a team to move to the closest object of a type under the fog of war.
+		TEAM_MOVE_TYPE_AREA_UNDER_FOG,								///< Set a team to move to the closest object of a type in an area under the fog of war.
+		TEAM_MOVE_TYPE_NOT_UNDER_FOG,									///< Set a team to move to the closest object of a type NOT under the fog of war.
+		TEAM_MOVE_TYPE_AREA_NOT_UNDER_FOG,						///< Set a team to move to the closest object of a type in an area NOT under the fog of war.
 
-			AI_PLAYER_BUILD_SPECIFIC_FROM_ID,							///< Set a player to build from a buildlist with a specific ID.
-			AI_PLAYER_INSERT_BUILDLIST_FROM_ID,						///< Set a player to insert an IDBuildList-Template into the main BuildList (Player::m_pBuildList).
-			AI_PLAYER_NORMALIZE_BUILDLIST_FROM_ID,				///< Set a player to readjust the positioning from an IDBuildList to another player's base.
-			AI_PLAYER_SET_DEFAULT_BUILDLIST_FROM_ID,			///< Set a player to exchange the default BuildList with an IDBuildList.
-			AI_PLAYER_RESET_BUILDLIST_FROM_ID,						///< Set a player to reset a buildlist with a specific ID, so that entries are not consumed, and the rotation is back to standard.
+		UNIT_TELEPORT_TO_LOCATION,										///< Teleport a unit to a waypoint.
+		TEAM_TELEPORT_TO_LOCATION,										///< Teleport a team to a waypoint.
 
-			PLAYER_APPLY_ATTACK_PRIORITY_SET,							///< Set a player to apply a priority set.
-			PLAYER_APPLY_ATTACK_PRIORITY_SET_TYPE,				///< Set a player to apply a priority set with units of a specific type.
-			TEAM_APPLY_ATTACK_PRIORITY_SET_TYPE,					///< Set a team to apply a priority set with units of a specific type.
+		AI_PLAYER_BUILD_SPECIFIC_FROM_ID,							///< Set a player to build from a buildlist with a specific ID.
+		AI_PLAYER_INSERT_BUILDLIST_FROM_ID,						///< Set a player to insert an IDBuildList-Template into the main BuildList (Player::m_pBuildList).
+		AI_PLAYER_NORMALIZE_BUILDLIST_FROM_ID,				///< Set a player to readjust the positioning from an IDBuildList to another player's base.
+		AI_PLAYER_SET_DEFAULT_BUILDLIST_FROM_ID,			///< Set a player to exchange the default BuildList with an IDBuildList.
+		AI_PLAYER_RESET_BUILDLIST_FROM_ID,						///< Set a player to reset a buildlist with a specific ID, so that entries are not consumed, and the rotation is back to standard.
 
-			TEAM_KEEP_DISTANCE_RELATION,									///< A team moves to keep a <Real> feet distance from a <relation> unit.
-			UNIT_KEEP_DISTANCE_RELATION,									///< A unit moves to keep a <Real> feet distance from a <relation> unit.
-			TEAM_KEEP_DISTANCE_RELATION_TYPE,							///< A team moves to keep a <Real> feet distance from a <relation> unit of a type.
-			UNIT_KEEP_DISTANCE_RELATION_TYPE,							///< A unit moves to keep a <Real> feet distance from a <relation> unit of a type.
+		PLAYER_APPLY_ATTACK_PRIORITY_SET,							///< Set a player to apply a priority set.
+		PLAYER_APPLY_ATTACK_PRIORITY_SET_TYPE,				///< Set a player to apply a priority set with units of a specific type.
+		TEAM_APPLY_ATTACK_PRIORITY_SET_TYPE,					///< Set a team to apply a priority set with units of a specific type.
 
-			SET_WILLINGNESS_TO_CRUSH_PLAYER,							///< Override the settings of a player's willingness to crush infantry.
-			SET_WILLINGNESS_TO_CRUSH_TEAM,								///< Override the settings a team's willingness to crush infantry.
-			SET_WILLINGNESS_TO_CRUSH_UNIT,								///< Override the settings a unit's willingness to crush infantry.
+		TEAM_KEEP_DISTANCE_RELATION,									///< A team moves to keep a <Real> feet distance from a <relation> unit.
+		UNIT_KEEP_DISTANCE_RELATION,									///< A unit moves to keep a <Real> feet distance from a <relation> unit.
+		TEAM_KEEP_DISTANCE_RELATION_TYPE,							///< A team moves to keep a <Real> feet distance from a <relation> unit of a type.
+		UNIT_KEEP_DISTANCE_RELATION_TYPE,							///< A unit moves to keep a <Real> feet distance from a <relation> unit of a type.
+
+		SET_WILLINGNESS_TO_CRUSH_PLAYER,							///< Override the settings of a player's willingness to crush infantry.
+		SET_WILLINGNESS_TO_CRUSH_TEAM,								///< Override the settings a team's willingness to crush infantry.
+		SET_WILLINGNESS_TO_CRUSH_UNIT,								///< Override the settings a unit's willingness to crush infantry.
+
+		PLAYER_HUNT_AREA,															///< A player's units inside an area are set to hunt.
+
+		TEAM_CUSTOM_COLOR,														///< Change the color of a team to a custom value.
+		PLAYER_CUSTOM_COLOR,													///< Change the color of a player to a custom value.
+
+		AI_PLAYER_ROTATE_BUILDLIST_FROM_ID,						///< Set a player to rotate its BuildList with an ID around its axis.
+
+		CREATE_WAYPOINT_LOCATION,											///< Create a waypoint at a specific location.
+		CREATE_WAYPOINT_UNIT,													///< Create a waypoint at a unit's location.
+		CREATE_WAYPOINT_TEAM,													///< Create a waypoint at a team's location.
+		CREATE_WAYPOINT_TYPE,													///< Create a waypoint at an objectType's location. Selection modes => 0: closest, 1: farthest, 2: random
+		REMOVE_WAYPOINT,															///< Delete a waypoint.
+		SET_WAYPOINT_LINK,														///< Add links between two waypoints.
+		REMOVE_WAYPOINT_LINK,													///< Remove links from one waypoint to a specific other and forwards backwards.
+		SET_WAYPOINT_LABELS,													///< Set custom waypoint path labels for a specific waypoint.
+		CLEAR_WAYPOINT_LABELS,												///< Clear the selected waypoint path labels for a specific waypoint.
+		RELOCATE_WAYPOINT_LOCATION,										///< Relocate a waypoint to a specific location.
+		RELOCATE_WAYPOINT_UNIT,												///< Relocate a waypoint to a unit's location.
+		RELOCATE_WAYPOINT_TEAM,												///< Relocate a waypoint to a team's location.
+		RELOCATE_WAYPOINT_TYPE,												///< Relocate a waypoint to an objectType's location. Selection modes => 0: closest, 1: farthest, 2: random
+		SET_WAYPOINT_BIDIRECTIONAL,										///< Set whether a waypoint is bi-directional or not.
+
 
 			//-------------------------------------------------------------------------------------------------
 			//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------

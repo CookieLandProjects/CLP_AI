@@ -6721,8 +6721,6 @@ void ScriptActions::doTeamMoveNearestBelongingToPlayer(const AsciiString& teamNa
 		PartitionFilterPlayer filterPlayer(tPlayer, true);
 		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterPlayer, nullptr };
 		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-
-		if (!bestObj)return;
 	}
 	else
 	{
@@ -6746,13 +6744,16 @@ void ScriptActions::doTeamMoveNearestBelongingToPlayer(const AsciiString& teamNa
 			}
 		}
 	}
+
+	if (!bestObj) return;
+
 	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object* obj = iter.cur();
-		if (!obj) return;
+		if (!obj) continue;
 
 		AIUpdateInterface* ai = obj->getAI();
-		if (!ai) return;
+		if (!ai) continue;
 
 		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
 		ai->aiMoveToObject(bestObj, CMD_FROM_SCRIPT);
@@ -6783,10 +6784,6 @@ void ScriptActions::doUnitMoveNearestBelongingToPlayer(const AsciiString& unitNa
 		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterPlayer, nullptr };
 
 		bestObj = ThePartitionManager->getClosestObject(obj->getPosition(), REALLY_FAR, FROM_CENTER_2D, filters);
-		if (!bestObj)
-		{
-			return;
-		}
 	}
 	else
 	{
@@ -6810,6 +6807,8 @@ void ScriptActions::doUnitMoveNearestBelongingToPlayer(const AsciiString& unitNa
 			}
 		}
 	}
+
+	if (!bestObj) return;
 
 	ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
 	ai->aiMoveToObject(bestObj, CMD_FROM_SCRIPT);
@@ -6865,10 +6864,6 @@ void ScriptActions::doTeamMoveAwayFromRelationType(const AsciiString& teamName, 
 		PartitionFilterThing thingsToAccept(templ, true);
 		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterAffiliation, nullptr };
 		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-		if (!bestObj)
-		{
-			return;
-		}
 	}
 	else
 	{
@@ -6891,6 +6886,7 @@ void ScriptActions::doTeamMoveAwayFromRelationType(const AsciiString& teamName, 
 			}
 		}
 	}
+
 	if (!bestObj) return;
 	//@-TanSo-: Calculate the flee vector
 	Coord3D threatPos = *bestObj->getPosition();
@@ -6973,10 +6969,6 @@ void ScriptActions::doTeamMoveTowardsRelationType(const AsciiString& teamName, R
 		PartitionFilterThing thingsToAccept(templ, true);
 		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterAffiliation, nullptr };
 		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-		if (!bestObj)
-		{
-			return;
-		}
 	}
 	else
 	{
@@ -6999,6 +6991,7 @@ void ScriptActions::doTeamMoveTowardsRelationType(const AsciiString& teamName, R
 			}
 		}
 	}
+
 	if (!bestObj) return;
 	//@-TanSo-: Calculate the flee vector
 	Coord3D threatPos = *bestObj->getPosition();
@@ -7062,7 +7055,6 @@ void ScriptActions::doUnitMoveAwayFromRelationType(const AsciiString& unitName, 
 		PartitionFilter* filters[] = { &f1, &filterMapStatus, &filterAffiliation, nullptr };
 
 		bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
-		if (!bestObj) return;
 	}
 	else
 	{
@@ -7086,7 +7078,6 @@ void ScriptActions::doUnitMoveAwayFromRelationType(const AsciiString& unitName, 
 	}
 
 	if (!bestObj) return;
-
 	//@-TanSo-: Calculate the flee vector.
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
@@ -7142,7 +7133,6 @@ void ScriptActions::doUnitMoveTowardsRelationType(const AsciiString& unitName, R
 		PartitionFilter* filters[] = { &f1, &filterMapStatus, &filterAffiliation, nullptr };
 
 		bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
-		if (!bestObj) return;
 	}
 	else
 	{
@@ -7166,7 +7156,6 @@ void ScriptActions::doUnitMoveTowardsRelationType(const AsciiString& unitName, R
 	}
 
 	if (!bestObj) return;
-
 	//@-TanSo-: Calculate the flee vector.
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
@@ -8040,13 +8029,14 @@ void ScriptActions::doPlayerTeamlessMerge(const AsciiString& playerName, const A
 		// This mirrors original EA engine behavior. It's dirty I know.
 		nextObj = iter2.cur();
 		iter2.advance();
-		if (obj->isKindOf(KINDOF_INFANTRY) || obj->isKindOf(KINDOF_VEHICLE) || obj->isKindOf(KINDOF_AIRCRAFT)) {
-			obj->setTeam(pTeam);
+		//if (obj->isKindOf(KINDOF_INFANTRY) || obj->isKindOf(KINDOF_VEHICLE) || obj->isKindOf(KINDOF_AIRCRAFT) || obj->isKindOf(KINDOF_CAN_ATTACK)) {
+		if (obj->isKindOf(KINDOF_CAN_ATTACK) && !obj->isEffectivelyDead()) {
+		obj->setTeam(pTeam);
 			updateTeamAndPlayerStuff(obj, nullptr);
 		}
 	}
 	if (nextObj) {
-		if (nextObj->isKindOf(KINDOF_INFANTRY) || nextObj->isKindOf(KINDOF_VEHICLE) || nextObj->isKindOf(KINDOF_AIRCRAFT)) {
+		if (nextObj->isKindOf(KINDOF_CAN_ATTACK) && !nextObj->isEffectivelyDead()) {
 			nextObj->setTeam(pTeam);
 			updateTeamAndPlayerStuff(nextObj, nullptr);
 		}
@@ -8506,7 +8496,7 @@ void ScriptActions::doTeamGarrisonEqually(const AsciiString& teamName, Int amoun
 
 		int slotsAvailable = std::min(slotsFree, target);
 
-		// @-TanSo-: in case less people are garrisoning than expected
+		// @-TanSo-: in case less units are garrisoning than expected
 		if (slotsAvailable < target) {
 			rest += (target - slotsAvailable);
 		}
@@ -11132,10 +11122,10 @@ void ScriptActions::doTeamMoveNearestUnderFog(const AsciiString& teamName, const
 	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object* obj = iter.cur();
-		if (!obj) return;
+		if (!obj) continue;
 
 		AIUpdateInterface* ai = obj->getAI();
-		if (!ai) return;
+		if (!ai) continue;
 
 		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
 		ai->aiMoveToObject(bestObj, CMD_FROM_SCRIPT);
@@ -11210,10 +11200,10 @@ void ScriptActions::doTeamMoveNearestUnderFogInArea(const AsciiString& teamName,
 	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object* obj = iter.cur();
-		if (!obj) return;
+		if (!obj) continue;
 
 		AIUpdateInterface* ai = obj->getAI();
-		if (!ai) return;
+		if (!ai) continue;
 
 		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
 		ai->aiMoveToObject(bestObj, CMD_FROM_SCRIPT);
@@ -11284,10 +11274,10 @@ void ScriptActions::doTeamMoveNearestNotUnderFog(const AsciiString& teamName, co
 	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object* obj = iter.cur();
-		if (!obj) return;
+		if (!obj) continue;
 
 		AIUpdateInterface* ai = obj->getAI();
-		if (!ai) return;
+		if (!ai) continue;
 
 		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
 		ai->aiMoveToObject(bestObj, CMD_FROM_SCRIPT);
@@ -11362,10 +11352,10 @@ void ScriptActions::doTeamMoveNearestNotUnderFogInArea(const AsciiString& teamNa
 	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object* obj = iter.cur();
-		if (!obj) return;
+		if (!obj) continue;
 
 		AIUpdateInterface* ai = obj->getAI();
-		if (!ai) return;
+		if (!ai) continue;
 
 		ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
 		ai->aiMoveToObject(bestObj, CMD_FROM_SCRIPT);
@@ -11440,17 +11430,34 @@ void ScriptActions::doSetDefaultBuildList(Int buildListID)
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doResetBuildListID(Int id)
+void ScriptActions::doResetBuildListID(Int buildListID)
 {
 	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
 	if (!pPlayer) return;
 
-	pPlayer->normalizeBuildListFromID(id, 0);
+	AISideBuildList* idList = pPlayer->findIDBuildList(buildListID);
+	if (!idList) return;
 
-	for (BuildListInfo* info = pPlayer->getBuildList(); info; info = info->getNext())
+	// @-TanSo-: Bring it back to the default rotation...
+	pPlayer->normalizeBuildListFromID(buildListID, 0);
+	//... and clear all flags.
+	if (idList)
 	{
-		info->setConsumedInIDList(FALSE);
+		for (BuildListInfo* info = idList->m_buildList; info; info = info->getNext())
+		{
+				info->setConsumedInIDList(FALSE);
+		}
 	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doRotateBuildListFromID(Int buildListID, Real angle)
+{
+	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
+	if (!pPlayer) return;
+
+	// @-TanSo-: Rotate the base around its own axis. If no spot is tied, use Location = {0, 0, 0}.
+	pPlayer->rotateBuildListFromID(buildListID, angle);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -11981,6 +11988,729 @@ void ScriptActions::doUnitSetWillingnessToCrush(const AsciiString& unitName, Boo
 	if (!pObj) return;
 
 	pObj->m_crushesInfantry = wantsToCrush;
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerHuntType(const AsciiString& playerName, const AsciiString& objectType)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) 
+		return;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+	if (templ)
+	{
+		Player::PlayerTeamList::const_iterator it;
+		for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+		{
+			for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+				Team* team = iter.cur();
+				if (!team) continue;
+
+				for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+				{
+					Object* pObj = objIter.cur();
+					if (!pObj) continue;
+
+					if (pObj->getTemplate() != templ)
+						continue;
+
+					AIUpdateInterface* aiUpdate = pObj->getAIUpdateInterface();
+					if (!aiUpdate) 
+						continue;
+					
+					aiUpdate->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+					aiUpdate->aiHunt(CMD_FROM_SCRIPT);
+				}
+			}
+		}
+	}
+	else
+	{
+		ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+		if (types)
+		{ 
+			Player::PlayerTeamList::const_iterator it;
+			for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+			{
+				for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+					Team* team = iter.cur();
+					if (!team) continue;
+
+					for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+					{
+						Object* pObj = objIter.cur();
+						if (!pObj) continue;
+
+						if (!types->isInSet(pObj->getTemplate()))
+							continue;
+
+						AIUpdateInterface* aiUpdate = pObj->getAIUpdateInterface();
+						if (!aiUpdate)
+							continue;
+
+						aiUpdate->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+						aiUpdate->aiHunt(CMD_FROM_SCRIPT);
+					}
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamHuntType(const AsciiString& teamName, const AsciiString& objectType)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam)
+		return;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+	if (templ)
+	{
+		for (DLINK_ITERATOR<Object> objIter = pTeam->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+		{
+			Object* pObj = objIter.cur();
+			if (!pObj) continue;
+
+			if (pObj->getTemplate() != templ)
+				continue;
+
+			AIUpdateInterface* aiUpdate = pObj->getAIUpdateInterface();
+			if (!aiUpdate)
+				continue;
+
+			aiUpdate->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+			aiUpdate->aiHunt(CMD_FROM_SCRIPT);
+		}
+	}
+	else
+	{
+		ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+		if (types)
+		{
+			for (DLINK_ITERATOR<Object> objIter = pTeam->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+			{
+				Object* pObj = objIter.cur();
+				if (!pObj) continue;
+
+				if (!types->isInSet(pObj->getTemplate()))
+					continue;
+
+				AIUpdateInterface* aiUpdate = pObj->getAIUpdateInterface();
+				if (!aiUpdate)
+					continue;
+
+				aiUpdate->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+				aiUpdate->aiHunt(CMD_FROM_SCRIPT);
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerHuntArea(const AsciiString& playerName, const AsciiString& triggerArea)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer)
+		return;
+
+	PolygonTrigger* pArea = TheTerrainLogic->getTriggerAreaByName(triggerArea);
+	if (!pArea)
+		return;
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+			{
+				Object* pObj = objIter.cur();
+				if (!pObj) continue;
+
+				if (!pObj->isInside(pArea))
+					continue;
+
+				if (pObj->isKindOf(KINDOF_DOZER) || pObj->isKindOf(KINDOF_HARVESTER) ||pObj->isKindOf(KINDOF_IGNORES_SELECT_ALL))
+					continue;
+
+				AIUpdateInterface* aiUpdate = pObj->getAIUpdateInterface();
+				if (!aiUpdate)
+					continue;
+
+				aiUpdate->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+				aiUpdate->aiHunt(CMD_FROM_SCRIPT);
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamCustomColor(const AsciiString& teamName, Color c)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam) return;
+
+	for (DLINK_ITERATOR<Object> objIter = pTeam->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+	{
+		Object* pObj = objIter.cur();
+		if (!pObj) continue;
+
+		pObj->setCustomIndicatorColor(c);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerCustomColor(const AsciiString& playerName, Color c)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance())
+			{
+				Object* pObj = objIter.cur();
+				if (!pObj) continue;
+
+				pObj->setCustomIndicatorColor(c);
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doCreateWaypoint(const AsciiString& waypointName, Coord3D location, const AsciiString& label1, const AsciiString& label2, const AsciiString& label3, Bool biDirectional, Bool snapToGrid)
+{
+	// Waypoint already exists.
+	if (TheTerrainLogic->getWaypointByName(waypointName))
+	{
+		DEBUG_LOG(("Waypoint %s not added - A waypoint with the same name already exists!", waypointName.str()));
+		return;
+	}
+
+	// Find the first id that doesn't yet exist.
+	Int id = 1;
+	while(TheTerrainLogic->getWaypointByID(id))
+	{
+		id++;
+	}
+	WaypointID finalID = (WaypointID)id;
+
+	Coord3D pos = {location.x, location.y, location.z};
+	if (snapToGrid)
+		pos.z = TheTerrainLogic->getGroundHeight(location.x, location.y);
+	
+	Waypoint* pWay = newInstance(Waypoint)(finalID, waypointName, &pos, label1, label2, label3, biDirectional);
+	TheTerrainLogic->addWaypoint(pWay);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doCreateWaypointAtUnit(const AsciiString& waypointName, const AsciiString& unitName, const AsciiString& label1, const AsciiString& label2, const AsciiString& label3, Bool biDirectional)
+{
+	Object* pObj = TheScriptEngine->getUnitNamed(unitName);
+	if (!pObj)
+		return;
+
+	// Waypoint already exists.
+	if (TheTerrainLogic->getWaypointByName(waypointName))
+	{
+		DEBUG_LOG(("Waypoint %s not added - A waypoint with the same name already exists!", waypointName.str()));
+		return;
+	}
+
+	// Find the first id that doesn't yet exist.
+	Int id = 1;
+	while (TheTerrainLogic->getWaypointByID(id))
+	{
+		id++;
+	}
+	WaypointID finalID = (WaypointID)id;
+
+	const Coord3D* pos = pObj->getPosition();
+
+	Waypoint* pWay = newInstance(Waypoint)(finalID, waypointName, pos, label1, label2, label3, biDirectional);
+	TheTerrainLogic->addWaypoint(pWay);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doCreateWaypointAtTeam(const AsciiString& waypointName, const AsciiString& teamName, const AsciiString& label1, const AsciiString& label2, const AsciiString& label3, Bool biDirectional)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam)
+		return;
+
+	// Waypoint already exists.
+	if (TheTerrainLogic->getWaypointByName(waypointName))
+	{
+		DEBUG_LOG(("Waypoint %s not added - A waypoint with the same name already exists!", waypointName.str()));
+		return;
+	}
+
+	// Find the first id that doesn't yet exist.
+	Int id = 1;
+	while (TheTerrainLogic->getWaypointByID(id))
+	{
+		id++;
+	}
+	WaypointID finalID = (WaypointID)id;
+
+	const Coord3D* pos = pTeam->getEstimateTeamPosition();
+
+	Waypoint* pWay = newInstance(Waypoint)(finalID, waypointName, pos, label1, label2, label3, biDirectional);
+	TheTerrainLogic->addWaypoint(pWay);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doCreateWaypointAtType(const AsciiString& waypointName, const AsciiString& objectType, const AsciiString& label1, const AsciiString& label2, const AsciiString& label3, Bool biDirectional, Int selectionMode)
+{
+	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
+	if (!pPlayer) return;
+
+	Coord3D location = { 0, 0, 0 };
+	Int objectCount = 0;
+
+	for (Object* obj = TheGameLogic->getFirstObject(); obj; obj = obj->getNextObject())
+	{
+		if (obj->getControllingPlayer() != pPlayer)
+			continue;
+
+		const Coord3D* objPos = obj->getPosition();
+
+		location.x += objPos->x;
+		location.y += objPos->y;
+		location.z += objPos->z;
+
+		++objectCount;
+	}
+
+	if (objectCount == 0)
+		return;
+
+	location.x /= objectCount;
+	location.y /= objectCount;
+	location.z /= objectCount;
+
+	const Object* bestObj = nullptr;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+	if (templ)
+	{
+		PartitionFilterThing thingsToAccept(templ, true);
+		PartitionFilter* filters[] = { &thingsToAccept, nullptr };
+
+		switch (selectionMode)
+		{
+		default: {
+			DEBUG_LOG(("Invalid selection mode [%d]. Aborting...", selectionMode));
+			return;
+		}
+		case 0: {
+			bestObj = ThePartitionManager->getClosestObject(&location, REALLY_FAR, FROM_CENTER_2D, filters);
+			break;
+		}
+		case 1: {
+			bestObj = ThePartitionManager->getFarthestObject(&location, REALLY_FAR, FROM_CENTER_2D, filters);
+			break;
+		}
+		case 2: {
+			std::vector<Object*> candidates;
+
+			ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(TheGameLogic->getFirstObject(), REALLY_FAR, FROM_CENTER_3D, filters, ITER_FASTEST);
+			MemoryPoolObjectHolder hold(iter);
+			for (Object* pObj = iter->first(); pObj; pObj = iter->next())
+			{
+				candidates.push_back(pObj);
+			}
+			//No objects found.
+			if (candidates.empty()) return;
+
+			bestObj = candidates[GameLogicRandomValue(0, candidates.size() - 1)];
+			break;
+		}
+		}
+	}
+	else
+	{
+		ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+		if (types)
+		{
+			std::vector<const ThingTemplate*> templates;
+			for (size_t i = 0; i < types->getListSize(); ++i)
+			{
+				const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
+				if (t) templates.push_back(t);
+			}
+
+			if (!templates.empty())
+			{
+				PartitionFilterObjectTypes typesToAccept(templates, true);
+				PartitionFilter* filters[] = { &typesToAccept, nullptr };
+
+				switch (selectionMode)
+				{
+				default: {
+					DEBUG_LOG(("Invalid selection mode [%d]. Aborting...", selectionMode));
+					return;
+				}
+				case 0: {
+					bestObj = ThePartitionManager->getClosestObject(&location, REALLY_FAR, FROM_CENTER_2D, filters);
+					break;
+				}
+				case 1:{
+					bestObj = ThePartitionManager->getFarthestObject(&location, REALLY_FAR, FROM_CENTER_2D, filters);
+					break;
+				}
+				case 2: {
+					std::vector<Object*> candidates;
+
+					ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(TheGameLogic->getFirstObject(), REALLY_FAR, FROM_CENTER_3D, filters, ITER_FASTEST);
+					MemoryPoolObjectHolder hold(iter);
+					for (Object* pObj = iter->first(); pObj; pObj = iter->next())
+					{
+						candidates.push_back(pObj);
+					}
+					//No objects found.
+					if (candidates.empty()) return;
+
+					bestObj = candidates[GameLogicRandomValue(0, candidates.size() - 1)];
+					break;
+				}
+				}
+			}
+		}
+	}
+	if (!bestObj) return;
+
+	// Waypoint already exists.
+	if (TheTerrainLogic->getWaypointByName(waypointName))
+	{
+		DEBUG_LOG(("Waypoint %s not added - A waypoint with the same name already exists!", waypointName.str()));
+		return;
+	}
+
+	// Find the first id that doesn't yet exist.
+	Int id = 1;
+	while (TheTerrainLogic->getWaypointByID(id))
+	{
+		id++;
+	}
+	WaypointID finalID = (WaypointID)id;
+
+	const Coord3D* pos = bestObj->getPosition();
+
+	Waypoint* pWay = newInstance(Waypoint)(finalID, waypointName, pos, label1, label2, label3, biDirectional);
+	TheTerrainLogic->addWaypoint(pWay);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doRemoveWaypoint(const AsciiString& waypointName)
+{
+	Waypoint* priorWaypoint = nullptr;
+	Waypoint* postWaypoint = nullptr;
+
+	for (Waypoint* pWay = TheTerrainLogic->getFirstWaypoint(); pWay; pWay = pWay->getNext())
+	{
+		if (pWay->getName() == waypointName)
+		{
+			// There is only one Waypoint. Leave the head.
+			if (!priorWaypoint)
+				return;
+
+			if (pWay->getNext())
+				postWaypoint = pWay->getNext();
+
+			// No two waypoints with the same name are allowed, so return early.
+			if (postWaypoint)
+			{
+				priorWaypoint->setNext(postWaypoint);
+				pWay->setNext(nullptr);
+				for (Waypoint* w = TheTerrainLogic->getFirstWaypoint(); w; w = w->getNext())
+				{
+					w->removeLink(pWay);
+				}
+				deleteInstance(pWay);
+				return;
+			}
+			else
+			{
+				priorWaypoint->setNext(nullptr);
+				for (Waypoint* w = TheTerrainLogic->getFirstWaypoint(); w; w = w->getNext())
+				{
+					w->removeLink(pWay);
+				}
+				deleteInstance(pWay);
+				return;
+			}
+		}
+		priorWaypoint = pWay;
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doConnectWaypoint(const AsciiString& waypointSource, const AsciiString& waypointTarget)
+{
+	Waypoint* source = TheTerrainLogic->getWaypointByName(waypointSource);
+	if (!source) return;
+
+	Waypoint* target = TheTerrainLogic->getWaypointByName(waypointTarget);
+	if (!target) return;
+
+	if (source == target) return;
+
+	Bool alreadyLinked = false;
+	for (Int i = 0; i < source->getNumLinks(); i++) {
+		if (source->getLink(i) == target) {
+			alreadyLinked = true; // already linked;
+			break;
+		}
+	}
+
+	if(!alreadyLinked)
+		source->addLink(target);
+
+	if (source->getBiDirectional() && target->getBiDirectional())
+	{
+		alreadyLinked = false;
+		for (Int i = 0; i < target->getNumLinks(); i++) {
+			if (target->getLink(i) == source) {
+				alreadyLinked = true; // already linked;
+				break;
+			}
+		}
+		if (!alreadyLinked)
+			target->addLink(source);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doDisconnectWaypoint(const AsciiString& waypointSource, const AsciiString& waypointTarget)
+{
+	Waypoint* source = TheTerrainLogic->getWaypointByName(waypointSource);
+	if (!source) return;
+
+	Waypoint* target = TheTerrainLogic->getWaypointByName(waypointTarget);
+	if (!target) return;
+
+	if (source == target) return;
+
+	source->removeLink(target);
+	target->removeLink(source);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doSetWaypointPathLabels(const AsciiString& waypointName, const AsciiString& label1, const AsciiString& label2, const AsciiString& label3)
+{
+	Waypoint* pWay = TheTerrainLogic->getWaypointByName(waypointName);
+	if (!pWay) return;
+
+	pWay->setPathLabels(label1, label2, label3);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doClearWaypointPathLabels(const AsciiString& waypointName, Bool clear1, Bool clear2, Bool clear3)
+{
+	Waypoint* pWay = TheTerrainLogic->getWaypointByName(waypointName);
+	if (!pWay) return;
+
+	AsciiString label1 = pWay->getPathLabel1();
+	AsciiString label2 = pWay->getPathLabel2();
+	AsciiString label3 = pWay->getPathLabel3();
+
+	if (clear1)
+		label1 = AsciiString::TheEmptyString;
+	if (clear2)
+		label2 = AsciiString::TheEmptyString;
+	if (clear3)
+		label3 = AsciiString::TheEmptyString;
+
+	pWay->setPathLabels(label1, label2, label3);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doRelocateWaypoint(const AsciiString& waypointName, Coord3D location, Bool snapToGrid)
+{
+	Waypoint* pWay = TheTerrainLogic->getWaypointByName(waypointName);
+	if (!pWay) return;
+
+	if (snapToGrid)
+		location.z = TheTerrainLogic->getGroundHeight(location.x, location.y);
+
+	pWay->setLocation(location.x, location.y, location.z);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doRelocateWaypointUnit(const AsciiString& waypointName, const AsciiString& unitName)
+{
+	Waypoint* pWay = TheTerrainLogic->getWaypointByName(waypointName);
+	if (!pWay) return;
+
+	Object* pObj = TheScriptEngine->getUnitNamed(unitName);
+	if (!pObj) return;
+
+	Coord3D pos = *pObj->getPosition();
+
+	pWay->setLocation(pos.x, pos.y, pos.z);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doRelocateWaypointTeam(const AsciiString& waypointName, const AsciiString& teamName)
+{
+	Waypoint* pWay = TheTerrainLogic->getWaypointByName(waypointName);
+	if (!pWay) return;
+
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam) return;
+
+	Coord3D pos = *pTeam->getEstimateTeamPosition();
+
+	pWay->setLocation(pos.x, pos.y, pos.z);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doRelocateWaypointType(const AsciiString& waypointName, const AsciiString& objectType, Int selectionMode)
+{
+	Waypoint* pWay = TheTerrainLogic->getWaypointByName(waypointName);
+	if (!pWay) return;
+
+	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
+	if (!pPlayer) return;
+
+	Coord3D location = { 0, 0, 0 };
+	Int objectCount = 0;
+
+	for (Object* obj = TheGameLogic->getFirstObject(); obj; obj = obj->getNextObject())
+	{
+		if (obj->getControllingPlayer() != pPlayer)
+			continue;
+
+		const Coord3D* objPos = obj->getPosition();
+
+		location.x += objPos->x;
+		location.y += objPos->y;
+		location.z += objPos->z;
+
+		++objectCount;
+	}
+
+	if (objectCount == 0)
+		return;
+
+	location.x /= objectCount;
+	location.y /= objectCount;
+	location.z /= objectCount;
+
+	const Object* bestObj = nullptr;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+	if (templ)
+	{
+		PartitionFilterThing thingsToAccept(templ, true);
+		PartitionFilter* filters[] = { &thingsToAccept, nullptr };
+
+		switch (selectionMode)
+		{
+		default: {
+			DEBUG_LOG(("Invalid selection mode [%d]. Aborting...", selectionMode));
+			return;
+		}
+		case 0: {
+			bestObj = ThePartitionManager->getClosestObject(&location, REALLY_FAR, FROM_CENTER_2D, filters);
+			break;
+		}
+		case 1: {
+			bestObj = ThePartitionManager->getFarthestObject(&location, REALLY_FAR, FROM_CENTER_2D, filters);
+			break;
+		}
+		case 2: {
+			std::vector<Object*> candidates;
+
+			ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(TheGameLogic->getFirstObject(), REALLY_FAR, FROM_CENTER_3D, filters, ITER_FASTEST);
+			MemoryPoolObjectHolder hold(iter);
+			for (Object* pObj = iter->first(); pObj; pObj = iter->next())
+			{
+				candidates.push_back(pObj);
+			}
+			//No objects found.
+			if (candidates.empty()) return;
+
+			bestObj = candidates[GameLogicRandomValue(0, candidates.size() - 1)];
+			break;
+		}
+		}
+	}
+	else
+	{
+		ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+		if (types)
+		{
+			std::vector<const ThingTemplate*> templates;
+			for (size_t i = 0; i < types->getListSize(); ++i)
+			{
+				const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
+				if (t) templates.push_back(t);
+			}
+
+			if (!templates.empty())
+			{
+				PartitionFilterObjectTypes typesToAccept(templates, true);
+				PartitionFilter* filters[] = { &typesToAccept, nullptr };
+
+				switch (selectionMode)
+				{
+				default: {
+					DEBUG_LOG(("Invalid selection mode [%d]. Aborting...", selectionMode));
+					return;
+				}
+				case 0: {
+					bestObj = ThePartitionManager->getClosestObject(&location, REALLY_FAR, FROM_CENTER_2D, filters);
+					break;
+				}
+				case 1: {
+					bestObj = ThePartitionManager->getFarthestObject(&location, REALLY_FAR, FROM_CENTER_2D, filters);
+					break;
+				}
+				case 2: {
+					std::vector<Object*> candidates;
+
+					ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(TheGameLogic->getFirstObject(), REALLY_FAR, FROM_CENTER_3D, filters, ITER_FASTEST);
+					MemoryPoolObjectHolder hold(iter);
+					for (Object* pObj = iter->first(); pObj; pObj = iter->next())
+					{
+						candidates.push_back(pObj);
+					}
+					//No objects found.
+					if (candidates.empty()) return;
+
+					bestObj = candidates[GameLogicRandomValue(0, candidates.size() - 1)];
+					break;
+				}
+				}
+			}
+		}
+	}
+	if (!bestObj) return;
+
+	Coord3D pos = *bestObj->getPosition();
+
+	pWay->setLocation(pos.x, pos.y, pos.z);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doSetWaypointBiDirectional(const AsciiString& waypointName, Bool biDirectional)
+{
+	Waypoint* pWay = TheTerrainLogic->getWaypointByName(waypointName);
+	if (!pWay) return;
+
+	pWay->setBiDirectional(biDirectional);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -13405,12 +14135,14 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 		case ScriptAction::TEAM_MOVE_TYPE_AREA_UNDER_FOG:
 			doTeamMoveNearestUnderFogInArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
 			return;
+
 		case ScriptAction::UNIT_TELEPORT_TO_LOCATION:
 			doUnitTeleportLocation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
 			return;
 		case ScriptAction::TEAM_TELEPORT_TO_LOCATION:
 			doTeamTeleportLocation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
 			return;
+
 		case ScriptAction::AI_PLAYER_BUILD_SPECIFIC_FROM_ID:
 			doBuildBuildingFromBuildListID(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
 			return;
@@ -13426,6 +14158,10 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 		case ScriptAction::AI_PLAYER_RESET_BUILDLIST_FROM_ID:
 			doResetBuildListID(pAction->getParameter(0)->getInt());
 			return;
+		case ScriptAction::AI_PLAYER_ROTATE_BUILDLIST_FROM_ID:
+			doRotateBuildListFromID(pAction->getParameter(0)->getInt(), pAction->getParameter(1)->getReal());
+			return;
+
 		case ScriptAction::PLAYER_APPLY_ATTACK_PRIORITY_SET:
 			doPlayerApplyPrioritySet(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
 			return;
@@ -13435,6 +14171,7 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 		case ScriptAction::TEAM_APPLY_ATTACK_PRIORITY_SET_TYPE:
 			doTeamApplyPrioritySetType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
 			return;
+
 		case ScriptAction::TEAM_KEEP_DISTANCE_RELATION:
 			doTeamKeepDistanceFromRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt());
 			return;
@@ -13456,6 +14193,100 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			return;
 		case ScriptAction::SET_WILLINGNESS_TO_CRUSH_UNIT:
 			doUnitSetWillingnessToCrush(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+
+		case ScriptAction::PLAYER_HUNT_TYPE:
+			doPlayerHuntType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::TEAM_HUNT_TYPE:
+			doTeamHuntType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::PLAYER_HUNT_AREA:
+			doPlayerHuntArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+
+		case ScriptAction::TEAM_CUSTOM_COLOR:
+			doTeamCustomColor(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+		case ScriptAction::PLAYER_CUSTOM_COLOR:
+			doPlayerCustomColor(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+
+		case ScriptAction::CREATE_WAYPOINT_LOCATION:
+		{
+			Coord3D pos;
+			pAction->getParameter(1)->getCoord3D(&pos);
+			doCreateWaypoint(
+				pAction->getParameter(0)->getString(),
+				pos,
+				pAction->getParameter(2)->getString(),
+				pAction->getParameter(3)->getString(),
+				pAction->getParameter(4)->getString(),
+				pAction->getParameter(5)->getInt(),
+				pAction->getParameter(6)->getInt()
+			); return;
+		}
+		case ScriptAction::CREATE_WAYPOINT_UNIT:
+			doCreateWaypointAtUnit(
+				pAction->getParameter(0)->getString(),
+				pAction->getParameter(1)->getString(),
+				pAction->getParameter(2)->getString(),
+				pAction->getParameter(3)->getString(),
+				pAction->getParameter(4)->getString(),
+				pAction->getParameter(5)->getInt()
+				); return;
+		case ScriptAction::CREATE_WAYPOINT_TEAM:
+			doCreateWaypointAtTeam(
+				pAction->getParameter(0)->getString(),
+				pAction->getParameter(1)->getString(),
+				pAction->getParameter(2)->getString(),
+				pAction->getParameter(3)->getString(),
+				pAction->getParameter(4)->getString(),
+				pAction->getParameter(5)->getInt()
+			); return;
+		case ScriptAction::CREATE_WAYPOINT_TYPE:
+			doCreateWaypointAtType(
+				pAction->getParameter(0)->getString(),
+				pAction->getParameter(1)->getString(),
+				pAction->getParameter(2)->getString(),
+				pAction->getParameter(3)->getString(),
+				pAction->getParameter(4)->getString(),
+				pAction->getParameter(5)->getInt(),
+				pAction->getParameter(6)->getInt()
+			); return;
+		case ScriptAction::REMOVE_WAYPOINT:
+			doRemoveWaypoint(pAction->getParameter(0)->getString());
+			return;
+		case ScriptAction::SET_WAYPOINT_LINK:
+			doConnectWaypoint(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::REMOVE_WAYPOINT_LINK:
+			doDisconnectWaypoint(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::SET_WAYPOINT_LABELS:
+			doSetWaypointPathLabels(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getString());
+			return;
+		case ScriptAction::CLEAR_WAYPOINT_LABELS:
+			doClearWaypointPathLabels(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getInt());
+			return;
+		case ScriptAction::RELOCATE_WAYPOINT_LOCATION:
+		{
+			Coord3D pos;
+			pAction->getParameter(1)->getCoord3D(&pos);
+			doRelocateWaypoint(pAction->getParameter(0)->getString(), pos, pAction->getParameter(2)->getInt());
+			return;
+		}
+		case ScriptAction::RELOCATE_WAYPOINT_UNIT:
+			doRelocateWaypointUnit(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::RELOCATE_WAYPOINT_TEAM:
+			doRelocateWaypointTeam(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::RELOCATE_WAYPOINT_TYPE:
+			doRelocateWaypointType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
+			return;
+		case ScriptAction::SET_WAYPOINT_BIDIRECTIONAL:
+			doSetWaypointBiDirectional(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
 			return;
 	}
 }

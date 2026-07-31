@@ -195,6 +195,7 @@ public: // AIPlayer interface, may be overridden by AISkirmishPlayer.  jba.
 	virtual void insertBuildListFromID(Int id);
 	virtual void normalizeBuildListFromID(Int id, Int spot);
 	virtual void setDefaultBuildList(Int id);
+	virtual void rotateBuildListFromID(Int id, Real angle);
 
 
 	virtual void buildAIBaseDefenseStructure(const AsciiString &thingName, Bool flank); ///< Builds base defense on front or flank of base.
@@ -347,14 +348,14 @@ protected:
 	ObjectID m_curWarehouseID;
 
 	// -TanSo-: Use of the factory reservation. Before this, team builds would be blended, which means
-	// that teams would be left halfway-built throughout the match. Suppose we have two teams,
-	// A with 5, and B with 3 units. The production line would look like this:
-	// -> Factory 1: A, B, A
-	// -> Factory 2: B, A, A
-	// -> Factory 3: A, B
+	// that teams would be left halfway-built throughout the match. Suppose we have four teams,
+	// A with 5, B with 3, C with 2, and D with 2 units. The production line would look like this:
+	// -> Factory 1: A, D, C, B
+	// -> Factory 2: B, A, D, A
+	// -> Factory 3: C, B, A, A
 	// With the reservation, teams now block factories for their own production like this:
-	// -> Factory 1: A, A, B
-	// -> Factory 2: A, A, B
-	// -> Factory 3: A, B
+	// -> Factory 1: A, A, A, A, A
+	// -> Factory 2: B, B, B
+	// -> Factory 3: C, C, D, D
 	std::vector<FactoryReservation> m_factoryReservations;
 };

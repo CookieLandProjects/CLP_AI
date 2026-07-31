@@ -640,85 +640,84 @@ Object *AIPlayer::buildStructureWithDozer(const ThingTemplate *bldgPlan, BuildLi
 																								 BuildAssistant::TERRAIN_RESTRICTIONS |
 																								 BuildAssistant::NO_OBJECT_OVERLAP,
 																								 dozer, m_player ) != LBC_OK ) {
-			// Warn.
-			AsciiString bldgName = bldgPlan->getName();
-			bldgName.concat(" - Dozer unable to place.  Attempting to adjust position.");
-			TheScriptEngine->AppendDebugMessage(bldgName, false);
-			// try to fix.
-			Real posOffset;
-			Bool valid = false;
-			// Wiggle it a little :)
-			Real limit = 10*PATHFIND_CELL_SIZE_F;
+		// Warn.
+		AsciiString bldgName = bldgPlan->getName();
+		bldgName.concat(" - Dozer unable to place.  Attempting to adjust position.");
+		TheScriptEngine->AppendDebugMessage(bldgName, false);
+		// try to fix.
+		Real posOffset;
+		Bool valid = false;
+		// Wiggle it a little :)
+		Real limit = 10*PATHFIND_CELL_SIZE_F;
+		if (isSkirmishAI()) {
+			limit = 300*PATHFIND_CELL_SIZE_F;
+		}
+		Coord3D newPos = pos;
+		for (posOffset = 0; posOffset<limit; posOffset += 2*PATHFIND_CELL_SIZE_F) {
 			if (isSkirmishAI()) {
-				limit = 300*PATHFIND_CELL_SIZE_F;
+				posOffset += 2*PATHFIND_CELL_SIZE_F;
 			}
-			Coord3D newPos = pos;
-			for (posOffset = 0; posOffset<limit; posOffset += 2*PATHFIND_CELL_SIZE_F) {
-				if (isSkirmishAI()) {
-					posOffset += 2*PATHFIND_CELL_SIZE_F;
-				}
-				Real offset = posOffset/2;
-				Real xPos, yPos;
-				yPos = pos.y-offset;
-				for (xPos = pos.x-offset; xPos <= pos.x+offset; xPos+=PATHFIND_CELL_SIZE_F) {
-					if (isSkirmishAI()) xPos += PATHFIND_CELL_SIZE_F;
-					newPos.x = xPos;
-					newPos.y = yPos;
-					valid = TheBuildAssistant->isLocationLegalToBuild( &newPos, bldgPlan, angle,
-																							 BuildAssistant::CLEAR_PATH |
-																							 BuildAssistant::TERRAIN_RESTRICTIONS |
-																							 BuildAssistant::NO_OBJECT_OVERLAP,
-																							 dozer, m_player ) == LBC_OK;
-					if (valid) break;
-					newPos.y = yPos+posOffset;
-					valid = TheBuildAssistant->isLocationLegalToBuild( &newPos, bldgPlan, angle,
-																							 BuildAssistant::CLEAR_PATH |
-																							 BuildAssistant::TERRAIN_RESTRICTIONS |
-																							 BuildAssistant::NO_OBJECT_OVERLAP,
-																							 dozer, m_player ) == LBC_OK;
-				}
-				if (valid) break;
-				xPos = pos.x-offset;
-				for (yPos = pos.y-offset; yPos <= pos.y+offset; yPos+=PATHFIND_CELL_SIZE_F) {
-					if (isSkirmishAI()) yPos += PATHFIND_CELL_SIZE_F;
-					newPos.x = xPos;
-					newPos.y = yPos;
-					valid = TheBuildAssistant->isLocationLegalToBuild( &newPos, bldgPlan, angle,
-																							 BuildAssistant::CLEAR_PATH |
-																							 BuildAssistant::TERRAIN_RESTRICTIONS |
-																							 BuildAssistant::NO_OBJECT_OVERLAP,
-																							 dozer, m_player ) == LBC_OK;
-					if (valid) break;
-					newPos.x = xPos+posOffset;
-					valid = TheBuildAssistant->isLocationLegalToBuild( &newPos, bldgPlan, angle,
-																							 BuildAssistant::CLEAR_PATH |
-																							 BuildAssistant::TERRAIN_RESTRICTIONS |
-																							 BuildAssistant::NO_OBJECT_OVERLAP,
-																							 dozer, m_player ) == LBC_OK;
-				}
-				if (valid) break;
-			}
-			if (valid) pos = newPos;
-			if (!valid) {
-				valid = TheBuildAssistant->isLocationLegalToBuild( &pos, bldgPlan, angle,
-																						 BuildAssistant::NO_ENEMY_OBJECT_OVERLAP,
+			Real offset = posOffset/2;
+			Real xPos, yPos;
+			yPos = pos.y-offset;
+			for (xPos = pos.x-offset; xPos <= pos.x+offset; xPos+=PATHFIND_CELL_SIZE_F) {
+				if (isSkirmishAI()) xPos += PATHFIND_CELL_SIZE_F;
+				newPos.x = xPos;
+				newPos.y = yPos;
+				valid = TheBuildAssistant->isLocationLegalToBuild( &newPos, bldgPlan, angle,
+																						 BuildAssistant::CLEAR_PATH |
+																						 BuildAssistant::TERRAIN_RESTRICTIONS |
+																						 BuildAssistant::NO_OBJECT_OVERLAP,
 																						 dozer, m_player ) == LBC_OK;
-				if (!valid) {
-					//-TanSo-: do not set true if it is just an enemy obstructing the placement.
-					if (TheBuildAssistant->isLocationLegalToBuild(
-						&pos,
-						bldgPlan,
-						angle,
-						BuildAssistant::NO_ENEMY_OBJECT_OVERLAP,
-						dozer,
-						m_player) == LBC_OK)
-					{
-						info->setBuildLocationBlocked(true);
-					}
-					return nullptr;
-				}
+				if (valid) break;
+				newPos.y = yPos+posOffset;
+				valid = TheBuildAssistant->isLocationLegalToBuild( &newPos, bldgPlan, angle,
+																						 BuildAssistant::CLEAR_PATH |
+																						 BuildAssistant::TERRAIN_RESTRICTIONS |
+																						 BuildAssistant::NO_OBJECT_OVERLAP,
+																						 dozer, m_player ) == LBC_OK;
 			}
-
+			if (valid) break;
+			xPos = pos.x-offset;
+			for (yPos = pos.y-offset; yPos <= pos.y+offset; yPos+=PATHFIND_CELL_SIZE_F) {
+				if (isSkirmishAI()) yPos += PATHFIND_CELL_SIZE_F;
+				newPos.x = xPos;
+				newPos.y = yPos;
+				valid = TheBuildAssistant->isLocationLegalToBuild( &newPos, bldgPlan, angle,
+																						 BuildAssistant::CLEAR_PATH |
+																						 BuildAssistant::TERRAIN_RESTRICTIONS |
+																						 BuildAssistant::NO_OBJECT_OVERLAP,
+																						 dozer, m_player ) == LBC_OK;
+				if (valid) break;
+				newPos.x = xPos+posOffset;
+				valid = TheBuildAssistant->isLocationLegalToBuild( &newPos, bldgPlan, angle,
+																						 BuildAssistant::CLEAR_PATH |
+																						 BuildAssistant::TERRAIN_RESTRICTIONS |
+																						 BuildAssistant::NO_OBJECT_OVERLAP,
+																						 dozer, m_player ) == LBC_OK;
+			}
+			if (valid) break;
+		}
+		if (valid) pos = newPos;
+		if (!valid) {
+			valid = TheBuildAssistant->isLocationLegalToBuild( &pos, bldgPlan, angle,
+																					 BuildAssistant::NO_ENEMY_OBJECT_OVERLAP,
+																					 dozer, m_player ) == LBC_OK;
+			if (!valid) {
+				//-TanSo-: do not set true if it is just an enemy obstructing the placement.
+				if (TheBuildAssistant->isLocationLegalToBuild(
+					&pos,
+					bldgPlan,
+					angle,
+					BuildAssistant::NO_ENEMY_OBJECT_OVERLAP,
+					dozer,
+					m_player) == LBC_OK)
+					{
+					info->setBuildLocationBlocked(true);
+					}
+				return nullptr;
+			}
+		}
 	}
 
 	TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
@@ -1029,8 +1028,13 @@ void AIPlayer::guardSupplyCenter( Team *team, Int minSupplies )
 
 		location.x -= offset.x*radius;
 		location.y -= offset.y*radius;
-		theGroup->groupGuardPosition( &location, GUARDMODE_NORMAL, CMD_FROM_SCRIPT );
 
+		//theGroup->groupGuardPosition( &location, GUARDMODE_NORMAL, CMD_FROM_SCRIPT );
+		
+		//-TanSo-: This should work better... Why? Guard mode makes units solely move towards a supply source, then guard.
+		// Turreted vehicles will slowly fire, while turretless vehicles and infantry wont fire upon enemy contact at all,
+		// which makes them vulnerable.
+		theGroup->groupAttackMoveToPosition(&location, GUARDMODE_NORMAL, CMD_FROM_SCRIPT);
 	}
 }
 
@@ -1569,7 +1573,7 @@ Object *AIPlayer::findFactory(const ThingTemplate *thing, Bool busyOK, Team* tea
 	for( BuildListInfo *info = m_player->getBuildList(); info; info = info->getNext() )
 	{
 		Object *factory = TheGameLogic->findObjectByID( info->getObjectID() );
-		if( factory )
+		if (factory)
 		{
 			if (factory->getControllingPlayer() != m_player) {
 				info->setObjectID(INVALID_ID);
@@ -1581,36 +1585,46 @@ Object *AIPlayer::findFactory(const ThingTemplate *thing, Bool busyOK, Team* tea
 			// also ignore buildings that are being sold.
 			if (factory->testStatus(OBJECT_STATUS_SOLD))
 				continue;
-			ProductionUpdateInterface *pu = factory->getProductionUpdateInterface();
+			ProductionUpdateInterface* pu = factory->getProductionUpdateInterface();
 			// If it doesn't produce, continue.
 			if (!pu) continue;
 
-			// ignore reserved factories
+			// if we can't create the unit do nothing
+			if (TheBuildAssistant->isPossibleToMakeUnit(factory, thing) == FALSE)
+				continue;
+
+			// mark reserved factories
+			Bool alreadyReserved = false;
 			reservation = getReservation(factory->getID());
 			if (team != nullptr)
 			{
 				// This is not the team we want to build
 				if (reservation->team != nullptr && reservation->team != team)
-					continue;
+					alreadyReserved = true;
+			}
+
+			// If the factory is not busy, return it.
+			Bool busy = pu->getProductionCount() > 0;
+			if (!busy) // found a not busy factory.
+			{
+				if (!alreadyReserved)
+					return factory;
 			}
 			else
 			{
-				// No team specified->only use factories that are not reserved.
-				if (reservation->team != nullptr)
-					continue;
+				if (!busyFactory) {
+					busyFactory = factory;
+				}
+				else {
+					ProductionUpdateInterface* bpu = busyFactory->getProductionUpdateInterface();
+					if (bpu && pu->getProductionCount() < bpu->getProductionCount())
+						busyFactory = factory;
+				}
 			}
-
-			// if we can't create the unit do nothing
-			if( TheBuildAssistant->isPossibleToMakeUnit( factory, thing ) == FALSE )
-				continue;
-			// If the factory is not busy, return it.
-			Bool busy = pu->getProductionCount()>0;
-			if (!busy)	// found a not busy factory.
-				return factory;
-
-			if (busyOK && reservation->team == team) busyFactory = factory;
+			// only override if the team already has a reservation
+			if (reservation->team == team)
+				busyFactory = factory;
 		}
-
 	}
 	// We didn't find an idle factory, so return the busy one.
 	if (busyOK)
@@ -4797,6 +4811,15 @@ void AIPlayer::normalizeBuildListFromID(Int id, Int spot)
 void AIPlayer::setDefaultBuildList(Int id)
 {
 	AsciiString teamStr = "Error : Solo ai doesn't support setDefaultBuildList. '";
+	teamStr.concat(id);
+	teamStr.concat("' not inserted.");
+	TheScriptEngine->AppendDebugMessage(teamStr, false);
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::rotateBuildListFromID(Int id, Real angle)
+{
+	AsciiString teamStr = "Error : Solo ai doesn't support rotateBuildListFromID. '";
 	teamStr.concat(id);
 	teamStr.concat("' not inserted.");
 	TheScriptEngine->AppendDebugMessage(teamStr, false);
