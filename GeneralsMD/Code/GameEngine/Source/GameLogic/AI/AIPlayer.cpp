@@ -650,7 +650,7 @@ Object *AIPlayer::buildStructureWithDozer(const ThingTemplate *bldgPlan, BuildLi
 			// Wiggle it a little :)
 			Real limit = 10*PATHFIND_CELL_SIZE_F;
 			if (isSkirmishAI()) {
-				limit = 120*PATHFIND_CELL_SIZE_F;
+				limit = 300*PATHFIND_CELL_SIZE_F;
 			}
 			Coord3D newPos = pos;
 			for (posOffset = 0; posOffset<limit; posOffset += 2*PATHFIND_CELL_SIZE_F) {
@@ -704,6 +704,17 @@ Object *AIPlayer::buildStructureWithDozer(const ThingTemplate *bldgPlan, BuildLi
 																						 BuildAssistant::NO_ENEMY_OBJECT_OVERLAP,
 																						 dozer, m_player ) == LBC_OK;
 				if (!valid) {
+					//-TanSo-: do not set true if it is just an enemy obstructing the placement.
+					if (TheBuildAssistant->isLocationLegalToBuild(
+						&pos,
+						bldgPlan,
+						angle,
+						BuildAssistant::NO_ENEMY_OBJECT_OVERLAP,
+						dozer,
+						m_player) == LBC_OK)
+					{
+						info->setBuildLocationBlocked(true);
+					}
 					return nullptr;
 				}
 			}
@@ -2095,7 +2106,7 @@ void AIPlayer::buildBySupplies(Int minimumCash, const AsciiString& thingName)
 			// try to fix.
 			Real posOffset;
 			// Wiggle it a little :)
-			for (posOffset = 0; posOffset<2*SUPPLY_CENTER_CLOSE_DIST; posOffset += 2*PATHFIND_CELL_SIZE_F) {
+			for (posOffset = 0; posOffset < 5 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2*PATHFIND_CELL_SIZE_F) {
 				Real offset = posOffset/2;
 				Real xPos, yPos;
 				yPos = location.y-offset;
@@ -2191,7 +2202,7 @@ Bool AIPlayer::calcClosestConstructionZoneLocation( const ThingTemplate *constru
 		// try to fix.
 		Real posOffset;
 		// Wiggle it a little :)
-		for( posOffset = 0; posOffset < 2 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2 * PATHFIND_CELL_SIZE_F )
+		for( posOffset = 0; posOffset < 5 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2 * PATHFIND_CELL_SIZE_F )
 		{
 			Real offset = posOffset / 2;
 			Real xPos, yPos;
@@ -2303,7 +2314,7 @@ void AIPlayer::buildSpecificBuildingNearestTeam( const AsciiString &thingName, c
 		// try to fix.
 		Real posOffset;
 		// Wiggle it a little :)
-		for( posOffset = 0; posOffset < 2 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2 * PATHFIND_CELL_SIZE_F )
+		for( posOffset = 0; posOffset < 5 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2 * PATHFIND_CELL_SIZE_F )
 		{
 			Real offset = posOffset / 2;
 			Real xPos, yPos;
@@ -4371,90 +4382,120 @@ void AIPlayer::buildSpecificBuildingNearestTeamAngle(const AsciiString& thingNam
 		return;
 	}
 
-	//From the team's location, find the most valid build location.
-	const Coord3D* location = team->getEstimateTeamPosition();
-	if (!location)
+	// Make sure we iterate through all instances, should the real closest team be obstructed somehow.
+	Team* targetTeam = const_cast<Team*>(team);
+	if (!targetTeam) return;
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = m_player->getPlayerTeams()->begin(); it != m_player->getPlayerTeams()->end(); ++it)
 	{
-		return;
-	}
-
-	// offset back towards the base.
-	Coord2D offset;
-	offset.x = location->x - m_baseCenter.x;
-	offset.y = location->y - m_baseCenter.y;
-	offset.normalize();
-
-	Real angle = (PI / 180.0f) * bAngle;
-
-	// validate the the position to build at is valid
-	Bool valid = false;
-	Coord3D newPos = *location;
-	if (TheBuildAssistant->isLocationLegalToBuild(location, tTemplate, angle, BuildAssistant::NO_OBJECT_OVERLAP, nullptr, m_player) != LBC_OK)
-	{
-		// Warn.
-		AsciiString bldgName = tTemplate->getName();
-		bldgName.concat(" - buildSpecificBuildingNearestTeam unable to place.  Attempting to adjust position.");
-		TheScriptEngine->AppendDebugMessage(bldgName, false);
-		// try to fix.
-		Real posOffset;
-		// Wiggle it a little :)
-		for (posOffset = 0; posOffset < 2 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2 * PATHFIND_CELL_SIZE_F)
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance())
 		{
-			Real offset = posOffset / 2;
-			Real xPos, yPos;
-			yPos = location->y - offset;
-			for (xPos = location->x - offset; xPos <= location->x + offset; xPos += PATHFIND_CELL_SIZE_F)
-			{
-				newPos.x = xPos;
-				newPos.y = yPos;
-				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
-					BuildAssistant::CLEAR_PATH |
-					BuildAssistant::TERRAIN_RESTRICTIONS |
-					BuildAssistant::NO_OBJECT_OVERLAP,
-					nullptr, m_player) == LBC_OK;
-				if (valid)
-					break;
+			Team* pTeam = iter.cur();
+			if (!pTeam)
+				continue;
 
-				newPos.y = yPos + posOffset;
-				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
-					BuildAssistant::CLEAR_PATH |
-					BuildAssistant::TERRAIN_RESTRICTIONS |
-					BuildAssistant::NO_OBJECT_OVERLAP,
-					nullptr, m_player) == LBC_OK;
+			if (pTeam->getPrototype() != targetTeam->getPrototype())
+				continue;
+
+			//From the team's location, find the most valid build location.
+			const Coord3D* location = pTeam->getEstimateTeamPosition();
+			if (!location) return;
+
+			// offset back towards the base.
+			Coord2D offset;
+			offset.x = location->x - m_baseCenter.x;
+			offset.y = location->y - m_baseCenter.y;
+			offset.normalize();
+
+			Real angle = (PI / 180.0f) * bAngle;
+
+			// validate the the position to build at is valid
+			Bool valid = TheBuildAssistant->isLocationLegalToBuild(location, tTemplate, angle,
+				BuildAssistant::CLEAR_PATH |
+				BuildAssistant::TERRAIN_RESTRICTIONS |
+				BuildAssistant::NO_OBJECT_OVERLAP,
+				nullptr, m_player) == LBC_OK;
+			if (valid)
+			{
+				Coord3D* earlyExitPosition = const_cast<Coord3D*>(location);
+				earlyExitPosition->z = 0; // All build list locations are ground relative.
+				m_player->addToPriorityBuildList(thingName, earlyExitPosition, angle);
+				TheTerrainVisual->removeAllBibs();
+				return;
 			}
 
-			if (valid)
-				break;
-
-			xPos = location->x - offset;
-			for (yPos = location->y - offset; yPos <= location->y + offset; yPos += PATHFIND_CELL_SIZE_F)
+			Coord3D newPos = *location;
+			if (TheBuildAssistant->isLocationLegalToBuild(location, tTemplate, angle, BuildAssistant::NO_OBJECT_OVERLAP, nullptr, m_player) != LBC_OK)
 			{
-				newPos.x = xPos;
-				newPos.y = yPos;
-				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
-					BuildAssistant::CLEAR_PATH | 
-					BuildAssistant::TERRAIN_RESTRICTIONS |
-					BuildAssistant::NO_OBJECT_OVERLAP,
-					nullptr, m_player) == LBC_OK;
-				if (valid)
-					break;
+				// Warn.
+				AsciiString bldgName = tTemplate->getName();
+				bldgName.concat(" - buildSpecificBuildingNearestTeam unable to place.  Attempting to adjust position.");
+				TheScriptEngine->AppendDebugMessage(bldgName, false);
+				// try to fix.
+				Real posOffset;
+				// Wiggle it a little :)
+				for (posOffset = 0; posOffset < 5 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2 * PATHFIND_CELL_SIZE_F)
+				{
+					Real offset = posOffset / 2;
+					Real xPos, yPos;
+					yPos = location->y - offset;
+					for (xPos = location->x - offset; xPos <= location->x + offset; xPos += PATHFIND_CELL_SIZE_F)
+					{
+						newPos.x = xPos;
+						newPos.y = yPos;
+						valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+							BuildAssistant::CLEAR_PATH |
+							BuildAssistant::TERRAIN_RESTRICTIONS |
+							BuildAssistant::NO_OBJECT_OVERLAP,
+							nullptr, m_player) == LBC_OK;
+						if (valid)
+							break;
 
-				newPos.x = xPos + posOffset;
-				valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
-					BuildAssistant::CLEAR_PATH |
-					BuildAssistant::TERRAIN_RESTRICTIONS |
-					BuildAssistant::NO_OBJECT_OVERLAP,
-					nullptr, m_player) == LBC_OK;
+						newPos.y = yPos + posOffset;
+						valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+							BuildAssistant::CLEAR_PATH |
+							BuildAssistant::TERRAIN_RESTRICTIONS |
+							BuildAssistant::NO_OBJECT_OVERLAP,
+							nullptr, m_player) == LBC_OK;
+					}
+
+					if (valid)
+						break;
+
+					xPos = location->x - offset;
+					for (yPos = location->y - offset; yPos <= location->y + offset; yPos += PATHFIND_CELL_SIZE_F)
+					{
+						newPos.x = xPos;
+						newPos.y = yPos;
+						valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+							BuildAssistant::CLEAR_PATH |
+							BuildAssistant::TERRAIN_RESTRICTIONS |
+							BuildAssistant::NO_OBJECT_OVERLAP,
+							nullptr, m_player) == LBC_OK;
+						if (valid)
+							break;
+
+						newPos.x = xPos + posOffset;
+						valid = TheBuildAssistant->isLocationLegalToBuild(&newPos, tTemplate, angle,
+							BuildAssistant::CLEAR_PATH |
+							BuildAssistant::TERRAIN_RESTRICTIONS |
+							BuildAssistant::NO_OBJECT_OVERLAP,
+							nullptr, m_player) == LBC_OK;
+					}
+
+					if (valid)
+						break;
+				}
 			}
-
 			if (valid)
-				break;
+			{
+				newPos.z = 0; // All build list locations are ground relative.
+				m_player->addToPriorityBuildList(thingName, &newPos, angle);
+				TheTerrainVisual->removeAllBibs();
+				return;
+			}
 		}
-	}
-	if (valid)
-	{
-		newPos.z = 0; // All build list locations are ground relative.
-		m_player->addToPriorityBuildList(thingName, &newPos, angle);
 	}
 
 	TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
@@ -4525,7 +4566,7 @@ void AIPlayer::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingNam
 			// try to fix.
 			Real posOffset;
 			// Wiggle it a little :)
-			for (posOffset = 0; posOffset < 2 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2 * PATHFIND_CELL_SIZE_F) {
+			for (posOffset = 0; posOffset < 5 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2 * PATHFIND_CELL_SIZE_F) {
 				Real offset = posOffset / 2;
 				Real xPos, yPos;
 				yPos = location.y - offset;
@@ -4627,7 +4668,7 @@ void AIPlayer::buildSpecificBuildingNearestObjectAngle(const AsciiString& thingN
 		// try to fix.
 		Real posOffset;
 		// Wiggle it a little :)
-		for (posOffset = 0; posOffset < 2 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2 * PATHFIND_CELL_SIZE_F)
+		for (posOffset = 0; posOffset < 5 * SUPPLY_CENTER_CLOSE_DIST; posOffset += 2 * PATHFIND_CELL_SIZE_F)
 		{
 			Real offset = posOffset / 2;
 			Real xPos, yPos;

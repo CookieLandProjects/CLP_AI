@@ -1166,7 +1166,7 @@ Bool wantToSquishTarget( State *thisState, void* userData )
 		if( obj->getAI() && (obj->getAI()->getWhichTurretForCurWeapon() != TURRET_INVALID) )
 		{
 			// I can only decide to crush-attack if I am attacking with a turreted weapon.
-			if (TheAI->getAiData()->m_aiCrushesInfantry) {
+			if (obj->m_crushesInfantry) {
 				if (obj && obj->getControllingPlayer() &&
 					obj->getControllingPlayer()->getPlayerType()==PLAYER_COMPUTER) {
 					if (obj->canCrushOrSquish(victim)) {
@@ -2362,8 +2362,10 @@ static Bool canPursue(Object *source, Weapon *weapon, Object *victim)
 	if (tur == TURRET_INVALID) {
 		return false;
 	}
+	Object* obj = source;
+	if (!source) return false;
 
-	if (TheAI->getAiData()->m_aiCrushesInfantry) {
+	if (obj->m_crushesInfantry) {
 		if ( source->getControllingPlayer() &&
 			(source->getControllingPlayer()->getPlayerType() == PLAYER_COMPUTER) &&
 			source->canCrushOrSquish(victim) ) {

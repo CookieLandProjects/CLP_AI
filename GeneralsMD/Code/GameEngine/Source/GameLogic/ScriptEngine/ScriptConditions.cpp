@@ -1775,7 +1775,7 @@ Bool ScriptConditions::evaluateMultiplayerPlayerDefeat()
 //-------------------------------------------------------------------------------------------------
 Bool ScriptConditions::evaluatePlayerUnitCondition(Condition *pCondition, Parameter *pPlayerParm, Parameter *pComparisonParm, Parameter *pCountParm, Parameter *pUnitTypeParm)
 {
-	if (pCondition->getCustomData()!=0)
+	if (pCondition->getCustomData() != 0)
 	{
 		// We have a cached value.
 		if( TheScriptEngine->getFrameObjectCountChanged() == pCondition->getCustomFrame() )
@@ -2756,6 +2756,11 @@ Bool ScriptConditions::evaluateEmptySpot(Parameter* pStartNdx)
 			Player* pPlayers = ThePlayerList->getNthPlayer(i);
 			if (pPlayers->getMpStartIndex() == ndx)
 			{
+				// If the player is dead, the spot is free again.
+				if (!pPlayers->isPlayerActive())
+				{
+					return true;
+				}
 				return false;
 			}
 		}
@@ -2890,7 +2895,7 @@ Bool ScriptConditions::evaluateNeighbouringSpotsEmpty(Parameter* pPlayerParm, Pa
 
 		for (int j = neighbouringWaypoints.size() - 1; j >= 0; j--) {
 			AsciiString sName = neighbouringWaypoints[j]->getName();
-			if (sName == tName) {
+			if (sName == tName && ThePlayerList->getNthPlayer(i)->isPlayerActive()) {
 				neighbouringWaypoints.erase(neighbouringWaypoints.begin() + j);
 			}
 		}
@@ -5931,7 +5936,7 @@ Bool ScriptConditions::evaluateTeamAllClear(Parameter* pTeamParm)
 // Influence is a special case, its not random, its picked via the influence system scripted
 // in worldbuilder.
 //-------------------------------------------------------------------------------------------------
-Bool ScriptConditions::AIPlaystyleEvaluation(Parameter* pPlayerParm, Parameter* pPlaystyleParm)
+Bool ScriptConditions::evaluateAIPlaystyle(Parameter* pPlayerParm, Parameter* pPlaystyleParm)
 {
 	if (!pPlayerParm || !pPlaystyleParm)
 		return false;
@@ -5945,6 +5950,43 @@ Bool ScriptConditions::AIPlaystyleEvaluation(Parameter* pPlayerParm, Parameter* 
 	Int expectedPlaystyle = pPlaystyleParm->getInt();
 	return (pPlayer->getPlaystyle() == expectedPlaystyle);
 }
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateNoTeams(Bool isFFA)
+{
+	Int activePlayerCount = 0;
+	Player* currentPlayer = nullptr;
+	Player* comparisonPlayer = nullptr;
+
+	for (Int i = 0; i < ThePlayerList->getPlayerCount(); i++)
+	{
+		currentPlayer = ThePlayerList->getNthPlayer(i);
+		if (!currentPlayer->isPlayerActive())
+			continue;
+		
+		activePlayerCount++;
+
+		for (Int j = 0; j < ThePlayerList->getPlayerCount(); j++)
+		{
+			comparisonPlayer = ThePlayerList->getNthPlayer(j);
+			if (!comparisonPlayer->isPlayerActive())
+				continue;
+
+			if (currentPlayer == comparisonPlayer)
+				continue;
+
+			if (currentPlayer->getDefaultTeam()->getRelationship(comparisonPlayer->getDefaultTeam()) == ALLIES)
+				return !isFFA;
+		}
+	}
+
+	// This cannot be an FFA if it's a 1v1
+	if (activePlayerCount < 3)
+		return false;
+
+	return isFFA;
+}
+
 
 //-------------------------------------------------------------------------------------------------
 //---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
@@ -6331,6 +6373,8 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 			return evaluateTeamAllClear(pCondition->getParameter(0));
 
 		case Condition::AI_PLAYSTYLE:
-      return AIPlaystyleEvaluation(pCondition->getParameter(0), pCondition->getParameter(1));
+      return evaluateAIPlaystyle(pCondition->getParameter(0), pCondition->getParameter(1));
+		case Condition::NO_TEAMS:
+			return evaluateNoTeams(pCondition->getParameter(0)->getInt());
 	}
 }

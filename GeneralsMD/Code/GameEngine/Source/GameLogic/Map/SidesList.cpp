@@ -932,7 +932,8 @@ m_currentGatherers(0),
 m_automaticallyBuild(true),
 m_priorityBuild(false),
 m_buildingName(AsciiString::TheEmptyString),
-m_consumedInIDList(false)
+m_consumedInIDList(false),
+m_buildLocationBlocked(false)
 {
 	m_location.zero();
 	m_rallyPointOffset.x = 0.0f;
@@ -1051,7 +1052,7 @@ BuildListInfo *BuildListInfo::duplicate()
 		link->setWhiner(next->getWhiner());
 		link->setUnsellable(next->getUnsellable());
 		link->setRepairable(next->getRepairable());
-		link->m_automaticallyBuild = m_automaticallyBuild;
+		link->m_automaticallyBuild = next->m_automaticallyBuild;
 
 		link->setObjectID(INVALID_ID);
 		link->setObjectTimestamp(0);
@@ -1117,6 +1118,7 @@ void BuildListInfo::xfer( Xfer *xfer )
 	}
 	if (version >= 3) {
 		xfer->xferBool(&m_consumedInIDList);
+		xfer->xferBool(&m_buildLocationBlocked);
 	}
 }
 

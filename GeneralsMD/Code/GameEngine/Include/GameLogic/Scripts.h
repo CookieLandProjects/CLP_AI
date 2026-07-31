@@ -677,6 +677,19 @@ public:
 			AI_PLAYER_SET_DEFAULT_BUILDLIST_FROM_ID,			///< Set a player to exchange the default BuildList with an IDBuildList.
 			AI_PLAYER_RESET_BUILDLIST_FROM_ID,						///< Set a player to reset a buildlist with a specific ID, so that entries are not consumed, and the rotation is back to standard.
 
+			PLAYER_APPLY_ATTACK_PRIORITY_SET,							///< Set a player to apply a priority set.
+			PLAYER_APPLY_ATTACK_PRIORITY_SET_TYPE,				///< Set a player to apply a priority set with units of a specific type.
+			TEAM_APPLY_ATTACK_PRIORITY_SET_TYPE,					///< Set a team to apply a priority set with units of a specific type.
+
+			TEAM_KEEP_DISTANCE_RELATION,									///< A team moves to keep a <Real> feet distance from a <relation> unit.
+			UNIT_KEEP_DISTANCE_RELATION,									///< A unit moves to keep a <Real> feet distance from a <relation> unit.
+			TEAM_KEEP_DISTANCE_RELATION_TYPE,							///< A team moves to keep a <Real> feet distance from a <relation> unit of a type.
+			UNIT_KEEP_DISTANCE_RELATION_TYPE,							///< A unit moves to keep a <Real> feet distance from a <relation> unit of a type.
+
+			SET_WILLINGNESS_TO_CRUSH_PLAYER,							///< Override the settings of a player's willingness to crush infantry.
+			SET_WILLINGNESS_TO_CRUSH_TEAM,								///< Override the settings a team's willingness to crush infantry.
+			SET_WILLINGNESS_TO_CRUSH_UNIT,								///< Override the settings a unit's willingness to crush infantry.
+
 			//-------------------------------------------------------------------------------------------------
 			//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------
 			//-------------------------------------------------------------------------------------------------
@@ -1213,7 +1226,9 @@ public:
 		UNIT_CLOSEST_RELATION_TYPE,							// True if a(n) <relation> object of a type is <comparison> <Real> feet away from a unit.
 
 		TEAM_ALL_CLEAR,													// True if a team just left combat. Utilizes the check from the behaviour tab.
-        AI_PLAYSTYLE,													// True if a player has a specific AI playstyle.
+    AI_PLAYSTYLE,														// True if a player has a specific AI playstyle.
+
+		NO_TEAMS,																// True if no player is allied to another & there are more than 2 active players (a.k.a this is an FFA match).
 		
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------

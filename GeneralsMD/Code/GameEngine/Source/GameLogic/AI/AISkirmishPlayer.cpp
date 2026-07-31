@@ -117,6 +117,14 @@ void AISkirmishPlayer::processBaseBuilding()
 				DEBUG_LOG(("*** ERROR - Build list building '%s' doesn't exist.", name.str()));
 				continue;
 			}
+
+			//-TanSo-: ignore buildings of which the placement is obstructed.
+			if (info->isBuildLocationBlocked())
+			{
+				DEBUG_LOG(("*** INFO - Skipping %s for having a blocked build location.", name.str()));
+				continue;
+			}
+
 			bldg = TheGameLogic->findObjectByID( info->getObjectID() );
 			// check for hole.
 			if (info->getObjectID() != INVALID_ID) {
@@ -141,6 +149,8 @@ void AISkirmishPlayer::processBaseBuilding()
 							}
 						}
  					}
+					// -TanSo-: A building got destroyed, and we don't know which. Clear all flags because space is free somewhere.
+					m_player->clearBuildLocationBlocks();
 				}	else {
 					if (bldg->getControllingPlayer() == m_player) {
 						// Check for built or dozer missing.
@@ -226,7 +236,7 @@ void AISkirmishPlayer::processBaseBuilding()
 				}
 				continue;
 			}
-			if (TheBuildAssistant->canMakeUnit(dozer, bldgPlan)!=CANMAKE_OK) {
+			if (TheBuildAssistant->canMakeUnit(dozer, curPlan)!=CANMAKE_OK) {
 				if (info->isBuildable()) {
 					AsciiString bldgName = info->getTemplateName();
 					bldgName.concat(" - Dozer unable to build - money or technology missing.");
@@ -257,6 +267,7 @@ void AISkirmishPlayer::processBaseBuilding()
 
 #ifdef USE_DOZER
 			// dozer-construct the building
+			
 			bldg = buildStructureWithDozer(bldgPlan, bldgInfo);
 
 			// store the object with the build order
@@ -1090,6 +1101,9 @@ void AISkirmishPlayer::newMap()
 			BuildListInfo *buildList = build->m_buildList->duplicate();
 			adjustBuildList(buildList); // adjust to  our start position.
 			m_player->setBuildList(buildList);
+			DEBUG_LOG(("Player %s buildlist=%p",
+				m_player->getGeneralName().str(),
+				m_player->getBuildList()));
 			computeCenterAndRadiusOfBase(&m_baseCenter, &m_baseRadius);
 			break;
 		}

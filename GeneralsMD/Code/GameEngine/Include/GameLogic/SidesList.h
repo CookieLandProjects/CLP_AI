@@ -305,6 +305,7 @@ protected:
 	Bool		 m_priorityBuild;						///< Is priority build.
 
 	Bool		m_consumedInIDList;					///< -TanSo-: Make sure we do not build the same building twice in an ID list.
+	Bool		m_buildLocationBlocked;			///< -TanSo-: Skip this entry if we cannot build it right now and move on.
 
 public:
 	// srj sez: naughty public access to avoid 'friend' -- should be friend for JUST THESE, but hey
@@ -372,6 +373,8 @@ public:
 	BuildListInfo* duplicateSingle();
 	Bool isConsumedInIDList() { return m_consumedInIDList; }
 	void setConsumedInIDList(Bool b) { m_consumedInIDList = b; }
+	Bool isBuildLocationBlocked() { return m_buildLocationBlocked; }
+	void setBuildLocationBlocked(Bool b) { m_buildLocationBlocked = b; }
 };
 
 inline void BuildListInfo::decrementNumRebuilds()

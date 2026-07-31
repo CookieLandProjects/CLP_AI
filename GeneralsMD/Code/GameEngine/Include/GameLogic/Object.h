@@ -643,6 +643,7 @@ public:
 
 	Bool m_seenByEnemy;			// @-TanSo-: use this with our scripts so we can make AI attack only things it sees at this moment. Pretty fair, right?
 	Int m_lastSeenFrame;
+	Bool m_crushesInfantry;	// Why don't we make crushing modular? Let the user decide whether artillery should REALLY crush or not. 9/10 times it's a bad idea...
 
 protected:
 
