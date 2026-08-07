@@ -136,7 +136,7 @@ public:
 	void setWarnings(Bool warnings) { m_hasWarnings = warnings;}
 	void setNextGroup(ScriptGroup *pGr) {m_nextGroup = pGr;}
 
-	AsciiString getName(void) const { return m_groupName;}
+	const AsciiString& const getName(void) { return m_groupName;}
 	Bool isActive(void) const { return m_isGroupActive;}
 	Bool isSubroutine(void) const { return m_isGroupSubroutine;}
 	Bool hasWarnings(void) const { return m_hasWarnings;}
@@ -849,7 +849,7 @@ public:
 	Real getCurTime() {return m_curTime;}
 	Int getDelayEvalSeconds() {return m_delayEvaluationSeconds;}
 
-	AsciiString getName(void) const { return m_scriptName;}
+	const AsciiString& const getName (void) { return m_scriptName;}
 	AsciiString getComment(void) const {return m_comment;}
 	AsciiString getActionComment(void) const {return m_actionComment;}
 	AsciiString getConditionComment(void) const {return m_conditionComment;}

@@ -2011,7 +2011,7 @@ Bool Condition::ParseConditionDataChunk(DataChunkInput &file, DataChunkInfo *inf
 		}
 
 		if (!match) {
-			DEBUG_CRASH(("Invalid script condition.  Making it false. jba."));
+			DEBUG_CRASH(("Invalid script condition: [%d], Making it noop. jba.", pCondition->m_conditionType));
 			pCondition->m_conditionType = CONDITION_FALSE;
 			pCondition->m_numParms = 0;
 		}
@@ -2035,7 +2035,7 @@ Bool Condition::ParseConditionDataChunk(DataChunkInput &file, DataChunkInfo *inf
 			}
 		}
 		if (!match) {
-			DEBUG_CRASH(("Invalid script condition.  Making it false. jba."));
+			DEBUG_CRASH(("Invalid script condition: [%d], Making it noop. jba.", pCondition->m_conditionType));
 			pCondition->m_conditionType = CONDITION_FALSE;
 			pCondition->m_numParms = 0;
 		}
@@ -2075,7 +2075,7 @@ Bool Condition::ParseConditionDataChunk(DataChunkInput &file, DataChunkInfo *inf
 	conT->m_firstMapUsed = TheGlobalData->m_mapName;
 #endif
 	if (ct->getNumParameters() != pCondition->getNumParameters()) {
-		DEBUG_CRASH(("Invalid script condition.  Making it false. jba."));
+		DEBUG_CRASH(("Invalid script condition (numbers of parameters don't match): [%d], Making it noop. jba.", pCondition->m_conditionType));
 		pCondition->m_conditionType = ConditionType::CONDITION_FALSE;
 		pCondition->m_numParms = 0;
 	}
@@ -2876,7 +2876,7 @@ ScriptAction *ScriptAction::ParseAction(DataChunkInput &file, DataChunkInfo *inf
 		}
 
 		if (!match) {
-			DEBUG_CRASH(("Invalid script action.  Making it noop. jba."));
+			DEBUG_CRASH(("Invalid script action: [%d], Making it noop. jba.", pScriptAction->m_actionType));
 			pScriptAction->m_actionType = ScriptAction::NO_OP;
 			pScriptAction->m_numParms = 0;
 		}
@@ -2899,7 +2899,7 @@ ScriptAction *ScriptAction::ParseAction(DataChunkInput &file, DataChunkInfo *inf
 				}
 			}
 			if (!match) {
-				DEBUG_CRASH(("Invalid script action.  Making it noop. jba."));
+				DEBUG_CRASH(("Invalid script action: [%d], Making it noop. jba.", pScriptAction->m_actionType));
 				pScriptAction->m_actionType = ScriptAction::NO_OP;
 				pScriptAction->m_numParms = 0;
 			}
@@ -3034,7 +3034,7 @@ ScriptAction *ScriptAction::ParseAction(DataChunkInput &file, DataChunkInfo *inf
 
 	if (at->getNumParameters() != pScriptAction->getNumParameters()) {
 		// Invalid script [3/20/2003]
-		DEBUG_CRASH(("Invalid script action.  Making it noop. jba."));
+		DEBUG_CRASH(("Invalid script action (numbers of parameters don't match): [%d], Making it noop. jba.", pScriptAction->m_actionType));
 		pScriptAction->m_actionType = ScriptAction::NO_OP;
 		pScriptAction->m_numParms = 0;
 	}

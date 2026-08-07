@@ -110,19 +110,82 @@ static Object *findBestTunnel(Player *ownerPlayer, const Coord3D *pos)
 	for( std::list<ObjectID>::const_iterator iter = allTunnels->begin(); iter != allTunnels->end(); iter++ ) {
 		// For each ID, look it up and change its team.  We all get captured together.
 		Object *currentTunnel = TheGameLogic->findObjectByID( *iter );
-		if( currentTunnel ) {
-			Real dx = currentTunnel->getPosition()->x-pos->x;
-			Real dy = currentTunnel->getPosition()->y-pos->y;
-			Real distSqr = dx*dx+dy*dy;
-			if (bestTunnel==nullptr || distSqr<bestDistSqr) {
-				bestDistSqr = distSqr;
-				bestTunnel = currentTunnel;
-			}
+		if (!currentTunnel)
+			continue;
+
+		if (currentTunnel->getStatusBits().test(OBJECT_STATUS_UNDER_CONSTRUCTION) ||
+				currentTunnel->getStatusBits().test(OBJECT_STATUS_SOLD) ||
+				currentTunnel->getStatusBits().test(OBJECT_STATUS_RECONSTRUCTING))
+			continue;
+
+		Real dx = currentTunnel->getPosition()->x-pos->x;
+		Real dy = currentTunnel->getPosition()->y-pos->y;
+		Real distSqr = dx*dx+dy*dy;
+		if (bestTunnel == nullptr || distSqr < bestDistSqr) {
+			bestDistSqr = distSqr;
+			bestTunnel = currentTunnel;
+
 		}
 	}
 	return bestTunnel;
 }
 
+static Object* findBestExitTunnel(Player* ownerPlayer, const Coord3D* pos)
+{
+	// When exiting while defending, the closest tunnel to the enemy is often not the best (splash damage from artillery
+	// as an example). Look for another, also close enough one (take the distance from the closest tunnel, multiply by 1.5
+	// and then start looking for others. Randomize for a more unpredictable, human approach)
+
+	if (!ownerPlayer) return nullptr; // should never happen, but hey.  jba.
+	TunnelTracker* tunnels = ownerPlayer->getTunnelSystem();
+	Object* bestTunnel = nullptr;
+	Real bestDistSqr = 0;
+	const std::list<ObjectID>* allTunnels = tunnels->getContainerList();
+	for (std::list<ObjectID>::const_iterator iter = allTunnels->begin(); iter != allTunnels->end(); iter++) {
+		// For each ID, look it up and change its team.  We all get captured together.
+		Object* currentTunnel = TheGameLogic->findObjectByID(*iter);
+		if (!currentTunnel)
+			continue;
+
+		if (currentTunnel->getStatusBits().test(OBJECT_STATUS_UNDER_CONSTRUCTION) ||
+				currentTunnel->getStatusBits().test(OBJECT_STATUS_SOLD) ||
+				currentTunnel->getStatusBits().test(OBJECT_STATUS_RECONSTRUCTING))
+			continue;
+
+		Real dx = currentTunnel->getPosition()->x - pos->x;
+		Real dy = currentTunnel->getPosition()->y - pos->y;
+		Real distSqr = dx * dx + dy * dy;
+		if (bestTunnel == nullptr || distSqr < bestDistSqr) {
+			bestDistSqr = distSqr;
+			bestTunnel = currentTunnel;
+		}
+	}
+	// Found the closest, now look whether we have potential candidates that work better.
+	std::vector<Object*> candidates = {};
+	Real searchRadius = bestDistSqr * 2.25f; // 1.5f^2
+
+	for (std::list<ObjectID>::const_iterator iter = allTunnels->begin(); iter != allTunnels->end(); iter++) {
+		// For each ID, look it up and change its team.  We all get captured together.
+		Object* currentTunnel = TheGameLogic->findObjectByID(*iter);
+		if (!currentTunnel)
+			continue;
+
+		if (currentTunnel->getStatusBits().test(OBJECT_STATUS_UNDER_CONSTRUCTION) ||
+				currentTunnel->getStatusBits().test(OBJECT_STATUS_SOLD) ||
+				currentTunnel->getStatusBits().test(OBJECT_STATUS_RECONSTRUCTING))
+			continue;
+
+		Real dx = currentTunnel->getPosition()->x - pos->x;
+		Real dy = currentTunnel->getPosition()->y - pos->y;
+		Real distSqr = dx * dx + dy * dy;
+		if(currentTunnel != bestTunnel && distSqr < searchRadius)
+				candidates.push_back(currentTunnel);
+	}
+	if (candidates.size() > 0)
+		return candidates[GameLogicRandomValue(0, candidates.size() - 1)];
+	else
+		return bestTunnel;
+}
 
 //-- ExitConditions -------------------------------------------------------------------------------
 /**
@@ -828,7 +891,7 @@ StateReturnType AITNGuardIdleState::update()
 			return STATE_SLEEP(0);
 		}
 		if (getMachineOwner()->getContainedBy()) {
-			Object *bestTunnel = findBestTunnel(owner->getControllingPlayer(), nemesis->getPosition());
+			Object *bestTunnel = findBestExitTunnel(owner->getControllingPlayer(), nemesis->getPosition());
 			ExitInterface* goalExitInterface = bestTunnel->getContain() ? bestTunnel->getContain()->getContainExitInterface() : nullptr;
 			if( goalExitInterface == nullptr )
 				return STATE_FAILURE;

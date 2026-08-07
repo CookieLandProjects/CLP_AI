@@ -1296,6 +1296,24 @@ protected:
 
 //=====================================
 /**
+ * @ -TanSo: Accept all objects with any of the give status bits
+ */
+class PartitionFilterStatusBits : public PartitionFilter
+{
+private:
+	ObjectStatusMaskType m_mask;
+	Bool m_match;
+public:
+	PartitionFilterStatusBits(ObjectStatusMaskType mask, Bool match) : m_mask(mask), m_match(match) {}
+protected:
+	virtual Bool allow(Object* other);
+#if defined(RTS_DEBUG)
+	virtual const char* debugGetName() { return "PartitionFilterStatusBits"; }
+#endif
+};
+
+//=====================================
+/**
 	PartitionManager is the singleton class that manages the entire partition/collision
 	system. It maintains the set of PartitionCells that correspond to the world system,
 	and updates the PartitionDatas as needed during update phase.

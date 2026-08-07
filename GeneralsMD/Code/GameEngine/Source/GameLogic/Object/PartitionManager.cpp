@@ -5966,6 +5966,13 @@ Bool PartitionFilterUnderFog::allow(Object* other)
 }
 
 // ------------------------------------------------------------------------------------------------
+Bool PartitionFilterStatusBits::allow(Object* other)
+{
+	return (m_mask.testForAny(other->getStatusBits())) ? m_match : !m_match;
+}
+
+
+// ------------------------------------------------------------------------------------------------
 Object* PartitionManager::getFarthestObjects(
 	const Object* obj,
 	const Coord3D* pos,

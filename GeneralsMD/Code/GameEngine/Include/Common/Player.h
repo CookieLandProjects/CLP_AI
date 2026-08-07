@@ -797,8 +797,8 @@ private:
 	NameKeyType									m_playerNameKey;							///< This player's internal name (for matching map objects)
 	PlayerIndex									m_playerIndex;								///< player unique index.
 	AsciiString									m_side;												///< the "side" this player is on
-	Int m_playstyle;                                          ///< the playstyle of this player.
-	AsciiString									m_baseSide;											///< the base side, GLA, USA, or China
+	Int													m_playstyle;                  ///< the playstyle of this player.
+	AsciiString									m_baseSide;										///< the base side, GLA, USA, or China
 	PlayerType									m_playerType;									///< human/computer control
 	Money												m_money;											///< Player's current wealth
 	Upgrade*										m_upgradeList;								///< list of all upgrades this player has

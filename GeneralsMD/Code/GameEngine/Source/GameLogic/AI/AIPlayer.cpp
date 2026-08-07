@@ -799,6 +799,11 @@ Object *AIPlayer::buildStructureWithDozer(const ThingTemplate *bldgPlan, BuildLi
 			bldgName.concat(" - Building started.");
 			TheScriptEngine->AppendDebugMessage(bldgName, false);
 		}
+		// @-TanSo-: Replace INVALID_ID with an actual ObjectID onto the supply source
+		if (bldg->isKindOf(KINDOF_CASH_GENERATOR))
+		{
+			assignSupplyCenterToReservation(bldg);
+		}
 	}
 	TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
 	return bldg;
@@ -2179,6 +2184,13 @@ void AIPlayer::buildBySupplies(Int minimumCash, const AsciiString& thingName)
 		}
 		TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
 		location.z = 0; // All build list locations are ground relative.
+
+		//@-TanSo-: Make sure that we can only build one center at each supply source
+		if (tTemplate->isKindOf(KINDOF_CASH_GENERATOR))
+		{
+			reserveSupplySource(bestSupplyWarehouse);
+		}
+
 		m_player->addToPriorityBuildList(thingName, &location, angle);
 		m_curWarehouseID = bestSupplyWarehouse->getID();
 	}
@@ -2413,6 +2425,8 @@ Object* AIPlayer::findSupplyCenter(Int minimumCash)
 		{
 			if (!obj->isKindOf(KINDOF_STRUCTURE)) continue;
 			if (!obj->isKindOf(KINDOF_SUPPLY_SOURCE)) continue;
+			if (isDockOccupied(obj->getID())) continue;	//-TanSo-: Do NOT use docks for which we already have a supply center.
+
 			static const NameKeyType key_warehouseUpdate = NAMEKEY("SupplyWarehouseDockUpdate");
 			SupplyWarehouseDockUpdate* warehouseModule = (SupplyWarehouseDockUpdate*)obj->findUpdateModule(key_warehouseUpdate);
 			if (warehouseModule) {
@@ -2422,7 +2436,7 @@ Object* AIPlayer::findSupplyCenter(Int minimumCash)
 					continue;
 				}
 
-				// CL 17/01/2026
+				// CL 17/01/2026 
 				// Skip supply sources that are already being harvested by any player.
 				// Only consider a harvester "using" this source if it either:
 				// has this source as its preferred dock
@@ -2476,9 +2490,7 @@ Object* AIPlayer::findSupplyCenter(Int minimumCash)
 				PartitionFilterPlayer f2(m_player, true);	// Only find your own units.
 				PartitionFilterOnMap filterMapStatus;
 
-
 				PartitionFilter* filters[] = { &f1, &f2, &filterMapStatus, nullptr };
-
 				Object* supplyCenter = ThePartitionManager->getClosestObject(&center, radius, FROM_BOUNDINGSPHERE_2D, filters);
 				if (supplyCenter) {
 					// We already have a supply center.
@@ -2513,6 +2525,16 @@ Object* AIPlayer::findSupplyCenter(Int minimumCash)
 		minimumCash /= 2;
 	} while (minimumCash > 100);
 
+	if (bestSupplyWarehouse) {
+		DEBUG_LOG((
+		"SUPPLY SEARCH: obj=%d template=%s pos=(%.2f, %.2f) occupied=%d",
+		bestSupplyWarehouse->getID(),
+		bestSupplyWarehouse->getTemplate()->getName().str(),
+		bestSupplyWarehouse->getPosition()->x,
+		bestSupplyWarehouse->getPosition()->y,
+		isDockOccupied(bestSupplyWarehouse->getID())
+		));
+	}
 	return bestSupplyWarehouse;
 }
 
@@ -3300,6 +3322,7 @@ void AIPlayer::update()
 
 	updateBridgeRepair(); // Handle any bridge repairs.
 
+	releaseDockReservations(); // Release any dock reservation that became invalid.
 }
 
 //----------------------------------------------------------------------------------------------------------
@@ -4639,6 +4662,13 @@ void AIPlayer::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingNam
 		}
 		TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
 		location.z = 0; // All build list locations are ground relative.
+
+		//@-TanSo-: Make sure that we can only build one center at each supply source
+		if (tTemplate->isKindOf(KINDOF_CASH_GENERATOR))
+		{
+			reserveSupplySource(bestSupplyWarehouse);
+		}
+
 		m_player->addToPriorityBuildList(thingName, &location, angle);
 		m_curWarehouseID = bestSupplyWarehouse->getID();
 	}
@@ -4859,6 +4889,129 @@ void AIPlayer::releaseFactoryReservations(Team* team)
 	{
 		if (reservation.team == team)
 			reservation.team = nullptr;
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool AIPlayer::isDockOccupied(ObjectID id) const
+{
+	for (Int i = 0; i < m_supplyDockReservations.size(); i++)
+	{
+		if (m_supplyDockReservations[i].dockID == id)
+			return true;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::setDockOccupation(ObjectID dockID, ObjectID centerID)
+{
+	for (Int i = 0; i < m_supplyDockReservations.size(); i++)
+	{
+		// Already occupied this one.
+		if (m_supplyDockReservations[i].dockID == dockID)
+			return;
+	}
+
+	SupplyDockReservation entry;
+	entry.dockID = dockID;
+	entry.centerID = centerID;
+	m_supplyDockReservations.push_back(entry);
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::releaseDockReservations()
+{
+	for (Int i = 0; i < m_supplyDockReservations.size(); )
+	{
+		if (m_supplyDockReservations[i].centerID == INVALID_ID)
+		{
+			++i;
+			continue;
+		}
+		Object* center = TheGameLogic->findObjectByID(m_supplyDockReservations[i].centerID);
+
+		Bool remove = false;
+
+		if (center == nullptr)
+			remove = true;
+		else if (center->isEffectivelyDead()) // dead.
+			remove = true;
+		else if (center->getStatusBits().test(OBJECT_STATUS_SOLD)) // can't undo selling.
+			remove = true;
+		else if (center->getControllingPlayer() != m_player) // captured.
+			remove = true;
+
+		if (remove)
+			m_supplyDockReservations.erase(m_supplyDockReservations.begin() + i);
+		else
+			++i;
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::reserveSupplySource(Object* supplySource)
+{
+	if (!supplySource)
+		return;
+
+	setDockOccupation(supplySource->getID(), INVALID_ID);
+
+	// If a small pile, reserve others in close proximity as well.
+	if (supplySource->getTemplate()->getName() == "SupplyPileSmall")
+	{
+		const Coord3D* pilePos = supplySource->getPosition();
+
+		const Real supplyClusterRadius = 90.0f;
+		const Real supplyClusterRadiusSquared = supplyClusterRadius * supplyClusterRadius;
+
+
+		for (Object* obj = TheGameLogic->getFirstObject(); obj; obj = obj->getNextObject())
+		{
+			if (obj == supplySource)
+				continue;
+
+			if (!obj->isKindOf(KINDOF_STRUCTURE))
+				continue;
+
+			if (!obj->isKindOf(KINDOF_SUPPLY_SOURCE))
+				continue;
+
+			if (obj->getTemplate()->getName() != "SupplyPileSmall")
+				continue;
+
+			if (isDockOccupied(obj->getID()))
+				continue;
+
+
+			const Coord3D* objPos = obj->getPosition();
+
+			Real dx = objPos->x - pilePos->x;
+			Real dy = objPos->y - pilePos->y;
+
+			Real distanceSquared = dx * dx + dy * dy;
+
+
+			if (distanceSquared <= supplyClusterRadiusSquared)
+			{
+				setDockOccupation(obj->getID(), INVALID_ID);
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void AIPlayer::assignSupplyCenterToReservation(Object* supplyCenter)
+{
+	if (!supplyCenter)
+		return;
+
+	for (Int i = 0; i < m_supplyDockReservations.size(); i++)
+	{
+		if (m_supplyDockReservations[i].centerID == INVALID_ID)
+		{
+			m_supplyDockReservations[i].centerID = supplyCenter->getID();
+		}
 	}
 }
 //-------------------------------------------------------------------------------------------------

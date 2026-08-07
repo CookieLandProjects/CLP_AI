@@ -40,6 +40,11 @@ struct FactoryReservation
 	ObjectID factoryID;
 	Team* team;
 };
+struct SupplyDockReservation
+{
+	ObjectID dockID;
+	ObjectID centerID;
+};
 
 /**
  * When a team is selected for training, a list of these
@@ -283,6 +288,13 @@ protected:
 	FactoryReservation* findReservation(ObjectID id);
 	FactoryReservation* getReservation(ObjectID id);
 	void releaseFactoryReservations(Team* team);
+
+	Bool isDockOccupied(ObjectID id) const;												// Is the dock already occupied? Don't build a second supply center here then!
+	void setDockOccupation(ObjectID dockID, ObjectID supplyID);		// Simply sets the reservation. Gets callled in reserveSupplySource().
+	void releaseDockReservations();																// Called in update(), removes reservations if the supply center is dead etc.
+	void reserveSupplySource(Object* supplyCenter);								// Sets a new reservation with an INVALID_ID for the supply center.
+	void assignSupplyCenterToReservation(Object* supplyCenter);		// Updates INVALID_ID to now carry the actual supply senter.
+
 	//-------------------------------------------------------------------------------------------------
 	//-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------
 	//-------------------------------------------------------------------------------------------------
@@ -358,4 +370,7 @@ protected:
 	// -> Factory 2: B, B, B
 	// -> Factory 3: C, C, D, D
 	std::vector<FactoryReservation> m_factoryReservations;
+	// -Tanso-: Use of the supplyDockReservation. This prevents AI players from placing two supply centers
+	// next to the same dock by blocking the dock, then adding the ObjectID of the center later on.
+	std::vector<SupplyDockReservation> m_supplyDockReservations;
 };
