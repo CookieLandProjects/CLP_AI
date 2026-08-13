@@ -3214,7 +3214,87 @@ void ScriptActions::doTeamAvailableForRecruitment(const AsciiString& teamName, B
 //-------------------------------------------------------------------------------------------------
 void ScriptActions::doCollectNearbyForTeam(const AsciiString& teamName)
 {
-	DEBUG_CRASH(("You would think this has been implemented, but you'd be wrong. (doCollectNearbyForTeam)"));
+	// DEBUG_CRASH(("You would think this has been implemented, but you'd be wrong. (doCollectNearbyForTeam)"));
+	//@-TanSo-: Oh F*ck off, do you know how much despair this gave me tryna figure out why that sh*t never worked?!?
+	// Yeah man, I'll implement this...
+
+	// This will work in a way where we will make a new instance from the called prototype.
+	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
+	if (!pPlayer) return;
+
+	Team* newTeam = TheTeamFactory->createTeam(TheTeamFactory->findTeamPrototype(teamName)->getName());
+	if (!newTeam) return;
+
+	std::vector<Int> maxUnits;
+	std::vector<Int> curUnits;
+	for (Int i = 0; i < TeamTemplateInfo::MAX_UNIT_TYPES; i++)
+	{
+		maxUnits.push_back(newTeam->getPrototype()->getTemplateInfo()->m_unitsInfo[i].maxUnits);
+		curUnits.push_back(0);
+	}
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance())
+		{
+			Team* team = iter.cur();
+			if (!team)
+				continue;
+
+			if (!team->isRecruitable())
+				continue;
+
+			DLINK_ITERATOR<Object> iter2 = team->iterate_TeamMemberList();
+			Object* nextObj = iter2.cur();
+
+			while (!iter2.done()) {
+				Object* obj = nextObj;
+				if (!obj) {
+					break;
+				}
+				// @-TanSo-: IMPORTANT: setTeam() removes an object from TeamMemberList.
+				// Iterator MUST be advanced before calling setTeam().
+				// This mirrors original EA engine behavior. It's dirty I know.
+				nextObj = iter2.cur();
+				iter.advance();
+
+				for (Int i = 0; i < maxUnits.size(); i++)
+				{
+					if (obj->getTemplate()->getName() == newTeam->getPrototype()->getTemplateInfo()->m_unitsInfo[i].unitThingName && curUnits[i] < maxUnits[i]) {
+						obj->setTeam(newTeam);
+						updateTeamAndPlayerStuff(obj, nullptr);
+						curUnits[i]++;
+						break;
+					}
+				}
+			}
+
+			if (nextObj) {
+				for (Int i = 0; i < maxUnits.size(); i++)
+				{
+					if (nextObj->getTemplate()->getName() == newTeam->getPrototype()->getTemplateInfo()->m_unitsInfo[i].unitThingName && curUnits[i] < maxUnits[i]) {
+						nextObj->setTeam(newTeam);
+						updateTeamAndPlayerStuff(nextObj, nullptr);
+						curUnits[i]++;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	Int unitCount = 0;
+	for (Int i = 0; i < curUnits.size(); i++)
+	{
+		unitCount += curUnits[i];
+	}
+	if (unitCount > 0){
+		newTeam->setActive();
+	}
+	else {
+		deleteInstance(newTeam);
+	}
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -12714,6 +12794,224 @@ void ScriptActions::doSetWaypointBiDirectional(const AsciiString& waypointName, 
 }
 
 //-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamHuntWithCommandButtonType(const AsciiString& teamName, const AsciiString& ability, const AsciiString& objectType)
+{
+	Team* theTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!theTeam) {
+		return;
+	}
+
+
+	const CommandButton* commandButton = TheControlBar->findCommandButton(ability);
+	if (!commandButton)
+	{
+		return;
+	}
+
+	switch (commandButton->getCommandType())
+	{
+
+	case GUI_COMMAND_SPECIAL_POWER:
+		if (commandButton->getSpecialPowerTemplate())
+		{
+			if (BitIsSet(commandButton->getOptions(), COMMAND_OPTION_NEED_OBJECT_TARGET))
+			{
+				// OK, we can hunt with a power that targets an object.
+				break;
+			}
+			AsciiString msg = "ERROR-Team hunt with command button - cannot hunt with ability ";
+			msg.concat(ability);
+			TheScriptEngine->AppendDebugMessage(msg, false);
+			return;
+		}
+		return;
+	case GUI_COMMAND_SWITCH_WEAPON:
+	case GUI_COMMAND_FIRE_WEAPON:
+	{
+		// ok, we can hunt with a weapon.
+		break;
+	}
+
+	case GUICOMMANDMODE_HIJACK_VEHICLE:
+	case GUICOMMANDMODE_CONVERT_TO_CARBOMB:
+	case GUICOMMANDMODE_SABOTAGE_BUILDING:
+		//Various enter type hunts.
+		break;
+
+	case GUI_COMMAND_OBJECT_UPGRADE:
+	case GUI_COMMAND_PLAYER_UPGRADE:
+	case GUI_COMMAND_DOZER_CONSTRUCT:
+	case GUI_COMMAND_DOZER_CONSTRUCT_CANCEL:
+	case GUI_COMMAND_UNIT_BUILD:
+	case GUI_COMMAND_CANCEL_UNIT_BUILD:
+	case GUI_COMMAND_CANCEL_UPGRADE:
+	case GUI_COMMAND_ATTACK_MOVE:
+	case GUI_COMMAND_GUARD:
+	case GUI_COMMAND_GUARD_WITHOUT_PURSUIT:
+	case GUI_COMMAND_GUARD_FLYING_UNITS_ONLY:
+	case GUI_COMMAND_WAYPOINTS:
+	case GUI_COMMAND_EXIT_CONTAINER:
+	case GUI_COMMAND_EVACUATE:
+	case GUI_COMMAND_EXECUTE_RAILED_TRANSPORT:
+	case GUI_COMMAND_BEACON_DELETE:
+	case GUI_COMMAND_SET_RALLY_POINT:
+	case GUI_COMMAND_SELL:
+	case GUI_COMMAND_HACK_INTERNET:
+	case GUI_COMMAND_TOGGLE_OVERCHARGE:
+#ifdef ALLOW_SURRENDER
+	case GUI_COMMAND_POW_RETURN_TO_PRISON:
+#endif
+#ifdef ALLOW_SURRENDER
+	case GUICOMMANDMODE_PICK_UP_PRISONER:
+#endif
+	default:
+	{
+		AsciiString msg = "ERROR-Team hunt with command button - cannot hunt with ability ";
+		msg.concat(ability);
+		TheScriptEngine->AppendDebugMessage(msg, false);
+		return;
+	}
+	break;
+	}
+
+	// Find the template or type
+	ObjectTypes* types = nullptr;
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+	if (!templ)
+	{
+		ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+		if (!types)
+			return;
+	}
+
+
+	// Have all the members of the team do the command button.
+	for (DLINK_ITERATOR<Object> iter = theTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		AIUpdateInterface* ai = obj->getAIUpdateInterface();
+		if (!ai) {
+			continue;
+		}
+
+		if (templ)
+		{
+			if (obj->getTemplate() != templ)
+				continue;
+		}
+		else
+		{
+			if (types) {
+				if (!types->isInSet(obj->getTemplate()))
+					continue;
+			}
+			else
+			{
+				continue;
+			}
+		}
+
+		Bool foundCommand = false;
+		const CommandSet* commandSet = TheControlBar->findCommandSet(obj->getCommandSetString());
+		if (commandSet)
+		{
+			for (int i = 0; i < MAX_COMMANDS_PER_SET; i++)
+			{
+				const CommandButton* aCommandButton = commandSet->getCommandButton(i);
+				if (commandButton == aCommandButton)
+				{
+					//We found the matching command button so now order the unit to do what the button wants.
+					foundCommand = true;
+					break;
+				}
+			}
+		}
+		if (!foundCommand) {
+			AsciiString msg = "Error - Team hunt with command button - unit type '";
+			msg.concat(obj->getTemplate()->getName().str());
+			msg.concat("' is not valid for ability ");
+			msg.concat(ability);
+			TheScriptEngine->AppendDebugMessage(msg, false);
+			continue;
+
+		}
+
+		switch (commandButton->getCommandType())
+		{
+
+		case GUI_COMMAND_FIRE_WEAPON:
+		case GUI_COMMAND_SWITCH_WEAPON:
+		case GUI_COMMAND_SPECIAL_POWER:
+		case GUICOMMANDMODE_HIJACK_VEHICLE:
+		case GUICOMMANDMODE_CONVERT_TO_CARBOMB:
+		case GUICOMMANDMODE_SABOTAGE_BUILDING:
+		{
+			static NameKeyType key_CommandButtonHuntUpdate = NAMEKEY("CommandButtonHuntUpdate");
+
+			CommandButtonHuntUpdate* huntUpdate = (CommandButtonHuntUpdate*)obj->findUpdateModule(key_CommandButtonHuntUpdate);
+			if (huntUpdate)
+			{
+				huntUpdate->setCommandButton(ability);
+			}
+			else {
+				AsciiString msg = "Error - Team hunt with command button - unit type '";
+				msg.concat(obj->getTemplate()->getName().str());
+				msg.concat("' requires CommandButtonHuntUpdate in .ini definition to hunt with ");
+				msg.concat(ability);
+				TheScriptEngine->AppendDebugMessage(msg, false);
+			}
+		}
+		break;
+
+		}
+
+	}
+}
+/*
+void ScriptActions::doTeamSendToRepair(const AsciiString& teamName)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam) return;
+
+	const Coord3D* teamPos = pTeam->getEstimateTeamPosition();
+
+	PartitionFilterSameMapStatus f1(pTeam->getFirstItemIn_TeamMemberList());
+	PartitionFilterAlive f2;
+	PartitionFilterPlayer f3(pTeam->getControllingPlayer(), TRUE);
+	PartitionFilterAcceptByKindOf vehicles(MAKE_KINDOF_MASK(KINDOF_REPAIR_PAD), KINDOFMASK_NONE); 
+	PartitionFilterAcceptByKindOf infantry(MAKE_KINDOF_MASK(KINDOF_HEAL_PAD), KINDOFMASK_NONE);
+	PartitionFilterAcceptByKindOf aircraft(MAKE_KINDOF_MASK(KINDOF_FS_AIRFIELD), KINDOFMASK_NONE);
+	PartitionFilter* filtersVehicles[] = { &f1, &f2, &f3, &vehicles, nullptr };
+	PartitionFilter* filtersInfantry[] = { &f1, &f2, &f3, &infantry, nullptr };
+	PartitionFilter* filtersAircraft[] = { &f1, &f2, &f3, &aircraft, nullptr };
+
+	Object* closestVehicleFactory = ThePartitionManager->getClosestObject(teamPos, REALLY_FAR, FROM_CENTER_2D, filtersVehicles);
+	Object* closestInfantryFactory = ThePartitionManager->getClosestObject(teamPos, REALLY_FAR, FROM_CENTER_2D, filtersVehicles);
+	Object* closestAircraftFactory = ThePartitionManager->getClosestObject(teamPos, REALLY_FAR, FROM_CENTER_2D, filtersVehicles);
+
+	DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); for (; !iter.done(); iter.advance())
+	{
+		Object* pObj = iter.cur();
+		if (!pObj)
+			continue;
+
+		if (pObj->isKindOf(KINDOF_AIRCRAFT))
+		{
+			if(closestAircraftFactory)
+				pObj->a
+		}
+		else if(pObj->isKindOf(KINDOF_VEHICLE)) // Yes, an aircraft is a vehicle. It still goes in the one above :)
+		{
+
+		}
+		else if (pObj->isKindOf(KINDOF_INFANTRY))
+		{
+
+		}
+	}
+}
+*/
+//-------------------------------------------------------------------------------------------------
 //----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 //-------------------------------------------------------------------------------------------------
 
@@ -14287,6 +14585,10 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			return;
 		case ScriptAction::SET_WAYPOINT_BIDIRECTIONAL:
 			doSetWaypointBiDirectional(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+
+		case ScriptAction::TEAM_HUNT_WITH_COMMAND_BUTTON_TYPE:
+			doTeamHuntWithCommandButtonType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
 			return;
 	}
 }

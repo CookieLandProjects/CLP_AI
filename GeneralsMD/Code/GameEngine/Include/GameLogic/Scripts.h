@@ -696,7 +696,7 @@ public:
 		TEAM_CUSTOM_COLOR,														///< Change the color of a team to a custom value.
 		PLAYER_CUSTOM_COLOR,													///< Change the color of a player to a custom value.
 
-		AI_PLAYER_ROTATE_BUILDLIST_FROM_ID,						///< Set a player to rotate its BuildList with an ID around its axis.
+		AI_PLAYER_ROTATE_BUILDLIST_FROM_ID,						///< Set a player to rotate their BuildList with an ID around its axis.
 
 		CREATE_WAYPOINT_LOCATION,											///< Create a waypoint at a specific location.
 		CREATE_WAYPOINT_UNIT,													///< Create a waypoint at a unit's location.
@@ -713,10 +713,18 @@ public:
 		RELOCATE_WAYPOINT_TYPE,												///< Relocate a waypoint to an objectType's location. Selection modes => 0: closest, 1: farthest, 2: random
 		SET_WAYPOINT_BIDIRECTIONAL,										///< Set whether a waypoint is bi-directional or not.
 
+		TEAM_HUNT_WITH_COMMAND_BUTTON_TYPE,						///< Set a team's objects of a type to hunt using a command button ability.
 
-			//-------------------------------------------------------------------------------------------------
-			//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------
-			//-------------------------------------------------------------------------------------------------
+		TEAM_GARRISON_TYPE,														///< Set a team to garrison a building of a type
+		UNIT_GARRISON_TYPE,														///< Set a unit to garrison a building of a type
+		TEAM_GARRISON_BUILDINGS_TYPE_WITH_MAX_NUMBER,	///< A team garrisons nearby buildings of a type with <int> infrantry each.
+		TEAM_GARRISON_NUMBER_BUILDINGS_TYPE,					///< A team equally garrisons <int> buildings of a type with all available infantry.
+
+		TEAM_REPAIR,																	///< A team goes back to the closest factory that can repair it.
+		TEAM_REPAIR_DESTROYED_PERCENT,								///< A team's units below N% health go back to the closest factory that can repair them.
+		//-------------------------------------------------------------------------------------------------
+		//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------
+		//-------------------------------------------------------------------------------------------------
 
 		NUM_ITEMS
 	};
@@ -1253,7 +1261,7 @@ public:
     AI_PLAYSTYLE,														// True if a player has a specific AI playstyle.
 
 		NO_TEAMS,																// True if no player is allied to another & there are more than 2 active players (a.k.a this is an FFA match).
-		
+		TEAM_COMPARISON_APART,									// True if a team is <comparison> <Real> feet apart on average.
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 		//-------------------------------------------------------------------------------------------------

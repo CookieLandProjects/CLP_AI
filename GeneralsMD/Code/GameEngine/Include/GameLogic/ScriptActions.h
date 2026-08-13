@@ -525,7 +525,11 @@ protected:
 	void doRelocateWaypointType(const AsciiString& waypointName, const AsciiString& objectType, Int selectionMode);
 	void doSetWaypointBiDirectional(const AsciiString& waypointName, Bool biDirectional);
 
-	// @-TanSo-: 116 additions
+	void doTeamHuntWithCommandButtonType(const AsciiString& teamName, const AsciiString& ability, const AsciiString& objectType);
+
+	//void doTeamSendToRepair(const AsciiString& teamName);
+
+	// @-TanSo-: 117 additions
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 	//-------------------------------------------------------------------------------------------------

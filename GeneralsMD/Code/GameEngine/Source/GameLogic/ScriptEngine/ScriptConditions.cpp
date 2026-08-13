@@ -4125,12 +4125,12 @@ Bool ScriptConditions::evaluateRelationPlayerValueArea(Condition* pCondition,Par
 
 	switch (pComparisonParm->getInt())
 	{
-	case Parameter::LESS_THAN:comparison = (totalCost < value);break;
-	case Parameter::LESS_EQUAL:comparison = (totalCost <= value);break;
-	case Parameter::EQUAL:comparison = (totalCost == value);break;
-	case Parameter::GREATER_EQUAL:comparison = (totalCost >= value);break;
-	case Parameter::GREATER:comparison = (totalCost > value);break;
-	case Parameter::NOT_EQUAL:comparison = (totalCost != value);break;
+	case Parameter::LESS_THAN:			comparison = (totalCost < value);break;
+	case Parameter::LESS_EQUAL:			comparison = (totalCost <= value);break;
+	case Parameter::EQUAL:					comparison = (totalCost == value);break;
+	case Parameter::GREATER_EQUAL:	comparison = (totalCost >= value);break;
+	case Parameter::GREATER:				comparison = (totalCost > value);break;
+	case Parameter::NOT_EQUAL:			comparison = (totalCost != value);break;
 	}
 	pCondition->setCustomData(comparison ? 1 : -1);
 	pCondition->setCustomFrame(TheScriptEngine->getFrameObjectCountChanged());
@@ -5394,12 +5394,12 @@ Bool ScriptConditions::evaluateTeamContainsComparisonType(Parameter* pTeamParm, 
 
 	switch (pComparisonParm->getInt())
 	{
-	case Parameter::LESS_THAN:			return value < count; break;
-	case Parameter::LESS_EQUAL:			return value <= count; break;
-	case Parameter::EQUAL:					return value == count; break;
-	case Parameter::GREATER_EQUAL:	return value >= count; break;
-	case Parameter::GREATER:				return value > count; break;
-	case Parameter::NOT_EQUAL:			return value != count; break;
+	case Parameter::LESS_THAN:			return count < value; break;
+	case Parameter::LESS_EQUAL:			return count <= value; break;
+	case Parameter::EQUAL:					return count == value; break;
+	case Parameter::GREATER_EQUAL:	return count >= value; break;
+	case Parameter::GREATER:				return count > value; break;
+	case Parameter::NOT_EQUAL:			return count != value; break;
 	}
 	return false;
 }
@@ -5963,7 +5963,7 @@ Bool ScriptConditions::evaluateNoTeams(Bool isFFA)
 		currentPlayer = ThePlayerList->getNthPlayer(i);
 		if (!currentPlayer->isPlayerActive())
 			continue;
-		
+
 		activePlayerCount++;
 
 		for (Int j = 0; j < ThePlayerList->getPlayerCount(); j++)
@@ -5987,6 +5987,45 @@ Bool ScriptConditions::evaluateNoTeams(Bool isFFA)
 	return isFFA;
 }
 
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateTeamApart(Parameter* pTeamParm, Parameter* pComparisonParm, Real value)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
+	if (!pTeam) return false;
+
+	const Coord3D* teamPos = pTeam->getEstimateTeamPosition();
+	Real totalDistSqr = 0.0f;
+	Int memberCount = 0;
+	for (DLINK_ITERATOR<Object> teamIter = pTeam->iterate_TeamMemberList(); !teamIter.done(); teamIter.advance())
+	{
+		Object* pObj = teamIter.cur();
+		if (!pObj) continue;
+
+		const Coord3D* objPos = pObj->getPosition();
+
+		Real dx = objPos->x - teamPos->x;
+		Real dy = objPos->y - teamPos->y;
+
+		totalDistSqr += dx * dx + dy * dy;
+		memberCount++;
+	}
+
+	if (memberCount == 0)
+		return false;
+
+	Real averageDistSqr = totalDistSqr / memberCount;
+	Real valueSqr = value * value;
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:			return averageDistSqr < valueSqr;
+	case Parameter::LESS_EQUAL:			return averageDistSqr <= valueSqr;
+	case Parameter::EQUAL:					return fabs(averageDistSqr - valueSqr) < 0.01f;
+	case Parameter::GREATER_EQUAL:	return averageDistSqr >= valueSqr;
+	case Parameter::GREATER:				return averageDistSqr > valueSqr;
+	case Parameter::NOT_EQUAL:			return fabs(averageDistSqr - valueSqr) > 0.01f;
+	}
+	return false;
+}
 
 //-------------------------------------------------------------------------------------------------
 //---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
@@ -6376,5 +6415,7 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
       return evaluateAIPlaystyle(pCondition->getParameter(0), pCondition->getParameter(1));
 		case Condition::NO_TEAMS:
 			return evaluateNoTeams(pCondition->getParameter(0)->getInt());
+		case Condition::TEAM_COMPARISON_APART:
+			return evaluateTeamApart(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getReal());
 	}
 }

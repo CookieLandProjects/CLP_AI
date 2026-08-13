@@ -367,6 +367,8 @@ public:
 	void setPrevSeeEnemy(Bool b) { m_prevSeeEnemy = b; }
 	Bool getSeeEnemy() { return m_seeEnemy; }
 	void setSeeEnemy(Bool b) { m_seeEnemy = b; }
+
+	Bool isRecruitable() { return m_isRecruitable; }
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------------- @CLP_AI TEAM ADDITIONS END -----------------------------------
 	//-------------------------------------------------------------------------------------------------

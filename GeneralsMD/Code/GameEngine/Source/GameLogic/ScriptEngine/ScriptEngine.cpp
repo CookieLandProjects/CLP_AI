@@ -7607,6 +7607,31 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[1] = " is bi-directional: ";
 	curTemplate->m_uiStrings[2] = ".";
 
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_HUNT_WITH_COMMAND_BUTTON_TYPE];
+	curTemplate->m_internalName = "TEAM_HUNT_WITH_COMMAND_BUTTON_TYPE";
+	curTemplate->m_uiName = "Team/Hunt/Set to hunt using commandbutton ability with objects of a type.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::COMMANDBUTTON_ALL_ABILITIES;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " begins hunting using ";
+	curTemplate->m_uiStrings[2] = " with all units of type";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_COMPARISON_APART];
+	curTemplate->m_internalName = "TEAM_COMPARISON_APART";
+	curTemplate->m_uiName = "Team/Distance between members is compared to a value.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = "'s units on average are ";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = " feet apart.";
+
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
 	//-------------------------------------------------------------------------------------------------
