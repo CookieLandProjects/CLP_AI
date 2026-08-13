@@ -12967,6 +12967,8 @@ void ScriptActions::doTeamHuntWithCommandButtonType(const AsciiString& teamName,
 
 	}
 }
+
+
 /*
 void ScriptActions::doTeamSendToRepair(const AsciiString& teamName)
 {
@@ -14590,5 +14592,6 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 		case ScriptAction::TEAM_HUNT_WITH_COMMAND_BUTTON_TYPE:
 			doTeamHuntWithCommandButtonType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
 			return;
+
 	}
 }

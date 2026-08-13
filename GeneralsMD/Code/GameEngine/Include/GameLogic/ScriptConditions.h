@@ -266,6 +266,7 @@ protected:
 
 	Bool evaluateNoTeams(Bool isFFA);
 	Bool evaluateTeamApart(Parameter* pTeamParm, Parameter* pComparisonParm, Real value);
+
 	// @n0ttws: AI playstyle evaluation
 	// @-TanSo-: 57 additions, 1 helper method
 	//-------------------------------------------------------------------------------------------------

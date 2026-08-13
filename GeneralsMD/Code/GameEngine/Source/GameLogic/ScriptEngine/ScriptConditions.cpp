@@ -6028,6 +6028,17 @@ Bool ScriptConditions::evaluateTeamApart(Parameter* pTeamParm, Parameter* pCompa
 }
 
 //-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateSomething(Parameter* pTeamParm, Bool hello)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
+	if (!pTeam) return false;
+
+	if (hello)
+		pTeam->transferUnitsTo(ThePlayerList->getNthPlayer(1)->getDefaultTeam());
+		return true;
+}
+
+//-------------------------------------------------------------------------------------------------
 //---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 //-------------------------------------------------------------------------------------------------
 
@@ -6417,5 +6428,6 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 			return evaluateNoTeams(pCondition->getParameter(0)->getInt());
 		case Condition::TEAM_COMPARISON_APART:
 			return evaluateTeamApart(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getReal());
+
 	}
 }

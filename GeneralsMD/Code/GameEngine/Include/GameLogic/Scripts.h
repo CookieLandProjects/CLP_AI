@@ -761,6 +761,11 @@ public:
 
 		return nullptr;
 	}
+	void setParameter(Int ndx, Parameter* p)
+	{
+		if (ndx >= 0 && ndx < MAX_PARMS)
+			m_parms[ndx] = p;
+	}
 	Bool hasWarnings() const { return m_hasWarnings;}
 	Int getNumParameters() {return m_numParms;}
 	Int getUiStrings(AsciiString strings[MAX_PARMS]);
@@ -1030,6 +1035,7 @@ public:
 	void friend_setReal(Real r) {m_real = r;}
 	void friend_setCoord3D(const Coord3D *pLoc) { setCoord3D(pLoc); }
 	void friend_setString(AsciiString s) {m_string = s;}
+	void friend_setStatus(ObjectStatusMaskType objectStatus) { m_objectStatus.set(objectStatus); }
 
 	void qualify(const AsciiString& qualifier,const AsciiString& playerTemplateName,const AsciiString& newPlayerName);
 
@@ -1262,6 +1268,7 @@ public:
 
 		NO_TEAMS,																// True if no player is allied to another & there are more than 2 active players (a.k.a this is an FFA match).
 		TEAM_COMPARISON_APART,									// True if a team is <comparison> <Real> feet apart on average.
+
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 		//-------------------------------------------------------------------------------------------------
@@ -1305,7 +1312,11 @@ public:
 
 		return nullptr;
 	}
-
+	void setParameter(Int ndx, Parameter* p)
+	{
+		if (ndx >= 0 && ndx < MAX_PARMS)
+			m_parms[ndx] = p;
+	}
 	Int getNumParameters() {return m_numParms;}
 	Int getUiStrings(AsciiString strings[MAX_PARMS]);
 	Bool hasWarnings() const { return m_hasWarnings;}

@@ -165,6 +165,186 @@ static Condition::ConditionType ParameterChangesVer2[] =
 };
 
 //-------------------------------------------------------------------------------------------------
+// **************************** CLP_AI Script Parsing Fix *****************************************
+//-------------------------------------------------------------------------------------------------
+
+//-------------------------------------------------------------------------------------------------
+void setDefaultActionParameterValue(const ActionTemplate* templ, ScriptAction* action, Int pos)
+{
+	if (!action || !templ) return;
+
+	Parameter::ParameterType type = templ->getParameterType(pos);
+
+	switch (type)
+	{
+	case Parameter::ParameterType::INT:
+	case Parameter::ParameterType::COMPARISON:
+	case Parameter::ParameterType::BOOLEAN:
+	case Parameter::ParameterType::RELATION:
+	case Parameter::ParameterType::AI_MOOD:
+	case Parameter::ParameterType::KIND_OF_PARAM:
+	case Parameter::ParameterType::RADAR_EVENT_TYPE:
+	case Parameter::ParameterType::COMMANDBUTTON_ABILITY:
+	case Parameter::ParameterType::BOUNDARY:
+	case Parameter::ParameterType::BUILDABLE:
+	case Parameter::ParameterType::SURFACES_ALLOWED:
+	case Parameter::ParameterType::SHAKE_INTENSITY:
+	case Parameter::ParameterType::COLOR:
+	case Parameter::ParameterType::PLAYSTYLE:
+		action->setParameter(pos, newInstance(Parameter)(type, 0)); break;
+
+	case Parameter::ParameterType::REAL:
+	case Parameter::ParameterType::ANGLE:
+	case Parameter::ParameterType::PERCENT:
+		action->setParameter(pos, newInstance(Parameter)(type)); break;
+
+	case Parameter::ParameterType::COORD3D: {
+		Parameter* parameter = newInstance(Parameter)(type);
+		Coord3D loc(0, 0, 0);
+		parameter->friend_setCoord3D(&loc);
+		action->setParameter(pos, parameter);
+		break;
+	}
+
+	case Parameter::ParameterType::OBJECT_STATUS: {
+		Parameter* parameter = newInstance(Parameter)(type);
+		parameter->friend_setStatus(KINDOF_NO_SELECT);
+		action->setParameter(pos, parameter);
+		break;
+	}
+
+	case Parameter::ParameterType::SCRIPT:
+	case Parameter::ParameterType::TEAM:
+	case Parameter::ParameterType::COUNTER:
+	case Parameter::ParameterType::FLAG:
+	case Parameter::ParameterType::WAYPOINT:
+	case Parameter::ParameterType::TRIGGER_AREA:
+	case Parameter::ParameterType::TEXT_STRING:
+	case Parameter::ParameterType::SIDE:
+	case Parameter::ParameterType::SOUND:
+	case Parameter::ParameterType::SCRIPT_SUBROUTINE:
+	case Parameter::ParameterType::UNIT:
+	case Parameter::ParameterType::OBJECT_TYPE:
+	case Parameter::ParameterType::TEAM_STATE:
+	case Parameter::ParameterType::DIALOG:
+	case Parameter::ParameterType::MUSIC:
+	case Parameter::ParameterType::MOVIE:
+	case Parameter::ParameterType::WAYPOINT_PATH:
+	case Parameter::ParameterType::LOCALIZED_TEXT:
+	case Parameter::ParameterType::BRIDGE:
+	case Parameter::ParameterType::ATTACK_PRIORITY_SET:
+	case Parameter::ParameterType::SPECIAL_POWER:
+	case Parameter::ParameterType::SCIENCE:
+	case Parameter::ParameterType::UPGRADE:
+	case Parameter::ParameterType::COMMAND_BUTTON:
+	case Parameter::ParameterType::FONT_NAME:
+	case Parameter::ParameterType::COMMANDBUTTON_ALL_ABILITIES:
+	case Parameter::ParameterType::SKIRMISH_WAYPOINT_PATH:
+	case Parameter::ParameterType::EMOTICON:
+	case Parameter::ParameterType::OBJECT_PANEL_FLAG:
+	case Parameter::ParameterType::FACTION_NAME:
+	case Parameter::ParameterType::OBJECT_TYPE_LIST:
+	case Parameter::ParameterType::REVEALNAME:
+	case Parameter::ParameterType::SCIENCE_AVAILABILITY:
+	case Parameter::ParameterType::KD_RATIO:
+		action->setParameter(pos, newInstance(Parameter)(type)); break;
+
+	case Parameter::ParameterType::LEFT_OR_RIGHT:
+		action->setParameter(pos, newInstance(Parameter)(type, 1)); break;
+
+	default: DEBUG_LOG(("Unknown Parameter Type %d", templ->getParameterType(pos))); return;
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void setDefaultConditionParameterValue(const ConditionTemplate* templ, Condition* action, Int pos)
+{
+	if (!action || !templ) return;
+
+	Parameter::ParameterType type = templ->getParameterType(pos);
+
+	switch (type)
+	{
+	case Parameter::ParameterType::INT:
+	case Parameter::ParameterType::COMPARISON:
+	case Parameter::ParameterType::BOOLEAN:
+	case Parameter::ParameterType::RELATION:
+	case Parameter::ParameterType::AI_MOOD:
+	case Parameter::ParameterType::KIND_OF_PARAM:
+	case Parameter::ParameterType::RADAR_EVENT_TYPE:
+	case Parameter::ParameterType::COMMANDBUTTON_ABILITY:
+	case Parameter::ParameterType::BOUNDARY:
+	case Parameter::ParameterType::BUILDABLE:
+	case Parameter::ParameterType::SURFACES_ALLOWED:
+	case Parameter::ParameterType::SHAKE_INTENSITY:
+	case Parameter::ParameterType::COLOR:
+	case Parameter::ParameterType::PLAYSTYLE:
+		action->setParameter(pos, newInstance(Parameter)(type, 0)); break;
+
+	case Parameter::ParameterType::REAL:
+	case Parameter::ParameterType::ANGLE:
+	case Parameter::ParameterType::PERCENT:
+		action->setParameter(pos, newInstance(Parameter)(type)); break;
+
+	case Parameter::ParameterType::COORD3D: {
+		Parameter* parameter = newInstance(Parameter)(type);
+		Coord3D loc(0, 0, 0);
+		parameter->friend_setCoord3D(&loc);
+		action->setParameter(pos, parameter);
+		break;
+	}
+
+	case Parameter::ParameterType::OBJECT_STATUS: {
+		Parameter* parameter = newInstance(Parameter)(type);
+		parameter->friend_setStatus(KINDOF_NO_SELECT);
+		action->setParameter(pos, parameter);
+		break;
+	}
+
+	case Parameter::ParameterType::SCRIPT:
+	case Parameter::ParameterType::TEAM:
+	case Parameter::ParameterType::COUNTER:
+	case Parameter::ParameterType::FLAG:
+	case Parameter::ParameterType::WAYPOINT:
+	case Parameter::ParameterType::TRIGGER_AREA:
+	case Parameter::ParameterType::TEXT_STRING:
+	case Parameter::ParameterType::SIDE:
+	case Parameter::ParameterType::SOUND:
+	case Parameter::ParameterType::SCRIPT_SUBROUTINE:
+	case Parameter::ParameterType::UNIT:
+	case Parameter::ParameterType::OBJECT_TYPE:
+	case Parameter::ParameterType::TEAM_STATE:
+	case Parameter::ParameterType::DIALOG:
+	case Parameter::ParameterType::MUSIC:
+	case Parameter::ParameterType::MOVIE:
+	case Parameter::ParameterType::WAYPOINT_PATH:
+	case Parameter::ParameterType::LOCALIZED_TEXT:
+	case Parameter::ParameterType::BRIDGE:
+	case Parameter::ParameterType::ATTACK_PRIORITY_SET:
+	case Parameter::ParameterType::SPECIAL_POWER:
+	case Parameter::ParameterType::SCIENCE:
+	case Parameter::ParameterType::UPGRADE:
+	case Parameter::ParameterType::COMMAND_BUTTON:
+	case Parameter::ParameterType::FONT_NAME:
+	case Parameter::ParameterType::COMMANDBUTTON_ALL_ABILITIES:
+	case Parameter::ParameterType::SKIRMISH_WAYPOINT_PATH:
+	case Parameter::ParameterType::EMOTICON:
+	case Parameter::ParameterType::OBJECT_PANEL_FLAG:
+	case Parameter::ParameterType::FACTION_NAME:
+	case Parameter::ParameterType::OBJECT_TYPE_LIST:
+	case Parameter::ParameterType::REVEALNAME:
+	case Parameter::ParameterType::SCIENCE_AVAILABILITY:
+	case Parameter::ParameterType::KD_RATIO:
+		action->setParameter(pos, newInstance(Parameter)(type)); break;
+
+	case Parameter::ParameterType::LEFT_OR_RIGHT:
+		action->setParameter(pos, newInstance(Parameter)(type, 1)); break;
+
+	default: DEBUG_LOG(("Unknown Parameter Type %d", templ->getParameterType(pos))); return;
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
 // ******************************** class  ScriptList *********************************************
 //-------------------------------------------------------------------------------------------------
 // Statics ///////////////////////////////////////////////////////////////////////////////////////
@@ -2075,9 +2255,23 @@ Bool Condition::ParseConditionDataChunk(DataChunkInput &file, DataChunkInfo *inf
 	conT->m_firstMapUsed = TheGlobalData->m_mapName;
 #endif
 	if (ct->getNumParameters() != pCondition->getNumParameters()) {
-		DEBUG_CRASH(("Invalid script condition (numbers of parameters don't match): [%d], Making it noop. jba.", pCondition->m_conditionType));
-		pCondition->m_conditionType = ConditionType::CONDITION_FALSE;
-		pCondition->m_numParms = 0;
+		// @CLP_AI modify the script instead of making it plain false.
+		if (pCondition->getNumParameters() < ct->getNumParameters()) {
+			for (Int i = pCondition->getNumParameters() - 1; i < ct->getNumParameters(); i++)
+			{
+				setDefaultConditionParameterValue(ct, pCondition, i);
+			}
+			DEBUG_CRASH(("Invalid script condition (too little parameters): [%d], adding default values. @-TanSo-.", pCondition->getConditionType()));
+		}
+		else {
+			for (Int i = pCondition->getNumParameters(); i > ct->getNumParameters(); i--)
+			{
+				deleteInstance(pCondition->getParameter(i));
+				pCondition->setParameter(i, nullptr);
+			}
+			DEBUG_CRASH(("Invalid script condition (too many parameters): [%d], cutting the rest. @-TanSo-.", pCondition->getConditionType()));
+		}
+		pCondition->m_numParms = ct->getNumParameters();
 	}
 	Condition *pLast = pOr->getFirstAndCondition();
 	while (pLast && pLast->getNext()) {
@@ -3034,9 +3228,23 @@ ScriptAction *ScriptAction::ParseAction(DataChunkInput &file, DataChunkInfo *inf
 
 	if (at->getNumParameters() != pScriptAction->getNumParameters()) {
 		// Invalid script [3/20/2003]
-		DEBUG_CRASH(("Invalid script action (numbers of parameters don't match): [%d], Making it noop. jba.", pScriptAction->m_actionType));
-		pScriptAction->m_actionType = ScriptAction::NO_OP;
-		pScriptAction->m_numParms = 0;
+		// @CLP_AI modify the script instead of making it no-op.
+		if (pScriptAction->getNumParameters() < at->getNumParameters()) {
+			for (Int i = pScriptAction->getNumParameters() - 1; i < at->getNumParameters(); i++)
+			{
+				setDefaultActionParameterValue(at, pScriptAction, i);
+			}
+			DEBUG_CRASH(("Invalid script action (too little parameters): [%d], adding default values. @-TanSo-.", pScriptAction->getActionType()));
+		}
+		else {
+			for (Int i = pScriptAction->getNumParameters(); i > at->getNumParameters(); i--)
+			{
+				deleteInstance(pScriptAction->getParameter(i));
+				pScriptAction->setParameter(i, nullptr);
+			}
+			DEBUG_CRASH(("Invalid script action (too many parameters): [%d], cutting the rest. @-TanSo-.", pScriptAction->getActionType()));
+		}
+		pScriptAction->m_numParms = at->getNumParameters();
 	}
 	DEBUG_ASSERTCRASH(file.atEndOfChunk(), ("Unexpected data left over."));
 	return pScriptAction;
