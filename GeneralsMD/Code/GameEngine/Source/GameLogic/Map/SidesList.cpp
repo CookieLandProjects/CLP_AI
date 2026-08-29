@@ -369,9 +369,24 @@ void SidesList::WriteSidesDataChunk(DataChunkOutput &chunkWriter)
 		}
 
 		// BEGIN stuff new to K_SIDES_DATA_VERSION_2
-		chunkWriter.writeInt(TheSidesList->getNumTeams());
-		for (i=0; i<TheSidesList->getNumTeams(); i++) {
-			chunkWriter.writeDict(*TheSidesList->getTeamInfo(i)->getDict());
+		Int numValidTeams = 0;
+
+		for (i = 0; i < TheSidesList->getNumTeams(); i++)
+		{
+			Dict* d = TheSidesList->getTeamInfo(i)->getDict();
+			if (d && !d->getAsciiString(TheKey_teamOwner).isEmpty())
+				numValidTeams++;
+		}
+		chunkWriter.writeInt(numValidTeams);
+		for (i = 0; i < TheSidesList->getNumTeams(); i++) {
+			Dict* d = TheSidesList->getTeamInfo(i)->getDict();
+			if (!d) continue;
+			if (!d->getAsciiString(TheKey_teamOwner).isEmpty()){
+				chunkWriter.writeDict(*d);
+			}
+			else {
+				DEBUG_LOG(("Skipping orphaned team [%s] during export.", d->getAsciiString(TheKey_teamName).str()));
+			}
 		}
 		// END stuff new to K_SIDES_DATA_VERSION_2
 
@@ -466,7 +481,9 @@ static Bool ParseTeamsDataChunk(DataChunkInput &file, DataChunkInfo *info, void 
 		AsciiString player = teamDict.getAsciiString(TheKey_teamOwner);
 		if (sides->findSkirmishSideInfo(player)) {
 			// player exists, so just add it.
-			sides->addSkirmishTeam(&teamDict);
+			// @-TanSo-: There are cases of teams not having any owning player. In that case we want to throw them out!
+			if(!teamDict.getAsciiString(TheKey_teamOwner).isEmpty())
+				sides->addSkirmishTeam(&teamDict);
 			//DEBUG_LOG(("Adding team %s", teamName.str()));
 		} else {
 			//DEBUG_LOG(("Couldn't add team %s, no player %s", teamName.str(), player.str()));
@@ -1259,4 +1276,13 @@ BuildListInfo* BuildListInfo::duplicateSingle()
 	copy->setNextBuildList(nullptr);
 
 	return copy;
+}
+
+void BuildListInfo::resetFlags()
+{
+	for(BuildListInfo* list = this; list; list = list->getNext())
+	{
+		m_consumedInIDList = false;
+		m_buildLocationBlocked = false;
+	}
 }

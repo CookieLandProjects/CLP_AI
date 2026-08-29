@@ -638,8 +638,8 @@ public:
 	void friend_adjustPowerForPlayer( Bool incoming );
 
 	Bool isBeingCaptured() const { return m_isBeingCaptured; }
-	//void setIsBeingCaptured(Bool beingCaptured);
 	void setIsBeingCaptured(Bool beingCaptured) { m_isBeingCaptured = beingCaptured; }
+	Int getCreationTimeStamp() const { return m_creationTimeStamp; }
 
 	Bool m_seenByEnemy;			// @-TanSo-: use this with our scripts so we can make AI attack only things it sees at this moment. Pretty fair, right?
 	Int m_lastSeenFrame;
@@ -827,7 +827,8 @@ private:
 	Bool													m_isReceivingDifficultyBonus;
 
 	// --------- @CLP_AI ADDITIONS
-  Bool													m_isBeingCaptured;			 ///< True if we're in the process of being captured.
+  Bool													m_isBeingCaptured;				///< True if we're in the process of being captured.
+	Int														m_creationTimeStamp;			///< Saves the time this object was initialized.
 };
 
 // deleteInstance is not meant to be used with Object in order to require the use of TheGameLogic->destroyObject()

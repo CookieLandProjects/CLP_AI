@@ -375,6 +375,7 @@ public:
 	void setConsumedInIDList(Bool b) { m_consumedInIDList = b; }
 	Bool isBuildLocationBlocked() { return m_buildLocationBlocked; }
 	void setBuildLocationBlocked(Bool b) { m_buildLocationBlocked = b; }
+	void resetFlags();
 };
 
 inline void BuildListInfo::decrementNumRebuilds()

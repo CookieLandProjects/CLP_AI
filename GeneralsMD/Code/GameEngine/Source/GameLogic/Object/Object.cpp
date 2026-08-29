@@ -219,7 +219,8 @@ Object::Object(const ThingTemplate* tt, const ObjectStatusMaskType& objectStatus
 	m_numTriggerAreasActive(0),
 	m_seenByEnemy(false),
 	m_lastSeenFrame(0),
-	m_crushesInfantry(false)
+	m_crushesInfantry(false),
+	m_creationTimeStamp(0)
 {
 #if defined(RTS_DEBUG)
 	m_hasDiedAlready = false;
@@ -509,6 +510,8 @@ Object::Object(const ThingTemplate* tt, const ObjectStatusMaskType& objectStatus
 	// -TanSo-: take m_aiCrushesInfantry from AIData that goes into the player as a default value, then save it here so we can keep it modular.
 	if (getControllingPlayer()->m_crushesInfantry)
 		m_crushesInfantry = true;
+
+	m_creationTimeStamp = TheGameLogic->getFrame();
 }
 
 //-------------------------------------------------------------------------------------------------

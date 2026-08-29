@@ -292,8 +292,10 @@ protected:
 	Bool isDockOccupied(ObjectID id) const;												// Is the dock already occupied? Don't build a second supply center here then!
 	void setDockOccupation(ObjectID dockID, ObjectID supplyID);		// Simply sets the reservation. Gets callled in reserveSupplySource().
 	void releaseDockReservations();																// Called in update(), removes reservations if the supply center is dead etc.
+	void resetFactoryReservations() { m_factoryReservations.clear(); }				// Called during newMap().
 	void reserveSupplySource(Object* supplyCenter);								// Sets a new reservation with an INVALID_ID for the supply center.
 	void assignSupplyCenterToReservation(Object* supplyCenter);		// Updates INVALID_ID to now carry the actual supply senter.
+	void resetSupplyDockReservations() { m_supplyDockReservations.clear(); }	// Called during newMap().
 
 	//-------------------------------------------------------------------------------------------------
 	//-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------

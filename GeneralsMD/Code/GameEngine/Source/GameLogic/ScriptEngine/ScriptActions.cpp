@@ -48,6 +48,7 @@
 // @-TanSo-: we need it for scripts, thanks.
 #include "Common/BuildAssistant.h"			
 #include "GameLogic/SidesList.h"
+#include "GameLogic/Module/ParticleUplinkCannonUpdate.h"
 
 #include "GameClient/Anim2D.h"
 #include "GameClient/CampaignManager.h"
@@ -5326,7 +5327,7 @@ void ScriptActions::doSetToppleDirection( const AsciiString& unitName, const Coo
 //-------------------------------------------------------------------------------------------------
 /** doMoveTeamTowardsNearest */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doMoveUnitTowardsNearest( const AsciiString& unitName, const AsciiString& objectType, AsciiString triggerName)
+void ScriptActions::doMoveUnitTowardsNearest( const AsciiString& unitName, const AsciiString& objectType, AsciiString triggerName, Int selectionMode)
 {
 	Object *obj = TheScriptEngine->getUnitNamed(unitName);
 	if (!obj)
@@ -5345,58 +5346,11 @@ void ScriptActions::doMoveUnitTowardsNearest( const AsciiString& unitName, const
 	{
 		return;
 	}
-
-	Object *bestObj = nullptr;
-
-	const ThingTemplate *templ = TheThingFactory->findTemplate( objectType, FALSE );
-	if( templ )
-	{
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilterPolygonTrigger acceptWithin(trig);
-		PartitionFilterSameMapStatus filterMapStatus(obj);
-
-		PartitionFilter *filters[] = { &thingsToAccept, &acceptWithin, &filterMapStatus, nullptr };
-
-		bestObj = ThePartitionManager->getClosestObject( obj->getPosition(), REALLY_FAR, FROM_CENTER_2D, filters );
-		if( !bestObj )
-		{
-			return;
-		}
-	}
-	else
-	{
-		ObjectTypes *objectTypes = TheScriptEngine->getObjectTypes( objectType );
-		if( objectTypes )
-		{
-			PartitionFilterPolygonTrigger acceptWithin( trig );
-			PartitionFilterSameMapStatus filterMapStatus( obj );
-
-			Coord3D pos = *obj->getPosition();
-			Real closestDist;
-			Real dist;
-
-			for( size_t typeIndex = 0; typeIndex < objectTypes->getListSize(); typeIndex++ )
-			{
-				AsciiString thisTypeName = objectTypes->getNthInList( typeIndex );
-				const ThingTemplate *thisType = TheThingFactory->findTemplate( thisTypeName );
-				if( thisType )
-				{
-					PartitionFilterThing f2( thisType, true );
-					PartitionFilter *filters[] = { &f2, &acceptWithin, &filterMapStatus, nullptr };
-
-					Object *obj = ThePartitionManager->getClosestObject( &pos, REALLY_FAR, FROM_CENTER_2D, filters, &dist );
-					if( obj )
-					{
-						if( !bestObj || dist < closestDist )
-						{
-							bestObj = obj;
-							closestDist = dist;
-						}
-					}
-				}
-			}
-		}
-	}
+	PartitionFilterPolygonTrigger acceptWithin(trig);
+	PartitionFilterSameMapStatus filterMapStatus(obj);
+	PartitionFilter* filters[] = { &acceptWithin, &filterMapStatus, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(obj->getPosition(), filters, objectType, selectionMode);
+	if (!bestObj) return;
 
 	ai->chooseLocomotorSet( LOCOMOTORSET_NORMAL );
 	ai->aiMoveToObject( bestObj, CMD_FROM_SCRIPT );
@@ -5405,7 +5359,7 @@ void ScriptActions::doMoveUnitTowardsNearest( const AsciiString& unitName, const
 //-------------------------------------------------------------------------------------------------
 /** doMoveTeamTowardsNearest */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doMoveTeamTowardsNearest( const AsciiString& teamName, const AsciiString& objectType, AsciiString triggerName)
+void ScriptActions::doMoveTeamTowardsNearest( const AsciiString& teamName, const AsciiString& objectType, AsciiString triggerName, Int selectionMode)
 {
 	Team *team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team)
@@ -5442,37 +5396,8 @@ void ScriptActions::doMoveTeamTowardsNearest( const AsciiString& teamName, const
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus( teamObj );
 	PartitionFilterPolygonTrigger acceptWithin( trig );
-	Object *bestObj = nullptr;
-
-	const ThingTemplate *templ = TheThingFactory->findTemplate( objectType, FALSE );
-	if( templ )
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept( templ, true );
-		PartitionFilter *filters[] = { &thingsToAccept, &acceptWithin, &filterMapStatus, nullptr };
-		bestObj = ThePartitionManager->getClosestObject( &teamPos, REALLY_FAR, FROM_CENTER_2D, filters );
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilter* filters[] = { &typesToAccept, &acceptWithin, &filterMapStatus, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
+	PartitionFilter* filters[] = { &acceptWithin, &filterMapStatus, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
 
 	for( iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance() )
@@ -6651,9 +6576,7 @@ void ScriptActions::doPlayerBuildUnit(const AsciiString& unitName, const AsciiSt
 {
 	Player* player = TheScriptEngine->getPlayerFromAsciiString(playerName);
 	if (!player)
-	{
 		return;
-	}
 
 	const ThingTemplate* unitTemplate = TheThingFactory->findTemplate(unitName);
 	if (!unitTemplate)
@@ -6744,7 +6667,6 @@ void ScriptActions::doTeamMoveRelative(const AsciiString& teamName, Coord3D* coo
 //-------------------------------------------------------------------------------------------------
 void ScriptActions::doUnitMoveRelative(const AsciiString& unitName, Coord3D* coords)
 {
-
 	Object* pUnit = TheScriptEngine->getUnitNamed(unitName);
 	if (!pUnit) { return; }
 
@@ -6764,7 +6686,7 @@ void ScriptActions::doUnitMoveRelative(const AsciiString& unitName, Coord3D* coo
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamMoveNearestBelongingToPlayer(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& playerName)
+void ScriptActions::doTeamMoveNearestBelongingToPlayer(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& playerName, Int selectionMode)
 {
 	Player* tPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
 	if (!tPlayer) return;
@@ -6791,40 +6713,9 @@ void ScriptActions::doTeamMoveNearestBelongingToPlayer(const AsciiString& teamNa
 
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilterPlayer filterPlayer(tPlayer, true);
-		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterPlayer, nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilterPlayer filterPlayer(tPlayer, true);
-				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterPlayer, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
-
+	PartitionFilterPlayer filterPlayer(tPlayer, true);
+	PartitionFilter* filters[] = { &filterMapStatus, &filterPlayer, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
 
 	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
@@ -6841,7 +6732,7 @@ void ScriptActions::doTeamMoveNearestBelongingToPlayer(const AsciiString& teamNa
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doUnitMoveNearestBelongingToPlayer(const AsciiString& unitName, const AsciiString& objectType, const AsciiString& playerName)
+void ScriptActions::doUnitMoveNearestBelongingToPlayer(const AsciiString& unitName, const AsciiString& objectType, const AsciiString& playerName, Int selectionMode)
 {
 	Player* tPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
 	if (!tPlayer) return;
@@ -6852,42 +6743,10 @@ void ScriptActions::doUnitMoveNearestBelongingToPlayer(const AsciiString& unitNa
 	AIUpdateInterface* ai = obj->getAIUpdateInterface();
 	if (!ai) return;
 
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilterSameMapStatus filterMapStatus(obj);
-		PartitionFilterPlayer filterPlayer(tPlayer, true);
-
-		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterPlayer, nullptr };
-
-		bestObj = ThePartitionManager->getClosestObject(obj->getPosition(), REALLY_FAR, FROM_CENTER_2D, filters);
-	}
-	else
-	{
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilterSameMapStatus filterMapStatus(obj);
-				PartitionFilterPlayer filterPlayer(tPlayer, true);
-				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterPlayer, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(obj->getPosition(), REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
-
+	PartitionFilterSameMapStatus filterMapStatus(obj);
+	PartitionFilterPlayer filterPlayer(tPlayer, true);
+	PartitionFilter* filters[] = {&filterMapStatus, &filterPlayer, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(obj->getPosition(), filters, objectType, selectionMode);
 	if (!bestObj) return;
 
 	ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
@@ -6895,13 +6754,11 @@ void ScriptActions::doUnitMoveNearestBelongingToPlayer(const AsciiString& unitNa
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamMoveAwayFromRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType)
+void ScriptActions::doTeamMoveAwayFromRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team)
-	{
 		return;
-	}
 
 	//Get the first object (to use in the partition filter checks).
 	Object* teamObj = nullptr;
@@ -6935,39 +6792,10 @@ void ScriptActions::doTeamMoveAwayFromRelationType(const AsciiString& teamName, 
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), relation, true);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterAffiliation, nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterAffiliation, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
-
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
+
 	//@-TanSo-: Calculate the flee vector
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
@@ -7000,7 +6828,7 @@ void ScriptActions::doTeamMoveAwayFromRelationType(const AsciiString& teamName, 
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamMoveTowardsRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType)
+void ScriptActions::doTeamMoveTowardsRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team)
@@ -7040,39 +6868,10 @@ void ScriptActions::doTeamMoveTowardsRelationType(const AsciiString& teamName, R
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), relation, true);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterAffiliation, nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterAffiliation, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
-
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
+
 	//@-TanSo-: Calculate the flee vector
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
@@ -7105,7 +6904,7 @@ void ScriptActions::doTeamMoveTowardsRelationType(const AsciiString& teamName, R
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doUnitMoveAwayFromRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType)
+void ScriptActions::doUnitMoveAwayFromRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType, Int selectionMode)
 {
 	Object* obj = TheScriptEngine->getUnitNamed(unitName);
 	if (!obj) return;
@@ -7125,39 +6924,10 @@ void ScriptActions::doUnitMoveAwayFromRelationType(const AsciiString& unitName, 
 	Coord3D objPos = *obj->getPosition();
 	PartitionFilterSameMapStatus filterMapStatus(obj);
 	PartitionFilterPlayerAffiliation filterAffiliation(obj->getControllingPlayer(), relation, true);
-
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		PartitionFilterThing f1(templ, true);
-		PartitionFilter* filters[] = { &f1, &filterMapStatus, &filterAffiliation, nullptr };
-
-		bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
-	}
-	else
-	{
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterAffiliation, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
-
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&objPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
+
 	//@-TanSo-: Calculate the flee vector.
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
@@ -7183,7 +6953,7 @@ void ScriptActions::doUnitMoveAwayFromRelationType(const AsciiString& unitName, 
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doUnitMoveTowardsRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType)
+void ScriptActions::doUnitMoveTowardsRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType, Int selectionMode)
 {
 	Object* obj = TheScriptEngine->getUnitNamed(unitName);
 	if (!obj) return;
@@ -7203,39 +6973,10 @@ void ScriptActions::doUnitMoveTowardsRelationType(const AsciiString& unitName, R
 	Coord3D objPos = *obj->getPosition();
 	PartitionFilterSameMapStatus filterMapStatus(obj);
 	PartitionFilterPlayerAffiliation filterAffiliation(obj->getControllingPlayer(), relation, true);
-
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		PartitionFilterThing f1(templ, true);
-		PartitionFilter* filters[] = { &f1, &filterMapStatus, &filterAffiliation, nullptr };
-
-		bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
-	}
-	else
-	{
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterAffiliation, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
-
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&objPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
+
 	//@-TanSo-: Calculate the flee vector.
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
@@ -7572,13 +7313,13 @@ void ScriptActions::doTeamUseCommandButtonAbilityOnType(const AsciiString& teamN
 void ScriptActions::doTeamUseCommandButtonAbilityOnTeam(const AsciiString& teamName, const AsciiString& ability, const AsciiString& targetTeam)
 {
 	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
-	if (!pTeam) {
+	if (!pTeam)
 		return;
-	}
+
 	Team* tTeam = TheScriptEngine->getTeamNamed(targetTeam);
-	if (!tTeam) {
+	if (!tTeam)
 		return;
-	}
+
 
 	AIGroupPtr theGroup = TheAI->createGroup();
 #if RETAIL_COMPATIBLE_AIGROUP
@@ -7588,9 +7329,9 @@ void ScriptActions::doTeamUseCommandButtonAbilityOnTeam(const AsciiString& teamN
 #endif
 
 	const CommandButton* commandButton = TheControlBar->findCommandButton(ability);
-	if (!commandButton) {
+	if (!commandButton)
 		return;
-	}
+
 
 	Object* srcObj = nullptr;
 	if (commandButton->getSpecialPowerTemplate()) {
@@ -7728,7 +7469,6 @@ void ScriptActions::doPlayerMergeType(const AsciiString& playerName, const Ascii
 		if (!objectTypes) return;
 	}
 
-
 	Player::PlayerTeamList::const_iterator it;
 
 	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
@@ -7808,7 +7548,6 @@ void ScriptActions::doTeamMergeType(const AsciiString& srcName, const AsciiStrin
 		objectTypes = TheScriptEngine->getObjectTypes(objectType);
 		if (!objectTypes) return;
 	}
-
 
 	DLINK_ITERATOR<Object> iter = srcTeam->iterate_TeamMemberList();
 	Object* nextObj = iter.cur();
@@ -8025,7 +7764,6 @@ void ScriptActions::doTeamDisbandType(const AsciiString& teamName, const AsciiSt
 	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
 	if (!pTeam) return;
 
-
 	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
 
 	ObjectTypes* objectTypes = nullptr;
@@ -8186,7 +7924,6 @@ void ScriptActions::doPlayerTeamlessMergeType(const AsciiString& playerName, con
 		if (!objectTypes) return;
 	}
 
-
 	DLINK_ITERATOR<Object> iter = pPlayer->getDefaultTeam()->iterate_TeamMemberList();
 	Object* nextObj = iter.cur();
 
@@ -8241,9 +7978,8 @@ void ScriptActions::doPlayerTeamlessMergeType(const AsciiString& playerName, con
 void ScriptActions::doPlayerGarrisonMaxEach(const AsciiString& playerName, Int maxAmount)
 {
 	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
-	if (!pPlayer) {
+	if (!pPlayer)
 		return;
-	}
 
 	Player::PlayerTeamList::const_iterator it;
 	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
@@ -8255,10 +7991,8 @@ void ScriptActions::doPlayerGarrisonMaxEach(const AsciiString& playerName, Int m
 
 			DLINK_ITERATOR<Object> diter = theTeam->iterate_TeamMemberList();
 			Object* leader = diter.cur();
-			if (!leader) {
+			if (!leader)
 				continue;
-			}
-
 
 			PartitionFilter* filters[16];
 			Int count = 0;
@@ -8284,7 +8018,6 @@ void ScriptActions::doPlayerGarrisonMaxEach(const AsciiString& playerName, Int m
 
 			ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(leader, REALLY_FAR, FROM_CENTER_3D, filters, ITER_SORTED_NEAR_TO_FAR);
 			MemoryPoolObjectHolder hold(iter);
-
 
 			// here's what we do. Find out how many slots each building has open, and tell each unit individually to
 			// garrison a specific building. We won't use the partition solver because we've already done most of the work
@@ -8328,16 +8061,13 @@ void ScriptActions::doPlayerGarrisonMaxEach(const AsciiString& playerName, Int m
 void ScriptActions::doTeamGarrisonMaxEach(const AsciiString& teamName, Int maxAmount)
 {
 	Team* theTeam = TheScriptEngine->getTeamNamed(teamName);
-	if (!theTeam) {
+	if (!theTeam)
 		return;
-	}
 
 	DLINK_ITERATOR<Object> diter = theTeam->iterate_TeamMemberList();
 	Object* leader = diter.cur();
-	if (!leader) {
+	if (!leader) 
 		return;
-	}
-
 
 	PartitionFilter* filters[16];
 	Int count = 0;
@@ -8363,7 +8093,6 @@ void ScriptActions::doTeamGarrisonMaxEach(const AsciiString& teamName, Int maxAm
 
 	ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(leader, REALLY_FAR, FROM_CENTER_3D, filters, ITER_SORTED_NEAR_TO_FAR);
 	MemoryPoolObjectHolder hold(iter);
-
 
 	// here's what we do. Find out how many slots each building has open, and tell each unit individually to
 	// garrison a specific building. We won't use the partition solver because we've already done most of the work
@@ -8405,9 +8134,8 @@ void ScriptActions::doTeamGarrisonMaxEach(const AsciiString& teamName, Int maxAm
 void ScriptActions::doPlayerGarrisonEqually(const AsciiString& playerName, Int amount)
 {
 	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
-	if (!pPlayer) {
+	if (!pPlayer)
 		return;
-	}
 
 	Player::PlayerTeamList::const_iterator it;
 	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
@@ -8418,9 +8146,8 @@ void ScriptActions::doPlayerGarrisonEqually(const AsciiString& playerName, Int a
 
 			DLINK_ITERATOR<Object> diter = theTeam->iterate_TeamMemberList();
 			Object* leader = diter.cur();
-			if (!leader) {
+			if (!leader)
 				return;
-			}
 
 
 			PartitionFilter* filters[16];
@@ -8509,16 +8236,13 @@ void ScriptActions::doPlayerGarrisonEqually(const AsciiString& playerName, Int a
 void ScriptActions::doTeamGarrisonEqually(const AsciiString& teamName, Int amount)
 {
 	Team* theTeam = TheScriptEngine->getTeamNamed(teamName);
-	if (!theTeam) {
+	if (!theTeam)
 		return;
-	}
 
 	DLINK_ITERATOR<Object> diter = theTeam->iterate_TeamMemberList();
 	Object* leader = diter.cur();
-	if (!leader) {
+	if (!leader)
 		return;
-	}
-
 
 	PartitionFilter* filters[16];
 	Int count = 0;
@@ -8642,7 +8366,6 @@ void ScriptActions::doSkirmishFireSpecialPowerAtMostCostType(const AsciiString& 
 					if (!mod->isReady())
 						continue;
 
-
 					Coord3D location;
 					Bool locationFound = FALSE;
 
@@ -8663,6 +8386,38 @@ void ScriptActions::doSkirmishFireSpecialPowerAtMostCostType(const AsciiString& 
 
 					if (locationFound && location.lengthSqr() > 0.0f)
 					{
+						//@-TanSo-: find the update interface so we can get the particle beam to go after the objectType instead of doing the 'S'-curve
+						for (BehaviorModule** behavior = pObj->getBehaviorModules(); *behavior; ++behavior)
+						{
+							// module and update belong to different behaviours. Find it separately
+							SpecialPowerUpdateInterface* candidate = (*behavior)->getSpecialPowerUpdateInterface();
+							if (!candidate)
+								continue;
+
+							ParticleUplinkCannonUpdate* cannon = dynamic_cast<ParticleUplinkCannonUpdate*>(candidate);
+							if (cannon) {
+								cannon->clearTargets();
+								const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+								if (templ && !cannon->isAlreadyTarget(templ)) {
+									cannon->addTarget(templ);
+								}
+								else
+								{
+									ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+									if (types)
+									{
+										for (size_t i = 0; i < types->getListSize(); ++i)
+										{
+											const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
+											if (t && !cannon->isAlreadyTarget(t)) cannon->addTarget(t);
+										}
+									}
+								}
+								cannon->setCustomMode(cannon->hasTargets());
+								break;
+							}
+						}
+						// Particle cannon stuff END
 						mod->doSpecialPowerAtLocation(&location, INVALID_ANGLE, COMMAND_FIRED_BY_SCRIPT);
 					}
 					break;
@@ -8729,7 +8484,7 @@ void ScriptActions::doBuildObjectNearestTeamAngle(const AsciiString& playerName,
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doBuildObjectNearestTypeAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, Real angle)
+void ScriptActions::doBuildObjectNearestTypeAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, Real angle, Int selectionMode)
 {
 	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
 	if (!thePlayer) return;
@@ -8761,52 +8516,10 @@ void ScriptActions::doBuildObjectNearestTypeAngle(const AsciiString& playerName,
 	Coord3D teamPos = *teamWay->getLocation();
 
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-		if (!bestObj)
-		{
-			return;
-		}
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			Real closestDist;
-			Real dist;
-			for (size_t typeIndex = 0; typeIndex < objectTypes->getListSize(); typeIndex++)
-			{
-				AsciiString thisTypeName = objectTypes->getNthInList(typeIndex);
-				const ThingTemplate* thisType = TheThingFactory->findTemplate(thisTypeName);
-				if (thisType)
-				{
-					PartitionFilterThing thingToAccept(thisType, true);
-					PartitionFilter* filters[] = { &thingToAccept, &filterMapStatus, nullptr };
-
-					Object* obj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters, &dist);
-					if (obj)
-					{
-						if (!bestObj || dist < closestDist)
-						{
-							bestObj = obj;
-							closestDist = dist;
-						}
-					}
-				}
-			}
-		}
-	}
-
+	PartitionFilter* filters[] = { &filterMapStatus, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
+
   //@-TanSo-: Give us the option to make random angles possible to bring some spice to the AI's building placement.
 	// If the angle is 361, we'll random between the 4 diagonal angles (45, -45, 135, -135).
 	// If the angle is 362, we'll random between any integer angle (0 - 359).
@@ -8828,7 +8541,7 @@ void ScriptActions::doBuildObjectNearestTypeAngle(const AsciiString& playerName,
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doBuildObjectNearestKindOfAngle(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, Real angle)
+void ScriptActions::doBuildObjectNearestKindOfAngle(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, Real angle, Int selectionMode)
 {
 	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
 	if (!thePlayer) return;
@@ -8859,17 +8572,14 @@ void ScriptActions::doBuildObjectNearestKindOfAngle(const AsciiString& playerNam
 
 	Coord3D teamPos = *teamWay->getLocation();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
-	Object* bestObj = nullptr;
-
 	KindOfType pKindOf = (KindOfType)kindOf;
 
 	PartitionFilterAcceptByKindOf theKindOf(pKindOf, TRUE);
 	PartitionFilter* filters[] = { &theKindOf, &filterMapStatus, nullptr };
-	bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, AsciiString::TheEmptyString, selectionMode);
 	if (!bestObj)
-	{
 		return;
-	}
+
 	//@-TanSo-: Give us the option to make random angles possible to bring some spice to the AI's building placement.
 	// If the angle is 361, we'll random between the 4 diagonal angles (45, -45, 135, -135).
 	// If the angle is 362, we'll random between any integer angle (0 - 359).
@@ -8891,7 +8601,7 @@ void ScriptActions::doBuildObjectNearestKindOfAngle(const AsciiString& playerNam
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doBuildObjectNearestTypeAngleArea(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, const AsciiString& triggerArea, Real angle)
+void ScriptActions::doBuildObjectNearestTypeAngleArea(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, const AsciiString& triggerArea, Real angle, Int selectionMode)
 {
 	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
 	if (!thePlayer) return;
@@ -8925,54 +8635,11 @@ void ScriptActions::doBuildObjectNearestTypeAngleArea(const AsciiString& playerN
 
 	Coord3D teamPos = *teamWay->getLocation();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilterPolygonTrigger acceptWithin(pTrig);
-		PartitionFilter* filters[] = { &thingsToAccept, &acceptWithin, &filterMapStatus, nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-		if (!bestObj)
-		{
-			return;
-		}
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			Real closestDist;
-			Real dist;
-			for (size_t typeIndex = 0; typeIndex < objectTypes->getListSize(); typeIndex++)
-			{
-				AsciiString thisTypeName = objectTypes->getNthInList(typeIndex);
-				const ThingTemplate* thisType = TheThingFactory->findTemplate(thisTypeName);
-				if (thisType)
-				{
-					PartitionFilterThing thingToAccept(thisType, true);
-					PartitionFilterPolygonTrigger acceptWithin(pTrig);
-					PartitionFilter* filters[] = { &thingToAccept, &acceptWithin, &filterMapStatus, nullptr };
-
-					Object* obj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters, &dist);
-					if (obj)
-					{
-						if (!bestObj || dist < closestDist)
-						{
-							bestObj = obj;
-							closestDist = dist;
-						}
-					}
-				}
-			}
-		}
-	}
-
+	PartitionFilterPolygonTrigger acceptWithin(pTrig);
+	PartitionFilter* filters[] = { &acceptWithin, &filterMapStatus, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
+
 	//@-TanSo-: Give us the option to make random angles possible to bring some spice to the AI's building placement.
 	// If the angle is 361, we'll random between the 4 diagonal angles (45, -45, 135, -135).
 	// If the angle is 362, we'll random between any integer angle (0 - 359).
@@ -8994,7 +8661,7 @@ void ScriptActions::doBuildObjectNearestTypeAngleArea(const AsciiString& playerN
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doBuildObjectNearestKindOfAngleArea(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, const AsciiString& triggerArea, Real angle)
+void ScriptActions::doBuildObjectNearestKindOfAngleArea(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, const AsciiString& triggerArea, Real angle, Int selectionMode)
 {
 	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
 	if (!thePlayer) return;
@@ -9028,18 +8695,14 @@ void ScriptActions::doBuildObjectNearestKindOfAngleArea(const AsciiString& playe
 
 	Coord3D teamPos = *teamWay->getLocation();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
-	Object* bestObj = nullptr;
-
 	KindOfType pKindOf = (KindOfType)kindOf;
 	PartitionFilterPolygonTrigger acceptWithin(pTrig);
-
 	PartitionFilterAcceptByKindOf theKindOf(pKindOf, TRUE);
 	PartitionFilter* filters[] = { &theKindOf, &acceptWithin, &filterMapStatus, nullptr };
-	bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, AsciiString::TheEmptyString, selectionMode);
 	if (!bestObj)
-	{
 		return;
-	}
+	
 	//@-TanSo-: Give us the option to make random angles possible to bring some spice to the AI's building placement.
 	// If the angle is 361, we'll random between the 4 diagonal angles (45, -45, 135, -135).
 	// If the angle is 362, we'll random between any integer angle (0 - 359).
@@ -9061,13 +8724,11 @@ void ScriptActions::doBuildObjectNearestKindOfAngleArea(const AsciiString& playe
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamMoveAwayFromRelation(const AsciiString& teamName, Real feet, Int relationType)
+void ScriptActions::doTeamMoveAwayFromRelation(const AsciiString& teamName, Real feet, Int relationType, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team)
-	{
 		return;
-	}
 
 	//Get the first object (to use in the partition filter checks).
 	Object* teamObj = nullptr;
@@ -9101,16 +8762,11 @@ void ScriptActions::doTeamMoveAwayFromRelation(const AsciiString& teamName, Real
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), relation, true);
-	Object* bestObj = nullptr;
-
 	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
-	bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, AsciiString::TheEmptyString, selectionMode);
 	if (!bestObj)
-	{
 		return;
-	}
 	
-	if (!bestObj) return;
 	//@-TanSo-: Calculate the flee vector
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
@@ -9143,13 +8799,11 @@ void ScriptActions::doTeamMoveAwayFromRelation(const AsciiString& teamName, Real
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamMoveTowardsRelation(const AsciiString& teamName, Real feet, Int relationType)
+void ScriptActions::doTeamMoveTowardsRelation(const AsciiString& teamName, Real feet, Int relationType, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team)
-	{
 		return;
-	}
 
 	//Get the first object (to use in the partition filter checks).
 	Object* teamObj = nullptr;
@@ -9183,16 +8837,11 @@ void ScriptActions::doTeamMoveTowardsRelation(const AsciiString& teamName, Real 
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), relation, true);
-	Object* bestObj = nullptr;
-
 	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
-	bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, AsciiString::TheEmptyString, selectionMode);
 	if (!bestObj)
-	{
 		return;
-	}
 
-	if (!bestObj) return;
 	//@-TanSo-: Calculate the flee vector
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
@@ -9225,7 +8874,7 @@ void ScriptActions::doTeamMoveTowardsRelation(const AsciiString& teamName, Real 
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doUnitMoveAwayFromRelation(const AsciiString& unitName, Real feet, Int relationType)
+void ScriptActions::doUnitMoveAwayFromRelation(const AsciiString& unitName, Real feet, Int relationType, Int selectionMode)
 {
 	Object* obj = TheScriptEngine->getUnitNamed(unitName);
 	if (!obj) return;
@@ -9245,11 +8894,8 @@ void ScriptActions::doUnitMoveAwayFromRelation(const AsciiString& unitName, Real
 	Coord3D objPos = *obj->getPosition();
 	PartitionFilterSameMapStatus filterMapStatus(obj);
 	PartitionFilterPlayerAffiliation filterAffiliation(obj->getControllingPlayer(), relation, true);
-	Object* bestObj = nullptr;
-
 	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
-
-	bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&objPos, filters, AsciiString::TheEmptyString, selectionMode);
 	if (!bestObj) return;
 
 	//@-TanSo-: Calculate the flee vector.
@@ -9277,7 +8923,7 @@ void ScriptActions::doUnitMoveAwayFromRelation(const AsciiString& unitName, Real
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doUnitMoveTowardsRelation(const AsciiString& unitName, Real feet, Int relationType)
+void ScriptActions::doUnitMoveTowardsRelation(const AsciiString& unitName, Real feet, Int relationType, Int selectionMode)
 {
 	Object* obj = TheScriptEngine->getUnitNamed(unitName);
 	if (!obj) return;
@@ -9297,11 +8943,8 @@ void ScriptActions::doUnitMoveTowardsRelation(const AsciiString& unitName, Real 
 	Coord3D objPos = *obj->getPosition();
 	PartitionFilterSameMapStatus filterMapStatus(obj);
 	PartitionFilterPlayerAffiliation filterAffiliation(obj->getControllingPlayer(), relation, true);
-	Object* bestObj = nullptr;
-
 	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
-
-	bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&objPos, filters, AsciiString::TheEmptyString, selectionMode);
 	if (!bestObj) return;
 
 	//@-TanSo-: Calculate the flee vector.
@@ -9425,7 +9068,6 @@ void ScriptActions::doPlayerCancelAllConstructionsType(const AsciiString& player
 {
 	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
 	if (!pPlayer) return;
-
 
 	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
 	if (templ)
@@ -9987,7 +9629,7 @@ void ScriptActions::doAIPlayerRemoveBaseDefenseStructure(const AsciiString& obje
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamAttackType(const AsciiString& teamName, const AsciiString& objectType)
+void ScriptActions::doTeamAttackType(const AsciiString& teamName, const AsciiString& objectType, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -10025,57 +9667,15 @@ void ScriptActions::doTeamAttackType(const AsciiString& teamName, const AsciiStr
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), ALLOW_ENEMIES, true);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterAffiliation, nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-		if (!bestObj)
-		{
-			return;
-		}
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			Real closestDist;
-			Real dist;
-			for (size_t typeIndex = 0; typeIndex < objectTypes->getListSize(); typeIndex++)
-			{
-				AsciiString thisTypeName = objectTypes->getNthInList(typeIndex);
-				const ThingTemplate* thisType = TheThingFactory->findTemplate(thisTypeName);
-				if (thisType)
-				{
-					PartitionFilterThing thingToAccept(thisType, true);
-					PartitionFilter* filters[] = { &thingToAccept, &filterMapStatus, &filterAffiliation, nullptr };
-
-					Object* obj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters, &dist);
-					if (obj)
-					{
-						if (!bestObj || dist < closestDist)
-						{
-							bestObj = obj;
-							closestDist = dist;
-						}
-					}
-				}
-			}
-		}
-	}
-
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
-	theGroup->groupAttackObject(bestObj, 100, CMD_FROM_SCRIPT);
+
+	theGroup->groupAttackObject(bestObj, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT);
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamAttackTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerParm)
+void ScriptActions::doTeamAttackTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerParm, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -10117,57 +9717,15 @@ void ScriptActions::doTeamAttackTypeArea(const AsciiString& teamName, const Asci
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPolygonTrigger filterArea(pTrigger);
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), ALLOW_ENEMIES, true);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterAffiliation, &filterArea, nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-		if (!bestObj)
-		{
-			return;
-		}
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			Real closestDist;
-			Real dist;
-			for (size_t typeIndex = 0; typeIndex < objectTypes->getListSize(); typeIndex++)
-			{
-				AsciiString thisTypeName = objectTypes->getNthInList(typeIndex);
-				const ThingTemplate* thisType = TheThingFactory->findTemplate(thisTypeName);
-				if (thisType)
-				{
-					PartitionFilterThing thingToAccept(thisType, true);
-					PartitionFilter* filters[] = { &thingToAccept, &filterMapStatus, &filterAffiliation, &filterArea, nullptr };
-
-					Object* obj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters, &dist);
-					if (obj)
-					{
-						if (!bestObj || dist < closestDist)
-						{
-							bestObj = obj;
-							closestDist = dist;
-						}
-					}
-				}
-			}
-		}
-	}
-
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, &filterArea, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
-	theGroup->groupAttackObject(bestObj, 100, CMD_FROM_SCRIPT);
+
+	theGroup->groupAttackObject(bestObj, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT);
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamAttackSeenUnit(const AsciiString& teamName)
+void ScriptActions::doTeamAttackSeenUnit(const AsciiString& teamName, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -10202,26 +9760,21 @@ void ScriptActions::doTeamAttackSeenUnit(const AsciiString& teamName)
 	team->getTeamAsAIGroup(theGroup.Peek());
 #endif
 
-
-	Object* bestObj = nullptr;
 	Coord3D teamPos = *team->getEstimateTeamPosition();
-
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), ALLOW_ENEMIES, true);
 	PartitionFilterLastFrameSeen filterSeenLastFrame(team->getControllingPlayer(), true);
 	PartitionFilter* filters[] = { &filterMapStatus, &filterSeenLastFrame, &filterAffiliation, nullptr };
 
-	bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, AsciiString::TheEmptyString, selectionMode);
 	if (!bestObj)
-	{
 		return;
-	}
 
-	theGroup->groupAttackObject(bestObj, 100, CMD_FROM_SCRIPT);
+	theGroup->groupAttackObject(bestObj, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT);
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamAttackSeenType(const AsciiString& teamName, const AsciiString& objectType)
+void ScriptActions::doTeamAttackSeenType(const AsciiString& teamName, const AsciiString& objectType, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -10247,44 +9800,16 @@ void ScriptActions::doTeamAttackSeenType(const AsciiString& teamName, const Asci
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), ALLOW_ENEMIES, true);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilterLastFrameSeen filterSeenLastFrame(team->getControllingPlayer(), true);
-		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterSeenLastFrame, &filterAffiliation, nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-	}
-	else
-	{
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilterLastFrameSeen filterSeenLastFrame(team->getControllingPlayer(), true);
-				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterSeenLastFrame, &filterAffiliation, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
-
+	PartitionFilterLastFrameSeen filterSeenLastFrame(team->getControllingPlayer(), true);
+	PartitionFilter* filters[] = { &filterMapStatus, &filterSeenLastFrame, &filterAffiliation, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
-	theGroup->groupAttackObject(bestObj, 100, CMD_FROM_SCRIPT);
+
+	theGroup->groupAttackObject(bestObj, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT);
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamAttackSeenArea(const AsciiString& teamName, const AsciiString& pTriggerParm)
+void ScriptActions::doTeamAttackSeenArea(const AsciiString& teamName, const AsciiString& pTriggerParm, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -10322,26 +9847,22 @@ void ScriptActions::doTeamAttackSeenArea(const AsciiString& teamName, const Asci
 	PolygonTrigger* pTrigger = TheScriptEngine->getQualifiedTriggerAreaByName(pTriggerParm);
 	if (!pTrigger) return;
 
-	Object* bestObj = nullptr;
 	Coord3D teamPos = *team->getEstimateTeamPosition();
-
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), ALLOW_ENEMIES, true);
 	PartitionFilterPolygonTrigger filterArea(pTrigger);
 	PartitionFilterLastFrameSeen filterSeenLastFrame(team->getControllingPlayer(), true);
 	PartitionFilter* filters[] = { &filterMapStatus, &filterSeenLastFrame, &filterAffiliation, &filterArea, nullptr };
 
-	bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, AsciiString::TheEmptyString, selectionMode);
 	if (!bestObj)
-	{
 		return;
-	}
 
-	theGroup->groupAttackObject(bestObj, 100, CMD_FROM_SCRIPT);
+	theGroup->groupAttackObject(bestObj, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT);
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamAttackSeenTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerParm)
+void ScriptActions::doTeamAttackSeenTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerParm, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -10383,45 +9904,12 @@ void ScriptActions::doTeamAttackSeenTypeArea(const AsciiString& teamName, const 
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), ALLOW_ENEMIES, true);
 	PartitionFilterPolygonTrigger filterArea(pTrigger);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilterLastFrameSeen filterSeenLastFrame(team->getControllingPlayer(), true);
-		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterSeenLastFrame, &filterAffiliation, &filterArea, nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-		if (!bestObj)
-		{
-			return;
-		}
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilterLastFrameSeen filterSeenLastFrame(team->getControllingPlayer(), true);
-				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterSeenLastFrame, &filterAffiliation, &filterArea, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
+	PartitionFilterLastFrameSeen filterSeenLastFrame(team->getControllingPlayer(), true);
+	PartitionFilter* filters[] = { &filterMapStatus, &filterSeenLastFrame, &filterAffiliation, &filterArea, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
-	theGroup->groupAttackObject(bestObj, 100, CMD_FROM_SCRIPT);
+
+	theGroup->groupAttackObject(bestObj, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -10446,7 +9934,7 @@ void ScriptActions::doTeamAttackMoveLocation(const AsciiString& teamName, const 
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamAttackMoveArea(const AsciiString& teamName, const AsciiString& pTriggerArea)
+void ScriptActions::doTeamAttackMoveArea(const AsciiString& teamName, const AsciiString& pTriggerArea, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -10489,7 +9977,7 @@ void ScriptActions::doTeamAttackMoveArea(const AsciiString& teamName, const Asci
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), ALLOW_ENEMIES, true);
 	PartitionFilterPolygonTrigger filterArea(pArea);
 	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, &filterArea, nullptr };
-	Object* bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, AsciiString::TheEmptyString, selectionMode);
 	if (!bestObj) return;
 
 	const Coord3D* attackPos = bestObj->getPosition();
@@ -10497,7 +9985,7 @@ void ScriptActions::doTeamAttackMoveArea(const AsciiString& teamName, const Asci
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamAttackMoveType(const AsciiString& teamName, const AsciiString& objectType)
+void ScriptActions::doTeamAttackMoveType(const AsciiString& teamName, const AsciiString& objectType, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -10535,41 +10023,8 @@ void ScriptActions::doTeamAttackMoveType(const AsciiString& teamName, const Asci
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), ALLOW_ENEMIES, true);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterAffiliation,  nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-		if (!bestObj)
-		{
-			return;
-		}
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterAffiliation, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation,  nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
 
 	const Coord3D* attackPos = bestObj->getPosition();
@@ -10577,7 +10032,7 @@ void ScriptActions::doTeamAttackMoveType(const AsciiString& teamName, const Asci
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamAttackMoveTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea)
+void ScriptActions::doTeamAttackMoveTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -10619,42 +10074,8 @@ void ScriptActions::doTeamAttackMoveTypeArea(const AsciiString& teamName, const 
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), ALLOW_ENEMIES, true);
 	PartitionFilterPolygonTrigger filterArea(pArea);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterAffiliation, &filterArea, nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-		if (!bestObj)
-		{
-			return;
-		}
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterAffiliation, &filterArea, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
-
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, &filterArea, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
 
 	const Coord3D* attackPos = bestObj->getPosition();
@@ -10692,7 +10113,7 @@ void ScriptActions::doTeamEvacuateDestroyedPercent(const AsciiString& teamName, 
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamAttackMoveSeenUnit(const AsciiString& teamName)
+void ScriptActions::doTeamAttackMoveSeenUnit(const AsciiString& teamName, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -10732,7 +10153,7 @@ void ScriptActions::doTeamAttackMoveSeenUnit(const AsciiString& teamName)
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), ALLOW_ENEMIES, true);
 	PartitionFilterLastFrameSeen filterSeenLastFrame(team->getControllingPlayer(), true);
 	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, &filterSeenLastFrame, nullptr };
-	Object* bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, AsciiString::TheEmptyString, selectionMode);
 	if (!bestObj) return;
 
 	const Coord3D* attackPos = bestObj->getPosition();
@@ -10740,7 +10161,7 @@ void ScriptActions::doTeamAttackMoveSeenUnit(const AsciiString& teamName)
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamAttackMoveSeenType(const AsciiString& teamName, const AsciiString& objectType)
+void ScriptActions::doTeamAttackMoveSeenType(const AsciiString& teamName, const AsciiString& objectType, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -10778,43 +10199,9 @@ void ScriptActions::doTeamAttackMoveSeenType(const AsciiString& teamName, const 
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), ALLOW_ENEMIES, true);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilterLastFrameSeen filterSeenLastFrame(team->getControllingPlayer(), true);
-		PartitionFilter* filters[] = { &thingsToAccept, &filterSeenLastFrame, &filterMapStatus, &filterAffiliation,  nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-		if (!bestObj)
-		{
-			return;
-		}
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilterLastFrameSeen filterSeenLastFrame(team->getControllingPlayer(), true);
-				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterSeenLastFrame, &filterAffiliation, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
+	PartitionFilterLastFrameSeen filterSeenLastFrame(team->getControllingPlayer(), true);
+	PartitionFilter* filters[] = { &filterSeenLastFrame, &filterMapStatus, &filterAffiliation,  nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
 
 	const Coord3D* attackPos = bestObj->getPosition();
@@ -10822,7 +10209,7 @@ void ScriptActions::doTeamAttackMoveSeenType(const AsciiString& teamName, const 
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamAttackMoveSeenArea(const AsciiString& teamName, const AsciiString& pTriggerArea)
+void ScriptActions::doTeamAttackMoveSeenArea(const AsciiString& teamName, const AsciiString& pTriggerArea, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -10866,7 +10253,7 @@ void ScriptActions::doTeamAttackMoveSeenArea(const AsciiString& teamName, const 
 	PartitionFilterPolygonTrigger filterArea(pArea);
 	PartitionFilterLastFrameSeen filterSeenLastFrame(team->getControllingPlayer(), true);
 	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, &filterArea, &filterSeenLastFrame, nullptr };
-	Object* bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, AsciiString::TheEmptyString, selectionMode);
 	if (!bestObj) return;
 
 	const Coord3D* attackPos = bestObj->getPosition();
@@ -10874,7 +10261,7 @@ void ScriptActions::doTeamAttackMoveSeenArea(const AsciiString& teamName, const 
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamAttackMoveSeenTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea)
+void ScriptActions::doTeamAttackMoveSeenTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -10916,44 +10303,9 @@ void ScriptActions::doTeamAttackMoveSeenTypeArea(const AsciiString& teamName, co
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), ALLOW_ENEMIES, true);
 	PartitionFilterPolygonTrigger filterArea(pArea);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilterLastFrameSeen filterSeenLastFrame(team->getControllingPlayer(), true);
-		PartitionFilter* filters[] = { &thingsToAccept, &filterSeenLastFrame, &filterMapStatus, &filterAffiliation, &filterArea, nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-		if (!bestObj)
-		{
-			return;
-		}
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilterLastFrameSeen filterSeenLastFrame(team->getControllingPlayer(), true);
-				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterSeenLastFrame, &filterAffiliation, &filterArea, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
-
+	PartitionFilterLastFrameSeen filterSeenLastFrame(team->getControllingPlayer(), true);
+	PartitionFilter* filters[] = { &filterSeenLastFrame, &filterMapStatus, &filterAffiliation, &filterArea, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
 
 	const Coord3D* attackPos = bestObj->getPosition();
@@ -11139,7 +10491,7 @@ void ScriptActions::doTeamMoveCapturedType(const AsciiString& teamName, const As
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamMoveNearestUnderFog(const AsciiString& teamName, const AsciiString& objectType)
+void ScriptActions::doTeamMoveNearestUnderFog(const AsciiString& teamName, const AsciiString& objectType, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -11163,40 +10515,9 @@ void ScriptActions::doTeamMoveNearestUnderFog(const AsciiString& teamName, const
 
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilterUnderFog filterFog(team->getControllingPlayer(), true);
-		PartitionFilter* filters[] = { &filterFog, &thingsToAccept, &filterMapStatus, nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilterUnderFog filterFog(team->getControllingPlayer(), true);
-				PartitionFilter* filters[] = { &filterFog, &typesToAccept, &filterMapStatus, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
-
+	PartitionFilterUnderFog filterFog(team->getControllingPlayer(), true);
+	PartitionFilter* filters[] = { &filterFog, &filterMapStatus, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
 
 	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
@@ -11213,7 +10534,7 @@ void ScriptActions::doTeamMoveNearestUnderFog(const AsciiString& teamName, const
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamMoveNearestUnderFogInArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea)
+void ScriptActions::doTeamMoveNearestUnderFogInArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -11241,40 +10562,9 @@ void ScriptActions::doTeamMoveNearestUnderFogInArea(const AsciiString& teamName,
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPolygonTrigger filterArea(pArea);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilterUnderFog filterFog(team->getControllingPlayer(), true);
-		PartitionFilter* filters[] = { &filterArea, &filterFog, &thingsToAccept, &filterMapStatus, nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilterUnderFog filterFog(team->getControllingPlayer(), true);
-				PartitionFilter* filters[] = { &filterArea, &filterFog, &typesToAccept, &filterMapStatus, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
-
+	PartitionFilterUnderFog filterFog(team->getControllingPlayer(), true);
+	PartitionFilter* filters[] = { &filterArea, &filterFog, &filterMapStatus, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
 
 	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
@@ -11291,7 +10581,7 @@ void ScriptActions::doTeamMoveNearestUnderFogInArea(const AsciiString& teamName,
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamMoveNearestNotUnderFog(const AsciiString& teamName, const AsciiString& objectType)
+void ScriptActions::doTeamMoveNearestNotUnderFog(const AsciiString& teamName, const AsciiString& objectType, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -11315,40 +10605,9 @@ void ScriptActions::doTeamMoveNearestNotUnderFog(const AsciiString& teamName, co
 
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilterUnderFog filterFog(team->getControllingPlayer(), false);
-		PartitionFilter* filters[] = { &filterFog, &thingsToAccept, &filterMapStatus, nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilterUnderFog filterFog(team->getControllingPlayer(), false);
-				PartitionFilter* filters[] = { &filterFog, &typesToAccept, &filterMapStatus, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
-
+	PartitionFilterUnderFog filterFog(team->getControllingPlayer(), false);
+	PartitionFilter* filters[] = { &filterFog, &filterMapStatus, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
 
 	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
@@ -11365,7 +10624,7 @@ void ScriptActions::doTeamMoveNearestNotUnderFog(const AsciiString& teamName, co
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamMoveNearestNotUnderFogInArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea)
+void ScriptActions::doTeamMoveNearestNotUnderFogInArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team) return;
@@ -11393,40 +10652,9 @@ void ScriptActions::doTeamMoveNearestNotUnderFogInArea(const AsciiString& teamNa
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPolygonTrigger filterArea(pArea);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilterUnderFog filterFog(team->getControllingPlayer(), false);
-		PartitionFilter* filters[] = { &filterArea, &filterFog, &thingsToAccept, &filterMapStatus, nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilterUnderFog filterFog(team->getControllingPlayer(), false);
-				PartitionFilter* filters[] = { &filterArea, &filterFog, &typesToAccept, &filterMapStatus, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
-
+	PartitionFilterUnderFog filterFog(team->getControllingPlayer(), false);
+	PartitionFilter* filters[] = { &filterArea, &filterFog, &filterMapStatus, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
 
 	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
@@ -11526,6 +10754,7 @@ void ScriptActions::doResetBuildListID(Int buildListID)
 		for (BuildListInfo* info = idList->m_buildList; info; info = info->getNext())
 		{
 				info->setConsumedInIDList(FALSE);
+				info->setBuildLocationBlocked(FALSE);
 		}
 	}
 }
@@ -11697,13 +10926,11 @@ void ScriptActions::doTeamApplyPrioritySetType(const AsciiString& teamName, cons
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamKeepDistanceFromRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType)
+void ScriptActions::doTeamKeepDistanceFromRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team)
-	{
 		return;
-	}
 
 	//Get the first object (to use in the partition filter checks).
 	Object* teamObj = nullptr;
@@ -11737,42 +10964,10 @@ void ScriptActions::doTeamKeepDistanceFromRelationType(const AsciiString& teamNa
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), relation, true);
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		//Find the closest specified template.
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilter* filters[] = { &thingsToAccept, &filterMapStatus, &filterAffiliation, nullptr };
-		bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-		if (!bestObj)
-		{
-			return;
-		}
-	}
-	else
-	{
-		//Find the closest object within the object template list.
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterAffiliation, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
+
 	//@-TanSo-: Calculate the flee vector
 	Coord3D threatPos = *bestObj->getPosition();
 	Coord3D fleeVec;
@@ -11805,7 +11000,7 @@ void ScriptActions::doTeamKeepDistanceFromRelationType(const AsciiString& teamNa
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doUnitKeepDistanceFromRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType)
+void ScriptActions::doUnitKeepDistanceFromRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType, Int selectionMode)
 {
 	Object* obj = TheScriptEngine->getUnitNamed(unitName);
 	if (!obj) return;
@@ -11825,39 +11020,8 @@ void ScriptActions::doUnitKeepDistanceFromRelationType(const AsciiString& unitNa
 	Coord3D objPos = *obj->getPosition();
 	PartitionFilterSameMapStatus filterMapStatus(obj);
 	PartitionFilterPlayerAffiliation filterAffiliation(obj->getControllingPlayer(), relation, true);
-
-	Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType, FALSE);
-	if (templ)
-	{
-		PartitionFilterThing f1(templ, true);
-		PartitionFilter* filters[] = { &f1, &filterMapStatus, &filterAffiliation, nullptr };
-
-		bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
-		if (!bestObj) return;
-	}
-	else
-	{
-		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
-		if (objectTypes)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < objectTypes->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(objectTypes->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilter* filters[] = { &typesToAccept, &filterMapStatus, &filterAffiliation, nullptr };
-				bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
-			}
-		}
-	}
-
+	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&objPos, filters, objectType, selectionMode);
 	if (!bestObj) return;
 
 	//@-TanSo-: Calculate the flee vector.
@@ -11885,13 +11049,11 @@ void ScriptActions::doUnitKeepDistanceFromRelationType(const AsciiString& unitNa
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doTeamKeepDistanceFromRelation(const AsciiString& teamName, Real feet, Int relationType)
+void ScriptActions::doTeamKeepDistanceFromRelation(const AsciiString& teamName, Real feet, Int relationType, Int selectionMode)
 {
 	Team* team = TheScriptEngine->getTeamNamed(teamName);
 	if (!team)
-	{
 		return;
-	}
 
 	//Get the first object (to use in the partition filter checks).
 	Object* teamObj = nullptr;
@@ -11925,14 +11087,10 @@ void ScriptActions::doTeamKeepDistanceFromRelation(const AsciiString& teamName, 
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus(teamObj);
 	PartitionFilterPlayerAffiliation filterAffiliation(teamObj->getControllingPlayer(), relation, true);
-	Object* bestObj = nullptr;
-
 	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
-	bestObj = ThePartitionManager->getClosestObject(&teamPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, AsciiString::TheEmptyString, selectionMode);
 	if (!bestObj)
-	{
 		return;
-	}
 
 	if (!bestObj) return;
 	//@-TanSo-: Calculate the flee vector
@@ -11967,7 +11125,7 @@ void ScriptActions::doTeamKeepDistanceFromRelation(const AsciiString& teamName, 
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doUnitKeepDistanceFromRelation(const AsciiString& unitName, Real feet, Int relationType)
+void ScriptActions::doUnitKeepDistanceFromRelation(const AsciiString& unitName, Real feet, Int relationType, Int selectionMode)
 {
 	Object* obj = TheScriptEngine->getUnitNamed(unitName);
 	if (!obj) return;
@@ -11987,11 +11145,8 @@ void ScriptActions::doUnitKeepDistanceFromRelation(const AsciiString& unitName, 
 	Coord3D objPos = *obj->getPosition();
 	PartitionFilterSameMapStatus filterMapStatus(obj);
 	PartitionFilterPlayerAffiliation filterAffiliation(obj->getControllingPlayer(), relation, true);
-	Object* bestObj = nullptr;
-
 	PartitionFilter* filters[] = { &filterMapStatus, &filterAffiliation, nullptr };
-
-	bestObj = ThePartitionManager->getClosestObject(&objPos, REALLY_FAR, FROM_CENTER_2D, filters);
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&objPos, filters, AsciiString::TheEmptyString, selectionMode);
 	if (!bestObj) return;
 
 	//@-TanSo-: Calculate the flee vector.
@@ -12379,95 +11534,7 @@ void ScriptActions::doCreateWaypointAtType(const AsciiString& waypointName, cons
 	location.y /= objectCount;
 	location.z /= objectCount;
 
-	const Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
-	if (templ)
-	{
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilter* filters[] = { &thingsToAccept, nullptr };
-
-		switch (selectionMode)
-		{
-		default: {
-			DEBUG_LOG(("Invalid selection mode [%d]. Aborting...", selectionMode));
-			return;
-		}
-		case 0: {
-			bestObj = ThePartitionManager->getClosestObject(&location, REALLY_FAR, FROM_CENTER_2D, filters);
-			break;
-		}
-		case 1: {
-			bestObj = ThePartitionManager->getFarthestObject(&location, REALLY_FAR, FROM_CENTER_2D, filters);
-			break;
-		}
-		case 2: {
-			std::vector<Object*> candidates;
-
-			ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(TheGameLogic->getFirstObject(), REALLY_FAR, FROM_CENTER_3D, filters, ITER_FASTEST);
-			MemoryPoolObjectHolder hold(iter);
-			for (Object* pObj = iter->first(); pObj; pObj = iter->next())
-			{
-				candidates.push_back(pObj);
-			}
-			//No objects found.
-			if (candidates.empty()) return;
-
-			bestObj = candidates[GameLogicRandomValue(0, candidates.size() - 1)];
-			break;
-		}
-		}
-	}
-	else
-	{
-		ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
-		if (types)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < types->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilter* filters[] = { &typesToAccept, nullptr };
-
-				switch (selectionMode)
-				{
-				default: {
-					DEBUG_LOG(("Invalid selection mode [%d]. Aborting...", selectionMode));
-					return;
-				}
-				case 0: {
-					bestObj = ThePartitionManager->getClosestObject(&location, REALLY_FAR, FROM_CENTER_2D, filters);
-					break;
-				}
-				case 1:{
-					bestObj = ThePartitionManager->getFarthestObject(&location, REALLY_FAR, FROM_CENTER_2D, filters);
-					break;
-				}
-				case 2: {
-					std::vector<Object*> candidates;
-
-					ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(TheGameLogic->getFirstObject(), REALLY_FAR, FROM_CENTER_3D, filters, ITER_FASTEST);
-					MemoryPoolObjectHolder hold(iter);
-					for (Object* pObj = iter->first(); pObj; pObj = iter->next())
-					{
-						candidates.push_back(pObj);
-					}
-					//No objects found.
-					if (candidates.empty()) return;
-
-					bestObj = candidates[GameLogicRandomValue(0, candidates.size() - 1)];
-					break;
-				}
-				}
-			}
-		}
-	}
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&location, nullptr, objectType, selectionMode);
 	if (!bestObj) return;
 
 	// Waypoint already exists.
@@ -12688,95 +11755,7 @@ void ScriptActions::doRelocateWaypointType(const AsciiString& waypointName, cons
 	location.y /= objectCount;
 	location.z /= objectCount;
 
-	const Object* bestObj = nullptr;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
-	if (templ)
-	{
-		PartitionFilterThing thingsToAccept(templ, true);
-		PartitionFilter* filters[] = { &thingsToAccept, nullptr };
-
-		switch (selectionMode)
-		{
-		default: {
-			DEBUG_LOG(("Invalid selection mode [%d]. Aborting...", selectionMode));
-			return;
-		}
-		case 0: {
-			bestObj = ThePartitionManager->getClosestObject(&location, REALLY_FAR, FROM_CENTER_2D, filters);
-			break;
-		}
-		case 1: {
-			bestObj = ThePartitionManager->getFarthestObject(&location, REALLY_FAR, FROM_CENTER_2D, filters);
-			break;
-		}
-		case 2: {
-			std::vector<Object*> candidates;
-
-			ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(TheGameLogic->getFirstObject(), REALLY_FAR, FROM_CENTER_3D, filters, ITER_FASTEST);
-			MemoryPoolObjectHolder hold(iter);
-			for (Object* pObj = iter->first(); pObj; pObj = iter->next())
-			{
-				candidates.push_back(pObj);
-			}
-			//No objects found.
-			if (candidates.empty()) return;
-
-			bestObj = candidates[GameLogicRandomValue(0, candidates.size() - 1)];
-			break;
-		}
-		}
-	}
-	else
-	{
-		ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
-		if (types)
-		{
-			std::vector<const ThingTemplate*> templates;
-			for (size_t i = 0; i < types->getListSize(); ++i)
-			{
-				const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
-				if (t) templates.push_back(t);
-			}
-
-			if (!templates.empty())
-			{
-				PartitionFilterObjectTypes typesToAccept(templates, true);
-				PartitionFilter* filters[] = { &typesToAccept, nullptr };
-
-				switch (selectionMode)
-				{
-				default: {
-					DEBUG_LOG(("Invalid selection mode [%d]. Aborting...", selectionMode));
-					return;
-				}
-				case 0: {
-					bestObj = ThePartitionManager->getClosestObject(&location, REALLY_FAR, FROM_CENTER_2D, filters);
-					break;
-				}
-				case 1: {
-					bestObj = ThePartitionManager->getFarthestObject(&location, REALLY_FAR, FROM_CENTER_2D, filters);
-					break;
-				}
-				case 2: {
-					std::vector<Object*> candidates;
-
-					ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(TheGameLogic->getFirstObject(), REALLY_FAR, FROM_CENTER_3D, filters, ITER_FASTEST);
-					MemoryPoolObjectHolder hold(iter);
-					for (Object* pObj = iter->first(); pObj; pObj = iter->next())
-					{
-						candidates.push_back(pObj);
-					}
-					//No objects found.
-					if (candidates.empty()) return;
-
-					bestObj = candidates[GameLogicRandomValue(0, candidates.size() - 1)];
-					break;
-				}
-				}
-			}
-		}
-	}
+	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&location, nullptr, objectType, selectionMode);
 	if (!bestObj) return;
 
 	Coord3D pos = *bestObj->getPosition();
@@ -12797,20 +11776,15 @@ void ScriptActions::doSetWaypointBiDirectional(const AsciiString& waypointName, 
 void ScriptActions::doTeamHuntWithCommandButtonType(const AsciiString& teamName, const AsciiString& ability, const AsciiString& objectType)
 {
 	Team* theTeam = TheScriptEngine->getTeamNamed(teamName);
-	if (!theTeam) {
+	if (!theTeam)
 		return;
-	}
-
 
 	const CommandButton* commandButton = TheControlBar->findCommandButton(ability);
 	if (!commandButton)
-	{
 		return;
-	}
 
 	switch (commandButton->getCommandType())
 	{
-
 	case GUI_COMMAND_SPECIAL_POWER:
 		if (commandButton->getSpecialPowerTemplate())
 		{
@@ -12884,7 +11858,6 @@ void ScriptActions::doTeamHuntWithCommandButtonType(const AsciiString& teamName,
 			return;
 	}
 
-
 	// Have all the members of the team do the command button.
 	for (DLINK_ITERATOR<Object> iter = theTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
@@ -12938,7 +11911,6 @@ void ScriptActions::doTeamHuntWithCommandButtonType(const AsciiString& teamName,
 
 		switch (commandButton->getCommandType())
 		{
-
 		case GUI_COMMAND_FIRE_WEAPON:
 		case GUI_COMMAND_SWITCH_WEAPON:
 		case GUI_COMMAND_SPECIAL_POWER:
@@ -12962,15 +11934,679 @@ void ScriptActions::doTeamHuntWithCommandButtonType(const AsciiString& teamName,
 			}
 		}
 		break;
-
 		}
-
 	}
 }
 
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doSkirmishUseParticleCannonTeleportMode(const AsciiString& playerName, Bool teleportMode)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
 
-/*
-void ScriptActions::doTeamSendToRepair(const AsciiString& teamName)
+	// Only allow AI-controlled players to use this.
+	if (!pPlayer->getAi())
+		return;
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance())
+		{
+			Team* team = iter.cur();
+			if (!team)
+				continue;
+
+			for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+			{
+				Object* pObj = iter.cur();
+				if (!pObj)
+					continue;
+
+				for (BehaviorModule** behavior = pObj->getBehaviorModules(); *behavior; ++behavior)
+				{
+					SpecialPowerUpdateInterface* candidate = (*behavior)->getSpecialPowerUpdateInterface();
+					if (!candidate)
+						continue;
+
+					ParticleUplinkCannonUpdate* cannon = dynamic_cast<ParticleUplinkCannonUpdate*>(candidate);
+					if (cannon)
+					{
+						cannon->setTeleportMode(teleportMode);
+					}
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamGarrisonType(const AsciiString& teamName, const AsciiString& objectType)
+{
+	Team* theTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!theTeam)
+		return;
+
+	DLINK_ITERATOR<Object> diter = theTeam->iterate_TeamMemberList();
+	Object* leader = diter.cur();
+	if (!leader)
+		return;
+
+	PartitionFilter* filters[16];
+	Int count = 0;
+
+	PartitionFilterAcceptByKindOf f1(MAKE_KINDOF_MASK(KINDOF_FS_INTERNET_CENTER), KINDOFMASK_NONE);
+	PartitionFilterGarrisonableByPlayer f2(theTeam->getControllingPlayer(), true, CMD_FROM_SCRIPT);
+
+	if (leader->isKindOf(KINDOF_MONEY_HACKER))
+	{
+		//If the leader is a hacker, then look for an internet center instead of a normal building!
+		filters[count++] = &f1;
+	}
+	else
+	{
+		//If the leader ISN'T a hacker, then look for standard fare garrisonable buildings (internet centers won't show up)!
+		filters[count++] = &f2;
+	}
+
+	PartitionFilterSameMapStatus filterMapStatus(leader);
+	filters[count++] = &filterMapStatus;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+	ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+	std::vector<const ThingTemplate*> templates;
+	if (types) {
+		for (size_t i = 0; i < types->getListSize(); ++i)
+		{
+			const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
+			if (t) templates.push_back(t);
+		}
+		if (templates.empty())
+			return;
+	}
+
+	PartitionFilterThing f3(templ, TRUE);
+	PartitionFilterObjectTypes f4(templates, TRUE);
+
+	if (templ)
+	{
+		filters[count++] = &f3;
+	}
+	else
+	{
+		if (!types) return;
+
+		filters[count++] = &f4;
+	}
+
+	filters[count++] = nullptr;
+
+	ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(leader, REALLY_FAR, FROM_CENTER_3D, filters, ITER_SORTED_NEAR_TO_FAR);
+	MemoryPoolObjectHolder hold(iter);
+
+	for (Object* theBuilding = iter->first(); theBuilding; theBuilding = iter->next()) {
+		ContainModuleInterface* cmi = theBuilding->getContain();
+		if (!cmi) {
+			continue;
+		}
+		Int slotsAvailable = cmi->getContainMax() - cmi->getContainCount();
+		for (int i = 0; i < slotsAvailable; ) {
+			Object* obj = diter.cur();
+			if (diter.done() || !obj) {
+				return;
+			}
+
+			AIUpdateInterface* ai = obj->getAIUpdateInterface();
+			if (ai && obj->isKindOf(KINDOF_INFANTRY) && !obj->isKindOf(KINDOF_NO_GARRISON)) {
+				ai->aiEnter(theBuilding, CMD_FROM_SCRIPT);
+				++i;
+			}
+			diter.advance();
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerGarrisonMaxEachType(const AsciiString& playerName, const AsciiString& objectType, Int maxAmount)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer)
+		return;
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+
+		for (DLINK_ITERATOR<Team> pIter = (*it)->iterate_TeamInstanceList(); !pIter.done(); pIter.advance()) {
+			Team* theTeam = pIter.cur();
+			if (!theTeam) continue;
+
+			DLINK_ITERATOR<Object> diter = theTeam->iterate_TeamMemberList();
+			Object* leader = diter.cur();
+			if (!leader) {
+				continue;
+			}
+
+
+			PartitionFilter* filters[16];
+			Int count = 0;
+
+			PartitionFilterAcceptByKindOf f1(MAKE_KINDOF_MASK(KINDOF_FS_INTERNET_CENTER), KINDOFMASK_NONE);
+			PartitionFilterGarrisonableByPlayer f2(theTeam->getControllingPlayer(), true, CMD_FROM_SCRIPT);
+
+			if (leader->isKindOf(KINDOF_MONEY_HACKER))
+			{
+				//If the leader is a hacker, then look for an internet center instead of a normal building!
+				filters[count++] = &f1;
+			}
+			else
+			{
+				//If the leader ISN'T a hacker, then look for standard fare garrisonable buildings (internet centers won't show up)!
+				filters[count++] = &f2;
+			}
+
+			PartitionFilterSameMapStatus filterMapStatus(leader);
+			filters[count++] = &filterMapStatus;
+
+			const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+			ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+			std::vector<const ThingTemplate*> templates;
+			if (types) {
+				for (size_t i = 0; i < types->getListSize(); ++i)
+				{
+					const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
+					if (t) templates.push_back(t);
+				}
+				if (templates.empty())
+					return;
+			}
+
+			PartitionFilterThing f3(templ, TRUE);
+			PartitionFilterObjectTypes f4(templates, TRUE);
+
+			if (templ)
+			{
+				filters[count++] = &f3;
+			}
+			else
+			{
+				if (!types) return;
+
+				filters[count++] = &f4;
+			}
+
+			filters[count++] = nullptr;
+
+			ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(leader, REALLY_FAR, FROM_CENTER_3D, filters, ITER_SORTED_NEAR_TO_FAR);
+			MemoryPoolObjectHolder hold(iter);
+
+			// here's what we do. Find out how many slots each building has open, and tell each unit individually to
+			// garrison a specific building. We won't use the partition solver because we've already done most of the work
+
+			for (Object* theBuilding = iter->first(); theBuilding; theBuilding = iter->next()) {
+				ContainModuleInterface* cmi = theBuilding->getContain();
+				if (!cmi) {
+					continue;
+				}
+
+				//@-TanSo-: Set a new maximum amount of available slots.
+				//If the max amount is bigger or equal to the slots available, just continue to fill normally
+				Int slotsAvailable;
+				if (cmi->getContainMax() - cmi->getContainCount() <= maxAmount)
+				{
+					slotsAvailable = cmi->getContainMax() - cmi->getContainCount();
+				}
+				else
+				{
+					slotsAvailable = cmi->getContainMax() - (cmi->getContainMax() - maxAmount);
+				}
+				for (int i = 0; i < slotsAvailable; ) {
+					Object* obj = diter.cur();
+					if (diter.done() || !obj) {
+						break;
+					}
+
+					AIUpdateInterface* ai = obj->getAIUpdateInterface();
+					if (ai && obj->isKindOf(KINDOF_INFANTRY) && !obj->isKindOf(KINDOF_NO_GARRISON)) {
+						ai->aiEnter(theBuilding, CMD_FROM_SCRIPT);
+						++i;
+					}
+					diter.advance();
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamGarrisonMaxEachType(const AsciiString& teamName, const AsciiString& objectType, Int maxAmount)
+{
+	Team* theTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!theTeam)
+		return;
+
+	DLINK_ITERATOR<Object> diter = theTeam->iterate_TeamMemberList();
+	Object* leader = diter.cur();
+	if (!leader)
+		return;
+
+	PartitionFilter* filters[16];
+	Int count = 0;
+
+	PartitionFilterAcceptByKindOf f1(MAKE_KINDOF_MASK(KINDOF_FS_INTERNET_CENTER), KINDOFMASK_NONE);
+	PartitionFilterGarrisonableByPlayer f2(theTeam->getControllingPlayer(), true, CMD_FROM_SCRIPT);
+
+	if (leader->isKindOf(KINDOF_MONEY_HACKER))
+	{
+		//If the leader is a hacker, then look for an internet center instead of a normal building!
+		filters[count++] = &f1;
+	}
+	else
+	{
+		//If the leader ISN'T a hacker, then look for standard fare garrisonable buildings (internet centers won't show up)!
+		filters[count++] = &f2;
+	}
+
+	PartitionFilterSameMapStatus filterMapStatus(leader);
+	filters[count++] = &filterMapStatus;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+	ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+	std::vector<const ThingTemplate*> templates;
+	if (types) {
+		for (size_t i = 0; i < types->getListSize(); ++i)
+		{
+			const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
+			if (t) templates.push_back(t);
+		}
+		if (templates.empty())
+			return;
+	}
+
+	PartitionFilterThing f3(templ, TRUE);
+	PartitionFilterObjectTypes f4(templates, TRUE);
+
+	if (templ)
+	{
+		filters[count++] = &f3;
+	}
+	else
+	{
+		if (!types) return;
+
+		filters[count++] = &f4;
+	}
+
+	filters[count++] = nullptr;
+
+	ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(leader, REALLY_FAR, FROM_CENTER_3D, filters, ITER_SORTED_NEAR_TO_FAR);
+	MemoryPoolObjectHolder hold(iter);
+
+	// here's what we do. Find out how many slots each building has open, and tell each unit individually to
+	// garrison a specific building. We won't use the partition solver because we've already done most of the work
+
+	for (Object* theBuilding = iter->first(); theBuilding; theBuilding = iter->next()) {
+		ContainModuleInterface* cmi = theBuilding->getContain();
+		if (!cmi) {
+			continue;
+		}
+
+		//@-TanSo-: Set a new maximum amount of available slots.
+		//If the max amount is bigger or equal to the slots available, just continue to fill normally
+		Int slotsAvailable;
+		if (cmi->getContainMax() - cmi->getContainCount() <= maxAmount)
+		{
+			slotsAvailable = cmi->getContainMax() - cmi->getContainCount();
+		}
+		else
+		{
+			slotsAvailable = cmi->getContainMax() - (cmi->getContainMax() - maxAmount);
+		}
+		for (int i = 0; i < slotsAvailable; ) {
+			Object* obj = diter.cur();
+			if (diter.done() || !obj) {
+				return;
+			}
+
+			AIUpdateInterface* ai = obj->getAIUpdateInterface();
+			if (ai && obj->isKindOf(KINDOF_INFANTRY) && !obj->isKindOf(KINDOF_NO_GARRISON)) {
+				ai->aiEnter(theBuilding, CMD_FROM_SCRIPT);
+				++i;
+			}
+			diter.advance();
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerGarrisonEquallyType(const AsciiString& playerName, Int amount, const AsciiString& objectType)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer)
+		return;
+
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> pIter = (*it)->iterate_TeamInstanceList(); !pIter.done(); pIter.advance()) {
+			Team* theTeam = pIter.cur();
+			if (!theTeam) continue;
+
+			DLINK_ITERATOR<Object> diter = theTeam->iterate_TeamMemberList();
+			Object* leader = diter.cur();
+			if (!leader) {
+				return;
+			}
+
+			PartitionFilter* filters[16];
+			Int count = 0;
+
+			PartitionFilterAcceptByKindOf f1(MAKE_KINDOF_MASK(KINDOF_FS_INTERNET_CENTER), KINDOFMASK_NONE);
+			PartitionFilterGarrisonableByPlayer f2(theTeam->getControllingPlayer(), true, CMD_FROM_SCRIPT);
+
+			if (leader->isKindOf(KINDOF_MONEY_HACKER))
+			{
+				//If the leader is a hacker, then look for an internet center instead of a normal building!
+				filters[count++] = &f1;
+			}
+			else
+			{
+				//If the leader ISN'T a hacker, then look for standard fare garrisonable buildings (internet centers won't show up)!
+				filters[count++] = &f2;
+			}
+
+			PartitionFilterSameMapStatus filterMapStatus(leader);
+			filters[count++] = &filterMapStatus;
+
+			const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+			ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+			std::vector<const ThingTemplate*> templates;
+			if (types) {
+				for (size_t i = 0; i < types->getListSize(); ++i)
+				{
+					const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
+					if (t) templates.push_back(t);
+				}
+				if (templates.empty())
+					return;
+			}
+
+			PartitionFilterThing f3(templ, TRUE);
+			PartitionFilterObjectTypes f4(templates, TRUE);
+
+			if (templ)
+			{
+				filters[count++] = &f3;
+			}
+			else
+			{
+				if (!types) return;
+
+				filters[count++] = &f4;
+			}
+
+			filters[count++] = nullptr;
+
+			ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(leader, REALLY_FAR, FROM_CENTER_3D, filters, ITER_SORTED_NEAR_TO_FAR);
+			MemoryPoolObjectHolder hold(iter);
+
+			int teamSize = 0;
+			for (DLINK_ITERATOR<Object> iter = theTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
+			{
+				Object* obj = iter.cur();
+				if (!obj) break;
+				if (obj->isKindOf(KINDOF_INFANTRY)) teamSize++;
+			}
+
+			// here's what we do. Find out how many slots each building has open, and tell each unit individually to
+			// garrison a specific building. We won't use the partition solver because we've already done most of the work
+			int base = teamSize / amount;
+			int rest = teamSize % amount;
+			int buildingIndex = 0;
+
+			for (Object* theBuilding = iter->first();
+				theBuilding && teamSize > 0;
+				theBuilding = iter->next(), ++buildingIndex)
+			{
+				ContainModuleInterface* cmi = theBuilding->getContain();
+				if (!cmi) continue;
+
+				int target = base + (buildingIndex < rest ? 1 : 0);
+
+				int slotsFree = cmi->getContainMax() - cmi->getContainCount();
+				if (slotsFree <= 0) {
+					// @-TanSo-: building cannot take any more units, add to the rest
+					rest += target;
+					continue;
+				}
+
+				int slotsAvailable = std::min(slotsFree, target);
+
+				// @-TanSo-: in case less people are garrisoning than expected
+				if (slotsAvailable < target) {
+					rest += (target - slotsAvailable);
+				}
+
+				for (int i = 0; i < slotsAvailable && teamSize > 0; ) {
+					Object* obj = diter.cur();
+					if (diter.done() || !obj) return;
+
+					AIUpdateInterface* ai = obj->getAIUpdateInterface();
+					if (ai &&
+						obj->isKindOf(KINDOF_INFANTRY) &&
+						!obj->isKindOf(KINDOF_NO_GARRISON))
+					{
+						ai->aiEnter(theBuilding, CMD_FROM_SCRIPT);
+						++i;
+						--teamSize;
+					}
+					diter.advance();
+				}
+			}
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamGarrisonEquallyType(const AsciiString& teamName, Int amount, const AsciiString& objectType)
+{
+	Team* theTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!theTeam)
+		return;
+
+	DLINK_ITERATOR<Object> diter = theTeam->iterate_TeamMemberList();
+	Object* leader = diter.cur();
+	if (!leader)
+		return;
+
+	PartitionFilter* filters[16];
+	Int count = 0;
+
+	PartitionFilterAcceptByKindOf f1(MAKE_KINDOF_MASK(KINDOF_FS_INTERNET_CENTER), KINDOFMASK_NONE);
+	PartitionFilterGarrisonableByPlayer f2(theTeam->getControllingPlayer(), true, CMD_FROM_SCRIPT);
+
+	if (leader->isKindOf(KINDOF_MONEY_HACKER))
+	{
+		//If the leader is a hacker, then look for an internet center instead of a normal building!
+		filters[count++] = &f1;
+	}
+	else
+	{
+		//If the leader ISN'T a hacker, then look for standard fare garrisonable buildings (internet centers won't show up)!
+		filters[count++] = &f2;
+	}
+
+	PartitionFilterSameMapStatus filterMapStatus(leader);
+	filters[count++] = &filterMapStatus;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+	ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+	std::vector<const ThingTemplate*> templates;
+	if (types) {
+		for (size_t i = 0; i < types->getListSize(); ++i)
+		{
+			const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
+			if (t) templates.push_back(t);
+		}
+		if (templates.empty())
+			return;
+	}
+
+	PartitionFilterThing f3(templ, TRUE);
+	PartitionFilterObjectTypes f4(templates, TRUE);
+
+	if (templ)
+	{
+		filters[count++] = &f3;
+	}
+	else
+	{
+		if (!types) return;
+
+		filters[count++] = &f4;
+	}
+
+	filters[count++] = nullptr;
+
+	ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(leader, REALLY_FAR, FROM_CENTER_3D, filters, ITER_SORTED_NEAR_TO_FAR);
+	MemoryPoolObjectHolder hold(iter);
+
+	int teamSize = 0;
+	for (DLINK_ITERATOR<Object> iter = theTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) break;
+		if (obj->isKindOf(KINDOF_INFANTRY)) teamSize++;
+	}
+	// here's what we do. Find out how many slots each building has open, and tell each unit individually to
+	// garrison a specific building. We won't use the partition solver because we've already done most of the work
+	int base = teamSize / amount;
+	int rest = teamSize % amount;
+	int buildingIndex = 0;
+
+	for (Object* theBuilding = iter->first();
+		theBuilding && teamSize > 0;
+		theBuilding = iter->next(), ++buildingIndex)
+	{
+		ContainModuleInterface* cmi = theBuilding->getContain();
+		if (!cmi) continue;
+
+		int target = base + (buildingIndex < rest ? 1 : 0);
+
+		int slotsFree = cmi->getContainMax() - cmi->getContainCount();
+		if (slotsFree <= 0) {
+			// @-TanSo-: building cannot take any more units, add to the rest
+			rest += target;
+			continue;
+		}
+
+		int slotsAvailable = std::min(slotsFree, target);
+
+		// @-TanSo-: in case less units are garrisoning than expected
+		if (slotsAvailable < target) {
+			rest += (target - slotsAvailable);
+		}
+
+		for (int i = 0; i < slotsAvailable && teamSize > 0; ) {
+			Object* obj = diter.cur();
+			if (diter.done() || !obj) return;
+
+			AIUpdateInterface* ai = obj->getAIUpdateInterface();
+			if (ai &&
+				obj->isKindOf(KINDOF_INFANTRY) &&
+				!obj->isKindOf(KINDOF_NO_GARRISON))
+			{
+				ai->aiEnter(theBuilding, CMD_FROM_SCRIPT);
+				++i;
+				--teamSize;
+			}
+			diter.advance();
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamLoadAllTransportsEvenlyType(const AsciiString& teamName, const AsciiString& objectType)
+{
+	Team* theTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!theTeam) return;
+
+	std::vector<Object*> transports;
+	std::vector<Object*> units;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+	ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+
+	// collect transports and units
+	for (DLINK_ITERATOR<Object> iter = theTeam->iterate_TeamMemberList();
+		!iter.done();
+		iter.advance())
+	{
+		Object* obj = iter.cur();
+		if (!obj) continue;
+
+		if (obj->isKindOf(KINDOF_TRANSPORT))
+		{
+			if (templ)
+			{
+				if (obj->getTemplate() != templ)
+					continue;
+			}
+			else
+			{
+				if (!types)
+					continue;
+
+				if (types->isInSet(obj->getTemplate()))
+					continue;
+			}
+
+			ContainModuleInterface* cmi = obj->getContain();
+			if (cmi && cmi->getContainCount() < cmi->getContainMax())
+				transports.push_back(obj);
+		}
+		else if (obj->isKindOf(KINDOF_INFANTRY))
+		{
+			if (!obj->getContain())
+				units.push_back(obj);
+		}
+	}
+
+	if (transports.empty() || units.empty())
+		return;
+
+	// round robin assignment
+	size_t transportIndex = 0;
+
+	for (size_t i = 0; i < units.size(); ++i)
+	{
+		Object* unit = units[i];
+
+		// find next transport with free space
+		size_t attempts = 0;
+		while (attempts < transports.size())
+		{
+			Object* transport = transports[transportIndex];
+			ContainModuleInterface* cmi = transport->getContain();
+
+			if (cmi && cmi->getContainCount() < cmi->getContainMax())
+			{
+				AIUpdateInterface* ai = unit->getAIUpdateInterface();
+				if (ai)
+					ai->aiEnter(transport, CMD_FROM_SCRIPT);
+
+				transportIndex = (transportIndex + 1) % transports.size();
+				break;
+			}
+
+			transportIndex = (transportIndex + 1) % transports.size();
+			attempts++;
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamSendToRepair(const AsciiString& teamName, Bool sendBackFullHP)
 {
 	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
 	if (!pTeam) return;
@@ -12988,31 +12624,37 @@ void ScriptActions::doTeamSendToRepair(const AsciiString& teamName)
 	PartitionFilter* filtersAircraft[] = { &f1, &f2, &f3, &aircraft, nullptr };
 
 	Object* closestVehicleFactory = ThePartitionManager->getClosestObject(teamPos, REALLY_FAR, FROM_CENTER_2D, filtersVehicles);
-	Object* closestInfantryFactory = ThePartitionManager->getClosestObject(teamPos, REALLY_FAR, FROM_CENTER_2D, filtersVehicles);
-	Object* closestAircraftFactory = ThePartitionManager->getClosestObject(teamPos, REALLY_FAR, FROM_CENTER_2D, filtersVehicles);
+	Object* closestInfantryFactory = ThePartitionManager->getClosestObject(teamPos, REALLY_FAR, FROM_CENTER_2D, filtersInfantry);
+	Object* closestAircraftFactory = ThePartitionManager->getClosestObject(teamPos, REALLY_FAR, FROM_CENTER_2D, filtersAircraft);
 
 	DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); for (; !iter.done(); iter.advance())
 	{
 		Object* pObj = iter.cur();
-		if (!pObj)
+		if (!pObj) continue;
+
+		AIUpdateInterface* ai = pObj->getAI();
+		if (!ai) continue;
+
+		// Floating point numbers are never really equal, that's why we accept a small difference
+		Bool fullHP = pObj->getBodyModule()->getMaxHealth() - pObj->getBodyModule()->getHealth() < 0.1f;
+		if (!sendBackFullHP && fullHP)
 			continue;
 
-		if (pObj->isKindOf(KINDOF_AIRCRAFT))
+		if (pObj->isKindOf(KINDOF_AIRCRAFT) && closestAircraftFactory)
 		{
-			if(closestAircraftFactory)
-				pObj->a
+			ai->aiDock(closestAircraftFactory, CMD_FROM_SCRIPT);
 		}
-		else if(pObj->isKindOf(KINDOF_VEHICLE)) // Yes, an aircraft is a vehicle. It still goes in the one above :)
+		else if(pObj->isKindOf(KINDOF_VEHICLE) && closestVehicleFactory) // Yes, an aircraft is a vehicle. It still goes in the one above :)
 		{
-
+			ai->aiDock(closestVehicleFactory, CMD_FROM_SCRIPT);
 		}
-		else if (pObj->isKindOf(KINDOF_INFANTRY))
+		else if (pObj->isKindOf(KINDOF_INFANTRY) && closestInfantryFactory)
 		{
-
+			ai->aiDock(closestInfantryFactory, CMD_FROM_SCRIPT);
 		}
 	}
 }
-*/
+
 //-------------------------------------------------------------------------------------------------
 //----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 //-------------------------------------------------------------------------------------------------
@@ -13947,11 +13589,11 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 		}
 
 		case ScriptAction::UNIT_MOVE_TOWARDS_NEAREST_OBJECT_TYPE:
-			doMoveUnitTowardsNearest(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			doMoveUnitTowardsNearest(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getInt());
 			return;
 
 		case ScriptAction::TEAM_MOVE_TOWARDS_NEAREST_OBJECT_TYPE:
-			doMoveTeamTowardsNearest(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			doMoveTeamTowardsNearest(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getInt());
 			return;
 
 		case ScriptAction::NAMED_RECEIVE_UPGRADE:
@@ -14205,16 +13847,16 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			doUnitMoveRelative(pAction->getParameter(0)->getString(), &posB);
 			return;
 		case ScriptAction::TEAM_MOVE_NEAREST_BELONGING_TO_PLAYER:
-			doTeamMoveNearestBelongingToPlayer(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			doTeamMoveNearestBelongingToPlayer(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::UNIT_MOVE_NEAREST_BELONGING_TO_PLAYER:
-			doUnitMoveNearestBelongingToPlayer(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			doUnitMoveNearestBelongingToPlayer(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::TEAM_MOVE_AWAY_FROM_RELATION_TYPE:
-			doTeamMoveAwayFromRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString());
+			doTeamMoveAwayFromRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString(), pAction->getParameter(4)->getInt());
 			return;
 		case ScriptAction::UNIT_MOVE_AWAY_FROM_RELATION_TYPE:
-			doUnitMoveAwayFromRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString());
+			doUnitMoveAwayFromRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString(), pAction->getParameter(4)->getInt());
 			return;
 		case ScriptAction::TEAM_MEET:
 			doTeamMeet(pAction->getParameter(0)->getString());
@@ -14286,28 +13928,28 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			doBuildSupplyCenterAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getReal());
 			return;
 		case ScriptAction::TEAM_MOVE_AWAY_FROM_RELATION:
-			doTeamMoveAwayFromRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt());
+			doTeamMoveAwayFromRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::UNIT_MOVE_AWAY_FROM_RELATION:
-			doUnitMoveAwayFromRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt());
+			doUnitMoveAwayFromRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED:
-			doBuildObjectNearestTypeAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getReal());
+			doBuildObjectNearestTypeAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getReal(), pAction->getParameter(4)->getInt());
 			return;
 		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED:
-			doBuildObjectNearestKindOfAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getReal());
+			doBuildObjectNearestKindOfAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getReal(), pAction->getParameter(4)->getInt());
 			return;
 		case ScriptAction::TEAM_MOVE_TOWARDS_RELATION:
-			doTeamMoveTowardsRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt());
+			doTeamMoveTowardsRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::TEAM_MOVE_TOWARDS_RELATION_TYPE:
-			doTeamMoveTowardsRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString());
+			doTeamMoveTowardsRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString(), pAction->getParameter(4)->getInt());
 			return;
 		case ScriptAction::UNIT_MOVE_TOWARDS_RELATION:
-			doUnitMoveTowardsRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt());
+			doUnitMoveTowardsRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::UNIT_MOVE_TOWARDS_RELATION_TYPE:
-			doUnitMoveTowardsRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString());
+			doUnitMoveTowardsRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString(), pAction->getParameter(4)->getInt());
 			return;
 		case ScriptAction::TEAM_MOVE_TO_TEAM:
 			doTeamMoveToTeam(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
@@ -14370,55 +14012,55 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			doAIPlayerBuildDefenseStructureFromVectorAtPlayer(true, pAction->getParameter(0)->getReal(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getString());
 			return;
 		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED_AREA:
-			doBuildObjectNearestKindOfAngleArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString(), pAction->getParameter(4)->getReal());
+			doBuildObjectNearestKindOfAngleArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString(), pAction->getParameter(4)->getReal(), pAction->getParameter(5)->getInt());
       return;
 		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED_AREA:
-			doBuildObjectNearestTypeAngleArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getString(), pAction->getParameter(4)->getReal());
+			doBuildObjectNearestTypeAngleArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getString(), pAction->getParameter(4)->getReal(), pAction->getParameter(5)->getInt());
 			return;
 		case ScriptAction::TEAM_ATTACK_TYPE:
-			doTeamAttackType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			doTeamAttackType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
 			return;
 		case ScriptAction::TEAM_ATTACK_TYPE_AREA:
-			doTeamAttackTypeArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			doTeamAttackTypeArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::TEAM_ATTACK_SEEN_UNIT:
-			doTeamAttackSeenUnit(pAction->getParameter(0)->getString());
+			doTeamAttackSeenUnit(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
 			return;
 		case ScriptAction::TEAM_ATTACK_SEEN_TYPE:
-			doTeamAttackSeenType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			doTeamAttackSeenType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
       return;
 		case ScriptAction::TEAM_ATTACK_SEEN_AREA:
-			doTeamAttackSeenArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			doTeamAttackSeenArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
 			return;
 		case ScriptAction::TEAM_ATTACK_SEEN_TYPE_AREA:
-			doTeamAttackSeenTypeArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			doTeamAttackSeenTypeArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::TEAM_ATTACKMOVE_WAYPOINT:
 			doTeamAttackMoveLocation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
 			return;
 		case ScriptAction::TEAM_ATTACKMOVE_AREA:
-			doTeamAttackMoveArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			doTeamAttackMoveArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
 			return;
 		case ScriptAction::TEAM_ATTACKMOVE_TYPE:
-			doTeamAttackMoveType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			doTeamAttackMoveType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
 			return;
 		case ScriptAction::TEAM_ATTACKMOVE_TYPE_AREA:
-			doTeamAttackMoveTypeArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			doTeamAttackMoveTypeArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::TEAM_EVACUATE_DESTROYED_PERCENT:
 			doTeamEvacuateDestroyedPercent(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal());
 			return;
 		case ScriptAction::TEAM_ATTACKMOVE_SEEN_UNIT:
-			doTeamAttackMoveSeenUnit(pAction->getParameter(0)->getString());
+			doTeamAttackMoveSeenUnit(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
 			return;
 		case ScriptAction::TEAM_ATTACKMOVE_SEEN_AREA:
-			doTeamAttackMoveSeenArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			doTeamAttackMoveSeenArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
 			return;
 		case ScriptAction::TEAM_ATTACKMOVE_SEEN_TYPE:
-			doTeamAttackMoveSeenType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			doTeamAttackMoveSeenType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
 			return;
 		case ScriptAction::TEAM_ATTACKMOVE_SEEN_TYPE_AREA:
-			doTeamAttackMoveSeenTypeArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			doTeamAttackMoveSeenTypeArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::TEAM_ATTACKMOVE_PATH:
 			doTeamAttackMovePath(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
@@ -14430,10 +14072,16 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			doTeamMoveCapturedType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
 			return;
 		case ScriptAction::TEAM_MOVE_TYPE_UNDER_FOG:
-			doTeamMoveNearestUnderFog(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			doTeamMoveNearestUnderFog(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
 			return;
 		case ScriptAction::TEAM_MOVE_TYPE_AREA_UNDER_FOG:
-			doTeamMoveNearestUnderFogInArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
+			doTeamMoveNearestUnderFogInArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getInt());
+			return;
+		case ScriptAction::TEAM_MOVE_TYPE_NOT_UNDER_FOG:
+			doTeamMoveNearestNotUnderFog(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
+			return;
+		case ScriptAction::TEAM_MOVE_TYPE_AREA_NOT_UNDER_FOG:
+			doTeamMoveNearestNotUnderFogInArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getInt());
 			return;
 
 		case ScriptAction::UNIT_TELEPORT_TO_LOCATION:
@@ -14473,16 +14121,16 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			return;
 
 		case ScriptAction::TEAM_KEEP_DISTANCE_RELATION:
-			doTeamKeepDistanceFromRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt());
+			doTeamKeepDistanceFromRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::UNIT_KEEP_DISTANCE_RELATION:
-			doUnitKeepDistanceFromRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt());
+			doUnitKeepDistanceFromRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::TEAM_KEEP_DISTANCE_RELATION_TYPE:
-			doTeamKeepDistanceFromRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString());
+			doTeamKeepDistanceFromRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString(), pAction->getParameter(4)->getInt());
 			return;
 		case ScriptAction::UNIT_KEEP_DISTANCE_RELATION_TYPE:
-			doUnitKeepDistanceFromRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString());
+			doUnitKeepDistanceFromRelationType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString(), pAction->getParameter(4)->getInt());
 			return;
 
 		case ScriptAction::SET_WILLINGNESS_TO_CRUSH_PLAYER:
@@ -14593,5 +14241,31 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			doTeamHuntWithCommandButtonType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
 			return;
 
+		case ScriptAction::SKIRMISH_SET_PARTICLE_CANNON_TELEPORT_MODE:
+			doSkirmishUseParticleCannonTeleportMode(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+
+		case ScriptAction::TEAM_GARRISON_TYPE:
+			doTeamGarrisonType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+		case ScriptAction::PLAYER_GARRISON_BUILDINGS_TYPE_WITH_MAX_NUMBER:
+			doPlayerGarrisonMaxEachType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
+			return;
+		case ScriptAction::TEAM_GARRISON_BUILDINGS_TYPE_WITH_MAX_NUMBER:
+			doTeamGarrisonMaxEachType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
+			return;
+		case ScriptAction::PLAYER_GARRISON_NUMBER_BUILDINGS_TYPE:
+			doPlayerGarrisonEquallyType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::TEAM_GARRISON_NUMBER_BUILDINGS_TYPE:
+			doTeamGarrisonEquallyType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt(), pAction->getParameter(2)->getString());
+			return;
+		case ScriptAction::TEAM_LOAD_TYPE_EVENLY:
+			doTeamLoadAllTransportsEvenlyType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
+			return;
+
+		case ScriptAction::TEAM_REPAIR:
+			doTeamSendToRepair(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
 	}
 }

@@ -191,6 +191,7 @@ void setDefaultActionParameterValue(const ActionTemplate* templ, ScriptAction* a
 	case Parameter::ParameterType::SHAKE_INTENSITY:
 	case Parameter::ParameterType::COLOR:
 	case Parameter::ParameterType::PLAYSTYLE:
+	case Parameter::ParameterType::SELECTION_MODE:
 		action->setParameter(pos, newInstance(Parameter)(type, 0)); break;
 
 	case Parameter::ParameterType::REAL:
@@ -279,6 +280,7 @@ void setDefaultConditionParameterValue(const ConditionTemplate* templ, Condition
 	case Parameter::ParameterType::SHAKE_INTENSITY:
 	case Parameter::ParameterType::COLOR:
 	case Parameter::ParameterType::PLAYSTYLE:
+	case Parameter::ParameterType::SELECTION_MODE:
 		action->setParameter(pos, newInstance(Parameter)(type, 0)); break;
 
 	case Parameter::ParameterType::REAL:
@@ -2473,6 +2475,17 @@ AsciiString Parameter::getUiText() const
 			}
 			break;
 
+		case SELECTION_MODE:
+			switch (m_int) {
+			case CLOSEST: uiText.format("Closest"); break;
+			case FARTHEST: uiText.format("Farthest"); break;
+			case RANDOM: uiText.format("Random"); break;
+			case YOUNGEST: uiText.format("Youngest"); break;
+			case OLDEST: uiText.format("Oldest"); break;
+			default: DEBUG_CRASH(("Unknown selection mode type."));
+			}
+			break;
+
 		case RELATION:
 			switch (m_int) {
 				case REL_ENEMY: uiText.format("Enemy"); break;
@@ -3230,14 +3243,14 @@ ScriptAction *ScriptAction::ParseAction(DataChunkInput &file, DataChunkInfo *inf
 		// Invalid script [3/20/2003]
 		// @CLP_AI modify the script instead of making it no-op.
 		if (pScriptAction->getNumParameters() < at->getNumParameters()) {
-			for (Int i = pScriptAction->getNumParameters() - 1; i < at->getNumParameters(); i++)
+			for (Int i = pScriptAction->getNumParameters(); i < at->getNumParameters(); i++)
 			{
 				setDefaultActionParameterValue(at, pScriptAction, i);
 			}
 			DEBUG_CRASH(("Invalid script action (too little parameters): [%d], adding default values. @-TanSo-.", pScriptAction->getActionType()));
 		}
 		else {
-			for (Int i = pScriptAction->getNumParameters(); i > at->getNumParameters(); i--)
+			for (Int i = pScriptAction->getNumParameters() - 1; i > at->getNumParameters(); i--)
 			{
 				deleteInstance(pScriptAction->getParameter(i));
 				pScriptAction->setParameter(i, nullptr);

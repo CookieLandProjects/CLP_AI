@@ -33,6 +33,7 @@ class ScriptAction;
 class GameWindow;
 class	Team;
 class View;
+class PartitionFilter;
 
 enum AudioAffect CPP_11(: Int);
 
@@ -330,8 +331,8 @@ protected:
 	void doSoundOverrideVolume( const AsciiString& soundEventName, Real newVolume );
 	void doInGamePopupMessage( const AsciiString& message, Int x, Int y, Int width, Bool pause );
 	void doSetToppleDirection( const AsciiString& unitName, const Coord3D* direction);
-	void doMoveUnitTowardsNearest( const AsciiString& unitName, const AsciiString& objectType, AsciiString triggerName);
-	void doMoveTeamTowardsNearest( const AsciiString& teamName, const AsciiString& objectType, AsciiString triggerName);
+	void doMoveUnitTowardsNearest( const AsciiString& unitName, const AsciiString& objectType, AsciiString triggerName, Int selectionMode);
+	void doMoveTeamTowardsNearest( const AsciiString& teamName, const AsciiString& objectType, AsciiString triggerName, Int selectionMode);
 	void doUnitReceiveUpgrade( const AsciiString& unitName, const AsciiString& upgradeName );
 	void doSkirmishAttackNearestGroupWithValue( const AsciiString& teamName, Int comparison, Int value );
 	void doSkirmishCommandButtonOnMostValuable( const AsciiString& teamName, const AsciiString& commandButton, Real range, Bool allTeamMembers);
@@ -390,29 +391,29 @@ protected:
 	void doPlayerBuildUnit(const AsciiString& unitName, const AsciiString& playerName);
 	void doBuildObjectNearestTeamAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& teamName, Real angle);
 	void doBuildSupplyCenterAngle(const AsciiString& player, const AsciiString& buildingType, Int cash, Real angle);
-	void doBuildObjectNearestTypeAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, Real angle);
-	void doBuildObjectNearestKindOfAngle(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, Real angle);
+	void doBuildObjectNearestTypeAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, Real angle, Int selectionMode);
+	void doBuildObjectNearestKindOfAngle(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, Real angle, Int selectionMode);
 	
-	void doBuildObjectNearestTypeAngleArea(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, const AsciiString& triggerArea, Real angle);
-	void doBuildObjectNearestKindOfAngleArea(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, const AsciiString& triggerArea, Real angle);
+	void doBuildObjectNearestTypeAngleArea(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, const AsciiString& triggerArea, Real angle, Int selectionMode);
+	void doBuildObjectNearestKindOfAngleArea(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, const AsciiString& triggerArea, Real angle, Int selectionMode);
 
 	void doTeamMoveRelative(const AsciiString& teamName, Coord3D* coords);
 	void doUnitMoveRelative(const AsciiString& unitName, Coord3D* coords);
-	void doTeamMoveNearestBelongingToPlayer(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& playerName);
-	void doUnitMoveNearestBelongingToPlayer(const AsciiString& unitName, const AsciiString& objectType, const AsciiString& playerName);
-	void doTeamMoveAwayFromRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType);
-	void doTeamMoveTowardsRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType);
-	void doUnitMoveAwayFromRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType);
-	void doUnitMoveTowardsRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType);
+	void doTeamMoveNearestBelongingToPlayer(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& playerName, Int selectionMode);
+	void doUnitMoveNearestBelongingToPlayer(const AsciiString& unitName, const AsciiString& objectType, const AsciiString& playerName, Int selectionMode);
+	void doTeamMoveAwayFromRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType, Int selectionMode);
+	void doTeamMoveTowardsRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType, Int selectionMode);
+	void doUnitMoveAwayFromRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType, Int selectionMode);
+	void doUnitMoveTowardsRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType, Int selectionMode);
 	void doTeamMeet(const AsciiString& teamName);
 	void doTeamMeetKindOf(const AsciiString& teamName, Int kindOf);
 	void doTeamMeetType(const AsciiString& teamName, const AsciiString& objectType);
 	void doTeamMeetTeam(const AsciiString& teamNameA, const AsciiString& teamNameB);
 	void doTeamMoveToTeam(const AsciiString& teamNameA, const AsciiString& teamNameB);
-	void doTeamMoveAwayFromRelation(const AsciiString& teamName, Real feet, Int relationType);
-	void doTeamMoveTowardsRelation(const AsciiString& teamName, Real feet, Int relationType);
-	void doUnitMoveAwayFromRelation(const AsciiString& unitName, Real feet, Int relationType);
-	void doUnitMoveTowardsRelation(const AsciiString& unitName, Real feet, Int relationType);
+	void doTeamMoveAwayFromRelation(const AsciiString& teamName, Real feet, Int relationType, Int selectionMode);
+	void doTeamMoveTowardsRelation(const AsciiString& teamName, Real feet, Int relationType, Int selectionMode);
+	void doUnitMoveAwayFromRelation(const AsciiString& unitName, Real feet, Int relationType, Int selectionMode);
+	void doUnitMoveTowardsRelation(const AsciiString& unitName, Real feet, Int relationType, Int selectionMode);
 
 	void doTeamUseCommandButtonAbilityOnType(const AsciiString& teamName, const AsciiString& ability, const AsciiString& objectType);
 	void doTeamUseCommandButtonAbilityOnTeam(const AsciiString& teamName, const AsciiString& ability, const AsciiString& targetTeam);
@@ -454,31 +455,31 @@ protected:
 	void doAIPlayerAddBaseDefenseStructure(const AsciiString& objectType);
 	void doAIPlayerRemoveBaseDefenseStructure(const AsciiString& objectType);
 
-  void doTeamAttackType(const AsciiString& teamName, const AsciiString& objectType);
-	void doTeamAttackTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerParm);
-	void doTeamAttackSeenUnit(const AsciiString& teamName);
-	void doTeamAttackSeenType(const AsciiString& teamName, const AsciiString& objectType);
-	void doTeamAttackSeenArea(const AsciiString& teamName, const AsciiString& pTriggerParm);
-	void doTeamAttackSeenTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerParm);
+  void doTeamAttackType(const AsciiString& teamName, const AsciiString& objectType, Int selectionMode);
+	void doTeamAttackTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerParm, Int selectionMode);
+	void doTeamAttackSeenUnit(const AsciiString& teamName, Int selectionMode);
+	void doTeamAttackSeenType(const AsciiString& teamName, const AsciiString& objectType, Int selectionMode);
+	void doTeamAttackSeenArea(const AsciiString& teamName, const AsciiString& pTriggerParm, Int selectionMode);
+	void doTeamAttackSeenTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerParm, Int selectionMode);
 
 	void doTeamAttackMoveLocation(const AsciiString& teamName, const AsciiString& waypointName);
-	void doTeamAttackMoveArea(const AsciiString& teamName, const AsciiString& pTriggerArea);
-	void doTeamAttackMoveType(const AsciiString& teamName, const AsciiString& objectType);
-	void doTeamAttackMoveTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea);
-	void doTeamAttackMoveSeenUnit(const AsciiString& teamName);
-	void doTeamAttackMoveSeenType(const AsciiString& teamName, const AsciiString& objectType);
-	void doTeamAttackMoveSeenArea(const AsciiString& teamName, const AsciiString& pTriggerParm);
-	void doTeamAttackMoveSeenTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerParm);
+	void doTeamAttackMoveArea(const AsciiString& teamName, const AsciiString& pTriggerArea, Int selectionMode);
+	void doTeamAttackMoveType(const AsciiString& teamName, const AsciiString& objectType, Int selectionMode);
+	void doTeamAttackMoveTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea, Int selectionMode);
+	void doTeamAttackMoveSeenUnit(const AsciiString& teamName, Int selectionMode);
+	void doTeamAttackMoveSeenType(const AsciiString& teamName, const AsciiString& objectType, Int selectionMode);
+	void doTeamAttackMoveSeenArea(const AsciiString& teamName, const AsciiString& pTriggerParm, Int selectionMode);
+	void doTeamAttackMoveSeenTypeArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerParm, Int selectionMode);
 	void doTeamAttackMovePath(const AsciiString& teamName, const AsciiString& waypointPath);
 
 	void doTeamEvacuateDestroyedPercent(const AsciiString& teamName, Real value);
 
 	void doTeamMoveCaptured(const AsciiString& teamName);
 	void doTeamMoveCapturedType(const AsciiString& teamName, const AsciiString objectType);
-	void doTeamMoveNearestUnderFog(const AsciiString& teamName, const AsciiString& objectType);
-	void doTeamMoveNearestUnderFogInArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea);
-	void doTeamMoveNearestNotUnderFog(const AsciiString& teamName, const AsciiString& objectType);
-	void doTeamMoveNearestNotUnderFogInArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea);
+	void doTeamMoveNearestUnderFog(const AsciiString& teamName, const AsciiString& objectType, Int selectionMode);
+	void doTeamMoveNearestUnderFogInArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea, Int selectionMode);
+	void doTeamMoveNearestNotUnderFog(const AsciiString& teamName, const AsciiString& objectType, Int selectionMode);
+	void doTeamMoveNearestNotUnderFogInArea(const AsciiString& teamName, const AsciiString& objectType, const AsciiString& pTriggerArea, Int selectionMode);
 
 	void doUnitTeleportLocation(const AsciiString& unitName, const AsciiString& waypointName);
 	void doTeamTeleportLocation(const AsciiString& teamName, const AsciiString& waypointName);
@@ -494,10 +495,10 @@ protected:
 	void doPlayerApplyPrioritySetType(const AsciiString& playerName, const AsciiString& attackPrioritySet, const AsciiString& objectType);
 	void doTeamApplyPrioritySetType(const AsciiString& teamName, const AsciiString& attackPrioritySet, const AsciiString& objectType);
 
-	void doTeamKeepDistanceFromRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType);
-	void doUnitKeepDistanceFromRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType);
-	void doTeamKeepDistanceFromRelation(const AsciiString& teamName, Real feet, Int relationType);
-	void doUnitKeepDistanceFromRelation(const AsciiString& unitName, Real feet, Int relationType);
+	void doTeamKeepDistanceFromRelationType(const AsciiString& teamName, Real feet, Int relationType, const AsciiString& objectType, Int selectionMode);
+	void doUnitKeepDistanceFromRelationType(const AsciiString& unitName, Real feet, Int relationType, const AsciiString& objectType, Int selectionMode);
+	void doTeamKeepDistanceFromRelation(const AsciiString& teamName, Real feet, Int relationType, Int selectionMode);
+	void doUnitKeepDistanceFromRelation(const AsciiString& unitName, Real feet, Int relationType, Int selectionMode);
 
 	void doPlayerSetWillingnessToCrush(const AsciiString& playerName, Bool wantsToCrush);
 	void doTeamSetWillingnessToCrush(const AsciiString& teamName, Bool wantsToCrush);
@@ -527,9 +528,19 @@ protected:
 
 	void doTeamHuntWithCommandButtonType(const AsciiString& teamName, const AsciiString& ability, const AsciiString& objectType);
 
-	//void doTeamSendToRepair(const AsciiString& teamName);
+	void doSkirmishUseParticleCannonTeleportMode(const AsciiString& playerName, Bool teleportMode);
 
-	// @-TanSo-: 117 additions
+	void doTeamGarrisonType(const AsciiString& teamName, const AsciiString& objectType);
+	void doPlayerGarrisonMaxEachType(const AsciiString& playerName, const AsciiString& objectType, Int maxAmount);
+	void doTeamGarrisonMaxEachType(const AsciiString& teamName, const AsciiString& objectType, Int maxAmount);
+	void doPlayerGarrisonEquallyType(const AsciiString& playerName, Int amount, const AsciiString& objectType);
+	void doTeamGarrisonEquallyType(const AsciiString& teamName, Int amount, const AsciiString& objectType);
+	void doTeamLoadAllTransportsEvenlyType(const AsciiString& teamName, const AsciiString& objectType);
+
+	void doTeamSendToRepair(const AsciiString& teamName, Bool sendBackFullHP);
+
+	// @-TanSo-: 123 additions
+
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 	//-------------------------------------------------------------------------------------------------

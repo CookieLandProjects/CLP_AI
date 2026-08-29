@@ -177,6 +177,8 @@ public:
 	void createOrbitToTargetLaser( UnsignedInt growthFrames );
 	void createGroundHitParticleSystem( IntensityTypes intensity );
 
+	void updateCustomTrajectory(Object* me);
+
 	Bool calculateDefaultInformation();
 	Bool calculateUpBonePositions();
 
@@ -239,4 +241,19 @@ protected:
 	Bool						m_manualTargetMode;
 	Bool						m_scriptedWaypointMode;
 	Bool						m_clientShroudedLastFrame;
+
+	//@CLP_AI Additions
+	Bool																m_customMode;					// Update the beam however the user wants it.
+	Bool																m_teleportMode;				// Rather than updating the position, teleport it to its destination (mission map intent).
+	Coord3D															m_victimPosition;			// The currently closest victim to approach.
+	std::vector<const ThingTemplate*>		m_targets;						// Container for the objectTypes the beam should look for.
+	ObjectID														m_currentVictimID;		// Just like m_nextDestWaypointID, this remembers the victim's ID for checks
+
+public:
+	void setCustomMode(Bool b) { m_customMode = b; }
+	void setTeleportMode(Bool b) { m_teleportMode = b; }
+	void addTarget(const ThingTemplate* t) { if(t) m_targets.push_back(t); }
+	void clearTargets() { m_targets.clear(); }
+	Bool isAlreadyTarget(const ThingTemplate* t) { for (Int i = 0; i < m_targets.size(); i++) { if (t == m_targets[i]) return true; } return false; }
+	Bool hasTargets() { return !m_targets.empty(); }
 };

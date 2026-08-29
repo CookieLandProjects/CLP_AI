@@ -202,6 +202,10 @@ ParticleUplinkCannonUpdate::ParticleUplinkCannonUpdate( Thing *thing, const Modu
 		m_outerNodePositions[ i ].zero();
 		m_outerNodeOrientations[ i ].Make_Identity();
 	}
+
+	m_customMode = false;
+	m_currentVictimID = INVALID_ID;
+	m_victimPosition.zero();
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -346,6 +350,8 @@ Bool ParticleUplinkCannonUpdate::initiateIntentToDoSpecialPower(const SpecialPow
 		m_scriptedWaypointMode = FALSE;
 #endif
 		m_initialTargetPosition.set( pos );
+		m_victimPosition.set( pos );
+		m_currentTargetPosition.set( pos );
 		m_startAttackFrame = max( now, (UnsignedInt)1 );
 		m_laserStatus = LASERSTATUS_NONE;
 		setLogicalStatus( STATUS_READY_TO_FIRE );
@@ -518,8 +524,12 @@ UpdateSleepTime ParticleUplinkCannonUpdate::update()
 		const Bool isFiring = orbitalBirthFrame <= now && now < orbitalDeathFrame;
 		if ( isFiring )
 		{
-
-			if( !m_manualTargetMode && !m_scriptedWaypointMode )
+			//@CLP_AI additions - AI targets given objectTypes here.
+			if (m_customMode)
+			{ 
+				updateCustomTrajectory(me);
+			}
+			else if( !m_manualTargetMode && !m_scriptedWaypointMode)
 			{
 				//Calculate the position of the beam because it swaths -- a nice S curve centering at the target location!
 
@@ -1401,6 +1411,7 @@ void ParticleUplinkCannonUpdate::crc( Xfer *xfer )
 	* 2: Serialize decay frames
 	* 3: Serialize scripted waypoints (Added for Zero Hour)
 	* 4: TheSuperHackers @tweak Serialize orbit to target laser radius
+	* 5: CLP_AI feature for custom targets (objectTypes)
 	*/
 // ------------------------------------------------------------------------------------------------
 void ParticleUplinkCannonUpdate::xfer( Xfer *xfer )
@@ -1411,7 +1422,7 @@ void ParticleUplinkCannonUpdate::xfer( Xfer *xfer )
 #if RETAIL_COMPATIBLE_XFER_SAVE
 	const XferVersion currentVersion = 3;
 #else
-	const XferVersion currentVersion = 4;
+	const XferVersion currentVersion = 5;
 #endif
 	XferVersion version = currentVersion;
 	xfer->xferVersion( &version, currentVersion );
@@ -1526,6 +1537,12 @@ void ParticleUplinkCannonUpdate::xfer( Xfer *xfer )
 		m_orbitToTargetLaserRadius.xfer( xfer );
 	}
 
+	if (version >= 5)
+	{
+		xfer->xferBool( &m_customMode );
+		xfer->xferCoord3D(&m_victimPosition);
+		xfer->xferObjectID(&m_currentVictimID);
+	}
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -1591,5 +1608,103 @@ void ParticleUplinkCannonUpdate::loadPostProcess()
 				m_annihilationSound.setPlayingHandle( TheAudio->addAudioEvent( &m_annihilationSound ) );
 			}
 		}
+	}
+}
+
+
+//@CLP_AI additions
+void ParticleUplinkCannonUpdate::updateCustomTrajectory(Object* me)
+{
+	if (!me)
+		return;
+
+	Object* target = nullptr;
+
+	// See if our victim has not yet been invalidated
+	if (m_currentVictimID != INVALID_ID)
+	{
+		target = TheGameLogic->findObjectByID(m_currentVictimID);
+
+		if (!target || target->isEffectivelyDead()/* || (*target->getPosition() - m_victimPosition).length() < 0.1f*/)
+		{
+			target = nullptr;
+			m_currentVictimID = INVALID_ID;
+		}
+	}
+
+	// If the target doesn't exist anymore, aquire a new one.
+	if (!target)
+	{
+		Real closestDist = 1000000.0f;
+		for (Object* obj = TheGameLogic->getFirstObject(); obj; obj = obj->getNextObject())
+		{
+			if (obj->isEffectivelyDead())
+				continue;
+
+			if (obj->getRelationship(me) != ENEMIES)
+				continue;
+
+			Bool isTemplate = false;
+			for (Int i = 0; i < m_targets.size(); i++)
+			{
+				if (obj->getTemplate() == m_targets[i])
+				{
+					isTemplate = true;
+					break;
+				}
+			}
+
+			if (!isTemplate)
+				continue;
+
+			Coord3D objPos = *obj->getPosition();
+			Real dx = objPos.x - m_currentTargetPosition.x;
+			Real dy = objPos.y - m_currentTargetPosition.y;
+			Real dist = sqrtf(dx * dx + dy * dy);
+
+			if (dist < closestDist)
+			{
+				closestDist = dist;
+				target = obj;
+			}
+		}
+		if (target)
+		{
+			m_currentVictimID = target->getID();
+		}
+	}
+
+	// Newly aquired or still existing, get the position as the desired beam destination.
+	if (target)
+	{
+		m_victimPosition = *target->getPosition();
+	}
+
+	// If the map creator wants to, teleport the beam from target to target rather than working with increments.
+	if (!m_teleportMode)
+	{
+		Coord3D direction = m_victimPosition;
+		direction.sub(m_currentTargetPosition);
+
+		Real distance = direction.length();
+
+		Real speed = getParticleUplinkCannonUpdateModuleData()->m_manualFastDrivingSpeed;
+		speed /= LOGICFRAMES_PER_SECOND;
+
+		if (distance <= speed)
+		{
+			m_currentTargetPosition = m_victimPosition;
+			m_currentVictimID = INVALID_ID;
+		}
+		else
+		{
+			direction.normalize();
+			direction.scale(speed);
+			m_currentTargetPosition += direction;
+		}
+	}
+	else
+	{
+		m_currentTargetPosition = m_victimPosition;
 	}
 }

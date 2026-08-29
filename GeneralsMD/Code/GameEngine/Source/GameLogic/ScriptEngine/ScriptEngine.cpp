@@ -3479,27 +3479,32 @@ void ScriptEngine::init()
 
  	curTemplate = &m_actionTemplates[ScriptAction::UNIT_MOVE_TOWARDS_NEAREST_OBJECT_TYPE];
 	curTemplate->m_internalName = "UNIT_MOVE_TOWARDS_NEAREST_OBJECT_TYPE";
-	curTemplate->m_uiName = "Unit_/ Move unit towards the nearest object of a specific type.";
-	curTemplate->m_numParameters = 3;
+	curTemplate->m_uiName = "Unit_/ Move unit towards a(n) object of a specific type.";
+	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::UNIT;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
 	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
-	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_parameters[3] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 4;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " will move towards the nearest ";
+	curTemplate->m_uiStrings[1] = " will move towards a(n) ";
 	curTemplate->m_uiStrings[2] = " within ";
+	curTemplate->m_uiStrings[3] = " with selection mode ";
+
 
  	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_TOWARDS_NEAREST_OBJECT_TYPE];
 	curTemplate->m_internalName = "TEAM_MOVE_TOWARDS_NEAREST_OBJECT_TYPE";
-	curTemplate->m_uiName = "Team_/ Move team towards the nearest object of a specific type.";
-	curTemplate->m_numParameters = 3;
+	curTemplate->m_uiName = "Team_/ Move team towards a(n) object of a specific type.";
+	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
 	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
-	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_parameters[3] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 4;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " will move towards the nearest ";
+	curTemplate->m_uiStrings[1] = " will move towards a(n) ";
 	curTemplate->m_uiStrings[2] = " within ";
+	curTemplate->m_uiStrings[3] = " with selection mode ";
 
  	curTemplate = &m_actionTemplates[ScriptAction::SKIRMISH_ATTACK_NEAREST_GROUP_WITH_VALUE];
 	curTemplate->m_internalName = "SKIRMISH_ATTACK_NEAREST_GROUP_WITH_VALUE";
@@ -5435,81 +5440,91 @@ void ScriptEngine::init()
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_NEAREST_BELONGING_TO_PLAYER];
 	curTemplate->m_internalName = "TEAM_MOVE_NEAREST_BELONGING_TO_PLAYER";
-	curTemplate->m_uiName = "Team/Move/Move team towards the nearst object type belonging to a player.";
-	curTemplate->m_numParameters = 3;
+	curTemplate->m_uiName = "Team/Move/Move team towards a(n) object type belonging to a player.";
+	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
 	curTemplate->m_parameters[2] = Parameter::SIDE;
-	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_parameters[3] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 4;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " will move towards the nearest ";
+	curTemplate->m_uiStrings[1] = " will move towards a(n) ";
 	curTemplate->m_uiStrings[2] = " belonging to ";
+	curTemplate->m_uiStrings[3] = " with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::UNIT_MOVE_NEAREST_BELONGING_TO_PLAYER];
 	curTemplate->m_internalName = "UNIT_MOVE_NEAREST_BELONGING_TO_PLAYER";
-	curTemplate->m_uiName = "Unit/Move/Move unit towards the nearst object type belonging to a player.";
-	curTemplate->m_numParameters = 3;
+	curTemplate->m_uiName = "Unit/Move/Move unit towards a(n) object type belonging to a player.";
+	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::UNIT;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
 	curTemplate->m_parameters[2] = Parameter::SIDE;
-	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_parameters[3] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 4;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " will move towards the nearest ";
+	curTemplate->m_uiStrings[1] = " will move towards a(n) ";
 	curTemplate->m_uiStrings[2] = " belonging to ";
+	curTemplate->m_uiStrings[3] = " with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_AWAY_FROM_RELATION_TYPE];
 	curTemplate->m_internalName = "TEAM_MOVE_AWAY_FROM_RELATION_TYPE";
-	curTemplate->m_uiName = "Team/Move/Distance/Move team away from the nearest friendly|neutral|enemy object type.";
-	curTemplate->m_numParameters = 4;
+	curTemplate->m_uiName = "Team/Move/Distance/Move team away from a(n) friendly|neutral|enemy object type.";
+	curTemplate->m_numParameters = 5;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::REAL;
 	curTemplate->m_parameters[2] = Parameter::RELATION;
 	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
-	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_parameters[4] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 5;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " will move ";
-	curTemplate->m_uiStrings[2] = " feet away from the nearest ";
+	curTemplate->m_uiStrings[2] = " feet away from a(n) ";
 	curTemplate->m_uiStrings[3] = " object of type ";
+	curTemplate->m_uiStrings[4] = " with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::UNIT_MOVE_AWAY_FROM_RELATION_TYPE];
 	curTemplate->m_internalName = "UNIT_MOVE_AWAY_FROM_RELATION_TYPE";
-	curTemplate->m_uiName = "Unit/Move/Distance/Move unit away from the nearest friendly|neutral|enemy object type.";
-	curTemplate->m_numParameters = 4;
+	curTemplate->m_uiName = "Unit/Move/Distance/Move unit away from a(n) friendly|neutral|enemy object type.";
+	curTemplate->m_numParameters = 5;
 	curTemplate->m_parameters[0] = Parameter::UNIT;
 	curTemplate->m_parameters[1] = Parameter::REAL;
 	curTemplate->m_parameters[2] = Parameter::RELATION;
 	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
-	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_parameters[4] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 5;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " will move ";
-	curTemplate->m_uiStrings[2] = " feet away from the nearest ";
+	curTemplate->m_uiStrings[2] = " feet away from a(n) ";
 	curTemplate->m_uiStrings[3] = " object of type ";
+	curTemplate->m_uiStrings[4] = " with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_AWAY_FROM_RELATION];
 	curTemplate->m_internalName = "TEAM_MOVE_AWAY_FROM_RELATION";
-	curTemplate->m_uiName = "Team/Move/Distance/Move team away from the nearest friendly|neutral|enemy unit.";
-	curTemplate->m_numParameters = 3;
+	curTemplate->m_uiName = "Team/Move/Distance/Move team away from a(n) friendly|neutral|enemy unit.";
+	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::REAL;
 	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_parameters[3] = Parameter::SELECTION_MODE;
 	curTemplate->m_numUiStrings = 4;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " will move ";
-	curTemplate->m_uiStrings[2] = " feet away from the nearest ";
-	curTemplate->m_uiStrings[3] = " unit.";
+	curTemplate->m_uiStrings[2] = " feet away from a(n) ";
+	curTemplate->m_uiStrings[3] = " unit with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::UNIT_MOVE_AWAY_FROM_RELATION];
 	curTemplate->m_internalName = "UNIT_MOVE_AWAY_FROM_RELATION";
-	curTemplate->m_uiName = "Unit/Move/Distance/Move unit away from the nearest friendly|neutral|enemy unit.";
-	curTemplate->m_numParameters = 3;
+	curTemplate->m_uiName = "Unit/Move/Distance/Move unit away from a(n) friendly|neutral|enemy unit.";
+	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::UNIT;
 	curTemplate->m_parameters[1] = Parameter::REAL;
 	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_parameters[3] = Parameter::SELECTION_MODE;
 	curTemplate->m_numUiStrings = 4;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " will move ";
-	curTemplate->m_uiStrings[2] = " feet away from the nearest ";
-	curTemplate->m_uiStrings[3] = " unit.";
+	curTemplate->m_uiStrings[2] = " feet away from a(n) ";
+	curTemplate->m_uiStrings[3] = " unit with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MEET];
 	curTemplate->m_internalName = "TEAM_MEET";
@@ -5828,66 +5843,74 @@ void ScriptEngine::init()
 	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED];
 	curTemplate->m_internalName = "AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED";
 	curTemplate->m_uiName = "Player/AI/Rotated/AI player build nearest objectType with custom rotation.";
-	curTemplate->m_numParameters = 4;
+	curTemplate->m_numParameters = 5;
 	curTemplate->m_parameters[0] = Parameter::SIDE;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
 	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
 	curTemplate->m_parameters[3] = Parameter::REAL;
-	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_parameters[4] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 6;
 	curTemplate->m_uiStrings[0] = "Have AI ";
 	curTemplate->m_uiStrings[1] = " build a ";
-	curTemplate->m_uiStrings[2] = " near the closest ";
+	curTemplate->m_uiStrings[2] = " near a(n) ";
 	curTemplate->m_uiStrings[3] = " , rotated ";
-	curTemplate->m_uiStrings[4] = " degrees.\n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
+	curTemplate->m_uiStrings[4] = " degrees with selection mode ";
+	curTemplate->m_uiStrings[5] = "\n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
 
 	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED];
 	curTemplate->m_internalName = "AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED";
-	curTemplate->m_uiName = "Player/AI/Rotated/AI player build nearest kindOf with custom rotation.";
-	curTemplate->m_numParameters = 4;
+	curTemplate->m_uiName = "Player/AI/Rotated/AI player build nearest a(n) kindOf with custom rotation.";
+	curTemplate->m_numParameters = 5;
 	curTemplate->m_parameters[0] = Parameter::SIDE;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
 	curTemplate->m_parameters[2] = Parameter::KIND_OF_PARAM;
 	curTemplate->m_parameters[3] = Parameter::REAL;
-	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_parameters[4] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 6;
 	curTemplate->m_uiStrings[0] = "Have AI ";
 	curTemplate->m_uiStrings[1] = " build a ";
-	curTemplate->m_uiStrings[2] = " near the closest ";
+	curTemplate->m_uiStrings[2] = " near a(n) ";
 	curTemplate->m_uiStrings[3] = " , rotated ";
-	curTemplate->m_uiStrings[4] = " degrees.\n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
+	curTemplate->m_uiStrings[4] = " degrees with selection mode "; 
+	curTemplate->m_uiStrings[5] = "\n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
 
 	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED_AREA];
 	curTemplate->m_internalName = "AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED_AREA";
-	curTemplate->m_uiName = "Player/AI/Rotated/AI player build nearest objectType in an area with custom rotation.";
-	curTemplate->m_numParameters = 5;
+	curTemplate->m_uiName = "Player/AI/Rotated/AI player build nearest a(n) objectType in an area with custom rotation.";
+	curTemplate->m_numParameters = 6;
 	curTemplate->m_parameters[0] = Parameter::SIDE;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
 	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
 	curTemplate->m_parameters[3] = Parameter::TRIGGER_AREA;
 	curTemplate->m_parameters[4] = Parameter::REAL;
-	curTemplate->m_numUiStrings = 6;
+	curTemplate->m_parameters[5] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 7;
 	curTemplate->m_uiStrings[0] = "Have AI ";
 	curTemplate->m_uiStrings[1] = " build a ";
-	curTemplate->m_uiStrings[2] = " near the closest ";
+	curTemplate->m_uiStrings[2] = " near a(n) ";
 	curTemplate->m_uiStrings[3] = " in area ";
 	curTemplate->m_uiStrings[4] = " , rotated ";
-	curTemplate->m_uiStrings[5] = " degrees.\n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
+	curTemplate->m_uiStrings[5] = " degrees with selection mode ";
+	curTemplate->m_uiStrings[6] = "\n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
 
 	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED_AREA];
 	curTemplate->m_internalName = "AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED_AREA";
-	curTemplate->m_uiName = "Player/AI/Rotated/AI player build nearest kindOf in an area with custom rotation.";
-	curTemplate->m_numParameters = 5;
+	curTemplate->m_uiName = "Player/AI/Rotated/AI player build nearest a(n) kindOf in an area with custom rotation.";
+	curTemplate->m_numParameters = 6;
 	curTemplate->m_parameters[0] = Parameter::SIDE;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
 	curTemplate->m_parameters[2] = Parameter::KIND_OF_PARAM;
 	curTemplate->m_parameters[3] = Parameter::TRIGGER_AREA;
 	curTemplate->m_parameters[4] = Parameter::REAL;
-	curTemplate->m_numUiStrings = 6;
+	curTemplate->m_parameters[5] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 7;
 	curTemplate->m_uiStrings[0] = "Have AI ";
 	curTemplate->m_uiStrings[1] = " build a ";
-	curTemplate->m_uiStrings[2] = " near the closest ";
+	curTemplate->m_uiStrings[2] = " near a(n) ";
 	curTemplate->m_uiStrings[3] = " in area ";
 	curTemplate->m_uiStrings[4] = " , rotated ";
-	curTemplate->m_uiStrings[5] = " degrees.\n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
+	curTemplate->m_uiStrings[5] = " degrees with selection mode ";
+	curTemplate->m_uiStrings[6] = " \n\nNOTE:\nIf the angle is set to 361.00, randomize diagonally (45, -45, 135, -135).\nIf the angle is set to 362.00, randomize (0 - 359).";
 
 	curTemplate = &m_conditionTemplates[Condition::PLAYER_RELATION_FACTION];
 	curTemplate->m_internalName = "PLAYER_RELATION_FACTION";
@@ -5963,57 +5986,63 @@ void ScriptEngine::init()
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_TOWARDS_RELATION];
 	curTemplate->m_internalName = "TEAM_MOVE_TOWARDS_RELATION";
-	curTemplate->m_uiName = "Team/Move/Distance/Move team towards the nearest friendly|neutral|enemy unit.";
-	curTemplate->m_numParameters = 3;
+	curTemplate->m_uiName = "Team/Move/Distance/Move team towards a(n) friendly|neutral|enemy unit.";
+	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::REAL;
 	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_parameters[3] = Parameter::SELECTION_MODE;
 	curTemplate->m_numUiStrings = 4;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " will move ";
-	curTemplate->m_uiStrings[2] = " feet towards the nearest ";
-	curTemplate->m_uiStrings[3] = " unit.";
+	curTemplate->m_uiStrings[2] = " feet towards a(n) ";
+	curTemplate->m_uiStrings[3] = " unit with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::UNIT_MOVE_TOWARDS_RELATION];
 	curTemplate->m_internalName = "UNIT_MOVE_TOWARDS_RELATION";
-	curTemplate->m_uiName = "Unit/Move/Distance/Move unit towards the nearest friendly|neutral|enemy unit.";
-	curTemplate->m_numParameters = 3;
+	curTemplate->m_uiName = "Unit/Move/Distance/Move unit towards a(n) friendly|neutral|enemy unit.";
+	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::UNIT;
 	curTemplate->m_parameters[1] = Parameter::REAL;
 	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_parameters[3] = Parameter::SELECTION_MODE;
 	curTemplate->m_numUiStrings = 4;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " will move ";
-	curTemplate->m_uiStrings[2] = " feet towards the nearest ";
-	curTemplate->m_uiStrings[3] = " unit.";
+	curTemplate->m_uiStrings[2] = " feet towards a(n) ";
+	curTemplate->m_uiStrings[3] = " unit with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_TOWARDS_RELATION_TYPE];
 	curTemplate->m_internalName = "TEAM_MOVE_TOWARDS_RELATION_TYPE";
-	curTemplate->m_uiName = "Team/Move/Distance/Move team towards the nearest friendly|neutral|enemy object type.";
-	curTemplate->m_numParameters = 4;
+	curTemplate->m_uiName = "Team/Move/Distance/Move team towards a(n) friendly|neutral|enemy object type.";
+	curTemplate->m_numParameters = 5;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::REAL;
 	curTemplate->m_parameters[2] = Parameter::RELATION;
 	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
-	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_parameters[4] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 5;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " will move ";
-	curTemplate->m_uiStrings[2] = " feet towards the nearest ";
+	curTemplate->m_uiStrings[2] = " feet towards a(n) ";
 	curTemplate->m_uiStrings[3] = " unit of type ";
+	curTemplate->m_uiStrings[4] = " with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::UNIT_MOVE_TOWARDS_RELATION_TYPE];
 	curTemplate->m_internalName = "UNIT_MOVE_TOWARDS_RELATION_TYPE";
-	curTemplate->m_uiName = "Unit/Move/Distance/Move unit towards the nearest friendly|neutral|enemy object type.";
-	curTemplate->m_numParameters = 4;
+	curTemplate->m_uiName = "Unit/Move/Distance/Move unit towards a(n) friendly|neutral|enemy object type.";
+	curTemplate->m_numParameters = 5;
 	curTemplate->m_parameters[0] = Parameter::UNIT;
 	curTemplate->m_parameters[1] = Parameter::REAL;
 	curTemplate->m_parameters[2] = Parameter::RELATION;
 	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
-	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_parameters[4] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 5;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " will move ";
-	curTemplate->m_uiStrings[2] = " feet towards the nearest ";
+	curTemplate->m_uiStrings[2] = " feet towards a(n) ";
 	curTemplate->m_uiStrings[3] = " unit of type ";
+	curTemplate->m_uiStrings[4] = " with selection mode ";
 
 	curTemplate = &m_conditionTemplates[Condition::PLAYER_DESTROYED_ENEMY_TYPE];
 	curTemplate->m_internalName = "PLAYER_DESTROYED_ENEMY_TYPE";
@@ -6555,69 +6584,77 @@ void ScriptEngine::init()
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACK_TYPE];
 	curTemplate->m_internalName = "TEAM_ATTACK_TYPE";
-	curTemplate->m_uiName = "Team/Attack/Set to attack -- closest enemy unit of a type.";
-	curTemplate->m_numParameters = 2;
+	curTemplate->m_uiName = "Team/Attack/Set to attack -- a(n) enemy unit of a type.";
+	curTemplate->m_numParameters = 3;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
-	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_parameters[2] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " attacks the closest enemy unit of type ";
+	curTemplate->m_uiStrings[1] = " attacks a(n) enemy unit of type ";
+	curTemplate->m_uiStrings[2] = " with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACK_TYPE_AREA];
 	curTemplate->m_internalName = "TEAM_ATTACK_TYPE_AREA";
-	curTemplate->m_uiName = "Team/Attack/Set to attack -- closest enemy unit of a type in an area.";
-	curTemplate->m_numParameters = 3;
+	curTemplate->m_uiName = "Team/Attack/Set to attack -- a(n) enemy unit of a type in an area.";
+	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
 	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
-	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_parameters[3] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 4;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " attacks the closest enemy unit of type ";
+	curTemplate->m_uiStrings[1] = " attacks a(n) enemy unit of type ";
 	curTemplate->m_uiStrings[2] = " in area ";
+	curTemplate->m_uiStrings[3] = " with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACK_SEEN_UNIT];
 	curTemplate->m_internalName = "TEAM_ATTACK_SEEN_UNIT";
-	curTemplate->m_uiName = "Team/Attack/Seen/Set to attack -- closest enemy unit the player has seen";
-	curTemplate->m_numParameters = 1;
+	curTemplate->m_uiName = "Team/Attack/Seen/Set to attack -- a(n) enemy unit the player has seen";
+	curTemplate->m_numParameters = 2;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::SELECTION_MODE;
 	curTemplate->m_numUiStrings = 2;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " attacks the closest enemy unit (within the past 10 seconds).";
+	curTemplate->m_uiStrings[1] = " attacks a(n) enemy unit the player has seen (within the past 10 seconds) with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACK_SEEN_TYPE];
 	curTemplate->m_internalName = "TEAM_ATTACK_SEEN_TYPE";
-	curTemplate->m_uiName = "Team/Attack/Seen/Set to attack -- closest enemy unit of a type the player has seen";
-	curTemplate->m_numParameters = 2;
-	curTemplate->m_parameters[0] = Parameter::TEAM;
-	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
-	curTemplate->m_numUiStrings = 3;
-	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " attacks the closest enemy unit of type ";
-	curTemplate->m_uiStrings[2] = " the player has seen (within the past 10 seconds).";
-
-	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACK_SEEN_AREA];
-	curTemplate->m_internalName = "TEAM_ATTACK_SEEN_AREA";
-	curTemplate->m_uiName = "Team/Attack/Seen/Set to attack -- closest enemy unit in an area the player has seen";
-	curTemplate->m_numParameters = 2;
-	curTemplate->m_parameters[0] = Parameter::TEAM;
-	curTemplate->m_parameters[1] = Parameter::TRIGGER_AREA;
-	curTemplate->m_numUiStrings = 3;
-	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " attacks the closest enemy unit in area ";
-	curTemplate->m_uiStrings[2] = " the player has seen (within the past 10 seconds).";
-
-	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACK_SEEN_TYPE_AREA];
-	curTemplate->m_internalName = "TEAM_ATTACK_SEEN_TYPE_AREA";
-	curTemplate->m_uiName = "Team/Attack/Seen/Set to attack -- closest enemy unit of a type in an area the player has seen";
+	curTemplate->m_uiName = "Team/Attack/Seen/Set to attack -- a(n) enemy unit of a type the player has seen";
 	curTemplate->m_numParameters = 3;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks the a(n) unit of type ";
+	curTemplate->m_uiStrings[2] = " the player has seen (within the past 10 seconds) with selection mode ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACK_SEEN_AREA];
+	curTemplate->m_internalName = "TEAM_ATTACK_SEEN_AREA";
+	curTemplate->m_uiName = "Team/Attack/Seen/Set to attack -- a(n) enemy unit in an area the player has seen";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[2] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks a(n) enemy unit in area ";
+	curTemplate->m_uiStrings[2] = " the player has seen (within the past 10 seconds) with selection mode ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACK_SEEN_TYPE_AREA];
+	curTemplate->m_internalName = "TEAM_ATTACK_SEEN_TYPE_AREA";
+	curTemplate->m_uiName = "Team/Attack/Seen/Set to attack -- a(n) enemy unit of a type in an area the player has seen";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
 	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[3] = Parameter::SELECTION_MODE;
 	curTemplate->m_numUiStrings = 4;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " attacks the closest enemy unit of type ";
+	curTemplate->m_uiStrings[1] = " attacks the a(n) enemy unit of type ";
 	curTemplate->m_uiStrings[2] = " in area ";
-	curTemplate->m_uiStrings[3] = " the player has seen (within the past 10 seconds).";
+	curTemplate->m_uiStrings[3] = " the player has seen (within the past 10 seconds) with selection mode ";
 
 	curTemplate = &m_conditionTemplates[Condition::TEAM_IDLE];
 	curTemplate->m_internalName = "TEAM_IDLE";
@@ -6827,35 +6864,41 @@ void ScriptEngine::init()
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_AREA];
 	curTemplate->m_internalName = "TEAM_ATTACKMOVE_AREA";
-	curTemplate->m_uiName = "Team/Attack/Attack Move/Attack Move -- closest enemy unit in an area.";
-	curTemplate->m_numParameters = 2;
+	curTemplate->m_uiName = "Team/Attack/Attack Move/Attack Move -- a(n) enemy unit in an area.";
+	curTemplate->m_numParameters = 3;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::TRIGGER_AREA;
-	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_parameters[2] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " attacks moves to the closest unit in area ";
+	curTemplate->m_uiStrings[1] = " attacks moves to a(n) unit in area ";
+	curTemplate->m_uiStrings[2] = " with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_TYPE];
 	curTemplate->m_internalName = "TEAM_ATTACKMOVE_TYPE";
-	curTemplate->m_uiName = "Team/Attack/Attack Move/Attack Move -- closest enemy unit of a type.";
-	curTemplate->m_numParameters = 2;
-	curTemplate->m_parameters[0] = Parameter::TEAM;
-	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
-	curTemplate->m_numUiStrings = 2;
-	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " attacks moves to the closest unit of type ";
-
-	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_TYPE_AREA];
-	curTemplate->m_internalName = "TEAM_ATTACKMOVE_TYPE_AREA";
-	curTemplate->m_uiName = "Team/Attack/Attack Move/Attack Move -- closest enemy unit of a type in an area.";
+	curTemplate->m_uiName = "Team/Attack/Attack Move/Attack Move -- a(n) enemy unit of a type.";
 	curTemplate->m_numParameters = 3;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
-	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[2] = Parameter::SELECTION_MODE;
 	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " attacks moves to the closest unit of type ";
+	curTemplate->m_uiStrings[1] = " attacks moves to a(n) unit of type ";
+	curTemplate->m_uiStrings[2] = " with selection mode ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_TYPE_AREA];
+	curTemplate->m_internalName = "TEAM_ATTACKMOVE_TYPE_AREA";
+	curTemplate->m_uiName = "Team/Attack/Attack Move/Attack Move -- a(n) enemy unit of a type in an area.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[3] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks moves to a(n) unit of type ";
 	curTemplate->m_uiStrings[2] = " in area ";
+	curTemplate->m_uiStrings[3] = " with selection mode ";
 
 	curTemplate = &m_conditionTemplates[Condition::TEAM_SINGLE_BELOW_HEALTH];
 	curTemplate->m_internalName = "TEAM_SINGLE_BELOW_HEALTH";
@@ -6903,44 +6946,51 @@ void ScriptEngine::init()
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_SEEN_UNIT];
 	curTemplate->m_internalName = "TEAM_ATTACKMOVE_SEEN_UNIT";
-	curTemplate->m_uiName = "Team/Attack/Attack Move/Seen/Attack Move -- closest seen unit.";
-	curTemplate->m_numParameters = 1;
+	curTemplate->m_uiName = "Team/Attack/Attack Move/Seen/Attack Move -- a seen unit.";
+	curTemplate->m_numParameters = 2;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::SELECTION_MODE;
 	curTemplate->m_numUiStrings = 2;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " attacks moves the closest seen unit.";
+	curTemplate->m_uiStrings[1] = " attacks moves to a seen enemy unit with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_SEEN_AREA];
 	curTemplate->m_internalName = "TEAM_ATTACKMOVE_SEEN_AREA";
-	curTemplate->m_uiName = "Team/Attack/Attack Move/Seen/Attack Move -- closest seen enemy unit in an area.";
-	curTemplate->m_numParameters = 2;
+	curTemplate->m_uiName = "Team/Attack/Attack Move/Seen/Attack Move -- a seen enemy unit in an area.";
+	curTemplate->m_numParameters = 3;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::TRIGGER_AREA;
-	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_parameters[2] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " attacks moves to the closest seen unit in area ";
+	curTemplate->m_uiStrings[1] = " attacks moves to a seen enemy unit in area ";
+	curTemplate->m_uiStrings[2] = " with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_SEEN_TYPE];
 	curTemplate->m_internalName = "TEAM_ATTACKMOVE_SEEN_TYPE";
-	curTemplate->m_uiName = "Team/Attack/Attack Move/Seen/Attack Move -- closest seen enemy unit of a type.";
-	curTemplate->m_numParameters = 2;
-	curTemplate->m_parameters[0] = Parameter::TEAM;
-	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
-	curTemplate->m_numUiStrings = 2;
-	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " attacks moves to the closest seen unit of type ";
-
-	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_SEEN_TYPE_AREA];
-	curTemplate->m_internalName = "TEAM_ATTACKMOVE_SEEN_TYPE_AREA";
-	curTemplate->m_uiName = "Team/Attack/Attack Move/Seen/Attack Move -- closest seen enemy unit of a type in an area.";
+	curTemplate->m_uiName = "Team/Attack/Attack Move/Seen/Attack Move -- a seen enemy unit of a type.";
 	curTemplate->m_numParameters = 3;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
-	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[2] = Parameter::SELECTION_MODE;
 	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " attacks moves to the closest seen unit of type ";
+	curTemplate->m_uiStrings[1] = " attacks moves to a seen enemy unit of type ";
+	curTemplate->m_uiStrings[2] = " with selection mode ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_SEEN_TYPE_AREA];
+	curTemplate->m_internalName = "TEAM_ATTACKMOVE_SEEN_TYPE_AREA";
+	curTemplate->m_uiName = "Team/Attack/Attack Move/Seen/Attack Move -- a seen enemy unit of a type in an area.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[3] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " attacks moves to a seen enemy unit of type ";
 	curTemplate->m_uiStrings[2] = " in area ";
+	curTemplate->m_uiStrings[3] = " with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_ATTACKMOVE_PATH];
 	curTemplate->m_internalName = "TEAM_ATTACKMOVE_PATH";
@@ -6998,51 +7048,55 @@ void ScriptEngine::init()
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_TYPE_UNDER_FOG];
 	curTemplate->m_internalName = "TEAM_MOVE_TYPE_UNDER_FOG";
-	curTemplate->m_uiName = "Team/Move/Fog Of War/ Move -- closest object of a type under the fog of war.";
-	curTemplate->m_numParameters = 2;
+	curTemplate->m_uiName = "Team/Move/Fog Of War/ Move -- an object of a type under the fog of war.";
+	curTemplate->m_numParameters = 3;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::SELECTION_MODE;
 	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " moves to the closest object of type ";
-	curTemplate->m_uiStrings[2] = " under the fog of war.";
+	curTemplate->m_uiStrings[1] = " moves to an object of type ";
+	curTemplate->m_uiStrings[2] = " under the fog of war with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_TYPE_AREA_UNDER_FOG];
 	curTemplate->m_internalName = "TEAM_MOVE_TYPE_AREA_UNDER_FOG";
-	curTemplate->m_uiName = "Team/Move/Fog Of War/ Move -- closest object of a type in an area under the fog of war.";
-	curTemplate->m_numParameters = 3;
+	curTemplate->m_uiName = "Team/Move/Fog Of War/ Move -- an object of a type in an area under the fog of war.";
+	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
 	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[3] = Parameter::SELECTION_MODE;
 	curTemplate->m_numUiStrings = 4;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " moves to the closest object of type ";
+	curTemplate->m_uiStrings[1] = " moves to an object of type ";
 	curTemplate->m_uiStrings[2] = " in area ";
-	curTemplate->m_uiStrings[3] = " under the fog of war.";
+	curTemplate->m_uiStrings[3] = " under the fog of war with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_TYPE_NOT_UNDER_FOG];
 	curTemplate->m_internalName = "TEAM_MOVE_TYPE_NOT_UNDER_FOG";
-	curTemplate->m_uiName = "Team/Move/Fog Of War/ Move -- closest object of a type NOT under the fog of war.";
-	curTemplate->m_numParameters = 2;
-	curTemplate->m_parameters[0] = Parameter::TEAM;
-	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
-	curTemplate->m_numUiStrings = 3;
-	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " moves to the closest object of type ";
-	curTemplate->m_uiStrings[2] = " NOT under the fog of war.";
-
-	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_TYPE_AREA_NOT_UNDER_FOG];
-	curTemplate->m_internalName = "TEAM_MOVE_TYPE_AREA_NOT_UNDER_FOG";
-	curTemplate->m_uiName = "Team/Move/Fog Of War/ Move -- closest object of a type in an area NOT under the fog of war.";
+	curTemplate->m_uiName = "Team/Move/Fog Of War/ Move -- an object of a type NOT under the fog of war.";
 	curTemplate->m_numParameters = 3;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " moves to an object of type ";
+	curTemplate->m_uiStrings[2] = " NOT under the fog of war with selection mode ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_MOVE_TYPE_AREA_NOT_UNDER_FOG];
+	curTemplate->m_internalName = "TEAM_MOVE_TYPE_AREA_NOT_UNDER_FOG";
+	curTemplate->m_uiName = "Team/Move/Fog Of War/ Move -- an object of a type in an area NOT under the fog of war.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
 	curTemplate->m_parameters[2] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[3] = Parameter::SELECTION_MODE;
 	curTemplate->m_numUiStrings = 4;
 	curTemplate->m_uiStrings[0] = " ";
-	curTemplate->m_uiStrings[1] = " moves to the closest object of type ";
+	curTemplate->m_uiStrings[1] = " moves to an object of type ";
 	curTemplate->m_uiStrings[2] = " in area ";
-	curTemplate->m_uiStrings[3] = " NOT under the fog of war.";
+	curTemplate->m_uiStrings[3] = " NOT under the fog of war with selection mode ";
 
 	curTemplate = &m_conditionTemplates[Condition::TEAM_CONTAINS_COMPARISON_RATIO_SIGHTED];
 	curTemplate->m_internalName = "TEAM_CONTAINS_COMPARISON_RATIO_SIGHTED";
@@ -7261,57 +7315,63 @@ void ScriptEngine::init()
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_KEEP_DISTANCE_RELATION];
 	curTemplate->m_internalName = "TEAM_KEEP_DISTANCE_RELATION";
-	curTemplate->m_uiName = "Team/Move/Distance/Move team to keep a distance from the nearest friendly|neutral|enemy unit.";
-	curTemplate->m_numParameters = 3;
+	curTemplate->m_uiName = "Team/Move/Distance/Move team to keep a distance from a(n) friendly|neutral|enemy unit.";
+	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::REAL;
 	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_parameters[3] = Parameter::SELECTION_MODE;
 	curTemplate->m_numUiStrings = 4;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " will keep a distance of ";
-	curTemplate->m_uiStrings[2] = " feet from the nearest ";
-	curTemplate->m_uiStrings[3] = " unit.";
+	curTemplate->m_uiStrings[2] = " feet from a(n) ";
+	curTemplate->m_uiStrings[3] = " unit with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::UNIT_KEEP_DISTANCE_RELATION];
 	curTemplate->m_internalName = "TEAM_KEEP_DISTANCE_RELATION";
-	curTemplate->m_uiName = "Unit/Move/Distance/Move team to keep a distance from the nearest friendly|neutral|enemy unit.";
-	curTemplate->m_numParameters = 3;
+	curTemplate->m_uiName = "Unit/Move/Distance/Move team to keep a distance from a(n) friendly|neutral|enemy unit.";
+	curTemplate->m_numParameters = 4;
 	curTemplate->m_parameters[0] = Parameter::UNIT;
 	curTemplate->m_parameters[1] = Parameter::REAL;
 	curTemplate->m_parameters[2] = Parameter::RELATION;
+	curTemplate->m_parameters[3] = Parameter::SELECTION_MODE;
 	curTemplate->m_numUiStrings = 4;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " will keep a distance of ";
-	curTemplate->m_uiStrings[2] = " feet from the nearest ";
-	curTemplate->m_uiStrings[3] = " unit.";
+	curTemplate->m_uiStrings[2] = " feet from a(n) ";
+	curTemplate->m_uiStrings[3] = " unit with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::TEAM_KEEP_DISTANCE_RELATION_TYPE];
 	curTemplate->m_internalName = "TEAM_KEEP_DISTANCE_RELATION_TYPE";
-	curTemplate->m_uiName = "Team/Move/Distance/Move team to keep a distance from the nearest friendly|neutral|enemy object type.";
-	curTemplate->m_numParameters = 4;
+	curTemplate->m_uiName = "Team/Move/Distance/Move team to keep a distance from a(n) friendly|neutral|enemy object type.";
+	curTemplate->m_numParameters = 5;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::REAL;
 	curTemplate->m_parameters[2] = Parameter::RELATION;
 	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
-	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_parameters[4] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 5;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " will keep a distance of ";
-	curTemplate->m_uiStrings[2] = " feet from the nearest ";
+	curTemplate->m_uiStrings[2] = " feet from a(n) ";
 	curTemplate->m_uiStrings[3] = " object of type ";
+	curTemplate->m_uiStrings[4] = " with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::UNIT_KEEP_DISTANCE_RELATION_TYPE];
 	curTemplate->m_internalName = "UNIT_KEEP_DISTANCE_RELATION_TYPE";
-	curTemplate->m_uiName = "Unit/Move/Distance/Move team to keep a distance from the nearest friendly|neutral|enemy object type.";
-	curTemplate->m_numParameters = 4;
+	curTemplate->m_uiName = "Unit/Move/Distance/Move team to keep a distance from a(n) friendly|neutral|enemy object type.";
+	curTemplate->m_numParameters = 5;
 	curTemplate->m_parameters[0] = Parameter::TEAM;
 	curTemplate->m_parameters[1] = Parameter::REAL;
 	curTemplate->m_parameters[2] = Parameter::RELATION;
 	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
-	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_parameters[4] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 5;
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " will keep a distance of ";
-	curTemplate->m_uiStrings[2] = " feet from the nearest ";
+	curTemplate->m_uiStrings[2] = " feet from a(n) ";
 	curTemplate->m_uiStrings[3] = " object of type ";
+	curTemplate->m_uiStrings[4] = " with selection mode ";
 
 	curTemplate = &m_actionTemplates[ScriptAction::SET_WILLINGNESS_TO_CRUSH_PLAYER];
 	curTemplate->m_internalName = "SET_WILLINGNESS_TO_CRUSH_PLAYER";
@@ -7632,6 +7692,144 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[2] = " ";
 	curTemplate->m_uiStrings[3] = " feet apart.";
 
+	curTemplate = &m_actionTemplates[ScriptAction::SKIRMISH_SET_PARTICLE_CANNON_TELEPORT_MODE];
+	curTemplate->m_internalName = "SKIRMISH_SET_PARTICLE_CANNON_TELEPORT_MODE";
+	curTemplate->m_uiName = "Player/Special power/Special power -- set teleportation mode for particle uplink cannons";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::BOOLEAN;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will teleport the beam to its targets ";
+	curTemplate->m_uiStrings[2] = " (when not using the S-curve).";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_GARRISON_TYPE];
+	curTemplate->m_internalName = "TEAM_GARRISON_TYPE";
+	curTemplate->m_uiName = "Team/Garrison/Garrison a nearby building of a specific type.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " garrison a nearby building of type ";
+	curTemplate->m_uiStrings[2] = "";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_GARRISON_BUILDINGS_TYPE_WITH_MAX_NUMBER];
+	curTemplate->m_internalName = "PLAYER_GARRISON_BUILDINGS_TYPE_WITH_MAX_NUMBER";
+	curTemplate->m_uiName = "Player/Garrison/Garrison nearby buildings of a specific type with a maximum number.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::INT;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " garrisons nearby buildings of type ";
+	curTemplate->m_uiStrings[2] = " with a maximum of ";
+	curTemplate->m_uiStrings[3] = " units each.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_GARRISON_BUILDINGS_TYPE_WITH_MAX_NUMBER];
+	curTemplate->m_internalName = "TEAM_GARRISON_BUILDINGS_TYPE_WITH_MAX_NUMBER";
+	curTemplate->m_uiName = "Team/Garrison/Garrison nearby buildings of a specific type with a maximum number.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::INT;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " garrisons nearby buildings of type ";
+	curTemplate->m_uiStrings[2] = " with a maximum of ";
+	curTemplate->m_uiStrings[3] = " units each.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::PLAYER_GARRISON_NUMBER_BUILDINGS_TYPE];
+	curTemplate->m_internalName = "PLAYER_GARRISON_NUMBER_BUILDINGS_TYPE";
+	curTemplate->m_uiName = "Player/Garrison/Garrison a number of nearby buildings of a specific type equally.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " garrisons ";
+	curTemplate->m_uiStrings[2] = " nearby buildings of type ";
+	curTemplate->m_uiStrings[3] = " equally.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_GARRISON_NUMBER_BUILDINGS_TYPE];
+	curTemplate->m_internalName = "TEAM_GARRISON_NUMBER_BUILDINGS_TYPE";
+	curTemplate->m_uiName = "Team/Garrison/Garrison a number of nearby buildings of a specific type equally.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " garrisons ";
+	curTemplate->m_uiStrings[2] = " nearby buildings of type ";
+	curTemplate->m_uiStrings[3] = " equally.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_LOAD_TYPE_EVENLY];
+	curTemplate->m_internalName = "TEAM_LOAD_TYPE_EVENLY";
+	curTemplate->m_uiName = "Team/Transport/Transport -- automatically load into a specific type evenly.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " loads into transports of type ";
+	curTemplate->m_uiStrings[2] = " evenly.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_REPAIR];
+	curTemplate->m_internalName = "TEAM_REPAIR";
+	curTemplate->m_uiName = "Team/Repair/Send a team to repair at the closest suitable buildings.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::BOOLEAN;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will send its units to repair at the closest suitable buildings. Units with full HP will also get sent back (";
+	curTemplate->m_uiStrings[2] = ").";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_CAN_LOAD_TRANSPORTS];
+	curTemplate->m_internalName = "TEAM_CAN_LOAD_TRANSPORTS";
+	curTemplate->m_uiName = "Team/Transport/Team is able to load infantry into transports.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " has uncontained infantry and transports with free space.";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_CLOSEST_TO_ENEMY_COMPARISON_RATIO_SIGHTED_RADIUS];
+	curTemplate->m_internalName = "TEAM_CLOSEST_TO_ENEMY_COMPARISON_RATIO_SIGHTED_RADIUS";
+	curTemplate->m_uiName = "Team/Sighted/Ratio/Team member closest to enemies sees enemies compared to allied units in a radius.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::REAL;
+	curTemplate->m_parameters[3] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " 's closest member to an enemy sees ";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = " times as many enemy units (shroud clearing range) as there are allied units within a ";
+	curTemplate->m_uiStrings[4] = " foot radius.\n\nNOTE: if the ratio is 1.00f, you simply ask without a ratio.";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_CLOSEST_TO_ENEMY_COMPARISON_TYPE_RATIO_SIGHTED_RADIUS];
+	curTemplate->m_internalName = "TEAM_CLOSEST_TO_ENEMY_COMPARISON_TYPE_RATIO_SIGHTED_RADIUS";
+	curTemplate->m_uiName = "Team/Sighted/Ratio/Team member closest to enemies sees enemies of a type compared to allied units of a type in a radius.";
+	curTemplate->m_numParameters = 6;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::REAL;
+	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[4] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[5] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 7;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " 's closest member to an enemy sees ";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = " times as many enemy units (shroud clearing range) of type ";
+	curTemplate->m_uiStrings[4] = " as there are allied units of type ";
+	curTemplate->m_uiStrings[5] = " within a ";
+	curTemplate->m_uiStrings[6] = " foot radius.\n\nNOTE: if the ratio is 1.00f, you simply ask without a ratio.";
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
 	//-------------------------------------------------------------------------------------------------
@@ -8052,32 +8250,6 @@ void ScriptEngine::update()
 	for (int l = 1; l < m_numKDRatios; ++l) {
 		_adjustVariable(m_KDRatios[l].name.str(), m_KDRatios[l].valueKills, m_KDRatios[l].valueDeaths);
 	}
-
-	for (int i = 0; i < ThePlayerList->getPlayerCount(); ++i)
-	{
-		Player* p = ThePlayerList->getNthPlayer(i);
-		p->m_lastFrameKills.clear();
-		p->m_lastFrameDeaths.clear();
-		p->m_lostUnitThisFrame = FALSE;
-
-		// @-TanSo-: We don't need it that often, so only do it sporadically.
-		if (TheGameLogic->getFrame() % 15 == 0) {
-			p->updateLastFrameSeen();
-		}
-
-		for (Player::PlayerTeamList::const_iterator it = p->getPlayerTeams()->begin(); it != p->getPlayerTeams()->end(); it++)
-		{
-			for (DLINK_ITERATOR<Team> teamIter = (*it)->iterate_TeamInstanceList(); !teamIter.done(); teamIter.advance())
-			{
-				Team* team = teamIter.cur();
-				team->m_lastFrameDeaths.clear();
-				team->m_lostUnitThisFrame = FALSE;
-
-				if (team->m_allClear > 0) team->m_allClear--;
-			}
-		}
-	}
-
 
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS END -------------------------------
@@ -9599,6 +9771,7 @@ void ScriptEngine::enableScript(ScriptAction* pAction)
 			if (candidate && candidate->getName() == scriptName)
 			{
 				pScript = candidate;
+				pScript->setFrameToEvaluate(TheGameLogic->getFrame() + 1); // Avoid implicit priorities within m_genericScriptsToRun.
 				break;
 			}
 		}
@@ -13260,3 +13433,128 @@ static void _cleanUpVTune()
 }
 #endif	// VTUNE
 
+//-------------------------------------------------------------------------------------------------
+// @-TanSo-: Figure out an object with a selection mode instead of always returning the closest one:
+// 0: closest
+// 1: farthest
+// 2: random
+// 3: youngest
+// 4: oldest
+//-------------------------------------------------------------------------------------------------
+Object* ScriptEngine::getObjectWithSelectionMode(
+	const Coord3D* sourcePos,
+	PartitionFilter** argFilters,
+	const AsciiString& objectType,
+	Int selectionMode
+)
+{
+	if (!sourcePos)
+		return nullptr;
+
+	// It could be that we do not want to filter for object types.
+	Bool filterByTypes = AsciiString::TheEmptyString != objectType;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+	ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+	// Early exit so we don't waste our time here.
+	if (filterByTypes) {
+		if (!templ && !types)
+			return nullptr;
+	}
+
+	// Create all the filters we need.
+	PartitionFilter* filters[16];
+	Int count = 0;
+
+	if (argFilters)
+	{
+		for (Int i = 0; argFilters[i]; i++)
+		{
+			filters[count++] = argFilters[i];
+		}
+	}
+
+	PartitionFilterOnMap f1;
+	PartitionFilterAlive f2;
+
+	filters[count++] = &f1;
+	filters[count++] = &f2;
+
+	std::vector<const ThingTemplate*> templates;
+	if (types && filterByTypes) {
+		for (size_t i = 0; i < types->getListSize(); ++i)
+		{
+			const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
+			if (t) templates.push_back(t);
+		}
+		if (templates.empty())
+			return nullptr;
+	}
+
+	PartitionFilterThing acceptThings(templ, TRUE);
+	PartitionFilterObjectTypes acceptTypes(templates, TRUE);
+
+	if (filterByTypes) {
+		if (templ)
+		{
+			filters[count++] = &acceptThings;
+		}
+		else
+		{
+			if (!types) return nullptr;
+
+			filters[count++] = &acceptTypes;
+		}
+	}
+
+	filters[count++] = nullptr;
+
+	Object* bestObj = nullptr;
+
+	// And now get to the selection modes.
+	switch (selectionMode)
+	{
+		// Find the closest.
+	case Parameter::CLOSEST:
+		bestObj = ThePartitionManager->getClosestObject(sourcePos, 100000 * MAP_XY_FACTOR, FROM_CENTER_2D, filters);
+		break;
+		// Find the farthest.
+	case Parameter::FARTHEST:
+		bestObj = ThePartitionManager->getFarthestObject(sourcePos, 100000 * MAP_XY_FACTOR, FROM_CENTER_2D, filters);
+		break;
+		// Find a random, the youngest or the oldest.
+	case Parameter::RANDOM:
+	case Parameter::YOUNGEST:
+	case Parameter::OLDEST:
+	{
+		std::vector<Object*> candidates;
+		ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(sourcePos, 100000 * MAP_XY_FACTOR, FROM_CENTER_3D, filters, ITER_FASTEST);
+		MemoryPoolObjectHolder hold(iter);
+
+		for (Object* pObj = iter->first(); pObj; pObj = iter->next())
+		{
+			if (selectionMode == Parameter::RANDOM)
+			{
+				candidates.push_back(pObj);
+			}
+			else if (selectionMode == Parameter::YOUNGEST)
+			{
+				if (!bestObj || bestObj->getCreationTimeStamp() < pObj->getCreationTimeStamp())
+					bestObj = pObj;
+			}
+			else if (selectionMode == Parameter::OLDEST)
+			{
+				if (!bestObj || bestObj->getCreationTimeStamp() > pObj->getCreationTimeStamp())
+					bestObj = pObj;
+			}
+		}
+		if (selectionMode == Parameter::RANDOM && !candidates.empty())
+			bestObj = candidates[GameLogicRandomValue(0, candidates.size() - 1)];
+		break;
+	}
+	default:
+		DEBUG_LOG(("Selection mode '%d' invalid", selectionMode));
+		return nullptr;
+	}
+	return bestObj;
+}

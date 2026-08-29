@@ -1954,6 +1954,12 @@ void Team::updateState()
 	// @-TanSo-: update our maximum health of both alive and dead units so we can measure realistic strength losses.
 		updateHealth();
 
+	m_lastFrameDeaths.clear();
+	m_lostUnitThisFrame = FALSE;
+
+	// Our 'all clear' lasts for 10 seconds. Script descriptions also convey this to the user. 
+	if (m_allClear > 0) m_allClear--;
+
 	// Also get a feel for how long we've been booping around, doing nothing.
 	if (isIdle())
 	{

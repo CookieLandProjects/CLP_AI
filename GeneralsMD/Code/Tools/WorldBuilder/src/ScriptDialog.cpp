@@ -2168,11 +2168,17 @@ Bool ScriptDialog::ParseTeamsDataChunk(DataChunkInput &file, DataChunkInfo *info
 		if (pThis->m_sides.findTeamInfo(teamName)) {
 			continue;
 		}
-		DEBUG_LOG(("Adding team %s", teamName.str()));
+		//DEBUG_LOG(("Adding team %s", teamName.str()));
 		AsciiString player = teamDict.getAsciiString(TheKey_teamOwner);
 		if (pThis->m_sides.findSideInfo(player)) {
 			// player exists, so just add it.
-			pThis->m_sides.addTeam(&teamDict);
+			// @-TanSo-: There are cases of teams not having any owning player. In that case we want to throw them out!
+			if (!teamDict.getAsciiString(TheKey_teamOwner).isEmpty()) {
+				pThis->m_sides.addTeam(&teamDict);
+				DEBUG_LOG(("Adding team [%s], owner [%s]",
+					teamName.str(),
+					player.str()));
+			}
 		} else {
 			AsciiString warning;
 			warning.format("Importing team %s of player %s.  Player %s doesn't exist, Select player..",

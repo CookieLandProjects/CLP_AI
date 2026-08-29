@@ -585,7 +585,7 @@ public:
 		PLAYER_GARRISON_NUMBER_BUILDINGS,							///< The player equally garrisons <int> buildings with all available infantry.
 
 		TEAM_MOVE_RELATIVE,														///< Set a team to move relative to its own position.
-		TEAM_MOVE_NEAREST_BELONGING_TO_PLAYER,				///< Set a team to move towards the nearest object type belonging to a player.
+		TEAM_MOVE_NEAREST_BELONGING_TO_PLAYER,								///< Set a team to move towards an object type belonging to a player.
 		TEAM_MOVE_AWAY_FROM_RELATION,									///< A team moves <Real> feet into the opposite direction of a <relation> unit.
 		TEAM_MOVE_AWAY_FROM_RELATION_TYPE,						///< A team moves <Real> feet into the opposite direction of a <relation> <objectType>.
 		TEAM_MOVE_TOWARDS_RELATION,										///< A team moves <Real> feet towards a <relation> unit.
@@ -715,13 +715,17 @@ public:
 
 		TEAM_HUNT_WITH_COMMAND_BUTTON_TYPE,						///< Set a team's objects of a type to hunt using a command button ability.
 
-		TEAM_GARRISON_TYPE,														///< Set a team to garrison a building of a type
-		UNIT_GARRISON_TYPE,														///< Set a unit to garrison a building of a type
-		TEAM_GARRISON_BUILDINGS_TYPE_WITH_MAX_NUMBER,	///< A team garrisons nearby buildings of a type with <int> infrantry each.
-		TEAM_GARRISON_NUMBER_BUILDINGS_TYPE,					///< A team equally garrisons <int> buildings of a type with all available infantry.
+		SKIRMISH_SET_PARTICLE_CANNON_TELEPORT_MODE,		///< The player fires its particle cannon with the teleport mode <Bool>.
 
-		TEAM_REPAIR,																	///< A team goes back to the closest factory that can repair it.
-		TEAM_REPAIR_DESTROYED_PERCENT,								///< A team's units below N% health go back to the closest factory that can repair them.
+		TEAM_GARRISON_TYPE,														///< Set a team to garrison a building of a type
+		PLAYER_GARRISON_BUILDINGS_TYPE_WITH_MAX_NUMBER,///< A player garrisons nearby buildings of a type with <int> infrantry each.
+		TEAM_GARRISON_BUILDINGS_TYPE_WITH_MAX_NUMBER,	///< A team garrisons nearby buildings of a type with <int> infrantry each.
+		PLAYER_GARRISON_NUMBER_BUILDINGS_TYPE,				///< A player equally garrisons <int> buildings of a type with all available infantry.
+		TEAM_GARRISON_NUMBER_BUILDINGS_TYPE,					///< A team equally garrisons <int> buildings of a type with all available infantry.
+		TEAM_LOAD_TYPE_EVENLY,												///< A team loads evenly into their transport units of a specific type.
+
+		TEAM_REPAIR,																	///< A team sends ALL units back to the closest factories that can repair them.
+
 		//-------------------------------------------------------------------------------------------------
 		//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------
 		//-------------------------------------------------------------------------------------------------
@@ -975,7 +979,8 @@ public:
 		//-------------------------------------------------------------------------------------------------
 
 		KD_RATIO,						// String, Int index into KD ratio array at runtime.
-    PLAYSTYLE,          // Check for Player Playstyle
+    PLAYSTYLE,          // Int, Check for Player Playstyle
+		SELECTION_MODE,			// Int, sets object look-ups to CLOSEST, FARTHEST, RANDOM, YOUNGEST, OLDEST.
 
 		//-------------------------------------------------------------------------------------------------
 		//----------------------------- @CLP_AI PARAMETER TYPE ADDITIONS END ------------------------------
@@ -997,6 +1002,14 @@ public:
 		REL_ENEMY			= ENEMIES,
 		REL_NEUTRAL		= NEUTRAL,
 		REL_FRIEND		= ALLIES
+	};
+
+	enum { // Selection modes. Stored in Int value.
+		CLOSEST = 0,
+		FARTHEST,
+		RANDOM,
+		YOUNGEST,
+		OLDEST
 	};
 
 	Parameter(ParameterType type, int val = 0) :
@@ -1268,7 +1281,10 @@ public:
 
 		NO_TEAMS,																// True if no player is allied to another & there are more than 2 active players (a.k.a this is an FFA match).
 		TEAM_COMPARISON_APART,									// True if a team is <comparison> <Real> feet apart on average.
+		TEAM_CAN_LOAD_TRANSPORTS,								// True if a team can load into transports i.e. has loose infantry & transporters with room
 
+		TEAM_CLOSEST_TO_ENEMY_COMPARISON_RATIO_SIGHTED_RADIUS, // True if the closest team member to the enemy sees <comparison> <ratio> units than it has allies in a specified radius.
+		TEAM_CLOSEST_TO_ENEMY_COMPARISON_TYPE_RATIO_SIGHTED_RADIUS, // True if the closest team member to the enemy sees <comparison> <ratio> units of type <objectType> than it has allies of type <objectType> in a specified radius.
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 		//-------------------------------------------------------------------------------------------------

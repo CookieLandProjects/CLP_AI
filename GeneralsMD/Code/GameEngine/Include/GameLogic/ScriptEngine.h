@@ -46,6 +46,7 @@ class ThingTemplate;
 class Player;
 class PolygonTrigger;
 class ObjectTypes;
+class PartitionFilter;
 
 #ifdef RTS_PROFILE_LEGACY
 #define SPECIAL_SCRIPT_PROFILING
@@ -222,7 +223,7 @@ class ScriptEngine : public SubsystemInterface,
 {
 
 public:
-	enum {MAX_COUNTERS=1024, MAX_FLAGS=1024, MAX_ATTACK_PRIORITIES=1024, MAX_KD_RATIOS=512};
+	enum {MAX_COUNTERS=2048, MAX_FLAGS=2048, MAX_ATTACK_PRIORITIES=1024, MAX_KD_RATIOS=512};
 	enum TFade {FADE_NONE, FADE_SUBTRACT, FADE_ADD, FADE_SATURATE, FADE_MULTIPLY};
 	ScriptEngine();
 	virtual ~ScriptEngine() override;
@@ -365,6 +366,9 @@ public:
 	static void parseScriptAction( INI* ini );
 	static void parseScriptCondition( INI* ini );
 
+	//@-TanSo-: This should replace & improve loads of code now. Replacing all the 'getClosest' calls in scripts with this makes them more flexible.
+	Object* getObjectWithSelectionMode(const Coord3D* sourcePos, PartitionFilter** argFilters, const AsciiString& objectType, Int selectionMode);
+
 protected:
 
 	// snapshot methods
@@ -435,7 +439,6 @@ protected:
 	Bool evaluateTwoCounters(Condition* pCondition);
 	void copyCounter(ScriptAction* pAction);
 	Bool evaluateCounterDivisible(Condition* pCondition);
-
 
 	void setKDRatio(ScriptAction* pAction);
 	Int allocateKDRatio(const AsciiString& name);

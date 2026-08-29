@@ -300,6 +300,9 @@ AsciiString EditParameter::getWarningText(Parameter *pParm, Bool isAction)
 		case Parameter::PLAYSTYLE:
 			break;
 
+		case Parameter::SELECTION_MODE:
+			break;
+
 		case Parameter::AI_MOOD:
 			break;
 
@@ -435,6 +438,7 @@ AsciiString EditParameter::getInfoText(Parameter *pParm)
 		case Parameter::SIDE:
 		case Parameter::COUNTER:
 		case Parameter::KD_RATIO:
+		case Parameter::SELECTION_MODE:
 		case Parameter::INT:
 		case Parameter::COLOR:
 		case Parameter::COORD3D:
@@ -1944,6 +1948,7 @@ BOOL EditParameter::OnInitDialog()
 			showCombo = true;
 			loadFlags(pCombo);
 			break;
+
 		case Parameter::COMPARISON:
 			captionText = "Comparison:";
 			pList->InsertString(-1, "LT Less Than");
@@ -1969,6 +1974,19 @@ BOOL EditParameter::OnInitDialog()
 			Int sel = m_parameter->getInt();
 			if (sel < 0 || sel >= pList->GetCount()) sel = 0;
 			pList->SetCurSel(sel);
+			showList = true;
+		}
+		break;
+
+		case Parameter::SELECTION_MODE:
+		{
+			captionText = "Selection Mode:";
+			pList->InsertString(-1, "Closest");
+			pList->InsertString(-1, "Farthest");
+			pList->InsertString(-1, "Random");
+			pList->InsertString(-1, "Youngest");
+			pList->InsertString(-1, "Oldest");
+			pList->SetCurSel(m_parameter->getInt());
 			showList = true;
 		}
 		break;
@@ -2344,6 +2362,7 @@ void EditParameter::OnOK()
 
 		case Parameter::BOOLEAN:
 		case Parameter::COMPARISON:
+		case Parameter::SELECTION_MODE:
 			m_parameter->friend_setInt(pList->GetCurSel());
 			break;
 

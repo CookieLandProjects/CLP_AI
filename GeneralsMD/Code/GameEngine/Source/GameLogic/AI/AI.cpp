@@ -628,6 +628,9 @@ Object *AI::findClosestEnemy( const Object *me, Real range, UnsignedInt qualifie
 		return nullptr;
 	}
 
+	//@-TanSo-: Modify the search for our custom AI
+	GameDifficulty difficulty = me->getControllingPlayer()->getPlayerDifficulty();
+
 	// only consider live, on-map enemies.
 	// since this gets called a ton, I made a special custom filter to
 	// combine several canned ones, in the name of speed (srj)
@@ -735,7 +738,30 @@ Object *AI::findClosestEnemy( const Object *me, Real range, UnsignedInt qualifie
 
 		Real distSqr = ThePartitionManager->getDistanceSquared(me, theEnemy, FROM_BOUNDINGSPHERE_2D);
 		Real dist = sqrt(distSqr);
-		Int modifier = dist/getAiData()->m_attackPriorityDistanceModifier;
+
+		
+		//@-TanSo-: Distance is a pretty good mod. Emphasize the effect for our AI.
+		if (difficulty == DIFFICULTY_BRUTAL)
+			dist *= 1.5f;
+		else if (difficulty == DIFFICULTY_ABSURD)
+			dist *= 1.75f;
+		else if (difficulty >= DIFFICULTY_INHUMANE)
+			dist *= 2.0f;
+
+		Real modifier = dist / getAiData()->m_attackPriorityDistanceModifier;;
+		//@-TanSo-: the above modifier should be Real.
+		// On our difficulty levels, make the unit health a modifier as well.
+		// Try to focus on stuff that has a movement debuff (sub 25% health).
+		if (difficulty >= DIFFICULTY_BRUTAL)
+		{
+			Real maxHealth = theEnemy->getBodyModule()->getMaxHealth();
+			Real currentHealth = theEnemy->getBodyModule()->getHealth();
+			Real healthPercentage = currentHealth / maxHealth;
+
+			if (healthPercentage < 0.25)
+				modifier *= healthPercentage + 0.25f; // Don't make the effect too strong.
+		}
+
 		Int modPriority = curPriority-modifier;
 		if (modPriority < 1)
 			modPriority = 1;

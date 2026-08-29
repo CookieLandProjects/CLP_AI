@@ -266,9 +266,13 @@ protected:
 
 	Bool evaluateNoTeams(Bool isFFA);
 	Bool evaluateTeamApart(Parameter* pTeamParm, Parameter* pComparisonParm, Real value);
+	Bool evaluateTeamCanLoadTransports(Parameter* pTeamParm);
+
+	Bool evaluateClosestTeamMemberToEnemyHasSightedComparisonRatioRadius(Parameter* pTeamParm, Parameter* pComparisonParm, Real ratio, Real radius);
+	Bool evaluateClosestTeamMemberToEnemyHasSightedComparisonTypeRatioRadius(Parameter* pTeamParm, Parameter* pComparisonParm, Real ratio, Parameter* objectType, Parameter* otherObjectType, Real radius);
 
 	// @n0ttws: AI playstyle evaluation
-	// @-TanSo-: 57 additions, 1 helper method
+	// @-TanSo-: 60 additions, 1 helper method
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 	//-------------------------------------------------------------------------------------------------

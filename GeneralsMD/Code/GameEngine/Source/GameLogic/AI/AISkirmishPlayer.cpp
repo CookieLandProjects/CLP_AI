@@ -267,7 +267,7 @@ void AISkirmishPlayer::processBaseBuilding()
 
 #ifdef USE_DOZER
 			// dozer-construct the building
-			
+
 			bldg = buildStructureWithDozer(bldgPlan, bldgInfo);
 
 			// store the object with the build order
@@ -428,13 +428,18 @@ Bool AISkirmishPlayer::selectTeamToBuild()
 	*/
 void AISkirmishPlayer::buildSpecificAIBuilding(const AsciiString &thingName)
 {
-	//
 	Bool found = false;
 	Bool foundUnbuilt = false;
 	for( BuildListInfo *info = m_player->getBuildList(); info; info = info->getNext() )
 	{
 		if (info->getTemplateName()==thingName)
 		{
+			if (info->getTemplateName() == "AmericaStrategyCenter" || info->getTemplateName() == "AmericaWarFactory")
+			{
+				AsciiString bldgName = info->getTemplateName();
+				bldgName.concat(" - found.");
+				TheScriptEngine->AppendDebugMessage(bldgName, false);
+			}
 			AsciiString name = info->getTemplateName();
 			if (name.isEmpty()) continue;
 			const ThingTemplate *bldgPlan = TheThingFactory->findTemplate( name );
@@ -788,7 +793,13 @@ void AISkirmishPlayer::recruitSpecificAITeam(TeamPrototype *teamProto, Real recr
 			AsciiString teamStr = "Error : team '";
 			teamStr.concat(teamProto->getName());
 			teamStr.concat("' has no Home Position (or Origin).");
+			teamStr.concat("' Moving to the first item in m_pBuildList. @-TanSo-.");
 			TheScriptEngine->AppendDebugMessage(teamStr, false);
+			//@CLP_AI fix 14/8/2026
+			const Coord3D* buildListLocation = m_player->getBuildList()->getLocation();
+			TeamTemplateInfo *pInfo = const_cast<TeamTemplateInfo*>(teamProto->getTemplateInfo());
+			pInfo->m_homeLocation = *buildListLocation;
+			pInfo->m_hasHomeLocation = true;
 		}
 		// create inactive team to place members into as they are built
 		// when team is complete, the team is activated
@@ -1091,15 +1102,18 @@ void AISkirmishPlayer::adjustBuildList(BuildListInfo *list)
  */
 void AISkirmishPlayer::newMap()
 {
-
+	
 	/* Get our proper build list. */
 	AsciiString mySide = m_player->getSide();
 	DEBUG_LOG(("AI Player side is %s", mySide.str()));
 	const AISideBuildList *build = TheAI->getAiData()->m_sideBuildLists;
-	while (build) {
+
+	while (build)
+	{
 		if (build->m_side == mySide) {
 			BuildListInfo *buildList = build->m_buildList->duplicate();
-			adjustBuildList(buildList); // adjust to  our start position.
+			buildList->resetFlags();
+			adjustBuildList(buildList); // adjust to our start position.
 			m_player->setBuildList(buildList);
 			DEBUG_LOG(("Player %s buildlist=%p",
 				m_player->getGeneralName().str(),
@@ -1114,9 +1128,6 @@ void AISkirmishPlayer::newMap()
 		if (list->m_side == mySide)
 			m_player->addIDBuildList(list->duplicate());
 	}
-	DEBUG_LOG(("Player %d: ID9 = %p",
-		m_player->getMpStartIndex() + 1,
-		m_player->findIDBuildList(9)));
 
 	DEBUG_ASSERTLOG(build!=nullptr, ("Couldn't find build list for skirmish player."));
 
@@ -1136,6 +1147,8 @@ void AISkirmishPlayer::newMap()
 			info->incrementNumRebuilds(); // the initial build in the normal build list consumes a rebuild, so add one.
 		}
 	}
+	resetSupplyDockReservations();
+	resetFactoryReservations();
 }
 
 //----------------------------------------------------------------------------------------------------------
@@ -1903,27 +1916,37 @@ void AISkirmishPlayer::setDefaultBuildList(Int id)
 	if (!src)
 		return;
 
+	// save the command center for later
+	Object* commandCenter = nullptr;
 	if (m_player->getBuildList())
 	{
-		m_player->setBuildList(nullptr);
+		for (Object* obj = TheGameLogic->getFirstObject(); obj; obj = obj->getNextObject())
+		{
+			if (obj->getControllingPlayer() != m_player)
+				continue;
+
+			if (!obj->isKindOf(KINDOF_COMMANDCENTER))
+				continue;
+
+			commandCenter = obj;
+			break;
+		}
 	}
 
 	normalizeBuildListFromID(id, m_player->getMpStartIndex() + 1);
 	
 	m_player->setBuildList(src->m_buildList->duplicate());
 
-	// RE-REGISTER FACTORY BUILDINGS
-	for (Object* obj = TheGameLogic->getFirstObject();obj ; obj = obj->getNextObject())
+	if (!commandCenter)
+		return;
+
+	for (BuildListInfo* info = m_player->getBuildList(); info; info = info->getNext())
 	{
-		if (obj->getControllingPlayer() != m_player)
-			continue;
-
-		ProductionUpdateInterface* pInterface = obj->getProductionUpdateInterface();
-
-		if (!pInterface)
-			continue;
-
-		m_player->addToBuildList(obj);
+		if (info->getTemplateName() == commandCenter->getTemplate()->getName())
+		{
+			info->setObjectID(commandCenter->getID());
+			break;
+		}
 	}
 }
 

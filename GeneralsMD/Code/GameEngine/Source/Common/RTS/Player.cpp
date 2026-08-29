@@ -717,10 +717,15 @@ void Player::update()
 		{
 			Team *team = iter.cur();
 			if( !team )
-			{
 				continue;
-			}
-			team->updateGenericScripts();
+
+			team->m_lastFrameDeaths.clear();
+			team->m_lostUnitThisFrame = FALSE;
+			if (team->m_allClear > 0) team->m_allClear--;
+			//@-TanSo-: This shouldn't be in Team::updateState(), yes, because only fully built teams would then
+			// update this. HOWEVER, if the team has no members at all, there is no use in updating this either!
+			if(team->hasAnyObjects())
+				team->updateGenericScripts();
 		}
 	}
 
@@ -764,6 +769,15 @@ void Player::update()
 #endif
 
 	m_money.updateIncomeBucket();
+
+	//@CLP_AI additions
+	m_lastFrameKills.clear();
+	m_lastFrameDeaths.clear();
+	m_lostUnitThisFrame = FALSE;
+
+	// @-TanSo-: We don't need it that often, so only do it sporadically.
+	if (TheGameLogic->getFrame() % 15 == 0)
+		updateLastFrameSeen();
 }
 
 //=============================================================================
@@ -4805,7 +4819,7 @@ AISideBuildList* Player::findIDBuildList(Int id)
 {
 	for (AISideBuildList* list : m_IDBuildLists)
 	{
-		if (list->m_buildListID == id)
+		if (list->m_buildListID == id && list->m_side == m_side)
 			return list;
 	}
 	return nullptr;

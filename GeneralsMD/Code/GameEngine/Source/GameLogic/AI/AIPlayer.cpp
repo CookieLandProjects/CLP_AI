@@ -631,6 +631,11 @@ Object *AIPlayer::buildStructureWithDozer(const ThingTemplate *bldgPlan, BuildLi
 		// If there's enemy units or structures, don't build/rebuild.
 		TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
 		DEBUG_LOG(("=====ILLEGAL TO BUILD!====="));
+
+		info->setBuildLocationBlocked(true);
+		m_readyToBuildStructure = true;
+		m_buildDelay = 0;
+
 		return nullptr;
 	}
 
@@ -699,24 +704,13 @@ Object *AIPlayer::buildStructureWithDozer(const ThingTemplate *bldgPlan, BuildLi
 			if (valid) break;
 		}
 		if (valid) pos = newPos;
-		if (!valid) {
-			valid = TheBuildAssistant->isLocationLegalToBuild( &pos, bldgPlan, angle,
-																					 BuildAssistant::NO_ENEMY_OBJECT_OVERLAP,
-																					 dozer, m_player ) == LBC_OK;
-			if (!valid) {
-				//-TanSo-: do not set true if it is just an enemy obstructing the placement.
-				if (TheBuildAssistant->isLocationLegalToBuild(
-					&pos,
-					bldgPlan,
-					angle,
-					BuildAssistant::NO_ENEMY_OBJECT_OVERLAP,
-					dozer,
-					m_player) == LBC_OK)
-					{
-					info->setBuildLocationBlocked(true);
-					}
-				return nullptr;
-			}
+		else {
+			TheTerrainVisual->removeAllBibs();
+			//-TanSo-: give us a chance to place another building :)
+			info->setBuildLocationBlocked(true);
+			m_readyToBuildStructure = true;
+			m_buildDelay = 0;
+			return nullptr;
 		}
 	}
 
@@ -1039,7 +1033,7 @@ void AIPlayer::guardSupplyCenter( Team *team, Int minSupplies )
 		//-TanSo-: This should work better... Why? Guard mode makes units solely move towards a supply source, then guard.
 		// Turreted vehicles will slowly fire, while turretless vehicles and infantry wont fire upon enemy contact at all,
 		// which makes them vulnerable.
-		theGroup->groupAttackMoveToPosition(&location, GUARDMODE_NORMAL, CMD_FROM_SCRIPT);
+		theGroup->groupAttackMoveToPosition(&location, 0x7fffffff, CMD_FROM_SCRIPT);
 	}
 }
 
@@ -2041,7 +2035,29 @@ void AIPlayer::buildUpgrade(const AsciiString &upgrade)
 // ------------------------------------------------------------------------------------------------
 void AIPlayer::buildBySupplies(Int minimumCash, const AsciiString& thingName)
 {
-	const ThingTemplate* tTemplate = TheThingFactory->findTemplate(thingName);
+	const ThingTemplate* tTemplate = nullptr;
+
+	//@-TanSo-:  If we get an objectTypeList, pick a random one.
+	const ThingTemplate* templ = TheThingFactory->findTemplate(thingName);
+	if (templ)
+	{
+		tTemplate = templ;
+	}
+	else
+	{
+		ObjectTypes* types = TheScriptEngine->getObjectTypes(thingName);
+		if (types) {
+			std::vector<const ThingTemplate*> templates;
+			for (size_t i = 0; i < types->getListSize(); ++i)
+			{
+				const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
+				// Structure could still not be buildable, but this at least kicks out some stuff.
+				if (t && t->isKindOf(KINDOF_STRUCTURE)) templates.push_back(t);
+			}
+			tTemplate = templates[GameLogicRandomValue(0, templates.size() - 1)];
+		}
+	}
+
 	if (!tTemplate)
 	{
 		DEBUG_CRASH(("Template %s should exist; check ini and script files.", thingName.str()));
@@ -2305,7 +2321,28 @@ Bool AIPlayer::calcClosestConstructionZoneLocation( const ThingTemplate *constru
 // ------------------------------------------------------------------------------------------------
 void AIPlayer::buildSpecificBuildingNearestTeam( const AsciiString &thingName, const Team *team )
 {
-	const ThingTemplate *tTemplate = TheThingFactory->findTemplate( thingName );
+	const ThingTemplate* tTemplate = nullptr;
+
+	//@-TanSo-:  If we get an objectTypeList, pick a random one.
+	const ThingTemplate* templ = TheThingFactory->findTemplate(thingName);
+	if (templ)
+	{
+		tTemplate = templ;
+	}
+	else
+	{
+		ObjectTypes* types = TheScriptEngine->getObjectTypes(thingName);
+		if (types) {
+			std::vector<const ThingTemplate*> templates;
+			for (size_t i = 0; i < types->getListSize(); ++i)
+			{
+				const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
+				// Structure could still not be buildable, but this at least kicks out some stuff.
+				if (t && t->isKindOf(KINDOF_STRUCTURE)) templates.push_back(t);
+			}
+			tTemplate = templates[GameLogicRandomValue(0, templates.size() - 1)];
+		}
+	}
 
 	if( !tTemplate || !team )
 	{
@@ -3426,6 +3463,8 @@ void AIPlayer::newMap()
 			info->incrementNumRebuilds(); // the initial build in the normal build list consumes a rebuild, so add one.
 		}
 	}
+	resetSupplyDockReservations();
+	resetFactoryReservations();
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -4471,13 +4510,31 @@ Int AIPlayer::getPlayerSuperweaponValueType(Coord3D* center, Int playerNdx, Real
 //-------------------------------------------------------------------------------------------------
 void AIPlayer::buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real bAngle)
 {
-	const ThingTemplate* tTemplate = TheThingFactory->findTemplate(thingName);
+	const ThingTemplate* tTemplate = nullptr;
+
+	//@-TanSo-: If we get an objectTypeList, pick a random one.
+	const ThingTemplate* templ = TheThingFactory->findTemplate(thingName);
+	if (templ)
+	{
+		tTemplate = templ;
+	}
+	else
+	{
+		ObjectTypes* types = TheScriptEngine->getObjectTypes(thingName);
+		if (types) {
+			std::vector<const ThingTemplate*> templates;
+			for (size_t i = 0; i < types->getListSize(); ++i)
+			{
+				const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
+				// Structure could still not be buildable, but this at least kicks out some stuff.
+				if (t && t->isKindOf(KINDOF_STRUCTURE)) templates.push_back(t);
+			}
+			tTemplate = templates[GameLogicRandomValue(0, templates.size() - 1)];
+		}
+	}
 
 	if (!tTemplate || !team)
-	{
-		//Assert will already happen in the failed findTemplate call.
 		return;
-	}
 
 	//@-TanSo-: Make sure we iterate through all instances, should the real closest team be obstructed somehow.
 	Team* targetTeam = const_cast<Team*>(team);
@@ -4602,12 +4659,31 @@ void AIPlayer::buildSpecificBuildingNearestTeamAngle(const AsciiString& thingNam
 //-------------------------------------------------------------------------------------------------
 void AIPlayer::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real bAngle)
 {
-	const ThingTemplate* tTemplate = TheThingFactory->findTemplate(thingName);
-	if (!tTemplate)
+	const ThingTemplate* tTemplate = nullptr;
+
+	//@-TanSo-:  If we get an objectTypeList, pick a random one.
+	const ThingTemplate* templ = TheThingFactory->findTemplate(thingName);
+	if (templ)
 	{
-		DEBUG_CRASH(("Template %s should exist; check ini and script files.", thingName.str()));
-		return;
+		tTemplate = templ;
 	}
+	else
+	{
+		ObjectTypes* types = TheScriptEngine->getObjectTypes(thingName);
+		if (types) {
+			std::vector<const ThingTemplate*> templates;
+			for (size_t i = 0; i < types->getListSize(); ++i)
+			{
+				const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
+				// Structure could still not be buildable, but this at least kicks out some stuff.
+				if (t && t->isKindOf(KINDOF_STRUCTURE)) templates.push_back(t);
+			}
+			tTemplate = templates[GameLogicRandomValue(0, templates.size() - 1)];
+		}
+	}
+
+	if (!tTemplate)
+		return;
 
 	Object* bestSupplyWarehouse = findSupplyCenter(minimumCash);
 
@@ -4618,7 +4694,6 @@ void AIPlayer::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingNam
 			bestSupplyWarehouse = curWarehouse;
 		}
 	}
-
 
 	if (bestSupplyWarehouse) {
 		Coord3D location;
@@ -4737,13 +4812,31 @@ void AIPlayer::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingNam
 //-------------------------------------------------------------------------------------------------
 void AIPlayer::buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real bAngle)
 {
-	const ThingTemplate* tTemplate = TheThingFactory->findTemplate(thingName);
+	const ThingTemplate* tTemplate = nullptr;
+
+	//@-TanSo-: If we get an objectTypeList, pick a random one.
+	const ThingTemplate* templ = TheThingFactory->findTemplate(thingName);
+	if (templ)
+	{
+		tTemplate = templ;
+	}
+	else
+	{
+		ObjectTypes* types = TheScriptEngine->getObjectTypes(thingName);
+		if (types) {
+			std::vector<const ThingTemplate*> templates;
+			for (size_t i = 0; i < types->getListSize(); ++i)
+			{
+				const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
+				// Structure could still not be buildable, but this at least kicks out some stuff.
+				if (t && t->isKindOf(KINDOF_STRUCTURE)) templates.push_back(t);
+			}
+			tTemplate = templates[GameLogicRandomValue(0, templates.size() - 1)];
+		}
+	}
 
 	if (!tTemplate || !bestObj)
-	{
-		//Assert will already happen in the failed findTemplate call.
 		return;
-	}
 
 	//From the object's location, find the most valid build location.
 	const Coord3D* location = bestObj->getPosition();

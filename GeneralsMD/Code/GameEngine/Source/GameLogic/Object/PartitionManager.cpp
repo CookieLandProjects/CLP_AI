@@ -3308,6 +3308,13 @@ Object *PartitionManager::getClosestObjects(
 
 	DEBUG_ASSERTCRASH((obj==nullptr) != (pos == nullptr), ("either obj or pos must be null"));
 
+	//@-TanSo-: Still hitting some case after this where obj & pos are BOTH nullptr :)
+	if (!obj)
+	{
+		if (!pos)
+			return nullptr;
+	}
+
 	DistCalcProc distProc = theDistCalcProcs[dc];
 
 	const Coord3D *objPos;
@@ -5984,8 +5991,13 @@ Object* PartitionManager::getFarthestObjects(
 	Coord3D* farthestVecArg
 )
 {
-	DEBUG_ASSERTCRASH((obj == nullptr) != (pos == nullptr),
-		("either obj or pos must be null"));
+	DEBUG_ASSERTCRASH((obj == nullptr) != (pos == nullptr), ("either obj or pos must be null"));
+
+	if (!obj)
+	{
+		if (!pos)
+			return nullptr;
+	}
 
 	DistCalcProc distProc = theDistCalcProcs[dc];
 
