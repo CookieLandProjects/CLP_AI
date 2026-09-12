@@ -580,10 +580,13 @@ public:
 	const Team *getDefaultTeam() const { DEBUG_ASSERTCRASH(m_defaultTeam!=nullptr,("default team is null")); return m_defaultTeam; }
 
 	void setBuildList(BuildListInfo *pBuildList);			///< sets the build list.
+	void clearBuildList();
 	BuildListInfo *getBuildList( void ) { return m_pBuildList; }		///< returns the build list. (build list might be modified by the solo AI)
 	void addToBuildListTransfered(Object* obj);
 	void addToBuildList(Object *obj);			///< Adds this to the build list.	 Used for factories placed instead of in build list.
 	void addToPriorityBuildList(AsciiString templateName, Coord3D *pos, Real angle);			///< Adds this to the build list.	 Used for factories placed instead of in build list.
+	void addToBuildListAdvancedEPO(const ThingTemplate* tmpl, const Coord3D& location, Real bAngle, INT rebuildTimes, BOOLEAN exactPositionOnly);
+	void addToBuildListAdvanced(Object* obj, INT rebuildTimes, BOOLEAN exactPositionOnly);
 
 	/// get the relationship between this->that.
 	Relationship getRelationship(const Team *that) const;

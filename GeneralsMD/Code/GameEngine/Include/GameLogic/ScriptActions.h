@@ -524,6 +524,9 @@ protected:
 	void doRelocateWaypointTeam(const AsciiString& waypointName, const AsciiString& teamName);
 	void doRelocateWaypointType(const AsciiString& waypointName, const AsciiString& objectType, Int selectionMode);
 	void doSetWaypointBiDirectional(const AsciiString& waypointName, Bool biDirectional);
+	void doAIClearBuildList(const AsciiString& player);
+	void doAIAddToBuildList(const AsciiString& player, const AsciiString& object, Coord3D* coords, Real angle, BOOLEAN initbuilt, INT rebuildTimes, BOOLEAN exactPositionOnly);
+	void doTransferAreaToPlayer(const AsciiString& areaName, const AsciiString& playerName);
 
 	// @-TanSo-: 116 additions
 	//-------------------------------------------------------------------------------------------------

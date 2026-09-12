@@ -7607,6 +7607,45 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[1] = " is bi-directional: ";
 	curTemplate->m_uiStrings[2] = ".";
 
+	curTemplate = &m_actionTemplates[ScriptAction::AI_CLEAR_BUILDLIST];
+	curTemplate->m_internalName = "AI_CLEAR_BUILDLIST";
+	curTemplate->m_uiName = "COOP/AI/AI clears everything from it's BuildList.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = "AI ";
+	curTemplate->m_uiStrings[1] = " clears everything from it's BuildList.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_ADD_TO_BUILDLIST];
+	curTemplate->m_internalName = "AI_ADD_TO_BUILDLIST";
+	curTemplate->m_uiName = "COOP/AI/AI adds a building to its BuildList.";
+	curTemplate->m_numParameters = 7;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::COORD3D;
+	curTemplate->m_parameters[3] = Parameter::REAL;
+	curTemplate->m_parameters[4] = Parameter::BOOLEAN;
+	curTemplate->m_parameters[5] = Parameter::INT;
+	curTemplate->m_parameters[6] = Parameter::BOOLEAN;
+	curTemplate->m_numUiStrings = 7;
+	curTemplate->m_uiStrings[0] = "AI ";
+	curTemplate->m_uiStrings[1] = " adds object ";
+	curTemplate->m_uiStrings[2] = " at ";
+	curTemplate->m_uiStrings[3] = " facing ";
+	curTemplate->m_uiStrings[4] = " to their BuildList.\n\nAlready Built: ";
+	curTemplate->m_uiStrings[5] = "\nRebuild times: ";
+	curTemplate->m_uiStrings[6] = " (0 for infinite)\nIgnore building distance rules: ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AREA_TRANSFER_TO_PLAYER];
+	curTemplate->m_internalName = "AREA_TRANSFER_TO_PLAYER";
+	curTemplate->m_uiName = "Transfer Control/Transfer control of all units or structures inside an area to a player.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TRIGGER_AREA;
+	curTemplate->m_parameters[1] = Parameter::SIDE;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = "Control of all units/structures inside area ";
+	curTemplate->m_uiStrings[1] = " transfers to ";
+
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
 	//-------------------------------------------------------------------------------------------------

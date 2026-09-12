@@ -60,6 +60,7 @@
 #include "GameClient/GameText.h"
 #include "GameClient/GUICallbacks.h"
 #include "GameClient/InGameUI.h"
+#include "GameClient/TerrainVisual.h"
 #include "GameClient/LookAtXlat.h"
 #include "GameClient/MessageBox.h"
 #include "GameClient/Mouse.h"
@@ -1097,7 +1098,148 @@ void ScriptActions::doBuildBuilding(const AsciiString& buildingType)
 	// This action ALWAYS occur on the current player.
 	Player *thePlayer = TheScriptEngine->getCurrentPlayer();
 	if (thePlayer) {
-		thePlayer->buildSpecificBuilding(buildingType);
+				const ThingTemplate *tmpl = TheThingFactory->findTemplate(buildingType);
+				if (!tmpl) {
+						// fallback to original behavior which will log an error in case stuff fails.
+						thePlayer->buildSpecificBuilding(buildingType);
+						return;
+				}
+
+				BuildListInfo *preferredInfo = nullptr;
+				for (BuildListInfo *info = thePlayer->getBuildList(); info; info = info->getNext()) {
+						if (info->getTemplateName() == buildingType) {
+								preferredInfo = info;
+								break;
+						}
+				}
+
+				if (preferredInfo) {
+						Coord3D infoPos = *preferredInfo->getLocation();
+						Real infoAngle = preferredInfo->getAngle();
+						Coord3D placePos = infoPos;
+						placePos.z = TheTerrainLogic->getGroundHeight(placePos.x, placePos.y);
+
+						if (TheBuildAssistant->isLocationLegalToBuild(&placePos, tmpl, infoAngle, BuildAssistant::NO_OBJECT_OVERLAP, nullptr, thePlayer) == LBC_OK) {
+								thePlayer->buildSpecificBuilding(buildingType);
+								TheTerrainVisual->removeAllBibs();
+								return;
+						}
+
+						if (preferredInfo->isExactPositionOnly()) {
+								thePlayer->buildSpecificBuilding(buildingType);
+								return;
+						}
+
+						const Int flagsToTry[] = {
+								BuildAssistant::CLEAR_PATH | BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP,
+								BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP,
+								BuildAssistant::NO_OBJECT_OVERLAP
+						};
+						const Real cell = PATHFIND_CELL_SIZE_F;
+						const Real step = cell;
+						const Real maxRadius = 80 * cell; // keep search near the original position
+						Bool found = FALSE;
+						Coord3D tryPos;
+						for (Int f = 0; f < (Int)(sizeof(flagsToTry)/sizeof(flagsToTry[0])) && !found; ++f) {
+								Int flags = flagsToTry[f];
+								for (Real r = 0.0f; r <= maxRadius && !found; r += 2.0f*cell) {
+										Real offset = r/2.0f;
+										Real yStart = infoPos.y - offset;
+										Real yEnd = infoPos.y + offset;
+										for (Real y = yStart; y <= yEnd && !found; y += step) {
+												Real xStart = infoPos.x - offset;
+												Real xEnd = infoPos.x + offset;
+												for (Real x = xStart; x <= xEnd; x += step) {
+														tryPos = infoPos;
+														tryPos.x = x;
+														tryPos.y = y;
+														tryPos.z = TheTerrainLogic->getGroundHeight(tryPos.x, tryPos.y);
+														if (TheBuildAssistant->isLocationLegalToBuild(&tryPos, tmpl, infoAngle, flags, nullptr, thePlayer) == LBC_OK) {
+																found = TRUE;
+																break;
+														}
+												}
+										}
+								}
+						}
+
+						if (found) {
+								tryPos.z = 0;
+								thePlayer->addToPriorityBuildList(buildingType, &tryPos, infoAngle);
+								TheTerrainVisual->removeAllBibs();
+								return;
+						}
+				}
+
+				Coord3D center;
+				Bool haveCenter = thePlayer->getAiBaseCenter(&center);
+				if (!haveCenter) {
+						for (Object *obj = TheGameLogic->getFirstObject(); obj; obj = obj->getNextObject()) {
+								if (obj->getControllingPlayer() == thePlayer) {
+										center = *obj->getPosition();
+										haveCenter = TRUE;
+										break;
+								}
+						}
+				}
+
+				if (!haveCenter) {
+						center.x = 0.0f; center.y = 0.0f; center.z = 0.0f;
+				}
+
+				Real angle = tmpl->getPlacementViewAngle();
+
+				Coord3D placePos = center;
+				placePos.z = TheTerrainLogic->getGroundHeight(placePos.x, placePos.y);
+				if (TheBuildAssistant->isLocationLegalToBuild(&placePos, tmpl, angle, BuildAssistant::NO_OBJECT_OVERLAP, nullptr, thePlayer) == LBC_OK) {
+						placePos.z = 0;
+						thePlayer->addToPriorityBuildList(buildingType, &placePos, angle);
+						TheTerrainVisual->removeAllBibs();
+						return;
+				}
+
+				const Int flagsToTry2[] = {
+						BuildAssistant::CLEAR_PATH | BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP,
+						BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP,
+						BuildAssistant::NO_OBJECT_OVERLAP
+				};
+
+				const Real cell2 = PATHFIND_CELL_SIZE_F;
+				const Real step2 = cell2;
+				const Real maxRadius2 = 300 * cell2;
+				Bool found2 = FALSE;
+				Coord3D tryPos2;
+				for (Int f = 0; f < (Int)(sizeof(flagsToTry2)/sizeof(flagsToTry2[0])) && !found2; ++f) {
+						Int flags = flagsToTry2[f];
+						for (Real r = 0.0f; r <= maxRadius2 && !found2; r += 2.0f*cell2) {
+								Real offset = r/2.0f;
+								Real yStart = center.y - offset;
+								Real yEnd = center.y + offset;
+								for (Real y = yStart; y <= yEnd && !found2; y += step2) {
+										Real xStart = center.x - offset;
+										Real xEnd = center.x + offset;
+										for (Real x = xStart; x <= xEnd; x += step2) {
+												tryPos2 = center;
+												tryPos2.x = x;
+												tryPos2.y = y;
+												tryPos2.z = TheTerrainLogic->getGroundHeight(tryPos2.x, tryPos2.y);
+												if (TheBuildAssistant->isLocationLegalToBuild(&tryPos2, tmpl, angle, flags, nullptr, thePlayer) == LBC_OK) {
+														found2 = TRUE;
+														break;
+												}
+										}
+								}
+						}
+				}
+
+				if (found2) {
+						tryPos2.z = 0;
+						thePlayer->addToPriorityBuildList(buildingType, &tryPos2, angle);
+						TheTerrainVisual->removeAllBibs();
+						return;
+				}
+
+				thePlayer->buildSpecificBuilding(buildingType);
 	}
 }
 
@@ -6547,23 +6689,31 @@ void ScriptActions::doNamedSetTrainHeld( const AsciiString &locoName, const Bool
 //-------------------------------------------------------------------------------------------------
 //------------------------------- @CLP_AI SCRIPT ACTION ADDITIONS  --------------------------------
 //-------------------------------------------------------------------------------------------------
+
+//-------------------------------------------------------------------------------------------------
 void ScriptActions::doPlayerSurrender(const AsciiString& playerName)
 {
 	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
 	if (!pPlayer) return;
 
-	for (int i = 2; i < ThePlayerList->getPlayerCount() - 1; i++)
+	Bool transferred = FALSE;
+	for (int i = 2; i < ThePlayerList->getPlayerCount() - 1; ++i)
 	{
-		if(ThePlayerList->getNthPlayer(i))
+		Player* pCandidate = ThePlayerList->getNthPlayer(i);
+		if (!pCandidate || pCandidate == pPlayer)
+			continue;
+
+		if (pCandidate->getRelationship(pPlayer->getDefaultTeam()) == ALLIES)
 		{
-			if (ThePlayerList->getNthPlayer(i)->getRelationship(pPlayer->getDefaultTeam()) == ALLIES)
-			{
-				ThePlayerList->getNthPlayer(i)->transferAssetsFromThat(pPlayer);
-				break;
-			}
+			pCandidate->transferAssetsFromThat(pPlayer);
+			transferred = TRUE;
+			break;
 		}
 	}
-	pPlayer->killPlayer();
+
+	// Only kill the player if no ally received the assets
+	if (!transferred)
+		pPlayer->killPlayer();
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -8744,7 +8894,57 @@ void ScriptActions::doBuildObjectNearestTypeAngle(const AsciiString& playerName,
 
 	if (angle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
 
-	thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle);
+		const ThingTemplate* tmpl = TheThingFactory->findTemplate(buildingType);
+		if (tmpl) {
+		Coord3D center = *bestObj->getPosition();
+		Coord3D tryPos;
+		const Real cell = PATHFIND_CELL_SIZE_F;
+		const Real step = cell;
+		const Real maxRadius = 600 * cell;
+		Bool found = FALSE;
+		Real radAngle = (PI / 180.0f) * angle;
+
+		if (TheBuildAssistant->isLocationLegalToBuild(&center, tmpl, radAngle, BuildAssistant::NO_OBJECT_OVERLAP, nullptr, thePlayer) == LBC_OK) {
+			tryPos = center;
+			found = TRUE;
+		}
+
+		const Int flagsToTry[] = {
+			BuildAssistant::NO_OBJECT_OVERLAP,
+			BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP,
+			BuildAssistant::CLEAR_PATH | BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP
+		};
+		for (Int f = 0; f < (Int)(sizeof(flagsToTry)/sizeof(flagsToTry[0])) && !found; ++f) {
+			Int flags = flagsToTry[f];
+			for (Real r = 0.0f; r <= maxRadius && !found; r += 2.0f*cell) {
+				Real offset = r/2.0f;
+				Real yStart = center.y - offset;
+				Real yEnd = center.y + offset;
+				for (Real y = yStart; y <= yEnd && !found; y += step) {
+					Real xStart = center.x - offset;
+					Real xEnd = center.x + offset;
+					for (Real x = xStart; x <= xEnd; x += step) {
+						tryPos = center;
+						tryPos.x = x;
+						tryPos.y = y;
+						tryPos.z = TheTerrainLogic->getGroundHeight(tryPos.x, tryPos.y);
+						if (TheBuildAssistant->isLocationLegalToBuild(&tryPos, tmpl, radAngle, flags, nullptr, thePlayer) == LBC_OK) {
+							found = TRUE;
+							break;
+						}
+					}
+				}
+			}
+		}
+		if (found) {
+			tryPos.z = 0;
+			thePlayer->addToPriorityBuildList(buildingType, &tryPos, radAngle);
+			TheTerrainVisual->removeAllBibs();
+			return;
+		}
+		}
+
+		thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -8807,7 +9007,57 @@ void ScriptActions::doBuildObjectNearestKindOfAngle(const AsciiString& playerNam
 
 	if (angle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
 
-	thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle);
+		const ThingTemplate* tmpl = TheThingFactory->findTemplate(buildingType);
+		if (tmpl) {
+		Coord3D center = *bestObj->getPosition();
+		Coord3D tryPos;
+		const Real cell = PATHFIND_CELL_SIZE_F;
+		const Real step = cell;
+		const Real maxRadius = 600 * cell;
+		Bool found = FALSE;
+		Real radAngle = (PI / 180.0f) * angle;
+
+		if (TheBuildAssistant->isLocationLegalToBuild(&center, tmpl, radAngle, BuildAssistant::NO_OBJECT_OVERLAP, nullptr, thePlayer) == LBC_OK) {
+			tryPos = center;
+			found = TRUE;
+		}
+
+		const Int flagsToTry[] = {
+			BuildAssistant::NO_OBJECT_OVERLAP,
+			BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP,
+			BuildAssistant::CLEAR_PATH | BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP
+		};
+		for (Int f = 0; f < (Int)(sizeof(flagsToTry)/sizeof(flagsToTry[0])) && !found; ++f) {
+			Int flags = flagsToTry[f];
+			for (Real r = 0.0f; r <= maxRadius && !found; r += 2.0f*cell) {
+				Real offset = r/2.0f;
+				Real yStart = center.y - offset;
+				Real yEnd = center.y + offset;
+				for (Real y = yStart; y <= yEnd && !found; y += step) {
+					Real xStart = center.x - offset;
+					Real xEnd = center.x + offset;
+					for (Real x = xStart; x <= xEnd; x += step) {
+						tryPos = center;
+						tryPos.x = x;
+						tryPos.y = y;
+						tryPos.z = TheTerrainLogic->getGroundHeight(tryPos.x, tryPos.y);
+						if (TheBuildAssistant->isLocationLegalToBuild(&tryPos, tmpl, radAngle, flags, nullptr, thePlayer) == LBC_OK) {
+							found = TRUE;
+							break;
+						}
+					}
+				}
+			}
+		}
+		if (found) {
+			tryPos.z = 0;
+			thePlayer->addToPriorityBuildList(buildingType, &tryPos, radAngle);
+			TheTerrainVisual->removeAllBibs();
+			return;
+		}
+		}
+
+		thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -11399,7 +11649,7 @@ void ScriptActions::doBuildBuildingFromBuildListID(const AsciiString& objectType
 	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
 	if (!pPlayer) return;
 
-	pPlayer->buildSpecificBuildingFromID(objectType, buildListID, true);
+		pPlayer->buildSpecificBuildingFromID(objectType, buildListID, true);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -12711,6 +12961,118 @@ void ScriptActions::doSetWaypointBiDirectional(const AsciiString& waypointName, 
 	if (!pWay) return;
 
 	pWay->setBiDirectional(biDirectional);
+}
+
+void ScriptActions::doAIClearBuildList(const AsciiString& player)
+{
+	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(player);
+	if (thePlayer) {
+		thePlayer->Player::clearBuildList();
+	}
+}
+
+void ScriptActions::doAIAddToBuildList(const AsciiString& player, const AsciiString& object, Coord3D* coords, Real angle, BOOLEAN initbuilt, INT rebuildTimes, BOOLEAN exactPositionOnly)
+{
+	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(player);
+	if (!thePlayer || !coords)
+		return;
+	Real bAngle = (PI / 180.0f) * angle;
+	Team* theTeam = thePlayer->getDefaultTeam();
+	const ThingTemplate* tmpl = TheThingFactory->findTemplate(object);
+
+	if (initbuilt)
+	{
+		if (tmpl) {
+			Object* obj = TheThingFactory->newObject(tmpl, theTeam);
+			if (obj)
+			{
+				obj->setOrientation(bAngle);
+
+				Real groundZ = TheTerrainLogic->getGroundHeight(coords->x, coords->y);
+				Coord3D finalPos = *coords;
+				finalPos.z = groundZ;
+
+				obj->setPosition(&finalPos);
+
+				if (obj->isKindOf(KINDOF_BLAST_CRATER)) {
+					TheTerrainLogic->createCraterInTerrain(obj);
+					TheAI->pathfinder()->addObjectToPathfindMap(obj);
+				}
+			}
+			thePlayer->addToBuildListAdvanced(obj, rebuildTimes, exactPositionOnly);
+		}
+	}
+	if (!initbuilt) {
+		thePlayer->addToBuildListAdvancedEPO(tmpl, *coords, bAngle, rebuildTimes, exactPositionOnly);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+/** doTransferAreaToPlayer */
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTransferAreaToPlayer(const AsciiString& areaName, const AsciiString& playerName)
+{
+	// Resolve polygon and player
+	PolygonTrigger *pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(areaName);
+	Player *pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pTrig || !pPlayer)
+		return;
+
+	Team *destTeam = pPlayer->getDefaultTeam();
+	if (!destTeam)
+		return;
+
+	// Iterate all objects and test polygon membership.  This is simple and robust.
+	for (Object *obj = TheGameLogic->getFirstObject(); obj; obj = obj->getNextObject())
+	{
+		// Skip invalid/destroyed objects
+		if (!obj || obj->isDestroyed() || obj->isEffectivelyDead())
+			continue;
+
+		// Get integer position compatible with PolygonTrigger::pointInTrigger
+		const Coord3D *pos = obj->getPosition();
+		if (!pos)
+			continue;
+
+		ICoord3D iPos;
+		iPos.x = pos->x;
+		iPos.y = pos->y;
+		iPos.z = pos->z;
+
+		// If object lies inside polygon, transfer it
+		if (pTrig->pointInTrigger(iPos))
+		{
+			// Avoid no-op
+			if (obj->getTeam() != destTeam)
+			{
+				obj->setTeam(destTeam);
+				updateTeamAndPlayerStuff(obj, nullptr);
+			}
+
+			// If this object contains other units (transport/garrison), transfer contained units too
+			ContainModuleInterface *contain = obj->getContain();
+			if (contain)
+			{
+				const ContainedItemsList *items = contain->getContainedItemsList();
+				if (items)
+				{
+					for (ContainedItemsList::const_iterator it = items->begin(); it != items->end(); ++it)
+					{
+						Object* contained = *it;
+						if (!contained)
+							continue;
+						if (contained->isDestroyed() || contained->isEffectivelyDead())
+							continue;
+						if (contained->getTeam() != destTeam)
+						{
+							contained->setTeam(destTeam);
+							updateTeamAndPlayerStuff(contained, nullptr);
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -14287,6 +14649,17 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			return;
 		case ScriptAction::SET_WAYPOINT_BIDIRECTIONAL:
 			doSetWaypointBiDirectional(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+		case ScriptAction::AI_CLEAR_BUILDLIST:
+			doAIClearBuildList(pAction->getParameter(0)->getString());
+			return;
+		case ScriptAction::AI_ADD_TO_BUILDLIST:
+			Coord3D posC;
+			pAction->getParameter(2)->getCoord3D(&posC);
+			doAIAddToBuildList(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), &posC, pAction->getParameter(3)->getReal(), pAction->getParameter(4)->getInt(), pAction->getParameter(5)->getInt(), pAction->getParameter(6)->getInt());
+			return;
+		case ScriptAction::AREA_TRANSFER_TO_PLAYER:
+			doTransferAreaToPlayer(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
 			return;
 	}
 }

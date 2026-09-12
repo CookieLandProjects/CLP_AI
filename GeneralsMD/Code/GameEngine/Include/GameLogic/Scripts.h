@@ -713,6 +713,10 @@ public:
 		RELOCATE_WAYPOINT_TYPE,												///< Relocate a waypoint to an objectType's location. Selection modes => 0: closest, 1: farthest, 2: random
 		SET_WAYPOINT_BIDIRECTIONAL,										///< Set whether a waypoint is bi-directional or not.
 
+		AI_CLEAR_BUILDLIST,
+		AI_ADD_TO_BUILDLIST,
+		AREA_TRANSFER_TO_PLAYER,
+
 
 			//-------------------------------------------------------------------------------------------------
 			//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------

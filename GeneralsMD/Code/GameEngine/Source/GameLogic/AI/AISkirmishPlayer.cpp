@@ -1725,6 +1725,49 @@ void AISkirmishPlayer::buildSpecificAIBuildingFromID(const AsciiString& thingNam
 
 		if (copy)
 		{
+			const ThingTemplate* tmpl = TheThingFactory->findTemplate(copy->getTemplateName());
+			if (tmpl && !copy->isExactPositionOnly()) {
+				Coord3D center = *copy->getLocation();
+				center.z = TheTerrainLogic->getGroundHeight(center.x, center.y);
+				Real angle = copy->getAngle();
+				const Real cell = PATHFIND_CELL_SIZE_F;
+				const Real step = cell;
+				const Real maxRadius = 300 * cell;
+				Bool found = FALSE;
+				Coord3D tryPos;
+				const Int flagsToTry[] = {
+					BuildAssistant::NO_OBJECT_OVERLAP,
+					BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP,
+					BuildAssistant::CLEAR_PATH | BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP
+				};
+				for (Int f = 0; f < (Int)(sizeof(flagsToTry)/sizeof(flagsToTry[0])) && !found; ++f) {
+					Int flags = flagsToTry[f];
+					for (Real r = 0.0f; r <= maxRadius && !found; r += 2.0f*cell) {
+						Real offset = r/2.0f;
+						Real yStart = center.y - offset;
+						Real yEnd = center.y + offset;
+						for (Real y = yStart; y <= yEnd && !found; y += step) {
+							Real xStart = center.x - offset;
+							Real xEnd = center.x + offset;
+							for (Real x = xStart; x <= xEnd; x += step) {
+								tryPos = center;
+								tryPos.x = x;
+								tryPos.y = y;
+								tryPos.z = TheTerrainLogic->getGroundHeight(tryPos.x, tryPos.y);
+								if (TheBuildAssistant->isLocationLegalToBuild(&tryPos, tmpl, angle, flags, nullptr, m_player) == LBC_OK) {
+									found = TRUE;
+									break;
+								}
+							}
+						}
+					}
+				}
+				if (found) {
+					tryPos.z = 0; // ground-relative for build list
+					copy->setLocation(tryPos);
+					copy->setAngle(angle);
+				}
+			}
 			m_player->insertBuildListInfo(copy, isPriority);
 			info->setConsumedInIDList(TRUE);
 			return;
