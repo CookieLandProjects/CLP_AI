@@ -150,6 +150,7 @@ public:
 
 	void reset();
 
+	AttackPriorityMap* getAttackPriorityMap() { return m_priorityMap; }
 protected:
 
 	// snapshot methods
@@ -452,6 +453,9 @@ protected:
 	void updateKDRatioDeaths(ScriptAction* pAction);
 	void copyKDRatioOntoCounters(ScriptAction* pAction);
 
+	void addPrioritySetToOther(ScriptAction* pAction);
+	void increasePriorityOfType(ScriptAction* pAction);
+	void decreasePriorityOfType(ScriptAction* pAction);
 
 //-------------------------------------------------------------------------------------------------
 //------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------

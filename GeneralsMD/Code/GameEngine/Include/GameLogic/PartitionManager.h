@@ -1314,6 +1314,23 @@ protected:
 
 //=====================================
 /**
+ * @ -TanSo: Accept or reject all objects that are idle (and (not) busy, for that matter)
+ */
+class PartitionFilterIdle : public PartitionFilter
+{
+private:
+	Bool m_match;
+public:
+	PartitionFilterIdle(Bool match) : m_match(match) {}
+protected:
+	virtual Bool allow(Object* other);
+#if defined(RTS_DEBUG)
+	virtual const char* debugGetName() { return "PartitionFilterFilterIdle"; }
+#endif
+};
+
+//=====================================
+/**
 	PartitionManager is the singleton class that manages the entire partition/collision
 	system. It maintains the set of PartitionCells that correspond to the world system,
 	and updates the PartitionDatas as needed during update phase.

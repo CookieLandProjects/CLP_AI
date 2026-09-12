@@ -3258,7 +3258,7 @@ void ScriptActions::doCollectNearbyForTeam(const AsciiString& teamName)
 				// Iterator MUST be advanced before calling setTeam().
 				// This mirrors original EA engine behavior. It's dirty I know.
 				nextObj = iter2.cur();
-				iter.advance();
+				iter2.advance();
 
 				for (Int i = 0; i < maxUnits.size(); i++)
 				{
@@ -6557,15 +6557,14 @@ void ScriptActions::doPlayerSurrender(const AsciiString& playerName)
 	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
 	if (!pPlayer) return;
 
-	for (int i = 2; i < ThePlayerList->getPlayerCount() - 1; i++)
+	for (Int i = 0; i < ThePlayerList->getPlayerCount() - 1; i++)
 	{
-		if(ThePlayerList->getNthPlayer(i))
+		Player* tPlayer = ThePlayerList->getNthPlayer(i);
+		if(tPlayer && tPlayer->getRelationship(pPlayer->getDefaultTeam()) == ALLIES)
 		{
-			if (ThePlayerList->getNthPlayer(i)->getRelationship(pPlayer->getDefaultTeam()) == ALLIES)
-			{
-				ThePlayerList->getNthPlayer(i)->transferAssetsFromThat(pPlayer);
-				break;
-			}
+			tPlayer->transferAssetsFromThat(pPlayer);
+			tPlayer->getMoney()->deposit(pPlayer->getMoney()->countMoney());
+			break;
 		}
 	}
 	pPlayer->killPlayer();
@@ -10749,14 +10748,16 @@ void ScriptActions::doResetBuildListID(Int buildListID)
 	// @-TanSo-: Bring it back to the default rotation...
 	pPlayer->normalizeBuildListFromID(buildListID, 0);
 	//... and clear all flags.
-	if (idList)
+	/*if (idList)
 	{
 		for (BuildListInfo* info = idList->m_buildList; info; info = info->getNext())
 		{
 				info->setConsumedInIDList(FALSE);
 				info->setBuildLocationBlocked(FALSE);
 		}
-	}
+	}*/
+	if (idList->m_buildList)
+		idList->m_buildList->resetFlags();
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -12656,6 +12657,118 @@ void ScriptActions::doTeamSendToRepair(const AsciiString& teamName, Bool sendBac
 }
 
 //-------------------------------------------------------------------------------------------------
+void ScriptActions::doUnitSendToRepair(const AsciiString& unitName)
+{
+	Object* pObj = TheScriptEngine->getUnitNamed(unitName);
+	if (!pObj) return;
+
+	AIUpdateInterface* ai = pObj->getAI();
+	if (!ai) return;
+
+	const Coord3D* teamPos = pObj->getPosition();
+
+	PartitionFilterSameMapStatus f1(pObj);
+	PartitionFilterAlive f2;
+	PartitionFilterPlayer f3(pObj->getControllingPlayer(), TRUE);
+	PartitionFilterAcceptByKindOf vehicles(MAKE_KINDOF_MASK(KINDOF_REPAIR_PAD), KINDOFMASK_NONE);
+	PartitionFilterAcceptByKindOf infantry(MAKE_KINDOF_MASK(KINDOF_HEAL_PAD), KINDOFMASK_NONE);
+	PartitionFilterAcceptByKindOf aircraft(MAKE_KINDOF_MASK(KINDOF_FS_AIRFIELD), KINDOFMASK_NONE);
+	PartitionFilter* filtersVehicles[] = { &f1, &f2, &f3, &vehicles, nullptr };
+	PartitionFilter* filtersInfantry[] = { &f1, &f2, &f3, &infantry, nullptr };
+	PartitionFilter* filtersAircraft[] = { &f1, &f2, &f3, &aircraft, nullptr };
+
+	Object* closestVehicleFactory = ThePartitionManager->getClosestObject(teamPos, REALLY_FAR, FROM_CENTER_2D, filtersVehicles);
+	Object* closestInfantryFactory = ThePartitionManager->getClosestObject(teamPos, REALLY_FAR, FROM_CENTER_2D, filtersInfantry);
+	Object* closestAircraftFactory = ThePartitionManager->getClosestObject(teamPos, REALLY_FAR, FROM_CENTER_2D, filtersAircraft);
+
+	if (pObj->isKindOf(KINDOF_AIRCRAFT) && closestAircraftFactory)
+	{
+		ai->aiDock(closestAircraftFactory, CMD_FROM_SCRIPT);
+	}
+	else if (pObj->isKindOf(KINDOF_VEHICLE) && closestVehicleFactory) // Yes, an aircraft is a vehicle. It still goes in the one above :)
+	{
+		ai->aiDock(closestVehicleFactory, CMD_FROM_SCRIPT);
+	}
+	else if (pObj->isKindOf(KINDOF_INFANTRY) && closestInfantryFactory)
+	{
+		ai->aiDock(closestInfantryFactory, CMD_FROM_SCRIPT);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamSendToRepairType(const AsciiString& teamName, const AsciiString& objectType, Bool sendBackFullHP)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam) return;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType);
+	ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType);
+	if (!templ || !types) return;
+
+	const Coord3D* teamPos = pTeam->getEstimateTeamPosition();
+
+	PartitionFilterSameMapStatus f1(pTeam->getFirstItemIn_TeamMemberList());
+	PartitionFilterAlive f2;
+	PartitionFilterPlayer f3(pTeam->getControllingPlayer(), TRUE);
+	PartitionFilterAcceptByKindOf vehicles(MAKE_KINDOF_MASK(KINDOF_REPAIR_PAD), KINDOFMASK_NONE);
+	PartitionFilterAcceptByKindOf infantry(MAKE_KINDOF_MASK(KINDOF_HEAL_PAD), KINDOFMASK_NONE);
+	PartitionFilterAcceptByKindOf aircraft(MAKE_KINDOF_MASK(KINDOF_FS_AIRFIELD), KINDOFMASK_NONE);
+	PartitionFilter* filtersVehicles[] = { &f1, &f2, &f3, &vehicles, nullptr };
+	PartitionFilter* filtersInfantry[] = { &f1, &f2, &f3, &infantry, nullptr };
+	PartitionFilter* filtersAircraft[] = { &f1, &f2, &f3, &aircraft, nullptr };
+
+	Object* closestVehicleFactory = ThePartitionManager->getClosestObject(teamPos, REALLY_FAR, FROM_CENTER_2D, filtersVehicles);
+	Object* closestInfantryFactory = ThePartitionManager->getClosestObject(teamPos, REALLY_FAR, FROM_CENTER_2D, filtersInfantry);
+	Object* closestAircraftFactory = ThePartitionManager->getClosestObject(teamPos, REALLY_FAR, FROM_CENTER_2D, filtersAircraft);
+
+	DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); for (; !iter.done(); iter.advance())
+	{
+		Object* pObj = iter.cur();
+		if (!pObj) continue;
+
+		AIUpdateInterface* ai = pObj->getAI();
+		if (!ai) continue;
+
+		// Floating point numbers are never really equal, that's why we accept a small difference
+		Bool fullHP = pObj->getBodyModule()->getMaxHealth() - pObj->getBodyModule()->getHealth() < 0.1f;
+		if (!sendBackFullHP && fullHP)
+			continue;
+
+		if (templ) {
+			if (templ != pObj->getTemplate())
+				continue;
+		}
+		else {
+			if(!types->isInSet(pObj->getTemplate()))
+				continue;
+		}
+
+		if (pObj->isKindOf(KINDOF_AIRCRAFT) && closestAircraftFactory)
+		{
+			ai->aiDock(closestAircraftFactory, CMD_FROM_SCRIPT);
+		}
+		else if (pObj->isKindOf(KINDOF_VEHICLE) && closestVehicleFactory) // Yes, an aircraft is a vehicle. It still goes in the one above :)
+		{
+			ai->aiDock(closestVehicleFactory, CMD_FROM_SCRIPT);
+		}
+		else if (pObj->isKindOf(KINDOF_INFANTRY) && closestInfantryFactory)
+		{
+			ai->aiDock(closestInfantryFactory, CMD_FROM_SCRIPT);
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doSetAIDataClosestBuildingToDozerPriority(Bool isUsing)
+{
+	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
+	if (!pPlayer) return;
+
+	pPlayer->setClosestDozerBuildingPriority(isUsing);
+}
+
+
+//-------------------------------------------------------------------------------------------------
 //----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 //-------------------------------------------------------------------------------------------------
 
@@ -14266,6 +14379,16 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 
 		case ScriptAction::TEAM_REPAIR:
 			doTeamSendToRepair(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			return;
+		case ScriptAction::UNIT_REPAIR:
+			doUnitSendToRepair(pAction->getParameter(0)->getString());
+			return;
+		case ScriptAction::TEAM_REPAIR_TYPE:
+			doTeamSendToRepairType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
+			return;
+
+		case ScriptAction::AI_PLAYER_CLOSEST_DOZER_BUILDING_PRIORITY:
+			doSetAIDataClosestBuildingToDozerPriority(pAction->getParameter(0)->getInt());
 			return;
 	}
 }

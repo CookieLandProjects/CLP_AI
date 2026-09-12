@@ -182,7 +182,7 @@ protected:
 	//-------------------------------------------------------------------------------------------------
 
 	Bool evaluatePlayerRelation(const AsciiString& playerSrcName, Int relationType, const AsciiString& playerDstName);
-  Bool evaluateEmptySpot(Parameter* pStartNdx);
+  Bool evaluateEmptySpot(Parameter* pStartNdx, Bool isEmpty);
 	Bool evaluateActivePlayerCount(Parameter* pComparisonParm, Int pPlayerCount);
 	Bool evaluateEmptySpotCount(Parameter* pComparisonParm, Int pEmptySpotCount);
 	Bool evaluateNeighbouringSpot(Parameter* pPlayerParm, Parameter* pStartNdx);
@@ -270,6 +270,9 @@ protected:
 
 	Bool evaluateClosestTeamMemberToEnemyHasSightedComparisonRatioRadius(Parameter* pTeamParm, Parameter* pComparisonParm, Real ratio, Real radius);
 	Bool evaluateClosestTeamMemberToEnemyHasSightedComparisonTypeRatioRadius(Parameter* pTeamParm, Parameter* pComparisonParm, Real ratio, Parameter* objectType, Parameter* otherObjectType, Real radius);
+
+	Bool evaluateUnitIsReloaded(Parameter* pUnitParm, Bool partially);
+	Bool evaluateTeamIsReloaded(Parameter* pTeamParm, Bool partially);
 
 	// @n0ttws: AI playstyle evaluation
 	// @-TanSo-: 60 additions, 1 helper method

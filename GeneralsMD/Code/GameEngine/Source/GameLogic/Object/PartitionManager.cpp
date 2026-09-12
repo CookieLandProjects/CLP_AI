@@ -5977,7 +5977,35 @@ Bool PartitionFilterStatusBits::allow(Object* other)
 {
 	return (m_mask.testForAny(other->getStatusBits())) ? m_match : !m_match;
 }
+#include "GameLogic/Module/DozerAIUpdate.h"
+#include "GameLogic/Module/WorkerAIUpdate.h"
+// ------------------------------------------------------------------------------------------------
+Bool PartitionFilterIdle::allow(Object* other)
+{
+	AIUpdateInterface* ai = other->getAI();
+	if (!ai) return FALSE;
 
+  // Dozers and workers are idle while building etc. Reject them if they are on a task though.
+	if (other->isKindOf(KINDOF_DOZER))
+	{
+		DozerAIInterface* dozerAI = ai->getDozerAIInterface();
+		if (dozerAI && dozerAI->getCurrentTask() != DOZER_TASK_INVALID) {
+			return !m_match;
+		}
+		else {
+			WorkerAIUpdate* workerAI = ai->getWorkerAIUpdate();
+			if (workerAI && workerAI->getCurrentTask() != DOZER_TASK_INVALID) {
+				return !m_match;
+			}
+		}
+		return m_match;
+	}
+
+	if (ai->isIdle())
+		return m_match;
+
+	return !m_match;
+}
 
 // ------------------------------------------------------------------------------------------------
 Object* PartitionManager::getFarthestObjects(

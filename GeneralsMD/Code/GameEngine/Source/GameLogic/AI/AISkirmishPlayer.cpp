@@ -77,7 +77,6 @@ m_curRightFlankLeftDefenseAngle(0),
 m_curRightFlankRightDefenseAngle(0),
 m_frameToCheckEnemy(0),
 m_currentEnemy(nullptr)
-
 {
 	m_frameLastBuildingBuilt = TheGameLogic->getFrame();
 	p->setCanBuildUnits(true); // turn on ai production by default.
@@ -428,18 +427,21 @@ Bool AISkirmishPlayer::selectTeamToBuild()
 	*/
 void AISkirmishPlayer::buildSpecificAIBuilding(const AsciiString &thingName)
 {
+	// @-TanSo-: if m_closestDozerBuildingPriority, try to fetch the building closest to any dozer.
+	Real closestDist = FLT_MAX;
+	BuildListInfo* closestInfo = nullptr;
+	PartitionFilterAlive filterAlive;
+	PartitionFilterSamePlayer filterAffiliation(m_player);
+	PartitionFilterAcceptByKindOf filterDozer(MAKE_KINDOF_MASK(KINDOF_DOZER), KINDOFMASK_NONE);
+	PartitionFilterIdle filterIdle(TRUE);
+	PartitionFilter* filters[] = { &filterDozer, &filterAffiliation, &filterAlive, &filterIdle, nullptr};
+
 	Bool found = false;
 	Bool foundUnbuilt = false;
 	for( BuildListInfo *info = m_player->getBuildList(); info; info = info->getNext() )
 	{
 		if (info->getTemplateName()==thingName)
 		{
-			if (info->getTemplateName() == "AmericaStrategyCenter" || info->getTemplateName() == "AmericaWarFactory")
-			{
-				AsciiString bldgName = info->getTemplateName();
-				bldgName.concat(" - found.");
-				TheScriptEngine->AppendDebugMessage(bldgName, false);
-			}
 			AsciiString name = info->getTemplateName();
 			if (name.isEmpty()) continue;
 			const ThingTemplate *bldgPlan = TheThingFactory->findTemplate( name );
@@ -455,11 +457,52 @@ void AISkirmishPlayer::buildSpecificAIBuilding(const AsciiString &thingName)
 			if (info->isPriorityBuild()) {
 				continue; // already marked for priority build.
 			}
-			foundUnbuilt = true;
-			info->markPriorityBuild();
-			break;
+			if (!m_player->getClosestDozerBuildingPriority()) {
+				foundUnbuilt = true;
+				info->markPriorityBuild();
+				break;
+			}
+			else {
+				const Coord3D* infoPos = info->getLocation();
+
+				// First-time acquisition
+				if (!closestInfo) {
+					Object* closestDozer = ThePartitionManager->getClosestObject(infoPos, FLT_MAX, FROM_CENTER_2D, filters);
+					const Coord3D* dozerPos = closestDozer->getPosition();
+					if (closestDozer) {
+						Real dx = dozerPos->x - infoPos->x;
+						Real dy = dozerPos->y - infoPos->y;
+						Real distSqr = dx * dx + dy * dy;
+
+						closestDist = distSqr;
+					}
+					closestInfo = info;
+					continue;
+				}
+
+				Object* closestDozer = ThePartitionManager->getClosestObject(infoPos, FLT_MAX, FROM_CENTER_2D, filters);
+				if (closestDozer)
+				{
+					const Coord3D* dozerPos = closestDozer->getPosition();
+
+					Real dx = dozerPos->x - infoPos->x;
+					Real dy = dozerPos->y - infoPos->y;
+					Real distSqr = dx * dx + dy * dy;
+
+					if (distSqr < closestDist) {
+						closestDist = distSqr;
+						closestInfo = info;
+					}
+				}
+			}
 		}
 	}
+
+	if (m_player->getClosestDozerBuildingPriority() && closestInfo) {
+		foundUnbuilt = true;
+		closestInfo->markPriorityBuild();
+	}
+
 	if (foundUnbuilt) {
 		m_buildDelay = 0;
 		AsciiString buildingStr = "Queueing building '";
@@ -1019,7 +1062,7 @@ void AISkirmishPlayer::adjustBuildList(BuildListInfo *list)
 	}
 	// Find the location of the command center in the build list.
 	Bool foundInBuildList = false;
-	Coord3D buildPos;
+	Coord3D buildPos = {0, 0, 0};
 	BuildListInfo *cur = list;
 	while (cur) {
 		const ThingTemplate *tTemplate = TheThingFactory->findTemplate(cur->getTemplateName());
@@ -1147,6 +1190,7 @@ void AISkirmishPlayer::newMap()
 			info->incrementNumRebuilds(); // the initial build in the normal build list consumes a rebuild, so add one.
 		}
 	}
+	//@-TanSo-: reset these explicitly just to be extra sure.
 	resetSupplyDockReservations();
 	resetFactoryReservations();
 }

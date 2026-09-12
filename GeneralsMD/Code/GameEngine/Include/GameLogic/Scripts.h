@@ -724,7 +724,15 @@ public:
 		TEAM_GARRISON_NUMBER_BUILDINGS_TYPE,					///< A team equally garrisons <int> buildings of a type with all available infantry.
 		TEAM_LOAD_TYPE_EVENLY,												///< A team loads evenly into their transport units of a specific type.
 
-		TEAM_REPAIR,																	///< A team sends ALL units back to the closest factories that can repair them.
+		TEAM_REPAIR,																	///< A team sends units back to the closest factories that can repair them.
+		UNIT_REPAIR,																	///< A unit goes back to the closest factory that can repair it.
+		TEAM_REPAIR_TYPE,															///< A team sends units of type <objectType> back to the closest factories that can repair them.
+
+		ADD_PRIORITY_SET_TO_OTHER,										///< Add the content of one priority set to another.
+		INCREASE_PRIORITY_IN_SET_TYPE,								///< Increase the priorty in a set by <Int> for <objectType>.
+		DECREASE_PRIORITY_IN_SET_TYPE,								///< Decrease the priorty in a set by <Int> for <objectType>.
+
+		AI_PLAYER_CLOSEST_DOZER_BUILDING_PRIORITY,		///< The AI player chooses the AIData-entry closest to a non-busy dozer rather than the first unbuilt one.
 
 		//-------------------------------------------------------------------------------------------------
 		//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------
@@ -1285,6 +1293,9 @@ public:
 
 		TEAM_CLOSEST_TO_ENEMY_COMPARISON_RATIO_SIGHTED_RADIUS, // True if the closest team member to the enemy sees <comparison> <ratio> units than it has allies in a specified radius.
 		TEAM_CLOSEST_TO_ENEMY_COMPARISON_TYPE_RATIO_SIGHTED_RADIUS, // True if the closest team member to the enemy sees <comparison> <ratio> units of type <objectType> than it has allies of type <objectType> in a specified radius.
+
+		UNIT_RELOADED,													// True if a unit is (partially if chosen) reloaded.
+		TEAM_RELOADED,													// True if a team is (partially if chosen) reloaded.
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 		//-------------------------------------------------------------------------------------------------

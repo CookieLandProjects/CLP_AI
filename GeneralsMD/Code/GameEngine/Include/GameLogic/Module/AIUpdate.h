@@ -52,6 +52,7 @@ class TurretAI;
 class TurretAIData;
 class Waypoint;
 class WorkerAIInterface;
+class WorkerAIUpdate;
 class HackInternetAIInterface;
 class AssaultTransportAIInterface;
 class JetAIUpdate;
@@ -314,6 +315,7 @@ public:
 #endif
 	virtual WorkerAIInterface* getWorkerAIInterface() { return nullptr; }
 	virtual const WorkerAIInterface* getWorkerAIInterface() const { return nullptr; }
+	virtual WorkerAIUpdate* getWorkerAIUpdate() { return nullptr; }
 	virtual HackInternetAIInterface* getHackInternetAIInterface() { return nullptr; }
 	virtual const HackInternetAIInterface* getHackInternetAIInterface() const { return nullptr; }
 	virtual AssaultTransportAIInterface* getAssaultTransportAIInterface() { return nullptr; }

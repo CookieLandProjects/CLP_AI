@@ -883,6 +883,15 @@ Bool GameEngine::canUpdateRegularGameLogic(UnsignedInt logicTimeQueryFlags)
 		const Real targetFrameTime = 1.0f / logicTimeScaleFps;
 		m_logicTimeAccumulator += min(TheFramePacer->getUpdateTime(), targetFrameTime);
 
+		DEBUG_LOG((
+			"FRAME PACER: logicScale=%d renderLimit=%d updateTime=%.6f accumulator=%.6f target=%.6f\n",
+			logicTimeScaleFps,
+			maxRenderFps,
+			TheFramePacer->getUpdateTime(),
+			m_logicTimeAccumulator,
+			targetFrameTime
+			));
+
 		if (m_logicTimeAccumulator >= targetFrameTime)
 		{
 			m_logicTimeAccumulator -= targetFrameTime;

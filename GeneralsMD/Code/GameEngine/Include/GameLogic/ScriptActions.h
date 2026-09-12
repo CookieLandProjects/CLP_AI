@@ -538,8 +538,12 @@ protected:
 	void doTeamLoadAllTransportsEvenlyType(const AsciiString& teamName, const AsciiString& objectType);
 
 	void doTeamSendToRepair(const AsciiString& teamName, Bool sendBackFullHP);
+	void doUnitSendToRepair(const AsciiString& unitName);
+	void doTeamSendToRepairType(const AsciiString& teamName, const AsciiString& objectType, Bool sendBackFullHP);
 
-	// @-TanSo-: 123 additions
+	void doSetAIDataClosestBuildingToDozerPriority(Bool isUsing);
+
+	// @-TanSo-: 125 additions
 
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------

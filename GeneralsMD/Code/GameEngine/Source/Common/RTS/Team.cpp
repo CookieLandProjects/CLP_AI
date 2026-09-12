@@ -1364,6 +1364,9 @@ Team::Team(TeamPrototype *proto, TeamID id ) :
 			m_checkEnemySighted = true;	 // Only keep track of enemy sighted if there is a script that cares.
 		}
 
+		//@-TanSo-: recruitability is not set from the team template info. Do it here.
+		m_isRecruitable = proto->getTemplateInfo()->m_isAIRecruitable;
+
 		AsciiString teamName = proto->getName();
 		teamName.concat(" - creating team instance.");
 		TheScriptEngine->AppendDebugMessage(teamName, false);

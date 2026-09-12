@@ -38,6 +38,7 @@ class BuildListInfo;
 struct FactoryReservation
 {
 	ObjectID factoryID;
+	//std::vector<Team*> teams; //@todo: make it possible to have one team make a reservation for multiple factories.
 	Team* team;
 };
 struct SupplyDockReservation
@@ -288,14 +289,16 @@ protected:
 	FactoryReservation* findReservation(ObjectID id);
 	FactoryReservation* getReservation(ObjectID id);
 	void releaseFactoryReservations(Team* team);
+	void resetFactoryReservations() { m_factoryReservations.clear(); }				// Called during newMap().
 
 	Bool isDockOccupied(ObjectID id) const;												// Is the dock already occupied? Don't build a second supply center here then!
 	void setDockOccupation(ObjectID dockID, ObjectID supplyID);		// Simply sets the reservation. Gets callled in reserveSupplySource().
 	void releaseDockReservations();																// Called in update(), removes reservations if the supply center is dead etc.
-	void resetFactoryReservations() { m_factoryReservations.clear(); }				// Called during newMap().
+	void resetSupplyDockReservations() { m_supplyDockReservations.clear(); }	// Called during newMap().
+
 	void reserveSupplySource(Object* supplyCenter);								// Sets a new reservation with an INVALID_ID for the supply center.
 	void assignSupplyCenterToReservation(Object* supplyCenter);		// Updates INVALID_ID to now carry the actual supply senter.
-	void resetSupplyDockReservations() { m_supplyDockReservations.clear(); }	// Called during newMap().
+
 
 	//-------------------------------------------------------------------------------------------------
 	//-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------
@@ -362,15 +365,22 @@ protected:
 	ObjectID m_curWarehouseID;
 
 	// -TanSo-: Use of the factory reservation. Before this, team builds would be blended, which means
-	// that teams would be left halfway-built throughout the match. Suppose we have four teams,
-	// A with 5, B with 3, C with 2, and D with 2 units. The production line would look like this:
+	// that teams would be left halfway-built throughout the match and never leave base. Suppose we have
+	// four teams, A with 5, B with 3, C with 2, and D with 2 units. The production line would look like this:
 	// -> Factory 1: A, D, C, B
 	// -> Factory 2: B, A, D, A
 	// -> Factory 3: C, B, A, A
-	// With the reservation, teams now block factories for their own production like this:
+	// With the reservation, if the factories are far apart, teams now block factories
+	// for their own production like this:
 	// -> Factory 1: A, A, A, A, A
 	// -> Factory 2: B, B, B
 	// -> Factory 3: C, C, D, D
+	// @todo
+	// If lets say Factory 1 was close to Factory 2, it would instead look like this:
+	// -> Factory 1: A, A, A, D, D
+	// -> Factory 2: A, A, C, C
+	// -> Factory 3: B, B, B
+
 	std::vector<FactoryReservation> m_factoryReservations;
 	// -Tanso-: Use of the supplyDockReservation. This prevents AI players from placing two supply centers
 	// next to the same dock by blocking the dock, then adding the ObjectID of the center later on.

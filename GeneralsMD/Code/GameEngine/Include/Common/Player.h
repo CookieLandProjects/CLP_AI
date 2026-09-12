@@ -484,6 +484,8 @@ public:
 	void updateLastFrameSeen();
 	void countObjectsByThingTemplateArea(Int numTmplates, const ThingTemplate* const* things, Bool ignoreDead, Int* counts, Bool ignoreUnderConstruction, const PolygonTrigger* triggerArea) const;
 
+	Bool getClosestDozerBuildingPriority() { return m_closestDozerBuildingPriority; }
+	void setClosestDozerBuildingPriority(Bool b) { m_closestDozerBuildingPriority = b; }
 	//-------------------------------------------------------------------------------------------------
 	//--------------------------------- @CLP_AI PLAYER ADDITIONS END ----------------------------------
 	//-------------------------------------------------------------------------------------------------
@@ -881,6 +883,8 @@ private:
 
 	Bool									m_isPlayerDead;
 	Bool									m_logicalRetaliationModeEnabled;
+
+	Bool m_closestDozerBuildingPriority; // Prioritize buildings with the closest dozer to save travel time.
 
 	public:
 		AIPlayer* getAIPlayer() { return m_ai; }

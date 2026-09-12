@@ -836,10 +836,21 @@ Real AI::getAdjustedVisionRangeForObject(const Object *object, Int factorsToCons
 		}
 		else
 		{
-			if (factorsToConsider & AI_VISIONFACTOR_GUARDINNER)
-				originalRange *= aiData->m_guardInnerModifierAI;
+			//@-TanSo-: for our AI, use the human retaliation modifier
+			if(object->getControllingPlayer()->getPlayerDifficulty() >= DIFFICULTY_BRUTAL)
+			{
+				if (factorsToConsider & AI_VISIONFACTOR_GUARDINNER)
+					originalRange *= aiData->m_guardInnerModifierHuman;
+				else
+					originalRange *= aiData->m_guardOuterModifierHuman;
+			}
 			else
-				originalRange *= aiData->m_guardOuterModifierAI;
+			{
+				if (factorsToConsider & AI_VISIONFACTOR_GUARDINNER)
+					originalRange *= aiData->m_guardInnerModifierAI;
+				else
+					originalRange *= aiData->m_guardOuterModifierAI;
+			}
 		}
 	}
 

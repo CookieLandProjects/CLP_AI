@@ -3253,27 +3253,30 @@ void AIPlayer::checkQueuedTeams()
 		for ( DLINK_ITERATOR<TeamInQueue> iter = iterate_TeamBuildQueue(); !iter.done(); iter.advance())
 		{
 			TeamInQueue *team = iter.cur();
-			if (team && team->isAllBuilt())
+			if (team)
 			{
-				// Move to ready queue
-				removeFrom_TeamBuildQueue(team);
-				prependTo_TeamReadyQueue(team);
-				iter = iterate_TeamBuildQueue();
-				releaseFactoryReservations(team->m_team); // -TanSo-: clear the team from our vector
-				continue;
-			}
-			Bool anyIdle = false;
-			for (DLINK_ITERATOR<Object> iter = team->m_team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
-				Object *obj = iter.cur();
-				if (obj && obj->getAI() && obj->getAI()->isIdle()) {
-					anyIdle = true;
+				if (team->isAllBuilt()) {
+					// Move to ready queue
+					removeFrom_TeamBuildQueue(team);
+					prependTo_TeamReadyQueue(team);
+					iter = iterate_TeamBuildQueue();
+					releaseFactoryReservations(team->m_team); // -TanSo-: clear the team from our vector
+					continue;
 				}
-			}
-			if (anyIdle) {
-				if (team->m_team->getPrototype()->getTemplateInfo()->m_executeActions) {
-					const Script *script = TheScriptEngine->findScriptByName(team->m_team->getPrototype()->getTemplateInfo()->m_productionCondition);
-					if (script) {
-						TheScriptEngine->friend_executeAction(script->getAction(), team->m_team);
+				Bool anyIdle = false;
+				//@-TanSo-: Use a different iterator name here.
+				for (DLINK_ITERATOR<Object> objectIter = team->m_team->iterate_TeamMemberList(); !objectIter.done(); objectIter.advance()) {
+					Object *obj = objectIter.cur();
+					if (obj && obj->getAI() && obj->getAI()->isIdle()) {
+						anyIdle = true;
+					}
+				}
+				if (anyIdle) {
+					if (team->m_team->getPrototype()->getTemplateInfo()->m_executeActions) {
+						const Script *script = TheScriptEngine->findScriptByName(team->m_team->getPrototype()->getTemplateInfo()->m_productionCondition);
+						if (script) {
+							TheScriptEngine->friend_executeAction(script->getAction(), team->m_team);
+						}
 					}
 				}
 			}
@@ -3417,7 +3420,8 @@ void AIPlayer::update()
 
 	doUpgradesAndSkills(); // See if it's time to build an upgrade or buy a skill.
 
-	updateBridgeRepair(); // Handle any bridge repairs.
+	//-@TanSo-: until bridge repairing is a feature, don't do this for performance reasons.
+	//updateBridgeRepair(); // Handle any bridge repairs.
 
 	releaseDockReservations(); // Release any dock reservation that became invalid.
 }
@@ -3463,8 +3467,10 @@ void AIPlayer::newMap()
 			info->incrementNumRebuilds(); // the initial build in the normal build list consumes a rebuild, so add one.
 		}
 	}
+	//@-TanSo-: reset these explicitly just to be extra sure.
 	resetSupplyDockReservations();
 	resetFactoryReservations();
+	m_player->setClosestDozerBuildingPriority(false);
 }
 
 // ------------------------------------------------------------------------------------------------

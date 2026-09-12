@@ -356,6 +356,7 @@ Player::Player( Int playerIndex )
 	init( nullptr );
 
 	m_crushesInfantry = false;
+	m_closestDozerBuildingPriority = false;
 }
 
 //=============================================================================
@@ -4087,6 +4088,8 @@ void Player::crc( Xfer *xfer )
 	xfer->xferInt( &m_skillPoints );
 	xfer->xferInt( &m_sciencePurchasePoints );
 
+	xfer->xferBool(&m_closestDozerBuildingPriority);
+
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -4861,7 +4864,11 @@ void Player::insertBuildListInfo(BuildListInfo* info, Bool isPriority)
 	{
 		if (cur->getObjectTimestamp() == 0)
 		{
-			DEBUG_LOG(("-> Found To insert after %d, %s"), cur->getObjectID(), cur->getTemplateName().str());
+			if (prev)
+			{
+				DEBUG_LOG(("-> Insert - placing after %d, %s.", prev->getObjectID(), prev->getTemplateName().str()));
+			}
+			DEBUG_LOG(("   INSERTING: %d, %s (%f,%f)", cur->getObjectID(), cur->getTemplateName().str(), cur->getLocation()->x, cur->getLocation()->y));
 			break;
 		}
 

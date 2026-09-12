@@ -444,7 +444,8 @@ Bool ScriptConditions::evaluatePlayerHasUnitTypeInArea(Condition *pCondition, Pa
 		return false;
 	}
 	Player::PlayerTeamList::const_iterator it;
-	Bool anyChanges = false;
+	//Bool anyChanges = false;
+	Bool anyChanges = true; //@-TanSo-: Promote Consistency, not confusion :)
 
 
 	if (pCondition->getCustomData() == 0) anyChanges = true;
@@ -540,7 +541,8 @@ Bool ScriptConditions::evaluatePlayerHasUnitKindInArea(Condition *pCondition, Pa
 	}
 
 	Player::PlayerTeamList::const_iterator it;
-	Bool anyChanges = false;
+	//Bool anyChanges = false;
+	Bool anyChanges = true; //@-TanSo-: Promote Consistency, not confusion :)
 	if (pCondition->getCustomData() == 0) anyChanges = true;
 
 
@@ -704,6 +706,18 @@ Bool ScriptConditions::evaluateNamedAttackedByType(Parameter *pUnitParm, Paramet
 		{
 			return TRUE;
 		}
+
+		//@-TanSo-: If the unit is contained (e.g. by a humvee or palace) also return true for the container.
+		Object* pAttacker = TheGameLogic->findObjectByID(lastDamageInfo->in.m_sourceID);
+		if (pAttacker && pAttacker->isContained())
+		{
+			Object* pContainer = pAttacker->getContainedBy();
+			if (pContainer && pContainer->getTemplate())
+			{
+				if (types.m_types->isInSet(pContainer->getTemplate()))
+					return TRUE;
+			}
+		}
 	}
 	else
 	{
@@ -766,6 +780,18 @@ Bool ScriptConditions::evaluateTeamAttackedByType(Parameter *pTeamParm, Paramete
 			{
 				return TRUE;
 			}
+
+			//@-TanSo-: If the unit is contained (e.g. by a humvee or palace) also return true for the container.
+			Object* pAttacker = TheGameLogic->findObjectByID(lastDamageInfo->in.m_sourceID);
+			if (pAttacker && pAttacker->isContained())
+			{
+				Object* pContainer = pAttacker->getContainedBy();
+				if (pContainer && pContainer->getTemplate())
+				{
+					if (types.m_types->isInSet(pContainer->getTemplate()))
+						return TRUE;
+				}
+			}
 		}
 		else
 		{
@@ -783,7 +809,6 @@ Bool ScriptConditions::evaluateTeamAttackedByType(Parameter *pTeamParm, Paramete
 				return TRUE;
 			}
 		}
-
 	}
 
 	return FALSE;
@@ -1397,7 +1422,8 @@ Bool ScriptConditions::evaluateNamedSelected(Condition *pCondition, Parameter *p
 	}
 
 
-	Bool anyChanges = false;
+	//Bool anyChanges = false;
+	Bool anyChanges = true; //@-TanSo-: Promote Consistency, not confusion :)
 	if (pCondition->getCustomData() == 0) anyChanges = true;
 
 
@@ -2120,7 +2146,8 @@ Bool ScriptConditions::evaluateSkirmishValueInArea(Condition *pCondition, Parame
 	}
 
 	Player::PlayerTeamList::const_iterator it;
-	Bool anyChanges = false;
+	//Bool anyChanges = false;
+	Bool anyChanges = true; //@-TanSo-: Promote Consistency, not confusion :)
 	if (pCondition->getCustomData() == 0) anyChanges = true;
 
 
@@ -2500,7 +2527,8 @@ Bool ScriptConditions::evaluateSkirmishPlayerHasUnitsInArea(Condition *pConditio
 		return false;
 	}
 	Player::PlayerTeamList::const_iterator it;
-	Bool anyChanges = false;
+	//Bool anyChanges = false;
+	Bool anyChanges = true; //@-TanSo-: Promote Consistency, not confusion :)
 
 
 	if (pCondition->getCustomData() == 0) anyChanges = true;
@@ -2742,31 +2770,27 @@ Bool ScriptConditions::evaluatePlayerRelation(const AsciiString& playerSrcName, 
 }
 
 //-------------------------------------------------------------------------------------------------
-Bool ScriptConditions::evaluateEmptySpot(Parameter* pStartNdx)
+Bool ScriptConditions::evaluateEmptySpot(Parameter* pStartNdx, Bool isEmpty)
 {
 	Int ndx = pStartNdx->getInt() - 1;
 	if (ndx >= 0)
 	{
-		Int pPlayerCount = ThePlayerList->getPlayerCount();
-    // @-TanSo-: iterate through all players
-		// i=2 because player 0 is "neutral" & player 1 is "PlyrCivilian".
-		// playerCount-1 to skip any possible "observer" player at the end.
-		for (int i = 2; i < pPlayerCount - 1; i++)
+		for (Int i = 0; i < ThePlayerList->getPlayerCount() - 1; i++)
 		{
-			Player* pPlayers = ThePlayerList->getNthPlayer(i);
-			if (pPlayers->getMpStartIndex() == ndx)
+			Player* pPlayer = ThePlayerList->getNthPlayer(i);
+			if (pPlayer->getMpStartIndex() == ndx)
 			{
 				// If the player is dead, the spot is free again.
-				if (!pPlayers->isPlayerActive())
+				if (!pPlayer->isPlayerActive())
 				{
-					return true;
+					return isEmpty;
 				}
-				return false;
+				return !isEmpty;
 			}
 		}
-		return true;
+		return isEmpty;
 	}
-	return false;
+	return !isEmpty;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -3141,6 +3165,11 @@ Bool ScriptConditions::evaluateHunted(Parameter* pPlayerParm)
 	Player* pPlayer = playerFromParam(pPlayerParm);
 	if (!pPlayer) return false;
 
+	const ThingTemplate* GLAStashTemplate = TheThingFactory->findTemplate("GLASupplyStash");
+	const ThingTemplate* ToxStashTemplate = TheThingFactory->findTemplate("Chem_GLASupplyStash");
+	const ThingTemplate* DemoStashTemplate = TheThingFactory->findTemplate("Demo_GLASupplyStash");
+	const ThingTemplate* SlthStashTemplate = TheThingFactory->findTemplate("Slth_GLASupplyStash");
+
 	Player::PlayerTeamList::const_iterator it;
 	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
 	{
@@ -3157,11 +3186,6 @@ Bool ScriptConditions::evaluateHunted(Parameter* pPlayerParm)
 
 				if (pObj->isKindOf(KINDOF_COMMANDCENTER) || pObj->isKindOf(KINDOF_DOZER)) return false; // GLA Workers are also Dozers!
 
-				const ThingTemplate* GLAStashTemplate = TheThingFactory->findTemplate("GLASupplyStash");
-				const ThingTemplate* ToxStashTemplate = TheThingFactory->findTemplate("Chem_GLASupplyStash");
-				const ThingTemplate* DemoStashTemplate = TheThingFactory->findTemplate("Demo_GLASupplyStash");
-				const ThingTemplate* SlthStashTemplate = TheThingFactory->findTemplate("Slth_GLASupplyStash");
-
 				if (objTmpl == GLAStashTemplate		||
 						objTmpl == ToxStashTemplate		||
 						objTmpl == DemoStashTemplate	||
@@ -3176,7 +3200,7 @@ Bool ScriptConditions::evaluateHunted(Parameter* pPlayerParm)
 //-------------------------------------------------------------------------------------------------
 Bool ScriptConditions::evaluatePlayerLostTypeInArea(Parameter* pPlayerParm, Parameter* pObjectType, Parameter* pArea)
 {
-	// --- Trigger / Area ---
+	// --- Trigger Area ---
 	PolygonTrigger* pTrig = TheScriptEngine->getQualifiedTriggerAreaByName(pArea->getString());
 	if (!pTrig) { return FALSE; }
 
@@ -3253,7 +3277,6 @@ Bool ScriptConditions::evaluatePlayerLostTypeInArea(Parameter* pPlayerParm, Para
 //-------------------------------------------------------------------------------------------------
 Bool ScriptConditions::evaluateTeamSightedRelationType(Parameter* pTeamParm, Int relationType, Parameter* pObjectType)
 {
-
 	Team* pTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
 	if (!pTeam) return false;
 
@@ -5257,6 +5280,9 @@ Bool ScriptConditions::evaluatePlayerTeamInstances(Parameter* pPlayerParm, Param
 			if (team->getPrototype() != pProto)
 				continue;
 
+			if (!team->isActive())
+				continue;
+
 			count++;
 		}
 	}
@@ -6019,6 +6045,52 @@ Bool ScriptConditions::evaluateClosestTeamMemberToEnemyHasSightedComparisonTypeR
 }
 
 //-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateUnitIsReloaded(Parameter* pUnitParm, Bool partially)
+{
+	Object* pObj = TheScriptEngine->getUnitNamed(pUnitParm->getString());
+	if (!pObj) return false;
+
+	Int totalShots, curShots = 0;
+	pObj->getAmmoPipShowingInfo(totalShots, curShots);
+
+	if (partially)
+	{
+		return curShots > 0;
+	}
+	else
+	{
+		return totalShots == curShots;
+	}
+}
+
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateTeamIsReloaded(Parameter* pTeamParm, Bool partially)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
+	if (!pTeam) return false;
+
+	for (DLINK_ITERATOR<Object> teamIter = pTeam->iterate_TeamMemberList(); !teamIter.done(); teamIter.advance())
+	{
+		Object* pObj = teamIter.cur();
+		if (!pObj) continue;
+
+		Int totalShots, curShots = 0;
+		pObj->getAmmoPipShowingInfo(totalShots, curShots);
+
+		if (partially)
+		{
+			if(curShots > 0)
+				return true;
+		}
+		else if (totalShots != curShots)
+			return false;
+
+	}
+	return true;
+}
+
+//-------------------------------------------------------------------------------------------------
 //---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 //-------------------------------------------------------------------------------------------------
 
@@ -6290,7 +6362,7 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 		case Condition::RELATION_IS:
 			return evaluatePlayerRelation(pCondition->getParameter(0)->getString(), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2)->getString());
 		case Condition::SPOT_EMPTY:
-      return evaluateEmptySpot(pCondition->getParameter(0));
+      return evaluateEmptySpot(pCondition->getParameter(0), pCondition->getParameter(1)->getInt());
     case Condition::SPOT_NEIGHBOURING:
       return evaluateNeighbouringSpot(pCondition->getParameter(0), pCondition->getParameter(1));
 		case Condition::NEIGHBOURING_SPOTS_EMPTY:
@@ -6416,6 +6488,10 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 		case Condition::TEAM_CLOSEST_TO_ENEMY_COMPARISON_TYPE_RATIO_SIGHTED_RADIUS:
 			return evaluateClosestTeamMemberToEnemyHasSightedComparisonTypeRatioRadius(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getReal(), pCondition->getParameter(3), pCondition->getParameter(4), pCondition->getParameter(5)->getReal());
 
+		case Condition::UNIT_RELOADED:
+			return evaluateUnitIsReloaded(pCondition->getParameter(0), pCondition->getParameter(1)->getInt());
+		case Condition::TEAM_RELOADED:
+			return evaluateTeamIsReloaded(pCondition->getParameter(0), pCondition->getParameter(1)->getInt());
 
 	}
 }

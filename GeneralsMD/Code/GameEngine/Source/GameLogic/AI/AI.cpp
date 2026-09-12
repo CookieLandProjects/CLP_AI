@@ -739,27 +739,24 @@ Object *AI::findClosestEnemy( const Object *me, Real range, UnsignedInt qualifie
 		Real distSqr = ThePartitionManager->getDistanceSquared(me, theEnemy, FROM_BOUNDINGSPHERE_2D);
 		Real dist = sqrt(distSqr);
 
-		
-		//@-TanSo-: Distance is a pretty good mod. Emphasize the effect for our AI.
-		if (difficulty == DIFFICULTY_BRUTAL)
-			dist *= 1.5f;
-		else if (difficulty == DIFFICULTY_ABSURD)
-			dist *= 1.75f;
-		else if (difficulty >= DIFFICULTY_INHUMANE)
-			dist *= 2.0f;
-
 		Real modifier = dist / getAiData()->m_attackPriorityDistanceModifier;;
 		//@-TanSo-: the above modifier should be Real.
-		// On our difficulty levels, make the unit health a modifier as well.
-		// Try to focus on stuff that has a movement debuff (sub 25% health).
+		// On our difficulty levels, make some more modifications.
 		if (difficulty >= DIFFICULTY_BRUTAL)
 		{
+			// Try to focus on stuff that has a movement debuff (sub 25% health).
 			Real maxHealth = theEnemy->getBodyModule()->getMaxHealth();
 			Real currentHealth = theEnemy->getBodyModule()->getHealth();
 			Real healthPercentage = currentHealth / maxHealth;
 
-			if (healthPercentage < 0.25)
+			if (healthPercentage < 0.25) {
 				modifier *= healthPercentage + 0.25f; // Don't make the effect too strong.
+				
+			}
+			//@-TanSo-: Also try to get rid of scaffolds for a quick buck.
+			else if (theEnemy->getStatusBits().test(OBJECT_STATUS_UNDER_CONSTRUCTION)) {
+				modifier *= theEnemy->getConstructionPercent() - 1.0f;
+			}
 		}
 
 		Int modPriority = curPriority-modifier;

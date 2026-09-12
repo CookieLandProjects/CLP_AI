@@ -701,6 +701,11 @@ void ActiveBody::attemptDamage( DamageInfo *damageInfo )
 
 
 			Real distance = TheAI->getAiData()->m_retaliateFriendsRadius + obj->getGeometryInfo().getBoundingCircleRadius();
+
+			//@-TanSo-: widen the distance for our difficulty levels. This should be 120 + 180 = 300 feet.
+			if (controllingPlayer->getPlayerDifficulty() >= DIFFICULTY_BRUTAL)
+				distance += 180.0f;
+
 			SimpleObjectIterator *iter = ThePartitionManager->iterateObjectsInRange( obj->getPosition(), distance, FROM_CENTER_2D, filters, ITER_FASTEST );
 			MemoryPoolObjectHolder hold( iter );
 			for( Object *them = iter->first(); them; them = iter->next() )

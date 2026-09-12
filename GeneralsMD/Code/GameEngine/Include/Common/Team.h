@@ -362,13 +362,13 @@ public:
 	void updateHealth();
 
 	Int m_idleFrames;																				// How long has our team been idling for?
-	Int m_allClear;																					// Keeps track of whether the team has left combat. Saves it 300 frames.
-	Bool getPrevSeeEnemy() { return m_prevSeeEnemy; }
+	Int m_allClear;																					// Keeps track of whether the team has left combat. Saves it for 300 frames.
+	Bool getPrevSeeEnemy() const { return m_prevSeeEnemy; }
 	void setPrevSeeEnemy(Bool b) { m_prevSeeEnemy = b; }
-	Bool getSeeEnemy() { return m_seeEnemy; }
+	Bool getSeeEnemy() const { return m_seeEnemy; }
 	void setSeeEnemy(Bool b) { m_seeEnemy = b; }
 
-	Bool isRecruitable() { return m_isRecruitable; }
+	Bool isRecruitable() const { return m_isRecruitable; }
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------------- @CLP_AI TEAM ADDITIONS END -----------------------------------
 	//-------------------------------------------------------------------------------------------------

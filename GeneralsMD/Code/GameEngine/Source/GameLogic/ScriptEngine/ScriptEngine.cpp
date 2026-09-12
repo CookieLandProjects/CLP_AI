@@ -5367,11 +5367,13 @@ void ScriptEngine::init()
 	curTemplate = &m_conditionTemplates[Condition::SPOT_EMPTY];
 	curTemplate->m_internalName = "SPOT_EMPTY";
 	curTemplate->m_uiName = "Skirmish/Spot/Check whether spot is empty.";
-	curTemplate->m_numParameters = 1;
+	curTemplate->m_numParameters = 2;
 	curTemplate->m_parameters[0] = Parameter::INT;
-	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_parameters[1] = Parameter::BOOLEAN;
+	curTemplate->m_numUiStrings = 3;
 	curTemplate->m_uiStrings[0] = "Spot Player_";
-	curTemplate->m_uiStrings[1] = "_Start is not a starting point for any player.";
+	curTemplate->m_uiStrings[1] = "_Start is not a starting point for any player (";
+	curTemplate->m_uiStrings[2] = ").";
 
 	curTemplate = &m_conditionTemplates[Condition::SPOT_NEIGHBOURING];
 	curTemplate->m_internalName = "SPOT_NEIGHBOURING";
@@ -7788,6 +7790,28 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[1] = " will send its units to repair at the closest suitable buildings. Units with full HP will also get sent back (";
 	curTemplate->m_uiStrings[2] = ").";
 
+	curTemplate = &m_actionTemplates[ScriptAction::UNIT_REPAIR];
+	curTemplate->m_internalName = "UNIT_REPAIR";
+	curTemplate->m_uiName = "Unit/Repair/Send a unit to repair at the closest suitable buildings.";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will send its units to repair at the closest suitable buildings.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_REPAIR_TYPE];
+	curTemplate->m_internalName = "TEAM_REPAIR_TYPE";
+	curTemplate->m_uiName = "Team/Repair/Send a team's objects of a specific type to repair at the closest suitable buildings.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::BOOLEAN;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " will send its units of type ";
+	curTemplate->m_uiStrings[2] = " to repair at the closest suitable buildings. Units with full HP will also get sent back (";
+	curTemplate->m_uiStrings[3] = ").";
+
 	curTemplate = &m_conditionTemplates[Condition::TEAM_CAN_LOAD_TRANSPORTS];
 	curTemplate->m_internalName = "TEAM_CAN_LOAD_TRANSPORTS";
 	curTemplate->m_uiName = "Team/Transport/Team is able to load infantry into transports.";
@@ -7830,6 +7854,74 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[4] = " as there are allied units of type ";
 	curTemplate->m_uiStrings[5] = " within a ";
 	curTemplate->m_uiStrings[6] = " foot radius.\n\nNOTE: if the ratio is 1.00f, you simply ask without a ratio.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::ADD_PRIORITY_SET_TO_OTHER];
+	curTemplate->m_internalName = "ADD_PRIORITY_SET_TO_OTHER";
+	curTemplate->m_uiName = "AttackPrioritySet/Add an attack priority set's settings to another set.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::ATTACK_PRIORITY_SET;
+	curTemplate->m_parameters[1] = Parameter::ATTACK_PRIORITY_SET;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " Add ";
+	curTemplate->m_uiStrings[1] = "'s content to ";
+	curTemplate->m_uiStrings[2] = ".";
+
+	curTemplate = &m_actionTemplates[ScriptAction::INCREASE_PRIORITY_IN_SET_TYPE];
+	curTemplate->m_internalName = "INCREASE_PRIORITY_IN_SET_TYPE";
+	curTemplate->m_uiName = "AttackPrioritySet/Increase the priority of objects of a specific type in a set.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::ATTACK_PRIORITY_SET;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::INT;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " Increase the priority of ";
+	curTemplate->m_uiStrings[1] = "'s objects of type ";
+	curTemplate->m_uiStrings[2] = " by ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::DECREASE_PRIORITY_IN_SET_TYPE];
+	curTemplate->m_internalName = "DECREASE_PRIORITY_IN_SET_TYPE";
+	curTemplate->m_uiName = "AttackPrioritySet/Decrease the priority of objects of a specific type in a set.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::ATTACK_PRIORITY_SET;
+	curTemplate->m_parameters[1] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[2] = Parameter::INT;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " Decrease the priority of ";
+	curTemplate->m_uiStrings[1] = "'s objects of type ";
+	curTemplate->m_uiStrings[2] = " by ";
+
+	curTemplate = &m_conditionTemplates[Condition::UNIT_RELOADED];
+	curTemplate->m_internalName = "UNIT_RELOADED";
+	curTemplate->m_uiName = "Unit/Unit is reloaded.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::UNIT;
+	curTemplate->m_parameters[1] = Parameter::BOOLEAN;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = "is reloaded (partially: ";
+	curTemplate->m_uiStrings[2] = ").";
+
+	curTemplate = &m_conditionTemplates[Condition::TEAM_RELOADED];
+	curTemplate->m_internalName = "TEAM_RELOADED";
+	curTemplate->m_uiName = "Team/Team is reloaded.";
+	curTemplate->m_numParameters = 2;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::BOOLEAN;
+	curTemplate->m_numUiStrings = 3;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = "is reloaded (partially: ";
+	curTemplate->m_uiStrings[2] = ").";
+
+	curTemplate = &m_actionTemplates[ScriptAction::AI_PLAYER_CLOSEST_DOZER_BUILDING_PRIORITY];
+	curTemplate->m_internalName = "AI_PLAYER_CLOSEST_DOZER_BUILDING_PRIORITY";
+	curTemplate->m_uiName = "Skirmish Only/AI prioritizes AIData entries with a close non-busy dozer";
+	curTemplate->m_numParameters = 1;
+	curTemplate->m_parameters[0] = Parameter::BOOLEAN;
+	curTemplate->m_numUiStrings = 2;
+	curTemplate->m_uiStrings[0] = " AI prioritizes AIData entries with the closest non-busy dozer (";
+	curTemplate->m_uiStrings[1] = ").";
+
+
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
 	//-------------------------------------------------------------------------------------------------
@@ -8243,17 +8335,11 @@ void ScriptEngine::update()
 			_adjustVariable(m_flags[k].name.str(), m_flags[k].value);
 		}
 	}
-	//-------------------------------------------------------------------------------------------------
-	//------------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS ---------------------------------
-	//-------------------------------------------------------------------------------------------------
 
+	// @CLP_AI addition
 	for (int l = 1; l < m_numKDRatios; ++l) {
 		_adjustVariable(m_KDRatios[l].name.str(), m_KDRatios[l].valueKills, m_KDRatios[l].valueDeaths);
 	}
-
-	//-------------------------------------------------------------------------------------------------
-	//----------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS END -------------------------------
-	//-------------------------------------------------------------------------------------------------
 
 #ifdef RTS_DEBUG
 	if (TheGameLogic->getFrame() == 0) {
@@ -8805,94 +8891,7 @@ const TCounter *ScriptEngine::getCounter(const AsciiString& counterName)
 	return nullptr;
 }
 
-
 //-------------------------------------------------------------------------------------------------
-//----------------------------------- @CLP_AI SCRIPT ADDITIONS ------------------------------------
-//-------------------------------------------------------------------------------------------------
-
-Int ScriptEngine::allocateKDRatio(const AsciiString& name)
-{
-	// Manually put in the Index
-	Int ndx = m_currentPlayer->getPlayerIndex();
-	AsciiString pName;
-	pName.format("%s%d", name, ndx);
-
-	Int i;
-	// Note - KDRatios start at 1.  0 means not assigned.
-	for (i = 1; i < m_numKDRatios; i++) {
-		if (pName == m_KDRatios[i].name) {
-			return i;
-		}
-	}
-	if (m_numKDRatios < MAX_KD_RATIOS) {
-		m_KDRatios[m_numKDRatios].name = pName;
-		i = m_numKDRatios;
-		m_numKDRatios++;
-		return(i);
-	}
-	return 0; // Shouldn't ever happen.
-}
-
-//-------------------------------------------------------------------------------------------------
-const TKDRatio* ScriptEngine::getKDRatio(const AsciiString& counterName)
-{
-	Int i;
-	for (i = 1; i < m_numKDRatios; i++)
-	{
-		if (counterName == m_KDRatios[i].name)
-		{
-			return &(m_KDRatios[i]);
-		}
-	}
-	return nullptr;
-}
-
-//-------------------------------------------------------------------------------------------------
-Bool ScriptEngine::evaluateTwoCounters(Condition* pCondition)
-{
-	Int counterNdxA = pCondition->getParameter(0)->getInt();
-	if (counterNdxA == 0) {
-		counterNdxA = allocateCounter(pCondition->getParameter(0)->getString());
-		pCondition->getParameter(0)->friend_setInt(counterNdxA);
-	}
-
-	Int counterNdxB = pCondition->getParameter(2)->getInt();
-	if (counterNdxB == 0) {
-		counterNdxB = allocateCounter(pCondition->getParameter(2)->getString());
-		pCondition->getParameter(2)->friend_setInt(counterNdxB);
-	}
-
-	switch (pCondition->getParameter(1)->getInt()) {
-	case Parameter::LESS_THAN: return m_counters[counterNdxA].value < m_counters[counterNdxB].value;
-	case Parameter::LESS_EQUAL: return m_counters[counterNdxA].value <= m_counters[counterNdxB].value;
-	case Parameter::EQUAL: return m_counters[counterNdxA].value == m_counters[counterNdxB].value;
-	case Parameter::GREATER_EQUAL: return m_counters[counterNdxA].value >= m_counters[counterNdxB].value;
-	case Parameter::GREATER: return m_counters[counterNdxA].value > m_counters[counterNdxB].value;
-	case Parameter::NOT_EQUAL: return m_counters[counterNdxA].value != m_counters[counterNdxB].value;
-	}
-	return false;
-}
-
-//-------------------------------------------------------------------------------------------------
-void ScriptEngine::copyCounter(ScriptAction* pAction)
-{
-	Int counterNdxA = pAction->getParameter(0)->getInt();
-	if (counterNdxA == 0) {
-		counterNdxA = allocateCounter(pAction->getParameter(0)->getString());
-		pAction->getParameter(0)->friend_setInt(counterNdxA);
-	}
-	Int counterNdxB = pAction->getParameter(1)->getInt();
-	if (counterNdxB == 0) {
-		counterNdxB = allocateCounter(pAction->getParameter(1)->getString());
-		pAction->getParameter(1)->friend_setInt(counterNdxB);
-	}
-	m_counters[counterNdxB].value = m_counters[counterNdxA].value;
-}
-
-//-------------------------------------------------------------------------------------------------
-//--------------------------------- @CLP_AI SCRIPT ADDITIONS END ----------------------------------
-//-------------------------------------------------------------------------------------------------
-
 void ScriptEngine::createNamedMapReveal(const AsciiString& revealName, const AsciiString& waypointName, Real radiusToReveal, const AsciiString& playerName)
 {
 	VecNamedRevealIt it;
@@ -9301,6 +9300,220 @@ void ScriptEngine::copyKDRatioOntoCounters(ScriptAction* pAction)
 
 	m_counters[counterNdxB].value = m_KDRatios[counterNdxA].valueKills;
 	m_counters[counterNdxC].value = m_KDRatios[counterNdxA].valueDeaths;
+}
+
+//-------------------------------------------------------------------------------------------------
+Int ScriptEngine::allocateKDRatio(const AsciiString& name)
+{
+	// Manually put in the Index
+	Int ndx = m_currentPlayer->getPlayerIndex();
+	AsciiString pName;
+	pName.format("%s%d", name, ndx);
+
+	Int i;
+	// Note - KDRatios start at 1.  0 means not assigned.
+	for (i = 1; i < m_numKDRatios; i++) {
+		if (pName == m_KDRatios[i].name) {
+			return i;
+		}
+	}
+	if (m_numKDRatios < MAX_KD_RATIOS) {
+		m_KDRatios[m_numKDRatios].name = pName;
+		i = m_numKDRatios;
+		m_numKDRatios++;
+		return(i);
+	}
+	return 0; // Shouldn't ever happen.
+}
+
+//-------------------------------------------------------------------------------------------------
+const TKDRatio* ScriptEngine::getKDRatio(const AsciiString& counterName)
+{
+	Int i;
+	for (i = 1; i < m_numKDRatios; i++)
+	{
+		if (counterName == m_KDRatios[i].name)
+		{
+			return &(m_KDRatios[i]);
+		}
+	}
+	return nullptr;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptEngine::evaluateTwoCounters(Condition* pCondition)
+{
+	Int counterNdxA = pCondition->getParameter(0)->getInt();
+	if (counterNdxA == 0) {
+		counterNdxA = allocateCounter(pCondition->getParameter(0)->getString());
+		pCondition->getParameter(0)->friend_setInt(counterNdxA);
+	}
+
+	Int counterNdxB = pCondition->getParameter(2)->getInt();
+	if (counterNdxB == 0) {
+		counterNdxB = allocateCounter(pCondition->getParameter(2)->getString());
+		pCondition->getParameter(2)->friend_setInt(counterNdxB);
+	}
+
+	switch (pCondition->getParameter(1)->getInt()) {
+	case Parameter::LESS_THAN: return m_counters[counterNdxA].value < m_counters[counterNdxB].value;
+	case Parameter::LESS_EQUAL: return m_counters[counterNdxA].value <= m_counters[counterNdxB].value;
+	case Parameter::EQUAL: return m_counters[counterNdxA].value == m_counters[counterNdxB].value;
+	case Parameter::GREATER_EQUAL: return m_counters[counterNdxA].value >= m_counters[counterNdxB].value;
+	case Parameter::GREATER: return m_counters[counterNdxA].value > m_counters[counterNdxB].value;
+	case Parameter::NOT_EQUAL: return m_counters[counterNdxA].value != m_counters[counterNdxB].value;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptEngine::copyCounter(ScriptAction* pAction)
+{
+	Int counterNdxA = pAction->getParameter(0)->getInt();
+	if (counterNdxA == 0) {
+		counterNdxA = allocateCounter(pAction->getParameter(0)->getString());
+		pAction->getParameter(0)->friend_setInt(counterNdxA);
+	}
+	Int counterNdxB = pAction->getParameter(1)->getInt();
+	if (counterNdxB == 0) {
+		counterNdxB = allocateCounter(pAction->getParameter(1)->getString());
+		pAction->getParameter(1)->friend_setInt(counterNdxB);
+	}
+	m_counters[counterNdxB].value = m_counters[counterNdxA].value;
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptEngine::addPrioritySetToOther(ScriptAction* pAction)
+{
+	DEBUG_ASSERTCRASH(pAction->getNumParameters() >= 3, ("Not enough parameters."));
+
+	AttackPriorityInfo* sourceInfo = findAttackInfo(pAction->getParameter(0)->getString(), false);
+	AttackPriorityInfo* targetInfo = findAttackInfo(pAction->getParameter(1)->getString(), true);
+	if (!sourceInfo || !targetInfo) return;
+
+	AttackPriorityMap* sourceMap = sourceInfo->getAttackPriorityMap();
+	if (!sourceMap) return;
+
+	for (AttackPriorityMap::iterator it = sourceMap->begin(); it != sourceMap->end(); ++it)
+	{
+		const ThingTemplate* sourceTemplate = it->first;
+		if (!sourceTemplate)
+			continue;
+
+		Int sourcePriority = it->second;
+
+		targetInfo->setPriority(sourceTemplate, sourcePriority);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptEngine::increasePriorityOfType(ScriptAction* pAction)
+{
+	DEBUG_ASSERTCRASH(pAction->getNumParameters() >= 4, ("Not enough parameters."));
+
+	AttackPriorityInfo* info = findAttackInfo(pAction->getParameter(0)->getString(), true);
+	if (!info) return;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(pAction->getParameter(1)->getString());
+	ObjectTypes* types = TheScriptEngine->getObjectTypes(pAction->getParameter(1)->getString());
+	if (!templ && !types) return;
+
+	AttackPriorityMap* map = info->getAttackPriorityMap();
+	if (!map) return;
+
+	Int priority = pAction->getParameter(2)->getInt();
+
+	if (templ) {
+		AttackPriorityMap::iterator it = map->find(templ);
+
+		if (it != map->end())
+			info->setPriority(templ, it->second + priority);
+		else
+			info->setPriority(templ, priority);
+	}
+	else {
+		std::vector<const ThingTemplate*> templates;
+		for (size_t i = 0; i < types->getListSize(); ++i)
+		{
+			const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
+			if (t) templates.push_back(t);
+		}
+		if (templates.empty())
+			return;
+
+		for (size_t i = 0; i < templates.size(); i++)
+		{
+			const ThingTemplate* t = templates[i];
+
+			AttackPriorityMap::iterator it = map->find(t);
+			
+			if (it != map->end())
+				info->setPriority(t, it->second + priority);
+			else
+				info->setPriority(t, priority);
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptEngine::decreasePriorityOfType(ScriptAction* pAction)
+{
+	DEBUG_ASSERTCRASH(pAction->getNumParameters() >= 4, ("Not enough parameters."));
+
+	AttackPriorityInfo* info = findAttackInfo(pAction->getParameter(0)->getString(), true);
+	if (!info) return;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(pAction->getParameter(1)->getString());
+	ObjectTypes* types = TheScriptEngine->getObjectTypes(pAction->getParameter(1)->getString());
+	if (!templ && !types) return;
+
+	AttackPriorityMap* map = info->getAttackPriorityMap();
+	if (!map) return;
+
+	Int priority = pAction->getParameter(2)->getInt();
+
+	if (templ) {
+		AttackPriorityMap::iterator it = map->find(templ);
+
+		if (it != map->end()) {
+			if (it->second - priority >= 0) {
+				info->setPriority(templ, it->second - priority);
+			}
+			else {
+				info->setPriority(templ, 0);
+			}
+		}
+		else
+			info->setPriority(templ, 0);
+	}
+	else {
+		std::vector<const ThingTemplate*> templates;
+		for (size_t i = 0; i < types->getListSize(); ++i)
+		{
+			const ThingTemplate* t = TheThingFactory->findTemplate(types->getNthInList(i));
+			if (t) templates.push_back(t);
+		}
+		if (templates.empty())
+			return;
+
+		for (size_t i = 0; i < templates.size(); i++)
+		{
+			const ThingTemplate* t = templates[i];
+
+			AttackPriorityMap::iterator it = map->find(t);
+
+			if (it != map->end()) {
+				if (it->second - priority >= 0) {
+					info->setPriority(t, it->second - priority);
+				}
+				else {
+					info->setPriority(t, 0);
+				}
+			}
+			else
+				info->setPriority(t, 0);
+		}
+	}
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -10662,8 +10875,7 @@ void ScriptEngine::executeActions( ScriptAction *pActionHead )
 			case ScriptAction::DISABLE_SCRIPT: disableScript(pCurAction);break;
 			case ScriptAction::CALL_SUBROUTINE: callSubroutine(pCurAction);break;
 
-
-
+			//@CLP_AI additions
 			case ScriptAction::SET_COUNTER_RANDOM: setCounterRandom(pCurAction, true); break;
 			case ScriptAction::COPY_COUNTER: copyCounter(pCurAction); break;
 			case ScriptAction::SET_KD_RATIO: setKDRatio(pCurAction); break;
@@ -10674,6 +10886,9 @@ void ScriptEngine::executeActions( ScriptAction *pActionHead )
 			case ScriptAction::UPDATE_KD_RATIO_KILLS_BUILDCOST: updateKDRatioKills(pCurAction); break;
 			case ScriptAction::UPDATE_KD_RATIO_DEATHS_BUILDCOST: updateKDRatioDeaths(pCurAction); break;
 			case ScriptAction::COPY_KD_RATIO_ONTO_COUNTERS: copyKDRatioOntoCounters(pCurAction); break;
+			case ScriptAction::ADD_PRIORITY_SET_TO_OTHER: addPrioritySetToOther(pCurAction); break;
+			case ScriptAction::INCREASE_PRIORITY_IN_SET_TYPE:increasePriorityOfType(pCurAction); break;
+			case ScriptAction::DECREASE_PRIORITY_IN_SET_TYPE:decreasePriorityOfType(pCurAction); break;
 
 			// Fade operations.
 			case ScriptAction::CAMERA_FADE_ADD :
