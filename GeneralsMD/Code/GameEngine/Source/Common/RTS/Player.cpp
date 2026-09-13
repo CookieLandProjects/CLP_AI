@@ -655,20 +655,42 @@ void Player::setBuildList(BuildListInfo *pBuildList)
 }
 
 //=============================================================================
+void Player::addToBuildListAdvancedEPO(const ThingTemplate* tmpl, const Coord3D& location, Real bAngle, INT rebuildTimes, BOOLEAN exactPositionOnly)
+{
+	BuildListInfo* newInfo = newInstance(BuildListInfo);
+	newInfo->setTemplateName(tmpl->getName());
+	newInfo->setLocation(location);
+	newInfo->setAngle(bAngle);
+	newInfo->setExactPositionOnly(exactPositionOnly);
+	newInfo->setNumRebuilds(rebuildTimes);
+	newInfo->setObjectTimestamp(TheGameLogic->getFrame());
+
+	newInfo->setNextBuildList(m_pBuildList);
+	m_pBuildList = newInfo;
+}
+
+//=============================================================================
+void Player::addToBuildListAdvanced(Object* obj, INT rebuildTimes, BOOLEAN exactPositionOnly)
+{
+	BuildListInfo* newInfo = newInstance(BuildListInfo);
+	newInfo->setObjectID(obj->getID());
+	newInfo->setTemplateName(obj->getTemplate()->getName());
+	newInfo->setLocation(*obj->getPosition());
+	newInfo->setAngle(obj->getOrientation());
+	newInfo->setExactPositionOnly(exactPositionOnly);
+	newInfo->setNumRebuilds(rebuildTimes);
+	newInfo->setObjectTimestamp(TheGameLogic->getFrame());
+
+	newInfo->setNextBuildList(m_pBuildList);
+	m_pBuildList = newInfo;
+}
+
+
+//=============================================================================
 void Player::addToBuildListTransfered(Object* obj)
 {
 	if (!obj || !obj->getTemplate())
 		return;
-	//DEBUG_LOG((
-	//	"[BUILDLIST] Added transferred building: "
-	//	"PlayerIndex=%d ObjectID=%d Template=%s Pos=(%.1f, %.1f, %.1f)",
-	//	getPlayerIndex(),
-	//	obj->getID(),
-	//	obj->getTemplate()->getName().str(),
-	//	obj->getPosition()->x,
-	//	obj->getPosition()->y,
-	//	obj->getPosition()->z
-	//	));
 	BuildListInfo* newInfo = newInstance(BuildListInfo);
 	newInfo->setObjectID(obj->getID());
 	newInfo->setTemplateName(obj->getTemplate()->getName());
@@ -4933,6 +4955,15 @@ void Player::rotateBuildListFromID(Int id, Real angle)
 	if (m_ai)
 		m_ai->rotateBuildListFromID(id, angle);
 }
+
+//=============================================================================
+void Player::clearBuildList()
+{
+	deleteInstance(m_pBuildList);
+	m_pBuildList = nullptr;
+}
+
+
 //-------------------------------------------------------------------------------------------------
 //--------------------------------- @CLP_AI PLAYER ADDITIONS END ----------------------------------
 //-------------------------------------------------------------------------------------------------

@@ -733,6 +733,9 @@ public:
 		DECREASE_PRIORITY_IN_SET_TYPE,								///< Decrease the priorty in a set by <Int> for <objectType>.
 
 		AI_PLAYER_CLOSEST_DOZER_BUILDING_PRIORITY,		///< The AI player chooses the AIData-entry closest to a non-busy dozer rather than the first unbuilt one.
+		AI_CLEAR_BUILDLIST,
+		AI_ADD_TO_BUILDLIST,
+		AREA_TRANSFER_TO_PLAYER,
 
 		//-------------------------------------------------------------------------------------------------
 		//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------

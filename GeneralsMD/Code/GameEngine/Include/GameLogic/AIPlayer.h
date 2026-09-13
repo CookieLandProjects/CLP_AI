@@ -219,6 +219,8 @@ public: // AIPlayer interface, may be overridden by AISkirmishPlayer.  jba.
 	virtual void selectSkillset(Int skillset);
 
 public:
+	void queueSupplyTruck();
+	void checkForSupplyCenter(BuildListInfo* info, Object* bldg);
 	Bool getBaseCenter(Coord3D *pos) const {*pos = m_baseCenter; return m_baseCenterSet;}
 	/// Difficulty level for this player.
 	GameDifficulty getAIDifficulty() const;
@@ -319,8 +321,6 @@ protected:
 	void computeCenterAndRadiusOfBase(Coord3D *center, Real *radius);
 	Object *findFactory(const ThingTemplate *thing, Bool busyOK, Team* team = nullptr); ///< Find a factory to build a unit.  If force is true, may return a busy factory.
 	void queueUnits();						///< Check the team build list, & queue up units at any idle factories.
-	void checkForSupplyCenter( BuildListInfo *info, Object *bldg);
- 	void queueSupplyTruck();
 	void updateBridgeRepair();
 	Bool dozerInQueue();
 	Object *findSupplyCenter(Int minSupplies);

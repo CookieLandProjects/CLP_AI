@@ -287,6 +287,7 @@ protected:
 	Bool			m_unsellable;
 	Bool			m_repairable;
 	Bool			m_automaticallyBuild;			///< If true, the ai will build.  If false, script has to enable this.
+	Bool			m_exactPositionOnly;			///< If true, the building must be placed at the exact position specified.
 
 
 	// For WorldBuilder use only:
@@ -320,6 +321,8 @@ public:
 	void setWhiner(Bool whiner) {m_whiner = whiner;}
 	void setUnsellable(Bool unsellable) {m_unsellable = unsellable;}
 	void setRepairable(Bool repairable) {m_repairable = repairable;}
+	void setExactPositionOnly(Bool b) { m_exactPositionOnly = b; }
+	Bool isExactPositionOnly() const { return m_exactPositionOnly; }
 
 public:
 	BuildListInfo *getNext() const {return m_nextBuildList;}

@@ -59,6 +59,9 @@
 
 #include "GameLogic/AI.h"
 #include "GameLogic/AIPathfind.h"
+#include "GameLogic/AIPlayer.h"
+#include "GameLogic/AISkirmishPlayer.h"
+#include "GameLogic/SidesList.h"
 #include "GameLogic/ExperienceTracker.h"
 #include "GameLogic/FiringTracker.h"
 #include "GameLogic/GameLogic.h"
@@ -953,6 +956,31 @@ void Object::setOrRestoreTeam( Team* team, Bool restoring )
 					const AttackPriorityInfo *info = TheScriptEngine->getAttackInfo(name);
 					if (info && info->getName().isNotEmpty()) {
 						ai->setAttackInfo(info);
+					}
+				}
+			}
+		}
+
+		if (!restoring && this->isKindOf(KINDOF_STRUCTURE))
+		{
+			Player* newOwner = m_team->getControllingPlayer();
+			AIPlayer* ai = newOwner->getAi();
+			if (newOwner && newOwner->isSkirmishAIPlayer())
+			{
+				newOwner->addToBuildListTransfered(this);
+				ai->onCapture(this);
+				if (ai && this->isKindOf(KINDOF_CASH_GENERATOR)) {
+					if (ai)
+					{
+						for (BuildListInfo* info = newOwner->getBuildList(); info; info = info->getNext())
+						{
+							if (info->getObjectID() == this->getID())
+							{
+								ai->checkForSupplyCenter(info, this);
+								ai->queueSupplyTruck();
+								break;
+							}
+						}
 					}
 				}
 			}
@@ -4630,6 +4658,10 @@ void Object::removeUpgrade( const UpgradeTemplate *upgradeT )
 //-------------------------------------------------------------------------------------------------
 void Object::onCapture( Player *oldOwner, Player *newOwner )
 {
+	if (oldOwner == newOwner)
+	{
+		return;
+	}
 	// Everybody chills when they captured so they don't keep doing something the new player might not want him to be doing
 	// TheSuperHackers @tweak Stubbjax 19/11/2025 Except when the new owner is an ally, so that Hackers keep on hacking, etc.
 	if( getAIUpdateInterface()  &&  (oldOwner != newOwner) )
@@ -4672,13 +4704,44 @@ void Object::onCapture( Player *oldOwner, Player *newOwner )
 	// mark the command bar to redraw
 	TheControlBar->markUIDirty();
 
-	if (oldOwner!=newOwner && newOwner->isSkirmishAIPlayer()) {
-		// The skirmish ai doesn't know what to do with captured faction buildings except sell them.
-		if (isFactionStructure()) {
-			TheBuildAssistant->sellObject( this );
+	//if (oldOwner!=newOwner && newOwner->isSkirmishAIPlayer()) {
+	//	// The skirmish ai doesn't know what to do with captured faction buildings except sell them.
+	//	if (isFactionStructure()) {
+	//		TheBuildAssistant->sellObject( this );
+	//		}
+	//	}
+
+	// n0ttws - 17/01/2026
+	// Notify the Dozer that it is mine now >:(
+	if (newOwner && newOwner->isSkirmishAIPlayer())
+	{
+		AIPlayer* ai = newOwner->getAi();
+		if (ai)
+		{
+			DEBUG_LOG(("Notifying AI via getAi() for capture of obj %d (ai ptr=%p)", getID(), ai));
+			ai->onCapture(this);
+		}
+		else
+		{
+			DEBUG_LOG(("isSkirmishAIPlayer() true but getAi() == nullptr  incomplete AI setup"));
 		}
 	}
 
+	// n0ttws - 17/01/2026
+	// Don't auto-sell captured faction structures. Instead, AI players will "recognize" and use them.
+	if (oldOwner != newOwner)
+	{
+		// If the new owner is an AI, add useful captured structures
+		// to its build list so the AI can consider them as usable production buildings.
+		if (newOwner && newOwner->isSkirmishAIPlayer()) {
+			// If this object has a production interface,
+			// add it to the new owner's build list so the AI can use it as a factory.
+			ProductionUpdateInterface* pui = getProductionUpdateInterface();
+			if (pui) {
+				newOwner->addToBuildList(this);
+			}
+		}
+	}
 }
 
 //-------------------------------------------------------------------------------------------------
