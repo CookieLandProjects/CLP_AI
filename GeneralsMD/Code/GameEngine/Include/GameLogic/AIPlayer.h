@@ -33,6 +33,8 @@
 
 enum { INVALID_SKILLSET_SELECTION = -1 };
 
+Bool findAnyLegalBuildLocation(const Coord3D &center, const ThingTemplate *tmpl, Real angle, Coord3D &outPos, Object *builder, Player *player, Bool skirmish, Real maxRadius);
+
 class BuildListInfo;
 
 struct FactoryReservation
@@ -253,6 +255,9 @@ public:
 	void buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real bAngle);
 	void buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real bAngle);
 	void buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real bAngle);
+
+	// Find a legal build position near center. Returns TRUE and gives outPos when found.
+	virtual Bool findLegalBuildPosition(const Coord3D &center, const ThingTemplate *tmpl, Real angle, Coord3D &outPos, Object *builder = nullptr, Bool skirmish = false, Real maxRadius = 0.0f);
 
 	Coord3D getSkirmishBuildListBaseCenter();
   Real getSkirmishBuildListBaseRadius();

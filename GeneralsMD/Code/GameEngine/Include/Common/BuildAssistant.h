@@ -162,6 +162,20 @@ public:
 																								 UnsignedInt options,
 																								 Player *thePlayer);
 
+		/**
+		 * n0ttws: Find a legal build location near a given center using a progressive search.
+		 * Returns true and gives outPos when a legal location is found.
+		 */
+		virtual Bool findLegalBuildLocation(const Coord3D &center,
+																				const ThingTemplate *tmpl,
+																				Real angle,
+																				Coord3D &outPos,
+																				const Int *flagsPriority,
+																				Int flagsCount,
+																				Real maxRadius,
+																				Real step,
+																				Player *player);
+
 	/// Adds bib highlighting for this location.
 	virtual void addBibs( const Coord3D *worldPos,
 																	const ThingTemplate *build );

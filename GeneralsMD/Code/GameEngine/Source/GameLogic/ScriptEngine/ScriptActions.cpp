@@ -1098,150 +1098,10 @@ void ScriptActions::doBuildBuilding(const AsciiString& buildingType)
 {
 	// This action ALWAYS occur on the current player.
 	Player *thePlayer = TheScriptEngine->getCurrentPlayer();
-	if (thePlayer) {
-				const ThingTemplate *tmpl = TheThingFactory->findTemplate(buildingType);
-				if (!tmpl) {
-						// fallback to original behavior which will log an error in case stuff fails.
-						thePlayer->buildSpecificBuilding(buildingType);
-						return;
-				}
+	if (!thePlayer) return;
 
-				BuildListInfo *preferredInfo = nullptr;
-				for (BuildListInfo *info = thePlayer->getBuildList(); info; info = info->getNext()) {
-						if (info->getTemplateName() == buildingType) {
-								preferredInfo = info;
-								break;
-						}
-				}
-
-				if (preferredInfo) {
-						Coord3D infoPos = *preferredInfo->getLocation();
-						Real infoAngle = preferredInfo->getAngle();
-						Coord3D placePos = infoPos;
-						placePos.z = TheTerrainLogic->getGroundHeight(placePos.x, placePos.y);
-
-						if (TheBuildAssistant->isLocationLegalToBuild(&placePos, tmpl, infoAngle, BuildAssistant::NO_OBJECT_OVERLAP, nullptr, thePlayer) == LBC_OK) {
-								thePlayer->buildSpecificBuilding(buildingType);
-								TheTerrainVisual->removeAllBibs();
-								return;
-						}
-
-						if (preferredInfo->isExactPositionOnly()) {
-								thePlayer->buildSpecificBuilding(buildingType);
-								return;
-						}
-
-						const Int flagsToTry[] = {
-								BuildAssistant::CLEAR_PATH | BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP,
-								BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP,
-								BuildAssistant::NO_OBJECT_OVERLAP
-						};
-						const Real cell = PATHFIND_CELL_SIZE_F;
-						const Real step = cell;
-						const Real maxRadius = 80 * cell; // keep search near the original position
-						Bool found = FALSE;
-						Coord3D tryPos;
-						for (Int f = 0; f < (Int)(sizeof(flagsToTry)/sizeof(flagsToTry[0])) && !found; ++f) {
-								Int flags = flagsToTry[f];
-								for (Real r = 0.0f; r <= maxRadius && !found; r += 2.0f*cell) {
-										Real offset = r/2.0f;
-										Real yStart = infoPos.y - offset;
-										Real yEnd = infoPos.y + offset;
-										for (Real y = yStart; y <= yEnd && !found; y += step) {
-												Real xStart = infoPos.x - offset;
-												Real xEnd = infoPos.x + offset;
-												for (Real x = xStart; x <= xEnd; x += step) {
-														tryPos = infoPos;
-														tryPos.x = x;
-														tryPos.y = y;
-														tryPos.z = TheTerrainLogic->getGroundHeight(tryPos.x, tryPos.y);
-														if (TheBuildAssistant->isLocationLegalToBuild(&tryPos, tmpl, infoAngle, flags, nullptr, thePlayer) == LBC_OK) {
-																found = TRUE;
-																break;
-														}
-												}
-										}
-								}
-						}
-
-						if (found) {
-								tryPos.z = 0;
-								thePlayer->addToPriorityBuildList(buildingType, &tryPos, infoAngle);
-								TheTerrainVisual->removeAllBibs();
-								return;
-						}
-				}
-
-				Coord3D center;
-				Bool haveCenter = thePlayer->getAiBaseCenter(&center);
-				if (!haveCenter) {
-						for (Object *obj = TheGameLogic->getFirstObject(); obj; obj = obj->getNextObject()) {
-								if (obj->getControllingPlayer() == thePlayer) {
-										center = *obj->getPosition();
-										haveCenter = TRUE;
-										break;
-								}
-						}
-				}
-
-				if (!haveCenter) {
-						center.x = 0.0f; center.y = 0.0f; center.z = 0.0f;
-				}
-
-				Real angle = tmpl->getPlacementViewAngle();
-
-				Coord3D placePos = center;
-				placePos.z = TheTerrainLogic->getGroundHeight(placePos.x, placePos.y);
-				if (TheBuildAssistant->isLocationLegalToBuild(&placePos, tmpl, angle, BuildAssistant::NO_OBJECT_OVERLAP, nullptr, thePlayer) == LBC_OK) {
-						placePos.z = 0;
-						thePlayer->addToPriorityBuildList(buildingType, &placePos, angle);
-						TheTerrainVisual->removeAllBibs();
-						return;
-				}
-
-				const Int flagsToTry2[] = {
-						BuildAssistant::CLEAR_PATH | BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP,
-						BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP,
-						BuildAssistant::NO_OBJECT_OVERLAP
-				};
-
-				const Real cell2 = PATHFIND_CELL_SIZE_F;
-				const Real step2 = cell2;
-				const Real maxRadius2 = 300 * cell2;
-				Bool found2 = FALSE;
-				Coord3D tryPos2;
-				for (Int f = 0; f < (Int)(sizeof(flagsToTry2)/sizeof(flagsToTry2[0])) && !found2; ++f) {
-						Int flags = flagsToTry2[f];
-						for (Real r = 0.0f; r <= maxRadius2 && !found2; r += 2.0f*cell2) {
-								Real offset = r/2.0f;
-								Real yStart = center.y - offset;
-								Real yEnd = center.y + offset;
-								for (Real y = yStart; y <= yEnd && !found2; y += step2) {
-										Real xStart = center.x - offset;
-										Real xEnd = center.x + offset;
-										for (Real x = xStart; x <= xEnd; x += step2) {
-												tryPos2 = center;
-												tryPos2.x = x;
-												tryPos2.y = y;
-												tryPos2.z = TheTerrainLogic->getGroundHeight(tryPos2.x, tryPos2.y);
-												if (TheBuildAssistant->isLocationLegalToBuild(&tryPos2, tmpl, angle, flags, nullptr, thePlayer) == LBC_OK) {
-														found2 = TRUE;
-														break;
-												}
-										}
-								}
-						}
-				}
-
-				if (found2) {
-						tryPos2.z = 0;
-						thePlayer->addToPriorityBuildList(buildingType, &tryPos2, angle);
-						TheTerrainVisual->removeAllBibs();
-						return;
-				}
-
-				thePlayer->buildSpecificBuilding(buildingType);
-	}
+  // n0ttws: Wiggle logic moved to a more logical location now, was i drunk when making this?
+	thePlayer->buildSpecificBuilding(buildingType);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -8680,57 +8540,11 @@ void ScriptActions::doBuildObjectNearestTypeAngle(const AsciiString& playerName,
 
 	if (angle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
 
-		const ThingTemplate* tmpl = TheThingFactory->findTemplate(buildingType);
-		if (tmpl) {
-		Coord3D center = *bestObj->getPosition();
-		Coord3D tryPos;
-		const Real cell = PATHFIND_CELL_SIZE_F;
-		const Real step = cell;
-		const Real maxRadius = 600 * cell;
-		Bool found = FALSE;
-		Real radAngle = (PI / 180.0f) * angle;
-
-		if (TheBuildAssistant->isLocationLegalToBuild(&center, tmpl, radAngle, BuildAssistant::NO_OBJECT_OVERLAP, nullptr, thePlayer) == LBC_OK) {
-			tryPos = center;
-			found = TRUE;
-		}
-
-		const Int flagsToTry[] = {
-			BuildAssistant::NO_OBJECT_OVERLAP,
-			BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP,
-			BuildAssistant::CLEAR_PATH | BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP
-		};
-		for (Int f = 0; f < (Int)(sizeof(flagsToTry)/sizeof(flagsToTry[0])) && !found; ++f) {
-			Int flags = flagsToTry[f];
-			for (Real r = 0.0f; r <= maxRadius && !found; r += 2.0f*cell) {
-				Real offset = r/2.0f;
-				Real yStart = center.y - offset;
-				Real yEnd = center.y + offset;
-				for (Real y = yStart; y <= yEnd && !found; y += step) {
-					Real xStart = center.x - offset;
-					Real xEnd = center.x + offset;
-					for (Real x = xStart; x <= xEnd; x += step) {
-						tryPos = center;
-						tryPos.x = x;
-						tryPos.y = y;
-						tryPos.z = TheTerrainLogic->getGroundHeight(tryPos.x, tryPos.y);
-						if (TheBuildAssistant->isLocationLegalToBuild(&tryPos, tmpl, radAngle, flags, nullptr, thePlayer) == LBC_OK) {
-							found = TRUE;
-							break;
-						}
-					}
-				}
-			}
-		}
-		if (found) {
-			tryPos.z = 0;
-			thePlayer->addToPriorityBuildList(buildingType, &tryPos, radAngle);
-			TheTerrainVisual->removeAllBibs();
-			return;
-		}
-		}
-
+		// Delegate placement and any advanced "wiggle" searching to the AI/dozer phase.
+		// All scripts should request the AI to build near the object; the AI will
+		// perform any necessary search/adjustment when a dozer is available.
 		thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle);
+		return;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -8792,52 +8606,15 @@ void ScriptActions::doBuildObjectNearestKindOfAngle(const AsciiString& playerNam
 
 		const ThingTemplate* tmpl = TheThingFactory->findTemplate(buildingType);
 		if (tmpl) {
-		Coord3D center = *bestObj->getPosition();
-		Coord3D tryPos;
-		const Real cell = PATHFIND_CELL_SIZE_F;
-		const Real step = cell;
-		const Real maxRadius = 600 * cell;
-		Bool found = FALSE;
-		Real radAngle = (PI / 180.0f) * angle;
+			Coord3D center = *bestObj->getPosition();
+			Real radAngle = (PI / 180.0f) * angle;
 
-		if (TheBuildAssistant->isLocationLegalToBuild(&center, tmpl, radAngle, BuildAssistant::NO_OBJECT_OVERLAP, nullptr, thePlayer) == LBC_OK) {
-			tryPos = center;
-			found = TRUE;
-		}
-
-		const Int flagsToTry[] = {
-			BuildAssistant::NO_OBJECT_OVERLAP,
-			BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP,
-			BuildAssistant::CLEAR_PATH | BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP
-		};
-		for (Int f = 0; f < (Int)(sizeof(flagsToTry)/sizeof(flagsToTry[0])) && !found; ++f) {
-			Int flags = flagsToTry[f];
-			for (Real r = 0.0f; r <= maxRadius && !found; r += 2.0f*cell) {
-				Real offset = r/2.0f;
-				Real yStart = center.y - offset;
-				Real yEnd = center.y + offset;
-				for (Real y = yStart; y <= yEnd && !found; y += step) {
-					Real xStart = center.x - offset;
-					Real xEnd = center.x + offset;
-					for (Real x = xStart; x <= xEnd; x += step) {
-						tryPos = center;
-						tryPos.x = x;
-						tryPos.y = y;
-						tryPos.z = TheTerrainLogic->getGroundHeight(tryPos.x, tryPos.y);
-						if (TheBuildAssistant->isLocationLegalToBuild(&tryPos, tmpl, radAngle, flags, nullptr, thePlayer) == LBC_OK) {
-							found = TRUE;
-							break;
-						}
-					}
-				}
+			// Quick check if the center itself is valid; if so, request AI to build there.
+			if (TheBuildAssistant->isLocationLegalToBuild(&center, tmpl, radAngle, BuildAssistant::NO_OBJECT_OVERLAP, nullptr, thePlayer) == LBC_OK) {
+				thePlayer->buildSpecificBuilding(buildingType);
+				TheTerrainVisual->removeAllBibs();
+				return;
 			}
-		}
-		if (found) {
-			tryPos.z = 0;
-			thePlayer->addToPriorityBuildList(buildingType, &tryPos, radAngle);
-			TheTerrainVisual->removeAllBibs();
-			return;
-		}
 		}
 
 		thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle);

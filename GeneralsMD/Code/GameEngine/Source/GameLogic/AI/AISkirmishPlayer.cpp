@@ -458,67 +458,67 @@ void AISkirmishPlayer::buildSpecificAIBuilding(const AsciiString &thingName)
 				continue; // already marked for priority build.
 			}
 			if (!m_player->getClosestDozerBuildingPriority()) {
-				foundUnbuilt = true;
-				info->markPriorityBuild();
-				break;
-			}
-			else {
-				const Coord3D* infoPos = info->getLocation();
+						foundUnbuilt = true;
+						info->markPriorityBuild();
+					break;
+				}
+				else {
+					const Coord3D* infoPos = info->getLocation();
 
-				// First-time acquisition
-				if (!closestInfo) {
+					// First-time acquisition
+					if (!closestInfo) {
+						Object* closestDozer = ThePartitionManager->getClosestObject(infoPos, FLT_MAX, FROM_CENTER_2D, filters);
+						const Coord3D* dozerPos = closestDozer->getPosition();
+						if (closestDozer) {
+							Real dx = dozerPos->x - infoPos->x;
+							Real dy = dozerPos->y - infoPos->y;
+							Real distSqr = dx * dx + dy * dy;
+
+							closestDist = distSqr;
+						}
+						closestInfo = info;
+						continue;
+					}
+
 					Object* closestDozer = ThePartitionManager->getClosestObject(infoPos, FLT_MAX, FROM_CENTER_2D, filters);
-					const Coord3D* dozerPos = closestDozer->getPosition();
-					if (closestDozer) {
+					if (closestDozer)
+					{
+						const Coord3D* dozerPos = closestDozer->getPosition();
+
 						Real dx = dozerPos->x - infoPos->x;
 						Real dy = dozerPos->y - infoPos->y;
 						Real distSqr = dx * dx + dy * dy;
 
-						closestDist = distSqr;
-					}
-					closestInfo = info;
-					continue;
-				}
-
-				Object* closestDozer = ThePartitionManager->getClosestObject(infoPos, FLT_MAX, FROM_CENTER_2D, filters);
-				if (closestDozer)
-				{
-					const Coord3D* dozerPos = closestDozer->getPosition();
-
-					Real dx = dozerPos->x - infoPos->x;
-					Real dy = dozerPos->y - infoPos->y;
-					Real distSqr = dx * dx + dy * dy;
-
-					if (distSqr < closestDist) {
-						closestDist = distSqr;
-						closestInfo = info;
+						if (distSqr < closestDist) {
+							closestDist = distSqr;
+							closestInfo = info;
+						}
 					}
 				}
 			}
 		}
-	}
 
-	if (m_player->getClosestDozerBuildingPriority() && closestInfo) {
-		foundUnbuilt = true;
-		closestInfo->markPriorityBuild();
-	}
+		if (m_player->getClosestDozerBuildingPriority() && closestInfo) {
+			foundUnbuilt = true;
+			closestInfo->markPriorityBuild();
+		}
 
-	if (foundUnbuilt) {
-		m_buildDelay = 0;
-		AsciiString buildingStr = "Queueing building '";
-		buildingStr.concat(thingName);
-		buildingStr.concat("' for construction.");
-		TheScriptEngine->AppendDebugMessage(buildingStr, false);
+		if (foundUnbuilt) {
+			m_buildDelay = 0;
+			AsciiString buildingStr = "Queueing building '";
+			buildingStr.concat(thingName);
+			buildingStr.concat("' for construction.");
+			TheScriptEngine->AppendDebugMessage(buildingStr, false);
 	}	else if (found) {
-		AsciiString buildingStr = "Warning - all instances of building '";
-		buildingStr.concat(thingName);
-		buildingStr.concat("' are already built or queued for build, not queueing.");
-		TheScriptEngine->AppendDebugMessage(buildingStr, false);
+			AsciiString buildingStr = "Warning - all instances of building '";
+			buildingStr.concat(thingName);
+			buildingStr.concat("' are already built or queued for build, not queueing.");
+			TheScriptEngine->AppendDebugMessage(buildingStr, false);
 	}	else {
-		AsciiString buildingStr = "Error - could not find building '";
-		buildingStr.concat(thingName);
-		buildingStr.concat("' in the building template list.");
-		TheScriptEngine->AppendDebugMessage(buildingStr, false);
+			AsciiString buildingStr = "Error - could not find building '";
+			buildingStr.concat(thingName);
+			buildingStr.concat("' in the building template list.");
+			TheScriptEngine->AppendDebugMessage(buildingStr, false);
 	}
 }
 
@@ -1790,38 +1790,18 @@ void AISkirmishPlayer::buildSpecificAIBuildingFromID(const AsciiString& thingNam
 				const Real cell = PATHFIND_CELL_SIZE_F;
 				const Real step = cell;
 				const Real maxRadius = 300 * cell;
-				Bool found = FALSE;
-				Coord3D tryPos;
 				const Int flagsToTry[] = {
 					BuildAssistant::NO_OBJECT_OVERLAP,
 					BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP,
 					BuildAssistant::CLEAR_PATH | BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP
 				};
-				for (Int f = 0; f < (Int)(sizeof(flagsToTry)/sizeof(flagsToTry[0])) && !found; ++f) {
-					Int flags = flagsToTry[f];
-					for (Real r = 0.0f; r <= maxRadius && !found; r += 2.0f*cell) {
-						Real offset = r/2.0f;
-						Real yStart = center.y - offset;
-						Real yEnd = center.y + offset;
-						for (Real y = yStart; y <= yEnd && !found; y += step) {
-							Real xStart = center.x - offset;
-							Real xEnd = center.x + offset;
-							for (Real x = xStart; x <= xEnd; x += step) {
-								tryPos = center;
-								tryPos.x = x;
-								tryPos.y = y;
-								tryPos.z = TheTerrainLogic->getGroundHeight(tryPos.x, tryPos.y);
-								if (TheBuildAssistant->isLocationLegalToBuild(&tryPos, tmpl, angle, flags, nullptr, m_player) == LBC_OK) {
-									found = TRUE;
-									break;
-								}
-							}
-						}
-					}
-				}
-				if (found) {
-					tryPos.z = 0; // ground-relative for build list
-					copy->setLocation(tryPos);
+				Coord3D foundPos;
+				// n0ttws: Use me new wiggly wiggle :D
+				if (TheBuildAssistant->findLegalBuildLocation(center, tmpl, angle, foundPos, flagsToTry,
+					(Int)(sizeof(flagsToTry)/sizeof(flagsToTry[0])), maxRadius, step, m_player))
+				{
+					foundPos.z = 0;
+					copy->setLocation(foundPos);
 					copy->setAngle(angle);
 				}
 			}

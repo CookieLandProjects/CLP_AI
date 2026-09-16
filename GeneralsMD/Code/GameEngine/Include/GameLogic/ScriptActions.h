@@ -525,9 +525,6 @@ protected:
 	void doRelocateWaypointTeam(const AsciiString& waypointName, const AsciiString& teamName);
 	void doRelocateWaypointType(const AsciiString& waypointName, const AsciiString& objectType, Int selectionMode);
 	void doSetWaypointBiDirectional(const AsciiString& waypointName, Bool biDirectional);
-	void doAIClearBuildList(const AsciiString& player);
-	void doAIAddToBuildList(const AsciiString& player, const AsciiString& object, Coord3D* coords, Real angle, BOOLEAN initbuilt, INT rebuildTimes, BOOLEAN exactPositionOnly);
-	void doTransferAreaToPlayer(const AsciiString& areaName, const AsciiString& playerName);
 
 	void doTeamHuntWithCommandButtonType(const AsciiString& teamName, const AsciiString& ability, const AsciiString& objectType);
 
@@ -545,7 +542,11 @@ protected:
 	void doTeamSendToRepairType(const AsciiString& teamName, const AsciiString& objectType, Bool sendBackFullHP);
 
 	void doSetAIDataClosestBuildingToDozerPriority(Bool isUsing);
+	void doAIClearBuildList(const AsciiString& player);
+	void doAIAddToBuildList(const AsciiString& player, const AsciiString& object, Coord3D* coords, Real angle, BOOLEAN initbuilt, INT rebuildTimes, BOOLEAN exactPositionOnly);
+	void doTransferAreaToPlayer(const AsciiString& areaName, const AsciiString& playerName);
 
+	// @n0ttws: 4 additions
 	// @-TanSo-: 125 additions
 
 	//-------------------------------------------------------------------------------------------------

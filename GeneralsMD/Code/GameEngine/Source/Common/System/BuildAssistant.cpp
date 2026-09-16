@@ -73,6 +73,97 @@ ObjectSellInfo::ObjectSellInfo()
 
 }
 
+//-------------------------------------------------------------------------------------------------
+// Find a legal build location near a given center using a progressive search.
+// Returns TRUE and gives outPos when a suitable location is found.
+//-------------------------------------------------------------------------------------------------
+Bool BuildAssistant::findLegalBuildLocation(const Coord3D &center,
+																						const ThingTemplate *tmpl,
+																						Real angle,
+																						Coord3D &outPos,
+																						const Int *flagsPriority,
+																						Int flagsCount,
+																						Real maxRadius,
+																						Real step,
+																						Player *player)
+{
+		if (!tmpl || flagsCount <= 0 || step <= 0.0f) return FALSE;
+
+		Coord3D tryPos = center;
+		tryPos.z = TheTerrainLogic->getGroundHeight(tryPos.x, tryPos.y);
+
+		// Quick center check with the strictest option first
+		if (isLocationLegalToBuild(&tryPos, tmpl, angle, flagsPriority[0], nullptr, player) == LBC_OK) {
+				outPos = tryPos;
+				outPos.z = 0;
+				return TRUE;
+		}
+
+		// Try rings around the center.
+		// This is more likely to find the nearest legal spot quickly compared to a full grid.
+		for (Int f = 0; f < flagsCount; ++f) {
+				Int flags = flagsPriority[f];
+
+				// Check the center for this flag set
+				tryPos = center;
+				tryPos.z = TheTerrainLogic->getGroundHeight(tryPos.x, tryPos.y);
+				if (isLocationLegalToBuild(&tryPos, tmpl, angle, flags, nullptr, player) == LBC_OK) {
+						outPos = tryPos;
+						outPos.z = 0;
+						return TRUE;
+				}
+
+				for (Real r = step; r <= maxRadius; r += step) {
+						Int numSamples = max(8, (Int)ceil((2.0f * PI * r) / step));
+						for (Int s = 0; s < numSamples; ++s) {
+								Real theta = (2.0f * PI * s) / (Real)numSamples;
+								tryPos.x = center.x + r * cos(theta);
+								tryPos.y = center.y + r * sin(theta);
+								tryPos.z = TheTerrainLogic->getGroundHeight(tryPos.x, tryPos.y);
+								if (isLocationLegalToBuild(&tryPos, tmpl, angle, flags, nullptr, player) == LBC_OK) {
+										LegalBuildCode clearCheck = isLocationClearOfObjects(&tryPos, tmpl, angle, nullptr, BuildAssistant::NO_OBJECT_OVERLAP, player);
+										if (clearCheck != LBC_OK) {
+												continue; // skippp!
+										}
+										outPos = tryPos;
+										outPos.z = 0;
+										return TRUE;
+								}
+						}
+				}
+		}
+
+		// If rings didnt work, try this as fallback
+		Real fallbackRadius = min(maxRadius, step * 4.0f);
+		if (fallbackRadius > 0.0f) {
+				Real gridStep = step * 0.5f;
+				for (Real r = 0.0f; r <= fallbackRadius; r += gridStep) {
+						Real offset = r;
+						Real yStart = center.y - offset;
+						Real yEnd = center.y + offset;
+						for (Real y = yStart; y <= yEnd; y += gridStep) {
+								Real xStart = center.x - offset;
+								Real xEnd = center.x + offset;
+								for (Real x = xStart; x <= xEnd; x += gridStep) {
+										tryPos.x = x;
+										tryPos.y = y;
+										tryPos.z = TheTerrainLogic->getGroundHeight(tryPos.x, tryPos.y);
+										if (isLocationLegalToBuild(&tryPos, tmpl, angle, flagsPriority[0], nullptr, player) == LBC_OK) {
+												LegalBuildCode clearCheck = isLocationClearOfObjects(&tryPos, tmpl, angle, nullptr, BuildAssistant::NO_OBJECT_OVERLAP, player);
+												if (clearCheck == LBC_OK) {
+														outPos = tryPos;
+														outPos.z = 0;
+														return TRUE;
+												}
+										}
+								}
+						}
+				}
+		}
+
+		return FALSE;
+}
+
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
 ObjectSellInfo::~ObjectSellInfo()
