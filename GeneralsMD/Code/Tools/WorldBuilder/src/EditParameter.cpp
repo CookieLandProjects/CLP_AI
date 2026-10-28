@@ -1986,6 +1986,8 @@ BOOL EditParameter::OnInitDialog()
 			pList->InsertString(-1, "Random");
 			pList->InsertString(-1, "Youngest");
 			pList->InsertString(-1, "Oldest");
+			pList->InsertString(-1, "Closest To Enemy");
+			pList->InsertString(-1, "Farthest From Enemy");
 			pList->SetCurSel(m_parameter->getInt());
 			showList = true;
 		}

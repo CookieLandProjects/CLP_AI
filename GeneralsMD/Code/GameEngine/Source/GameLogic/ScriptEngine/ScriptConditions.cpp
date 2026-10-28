@@ -59,7 +59,9 @@
 #include "GameLogic/ScriptEngine.h"
 #include "GameLogic/Scripts.h"
 #include "GameLogic/VictoryConditions.h"
-
+//@-TanSo-: We need this, thanks :)
+#include "GameLogic/SidesList.h"
+#include "GameLogic/Module/ProductionUpdate.h"
 
 class ObjectTypesTemp
 {
@@ -5491,96 +5493,32 @@ Bool ScriptConditions::evaluateTeamClosestRelationType(Parameter* pTeamParm, Int
 	Team* pTeam = TheScriptEngine->getTeamNamed(pTeamParm->getString());
 	if (!pTeam) return false;
 
-	Real cDist = FLT_MAX;
 	const Coord3D* teamPos = pTeam->getEstimateTeamPosition();
 	if (!teamPos) return false;
 
-	Player::PlayerTeamList::const_iterator it;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType->getString());
-	if (templ)
+	UnsignedInt relation = 0;
+	switch (pRelation)
 	{
-		for (int i = 0; i < ThePlayerList->getPlayerCount() - 1; i++) {
-			if (ThePlayerList->getNthPlayer(i)->getRelationship(pTeam->getControllingPlayer()->getDefaultTeam()) == pRelation)
-			{
-				if (ThePlayerList->getNthPlayer(i) == pTeam->getControllingPlayer() && pRelation != ALLIES) // Count me in if ALLIES!
-					continue;
-
-				for (it = ThePlayerList->getNthPlayer(i)->getPlayerTeams()->begin(); it != ThePlayerList->getNthPlayer(i)->getPlayerTeams()->end(); ++it)
-				{
-					for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
-						Team* team = iter.cur();
-						if (!team) continue;
-
-						for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
-							Object* pObj = iter.cur();
-							if (!pObj) continue;
-
-							if (pObj->getTemplate() != templ)
-								continue;
-
-							Coord3D oCoords = *pObj->getPosition();
-							Real dist = oCoords.lengthSqr() - teamPos->lengthSqr();
-
-							// Only possible if inside a garrison or unit, and then not desirable.
-							if (dist < 10.0f) continue;
-
-							if (dist < cDist) { cDist = dist; }
-
-						}
-					}
-				}
-			}
-		}
+	case ENEMIES: relation = ALLOW_ENEMIES; break;
+	case NEUTRAL: relation = ALLOW_NEUTRAL; break;
+	case ALLIES: relation = ALLOW_ALLIES; break;
 	}
-	else
-	{
-		ObjectTypes* type = TheScriptEngine->getObjectTypes(objectType->getString());
-		if (type)
-		{
-			for (int i = 0; i < ThePlayerList->getPlayerCount() - 1; i++) {
-				if (ThePlayerList->getNthPlayer(i)->getRelationship(pTeam->getControllingPlayer()->getDefaultTeam()) == pRelation)
-				{
-					if (ThePlayerList->getNthPlayer(i) == pTeam->getControllingPlayer() && pRelation != ALLIES) // Count me in if ALLIES!
-						continue;
 
-					for (it = ThePlayerList->getNthPlayer(i)->getPlayerTeams()->begin(); it != ThePlayerList->getNthPlayer(i)->getPlayerTeams()->end(); ++it)
-					{
-						for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
-							Team* team = iter.cur();
-							if (!team) continue;
+	PartitionFilterPlayerAffiliation f1(pTeam->getControllingPlayer(), relation, TRUE);
+	PartitionFilter* filters[] = { &f1, nullptr };
 
-							for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
-								Object* pObj = iter.cur();
-								if (!pObj) continue;
+	Object* closestObject = TheScriptEngine->getObjectWithSelectionMode(teamPos, filters, objectType->getString(), Parameter::CLOSEST);
+	if (!closestObject) return false;
 
-								if (!type->isInSet(pObj->getTemplate()))
-									continue;
-
-								Coord3D oCoords = *pObj->getPosition();
-								Real dist = oCoords.length() - teamPos->length();
-
-								// Only possible if inside a garrison or unit, and then not desirable.
-								if (dist < 10.0f) continue;
-
-								if (dist < cDist) { cDist = dist; }
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	if (cDist == FLT_MAX)	return false;
-
+	Real dist = fabs(closestObject->getPosition()->length() - teamPos->length());
 	switch (pComparisonParm->getInt())
 	{
-	case Parameter::LESS_THAN:			return cDist < value;
-	case Parameter::LESS_EQUAL:			return cDist <= value;
-	case Parameter::EQUAL:					return fabs(cDist - value) < 0.01f;
-	case Parameter::GREATER_EQUAL:	return cDist >= value;
-	case Parameter::GREATER:				return cDist > value;
-	case Parameter::NOT_EQUAL:			return fabs(cDist - value) >= 0.01f;
+	case Parameter::LESS_THAN:			return dist < value;
+	case Parameter::LESS_EQUAL:			return dist <= value;
+	case Parameter::EQUAL:					return fabs(dist - value) < 0.01f;
+	case Parameter::GREATER_EQUAL:	return dist >= value;
+	case Parameter::GREATER:				return dist > value;
+	case Parameter::NOT_EQUAL:			return fabs(dist - value) >= 0.01f;
 	}
 
 	return false;
@@ -5592,96 +5530,32 @@ Bool ScriptConditions::evaluateUnitClosestRelationType(Parameter* pUnitParm, Int
 	Object* pUnit = TheScriptEngine->getUnitNamed(pUnitParm->getString());
 	if (!pUnit) return false;
 
-	Real cDist = FLT_MAX;
 	const Coord3D* unitPos = pUnit->getPosition();
 	if (!unitPos) return false;
 
-	Player::PlayerTeamList::const_iterator it;
-
-	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType->getString());
-	if (templ)
+	UnsignedInt relation = 0;
+	switch (pRelation)
 	{
-		for (int i = 0; i < ThePlayerList->getPlayerCount() - 1; i++) {
-			if (ThePlayerList->getNthPlayer(i)->getRelationship(pUnit->getControllingPlayer()->getDefaultTeam()) == pRelation)
-			{
-				if (ThePlayerList->getNthPlayer(i) == pUnit->getControllingPlayer() && pRelation != ALLIES) // Count me in if ALLIES!
-					continue;
-
-				for (it = ThePlayerList->getNthPlayer(i)->getPlayerTeams()->begin(); it != ThePlayerList->getNthPlayer(i)->getPlayerTeams()->end(); ++it)
-				{
-					for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
-						Team* team = iter.cur();
-						if (!team) continue;
-
-						for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
-							Object* pObj = iter.cur();
-							if (!pObj) continue;
-
-							if (pObj->getTemplate() != templ)
-								continue;
-
-							Coord3D oCoords = *pObj->getPosition();
-							Real dist = oCoords.lengthSqr() - unitPos->lengthSqr();
-
-							// Only possible if inside a garrison or unit, and then not desirable.
-							if (dist < 10.0f) continue;
-
-							if (dist < cDist) { cDist = dist; }
-
-						}
-					}
-				}
-			}
-		}
+	case ENEMIES: relation = ALLOW_ENEMIES; break;
+	case NEUTRAL: relation = ALLOW_NEUTRAL; break;
+	case ALLIES: relation = ALLOW_ALLIES; break;
 	}
-	else
-	{
-		ObjectTypes* type = TheScriptEngine->getObjectTypes(objectType->getString());
-		if (type)
-		{
-			for (int i = 0; i < ThePlayerList->getPlayerCount() - 1; i++) {
-				if (ThePlayerList->getNthPlayer(i)->getRelationship(pUnit->getControllingPlayer()->getDefaultTeam()) == pRelation)
-				{
-					if (ThePlayerList->getNthPlayer(i) == pUnit->getControllingPlayer() && pRelation != ALLIES) // Count me in if ALLIES!
-						continue;
 
-					for (it = ThePlayerList->getNthPlayer(i)->getPlayerTeams()->begin(); it != ThePlayerList->getNthPlayer(i)->getPlayerTeams()->end(); ++it)
-					{
-						for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
-							Team* team = iter.cur();
-							if (!team) continue;
+	PartitionFilterPlayerAffiliation f1(pUnit->getControllingPlayer(), relation, TRUE);
+	PartitionFilter* filters[] = { &f1, nullptr };
 
-							for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
-								Object* pObj = iter.cur();
-								if (!pObj) continue;
+	Object* closestObject = TheScriptEngine->getObjectWithSelectionMode(unitPos, filters, objectType->getString(), Parameter::CLOSEST);
+	if (!closestObject) return false;
 
-								if (!type->isInSet(pObj->getTemplate()))
-									continue;
-
-								Coord3D oCoords = *pObj->getPosition();
-								Real dist = oCoords.lengthSqr() - unitPos->lengthSqr();
-
-								// Only possible if inside a garrison or unit, and then not desirable.
-								if (dist < 10.0f) continue;
-
-								if (dist < cDist) { cDist = dist; }
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	if (cDist == FLT_MAX)	return false;
-
+	Real dist = fabs(closestObject->getPosition()->length() - unitPos->length());
 	switch (pComparisonParm->getInt())
 	{
-	case Parameter::LESS_THAN:			return cDist < value;
-	case Parameter::LESS_EQUAL:			return cDist <= value;
-	case Parameter::EQUAL:					return fabs(cDist - value) < 0.01f;
-	case Parameter::GREATER_EQUAL:	return cDist >= value;
-	case Parameter::GREATER:				return cDist > value;
-	case Parameter::NOT_EQUAL:			return fabs(cDist - value) >= 0.01f;
+	case Parameter::LESS_THAN:			return dist < value;
+	case Parameter::LESS_EQUAL:			return dist <= value;
+	case Parameter::EQUAL:					return fabs(dist - value) < 0.01f;
+	case Parameter::GREATER_EQUAL:	return dist >= value;
+	case Parameter::GREATER:				return dist > value;
+	case Parameter::NOT_EQUAL:			return fabs(dist - value) >= 0.01f;
 	}
 
 	return false;
@@ -5895,7 +5769,7 @@ Bool ScriptConditions::evaluateClosestTeamMemberToEnemyHasSightedComparisonRatio
 
 	// Okay, we now have our closest team member found. Back to the enemy filter and count enemies in sight. 
 	filters[1] = &filterEnemies;
-	SimpleObjectIterator* iterEnemy = ThePartitionManager->iterateObjectsInRange(closestTeamMember, closestTeamMember->getShroudClearingRange(), FROM_CENTER_2D, filters);
+	SimpleObjectIterator* iterEnemy = ThePartitionManager->iterateObjectsInRange(closestTeamMember, radius, FROM_CENTER_2D, filters);
 	MemoryPoolObjectHolder holdEnemies(iterEnemy);
 	Real countEnemies = (Real) iterEnemy->getCount();
 
@@ -6003,7 +5877,7 @@ Bool ScriptConditions::evaluateClosestTeamMemberToEnemyHasSightedComparisonTypeR
 	}
 	filters[3] = nullptr;
 
-	SimpleObjectIterator* iterEnemy = ThePartitionManager->iterateObjectsInRange(closestTeamMember, closestTeamMember->getShroudClearingRange(), FROM_CENTER_2D, filters);
+	SimpleObjectIterator* iterEnemy = ThePartitionManager->iterateObjectsInRange(closestTeamMember, radius, FROM_CENTER_2D, filters);
 	MemoryPoolObjectHolder holdEnemies(iterEnemy);
 	Real countEnemies = (Real)iterEnemy->getCount();
 
@@ -6088,6 +5962,199 @@ Bool ScriptConditions::evaluateTeamIsReloaded(Parameter* pTeamParm, Bool partial
 
 	}
 	return true;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateAIDataBuildsLeft(Parameter* pComparisonParm, Int value, Parameter* objectType)
+{
+	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
+	if (!pPlayer) return FALSE;
+
+	Int countMax = 0;
+	Int countCur = 0;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType->getString());
+	ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType->getString());
+	if (!templ && !types) return FALSE;
+
+	for (BuildListInfo* info = pPlayer->getBuildList(); info; info = info->getNext())
+	{
+		if (templ) {
+			if (templ->getName() != info->getTemplateName())
+				continue;
+		}
+		else {
+			if (!types->isInSet(info->getTemplateName()))
+				continue;
+		}
+
+		if (info->isPriorityBuild() || info->getObjectID() != INVALID_ID)
+			countCur++;
+
+		countMax++;
+	}
+
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:			return countMax - countCur < value; break;
+	case Parameter::LESS_EQUAL:			return countMax - countCur <= value; break;
+	case Parameter::EQUAL:					return countMax - countCur == value; break;
+	case Parameter::GREATER_EQUAL:	return countMax - countCur >= value; break;
+	case Parameter::GREATER:				return countMax - countCur > value; break;
+	case Parameter::NOT_EQUAL:			return countMax - countCur != value; break;
+	}
+	return FALSE;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateComparisonSkirmishSpecialPowerIsReady(Parameter* pSkirmishPlayerParm, Parameter* pComparisonParm, Int value, Parameter* pPower)
+{
+	Int nextFrame = TheGameLogic->getFrame() + 1;
+	const SpecialPowerTemplate* power = TheSpecialPowerStore->findSpecialPowerTemplate(pPower->getString());
+	if (!power)
+		return false;
+
+	Player* pPlayer = playerFromParam(pSkirmishPlayerParm);
+	if (!pPlayer)
+		return false;
+
+	Int count = 0;
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance())
+		{
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+			{
+				Object* pObj = iter.cur();
+				if (!pObj) continue;
+
+				if (pObj->getStatusBits().test(OBJECT_STATUS_UNDER_CONSTRUCTION) || pObj->isDisabled())
+					continue;
+
+				SpecialPowerModuleInterface* mod = pObj->getSpecialPowerModule(power);
+				if (mod)
+				{
+					if (!TheSpecialPowerStore->canUseSpecialPower(pObj, power))
+						continue;
+
+					if (mod->isReady()) count++;
+					if (mod->getReadyFrame() < nextFrame) nextFrame = mod->getReadyFrame();
+				}
+			}
+		}
+	}
+
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:			return count < value; break;
+	case Parameter::LESS_EQUAL:			return count <= value; break;
+	case Parameter::EQUAL:					return count == value; break;
+	case Parameter::GREATER_EQUAL:	return count >= value; break;
+	case Parameter::GREATER:				return count > value; break;
+	case Parameter::NOT_EQUAL:			return count != value; break;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateComparisonFreeFactorieSlotsType(Parameter* pPlayerParm, Parameter* pComparisonParm, Int value, Parameter* objectType, Int amountSlots)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer)
+		return false;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType->getString());
+	ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType->getString());
+	if (!templ && !types) return false;
+
+	Int count = 0;
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance())
+		{
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+			{
+				Object* pObj = iter.cur();
+				if (!pObj) continue;
+
+				ProductionUpdateInterface* pu = pObj->getProductionUpdateInterface();
+				if (!pu) continue;
+
+				if (templ) {
+					if (templ != pObj->getTemplate())
+						continue;
+				}
+				else {
+					if (!types->isInSet(pObj->getTemplate()))
+						continue;
+				}
+
+				if(pu->getProductionCount() < amountSlots)
+					count++;
+			}
+		}
+	}
+
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:			return count < value; break;
+	case Parameter::LESS_EQUAL:			return count <= value; break;
+	case Parameter::EQUAL:					return count == value; break;
+	case Parameter::GREATER_EQUAL:	return count >= value; break;
+	case Parameter::GREATER:				return count > value; break;
+	case Parameter::NOT_EQUAL:			return count != value; break;
+	}
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateAIDataBuildsInQueue(Parameter* pComparisonParm, Int value, Parameter* objectType)
+{
+	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
+	if (!pPlayer) return FALSE;
+
+	Int countMax = 0;
+	Int countCur = 0;
+
+	const ThingTemplate* templ = TheThingFactory->findTemplate(objectType->getString());
+	ObjectTypes* types = TheScriptEngine->getObjectTypes(objectType->getString());
+	if (!templ && !types) return FALSE;
+
+	for (BuildListInfo* info = pPlayer->getBuildList(); info; info = info->getNext())
+	{
+		if (templ) {
+			if (templ->getName() != info->getTemplateName())
+				continue;
+		}
+		else {
+			if (!types->isInSet(info->getTemplateName()))
+				continue;
+		}
+
+		if (info->getObjectID() != INVALID_ID || !info->isPriorityBuild() || info->isUnderConstruction())
+			countCur++;
+
+		countMax++;
+	}
+
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:			return countMax - countCur < value; break;
+	case Parameter::LESS_EQUAL:			return countMax - countCur <= value; break;
+	case Parameter::EQUAL:					return countMax - countCur == value; break;
+	case Parameter::GREATER_EQUAL:	return countMax - countCur >= value; break;
+	case Parameter::GREATER:				return countMax - countCur > value; break;
+	case Parameter::NOT_EQUAL:			return countMax - countCur != value; break;
+	}
+	return FALSE;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -6493,5 +6560,13 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 		case Condition::TEAM_RELOADED:
 			return evaluateTeamIsReloaded(pCondition->getParameter(0), pCondition->getParameter(1)->getInt());
 
+		case Condition::AIDATA_BUILDS_LEFT:
+			return evaluateAIDataBuildsLeft(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2));
+		case Condition::SKIRMISH_COMPARISON_SPECIAL_POWER_READY:
+			return evaluateComparisonSkirmishSpecialPowerIsReady(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getInt(), pCondition->getParameter(3));
+		case Condition::PLAYER_COMPARISON_FREE_FACTORY_SLOTS_TYPE:
+			return evaluateComparisonFreeFactorieSlotsType(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getInt(), pCondition->getParameter(3), pCondition->getParameter(4)->getInt());
+		case Condition::AIDATA_BUILDS_IN_QUEUE:
+			return evaluateAIDataBuildsInQueue(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2));
 	}
 }

@@ -316,6 +316,7 @@ public:
 	virtual WorkerAIInterface* getWorkerAIInterface() { return nullptr; }
 	virtual const WorkerAIInterface* getWorkerAIInterface() const { return nullptr; }
 	virtual WorkerAIUpdate* getWorkerAIUpdate() { return nullptr; }
+	virtual const WorkerAIUpdate* getWorkerAIUpdate() const { return nullptr; }
 	virtual HackInternetAIInterface* getHackInternetAIInterface() { return nullptr; }
 	virtual const HackInternetAIInterface* getHackInternetAIInterface() const { return nullptr; }
 	virtual AssaultTransportAIInterface* getAssaultTransportAIInterface() { return nullptr; }
@@ -801,6 +802,10 @@ private:
 	Bool				m_allowedToChase;						///< Allowed to pursue targets.
 	Bool				m_isInUpdate;								///< If true, we are inside our update method.
 	Bool				m_fixLocoInPostProcess;
+
+	//@CLP_AI additions
+	public:
+		void aiFlankPosition(const Coord3D* targetPos, Real angle, Real distance);
 };
 
 //------------------------------------------------------------------------------------------------------------

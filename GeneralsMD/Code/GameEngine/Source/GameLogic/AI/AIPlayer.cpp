@@ -686,6 +686,14 @@ Object *AIPlayer::buildStructureNow(const ThingTemplate *bldgPlan, BuildListInfo
 // ------------------------------------------------------------------------------------------------
 Object *AIPlayer::buildStructureWithDozer(const ThingTemplate *bldgPlan, BuildListInfo *info)
 {
+	//@-TanSo-: There are buildings that are only allowed to be built ONCE. Make sure they wont clog our build list.
+	if (!m_player->canBuildMoreOfType(bldgPlan))
+	{
+		info->setBuildLocationBlocked(true);
+		m_readyToBuildStructure = true;
+		m_buildDelay = 0;
+	}
+	
 	// Find a dozer.
 	Object *dozer = findDozer(info->getLocation());
 	if (dozer==nullptr) {
@@ -721,35 +729,37 @@ Object *AIPlayer::buildStructureWithDozer(const ThingTemplate *bldgPlan, BuildLi
 
 		// validate the the position to build at is valid
 		if( TheBuildAssistant->isLocationLegalToBuild( &pos, bldgPlan, angle,
-																																																 BuildAssistant::CLEAR_PATH |
-																																																 BuildAssistant::TERRAIN_RESTRICTIONS |
-																																																 BuildAssistant::NO_OBJECT_OVERLAP,
-																																																 dozer, m_player ) != LBC_OK ) {
+																										BuildAssistant::CLEAR_PATH |
+																										BuildAssistant::TERRAIN_RESTRICTIONS |
+																										BuildAssistant::NO_OBJECT_OVERLAP,
+																										dozer, m_player ) != LBC_OK ) {
 				// Warn.
 				AsciiString bldgName = bldgPlan->getName();
 				bldgName.concat(" - Dozer unable to place.  Attempting to adjust position.");
 				TheScriptEngine->AppendDebugMessage(bldgName, false);
-								Coord3D newPos;
-								// Wiggle wiggle wiggle!
-								Real limit = 80*PATHFIND_CELL_SIZE_F;
-								if (findAnyLegalBuildLocation(pos, bldgPlan, angle, newPos, dozer, m_player, isSkirmishAI(), limit)) {
-												pos = newPos;
-												// n0ttws: If the new legal location is found then set that as our info building location for the rest of that match.
-												// Useful so searches dont repeat later on.
-												// Under rare occasions this will be illegal again so we'll search from that new spot now.
-												Coord3D origLoc = *info->getLocation();
-												if (!info->isExactPositionOnly() && (fabs(origLoc.x) > 0.001f || fabs(origLoc.y) > 0.001f)) {
-																info->setLocation(pos);
-												}
-								} else {
-										if (TheBuildAssistant->isLocationLegalToBuild(&pos, bldgPlan, angle,
-																																		BuildAssistant::NO_ENEMY_OBJECT_OVERLAP,
-																																		dozer, m_player) == LBC_OK)
-										{
-												info->setBuildLocationBlocked(true);
-										}
-										return nullptr;
-								}
+					Coord3D newPos;
+					// Wiggle wiggle wiggle!
+					Real limit = 80*PATHFIND_CELL_SIZE_F;
+					if (findAnyLegalBuildLocation(pos, bldgPlan, angle, newPos, dozer, m_player, isSkirmishAI(), limit)) {
+									pos = newPos;
+									// n0ttws: If the new legal location is found then set that as our info building location for the rest of that match.
+									// Useful so searches dont repeat later on.
+									// Under rare occasions this will be illegal again so we'll search from that new spot now.
+									Coord3D origLoc = *info->getLocation();
+									if (!info->isExactPositionOnly() && (fabs(origLoc.x) > 0.001f || fabs(origLoc.y) > 0.001f)) {
+													info->setLocation(pos);
+									}
+					} else {
+						if (TheBuildAssistant->isLocationLegalToBuild(&pos, bldgPlan, angle,
+																													BuildAssistant::NO_ENEMY_OBJECT_OVERLAP,
+																													dozer, m_player) == LBC_OK)
+						{
+							info->setBuildLocationBlocked(true);
+							m_readyToBuildStructure = true;
+							m_buildDelay = 0;
+						}
+						return nullptr;
+					}
 		}
 
 	TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
@@ -1080,7 +1090,8 @@ void AIPlayer::guardSupplyCenter( Team *team, Int minSupplies )
 //-------------------------------------------------------------------------------------------------
 Bool AIPlayer::isSupplySourceAttacked()
 {
-	const Int SCAN_RATE = 10; // don't scan more often than every 10 seconds.
+	//@-TanSo-: NO. 10 seconds is WAY too little. 2 Seconds is more reasonable.
+	const Int SCAN_RATE = 2; // don't scan more often than every 10 seconds.
 	UnsignedInt curFrame = TheGameLogic->getFrame();
 	if (curFrame==0) {
 		m_supplySourceAttackCheckFrame = curFrame+SCAN_RATE;
@@ -1598,11 +1609,123 @@ Bool AIPlayer::startTraining( WorkOrder *order, Bool busyOK, AsciiString teamNam
 }
 
 // ------------------------------------------------------------------------------------------------
+Object* AIPlayer::findFactory(const ThingTemplate* thing, Bool busyOK, Team* team)
+{
+	Object* bestBusyFactory = nullptr;
+	Int bestBusyCount = INT_MAX;
+
+	Bool teamHasReservation = false;
+
+	// First determine whether this team already owns any factory.
+	if (team != nullptr)
+	{
+		for (FactoryReservation reservation : m_factoryReservations)
+		{
+			if (reservation.team == team)
+			{
+				teamHasReservation = true;
+				break;
+			}
+		}
+	}
+
+	for (BuildListInfo* info = m_player->getBuildList(); info; info = info->getNext())
+	{
+		Object* factory = TheGameLogic->findObjectByID(info->getObjectID());
+		if (!factory)
+			continue;
+
+		if (factory->getControllingPlayer() != m_player)
+		{
+			info->setObjectID(INVALID_ID);
+			continue;
+		}
+
+		if (factory->testStatus(OBJECT_STATUS_UNDER_CONSTRUCTION))
+			continue;
+
+		if (factory->testStatus(OBJECT_STATUS_SOLD))
+			continue;
+
+		ProductionUpdateInterface* pu = factory->getProductionUpdateInterface();
+		if (!pu)
+			continue;
+
+		if (!TheBuildAssistant->isPossibleToMakeUnit(factory, thing))
+			continue;
+
+		// A factory reserved by another team never ever is a candidate.
+		FactoryReservation* reservation = getReservation(factory->getID());
+		Bool reservedForOtherTeam = team != nullptr && reservation->team != nullptr && reservation->team != team;
+		if (reservedForOtherTeam)
+			continue;
+
+		Bool reservedForThisTeam = team != nullptr && reservation->team == team;
+
+		Bool busy = pu->getProductionCount() > 0;
+
+		// Own reservation -> highest priority.
+		if (reservedForThisTeam)
+		{
+			if (!busy)
+				return factory;
+
+			if (busyOK)
+			{
+				Int productionCount = pu->getProductionCount();
+
+				if (!bestBusyFactory ||
+					productionCount < bestBusyCount)
+				{
+					bestBusyFactory = factory;
+					bestBusyCount = productionCount;
+				}
+			}
+
+			continue;
+		}
+
+		// Unreserved factory.
+		if (reservation->team == nullptr)
+		{
+			Bool allowedForTeam = true;
+
+			if (teamHasReservation) {
+				allowedForTeam = isNearTeamFactory(factory, team);
+			}
+
+			if (!allowedForTeam)
+				continue;
+
+			if (!busy)
+				return factory;
+
+			if (busyOK)
+			{
+				Int productionCount = pu->getProductionCount();
+
+				if (!bestBusyFactory ||
+					productionCount < bestBusyCount)
+				{
+					bestBusyFactory = factory;
+					bestBusyCount = productionCount;
+				}
+			}
+		}
+	}
+
+	if (busyOK)
+		return bestBusyFactory;
+
+	return nullptr;
+}
+
+// ------------------------------------------------------------------------------------------------
 /** Search the computer player's buildings for one that can build the given request.
 	* If busyOK is true, it will return a busy factory if there are no idle ones.  This is
 	* used for script invoked teams "push" to the front of the queue. */
 // ------------------------------------------------------------------------------------------------
-Object *AIPlayer::findFactory(const ThingTemplate *thing, Bool busyOK, Team* team)
+/*Object* AIPlayer::findFactory(const ThingTemplate* thing, Bool busyOK, Team* team)
 {
 	Object *busyFactory = nullptr; // We prefer a factory that isn't busy.
 	FactoryReservation* reservation = nullptr; // -TanSo-: Check whether a factory is already reserved.
@@ -1668,7 +1791,7 @@ Object *AIPlayer::findFactory(const ThingTemplate *thing, Bool busyOK, Team* tea
 		return busyFactory;
 
 	return nullptr;
-}
+}*/
 
 // ------------------------------------------------------------------------------------------------
 /** Return true if team can be considered for building */
@@ -4841,12 +4964,45 @@ void AIPlayer::releaseFactoryReservations(Team* team)
 }
 
 //-------------------------------------------------------------------------------------------------
+Bool AIPlayer::isNearTeamFactory(Object* factory, Team* team)
+{
+	Real maxDistance = 500.0f; // Consider "close by" if within 500 feet from another factory.
+
+	for (FactoryReservation reservation : m_factoryReservations)
+	{
+		if (reservation.team != team)
+			continue;
+
+		Object* reservedFactory = TheGameLogic->findObjectByID(reservation.factoryID);
+		if (!reservedFactory)
+			continue;
+
+		Real distSqr = ThePartitionManager->getDistanceSquared(factory, reservedFactory, FROM_CENTER_2D);
+
+		if (distSqr <= sqr(maxDistance))
+			return true;
+	}
+
+	return false;
+}
+
+//-------------------------------------------------------------------------------------------------
 Bool AIPlayer::isDockOccupied(ObjectID id) const
 {
-	for (Int i = 0; i < m_supplyDockReservations.size(); i++)
-	{
-		if (m_supplyDockReservations[i].dockID == id)
-			return true;
+	for (Int i = 0; i < ThePlayerList->getPlayerCount(); i++) {
+		Player* pPlayer = ThePlayerList->getNthPlayer(i);
+		if (!pPlayer || !pPlayer->getAi()) continue;
+
+		// Avoid putting up a scaffold at a supply my friend is trying to harvest from.
+		if (pPlayer != m_player && pPlayer->getRelationship(m_player->getDefaultTeam()) != ALLIES)
+			continue;
+
+		std::vector<SupplyDockReservation> supRes = pPlayer->getAi()->getSupplyDockReservations();
+		for (Int j = 0; j < supRes.size(); j++)
+		{
+			if (supRes[j].dockID == id)
+				return true;
+		}
 	}
 	return false;
 }
@@ -4870,30 +5026,28 @@ void AIPlayer::setDockOccupation(ObjectID dockID, ObjectID centerID)
 //-------------------------------------------------------------------------------------------------
 void AIPlayer::releaseDockReservations()
 {
-	for (Int i = 0; i < m_supplyDockReservations.size(); )
+	for (Int i = 0; i < m_supplyDockReservations.size(); i++)
 	{
 		if (m_supplyDockReservations[i].centerID == INVALID_ID)
-		{
-			++i;
 			continue;
-		}
+		
 		Object* center = TheGameLogic->findObjectByID(m_supplyDockReservations[i].centerID);
 
 		Bool remove = false;
 
 		if (center == nullptr)
 			remove = true;
-		else if (center->isEffectivelyDead()) // dead.
-			remove = true;
-		else if (center->getStatusBits().test(OBJECT_STATUS_SOLD)) // can't undo selling.
-			remove = true;
+		//else if (center->isEffectivelyDead()) // dead.
+		//	remove = true;
+		//else if (center->getStatusBits().test(OBJECT_STATUS_SOLD)) // can't undo selling.
+		//	remove = true;
 		else if (center->getControllingPlayer() != m_player) // captured.
+			remove = true;
+		else if (center->getCreationTimeStamp() <= 0)
 			remove = true;
 
 		if (remove)
 			m_supplyDockReservations.erase(m_supplyDockReservations.begin() + i);
-		else
-			++i;
 	}
 }
 

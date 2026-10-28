@@ -7833,7 +7833,7 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " 's closest member to an enemy sees ";
 	curTemplate->m_uiStrings[2] = " ";
-	curTemplate->m_uiStrings[3] = " times as many enemy units (shroud clearing range) as there are allied units within a ";
+	curTemplate->m_uiStrings[3] = " times as many enemy units as there are allied units within a ";
 	curTemplate->m_uiStrings[4] = " foot radius.\n\nNOTE: if the ratio is 1.00f, you simply ask without a ratio.";
 
 	curTemplate = &m_conditionTemplates[Condition::TEAM_CLOSEST_TO_ENEMY_COMPARISON_TYPE_RATIO_SIGHTED_RADIUS];
@@ -7850,7 +7850,7 @@ void ScriptEngine::init()
 	curTemplate->m_uiStrings[0] = " ";
 	curTemplate->m_uiStrings[1] = " 's closest member to an enemy sees ";
 	curTemplate->m_uiStrings[2] = " ";
-	curTemplate->m_uiStrings[3] = " times as many enemy units (shroud clearing range) of type ";
+	curTemplate->m_uiStrings[3] = " times as many enemy units of type ";
 	curTemplate->m_uiStrings[4] = " as there are allied units of type ";
 	curTemplate->m_uiStrings[5] = " within a ";
 	curTemplate->m_uiStrings[6] = " foot radius.\n\nNOTE: if the ratio is 1.00f, you simply ask without a ratio.";
@@ -7960,6 +7960,130 @@ void ScriptEngine::init()
 	curTemplate->m_numUiStrings = 2;
 	curTemplate->m_uiStrings[0] = "Control of all units/structures inside area ";
 	curTemplate->m_uiStrings[1] = " transfers to ";
+
+	curTemplate = &m_conditionTemplates[Condition::AIDATA_BUILDS_LEFT];
+	curTemplate->m_internalName = "AIDATA_BUILDS_LEFT";
+	curTemplate->m_uiName = "Skirmish/AIData builds are left.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::COMPARISON;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " There are ";
+	curTemplate->m_uiStrings[1] = " ";
+	curTemplate->m_uiStrings[2] = " structures of type ";
+	curTemplate->m_uiStrings[3] = " left to be marked as a priority build.";
+
+	curTemplate = &m_conditionTemplates[Condition::SKIRMISH_COMPARISON_SPECIAL_POWER_READY];
+	curTemplate->m_internalName = "SKIRMISH_COMPARISON_SPECIAL_POWER_READY";
+	curTemplate->m_uiName = "Player/Special Power/An amount of a player's special power is ready to fire.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::INT;
+	curTemplate->m_parameters[3] = Parameter::SPECIAL_POWER;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " has ";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = " special power(s) of type ";
+	curTemplate->m_uiStrings[4] = " ready to fire. ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_FLANK_TYPE];
+	curTemplate->m_internalName = "TEAM_FLANK_TYPE";
+	curTemplate->m_uiName = "Team/Flank/A team flanks an object of a specific type.";
+	curTemplate->m_numParameters = 6;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[3] = Parameter::REAL;
+	curTemplate->m_parameters[4] = Parameter::REAL;
+	curTemplate->m_parameters[5] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 6;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " flanks a(n) ";
+	curTemplate->m_uiStrings[2] = " object of type ";
+	curTemplate->m_uiStrings[3] = " up to ";
+	curTemplate->m_uiStrings[4] = " degrees, keeping a distance of ";
+	curTemplate->m_uiStrings[5] = " feet, with selection mode ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::UNIT_FLANK_TYPE];
+	curTemplate->m_internalName = "UNIT_FLANK_TYPE";
+	curTemplate->m_uiName = "Unit/Flank/A unit flanks an object of a specific type.";
+	curTemplate->m_numParameters = 6;
+	curTemplate->m_parameters[0] = Parameter::UNIT;
+	curTemplate->m_parameters[1] = Parameter::RELATION;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[3] = Parameter::REAL;
+	curTemplate->m_parameters[4] = Parameter::REAL;
+	curTemplate->m_parameters[5] = Parameter::SELECTION_MODE;
+	curTemplate->m_numUiStrings = 6;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " flanks a(n) ";
+	curTemplate->m_uiStrings[2] = " object of type ";
+	curTemplate->m_uiStrings[3] = " up to ";
+	curTemplate->m_uiStrings[4] = " degrees, keeping a distance of ";
+	curTemplate->m_uiStrings[5] = " feet, with selection mode ";
+
+	curTemplate = &m_actionTemplates[ScriptAction::TEAM_FLANK_LOCATION];
+	curTemplate->m_internalName = "TEAM_FLANK_LOCATION";
+	curTemplate->m_uiName = "Team/Flank/A team flanks a location.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::TEAM;
+	curTemplate->m_parameters[1] = Parameter::WAYPOINT;
+	curTemplate->m_parameters[2] = Parameter::REAL;
+	curTemplate->m_parameters[3] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " flanks ";
+	curTemplate->m_uiStrings[2] = " up to ";
+	curTemplate->m_uiStrings[3] = " degrees, keeping a distance of ";
+	curTemplate->m_uiStrings[4] = " feet.";
+
+	curTemplate = &m_actionTemplates[ScriptAction::UNIT_FLANK_LOCATION];
+	curTemplate->m_internalName = "UNIT_FLANK_LOCATION";
+	curTemplate->m_uiName = "Unit/Flank/A unit flanks a location.";
+	curTemplate->m_numParameters = 4;
+	curTemplate->m_parameters[0] = Parameter::UNIT;
+	curTemplate->m_parameters[1] = Parameter::WAYPOINT;
+	curTemplate->m_parameters[2] = Parameter::REAL;
+	curTemplate->m_parameters[3] = Parameter::REAL;
+	curTemplate->m_numUiStrings = 5;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " flanks ";
+	curTemplate->m_uiStrings[2] = " up to ";
+	curTemplate->m_uiStrings[3] = " degrees, keeping a distance of ";
+	curTemplate->m_uiStrings[4] = " feet.";
+
+	curTemplate = &m_conditionTemplates[Condition::PLAYER_COMPARISON_FREE_FACTORY_SLOTS_TYPE];
+	curTemplate->m_internalName = "PLAYER_COMPARISON_FREE_FACTORY_SLOTS_TYPE";
+	curTemplate->m_uiName = "Player/Owns/Player has factories of a specific type with free slots.";
+	curTemplate->m_numParameters = 5;
+	curTemplate->m_parameters[0] = Parameter::SIDE;
+	curTemplate->m_parameters[1] = Parameter::COMPARISON;
+	curTemplate->m_parameters[2] = Parameter::INT;
+	curTemplate->m_parameters[3] = Parameter::OBJECT_TYPE;
+	curTemplate->m_parameters[4] = Parameter::INT;
+	curTemplate->m_numUiStrings = 6;
+	curTemplate->m_uiStrings[0] = " ";
+	curTemplate->m_uiStrings[1] = " has ";
+	curTemplate->m_uiStrings[2] = " ";
+	curTemplate->m_uiStrings[3] = " factories of type ";
+	curTemplate->m_uiStrings[4] = " with less than ";
+	curTemplate->m_uiStrings[5] = " units in queue.";
+
+	curTemplate = &m_conditionTemplates[Condition::AIDATA_BUILDS_IN_QUEUE];
+	curTemplate->m_internalName = "AIDATA_BUILDS_IN_QUEUE";
+	curTemplate->m_uiName = "Skirmish/AIData builds are in queue.";
+	curTemplate->m_numParameters = 3;
+	curTemplate->m_parameters[0] = Parameter::COMPARISON;
+	curTemplate->m_parameters[1] = Parameter::INT;
+	curTemplate->m_parameters[2] = Parameter::OBJECT_TYPE;
+	curTemplate->m_numUiStrings = 4;
+	curTemplate->m_uiStrings[0] = " There are ";
+	curTemplate->m_uiStrings[1] = " ";
+	curTemplate->m_uiStrings[2] = " structures of type ";
+	curTemplate->m_uiStrings[3] = " in queue, waiting to be built.";
 
 	//-------------------------------------------------------------------------------------------------
 	//------------------------------- @CLP_AI SCRIPT UI ADDITIONS END ---------------------------------
@@ -13694,6 +13818,8 @@ static void _cleanUpVTune()
 // 2: random
 // 3: youngest
 // 4: oldest
+// 5: closest to enemy
+// 6: farthest from enemy
 //-------------------------------------------------------------------------------------------------
 Object* ScriptEngine::getObjectWithSelectionMode(
 	const Coord3D* sourcePos,
@@ -13782,7 +13908,7 @@ Object* ScriptEngine::getObjectWithSelectionMode(
 	case Parameter::OLDEST:
 	{
 		std::vector<Object*> candidates;
-		ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(sourcePos, 100000 * MAP_XY_FACTOR, FROM_CENTER_3D, filters, ITER_FASTEST);
+		ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(sourcePos, 100000 * MAP_XY_FACTOR, FROM_CENTER_2D, filters, ITER_FASTEST);
 		MemoryPoolObjectHolder hold(iter);
 
 		for (Object* pObj = iter->first(); pObj; pObj = iter->next())
@@ -13804,6 +13930,27 @@ Object* ScriptEngine::getObjectWithSelectionMode(
 		}
 		if (selectionMode == Parameter::RANDOM && !candidates.empty())
 			bestObj = candidates[GameLogicRandomValue(0, candidates.size() - 1)];
+		break;
+	}
+	// Find the closest to or farthest from the closest enemy.
+	case Parameter::CLOSEST_TO_ENEMY:
+	case Parameter::FARTHEST_FROM_ENEMY:
+	{
+		PartitionFilterPlayerAffiliation filterEnemy(getCurrentPlayer(), ALLOW_ENEMIES, TRUE);
+		filters[count] = &filterEnemy;
+		filters[count++] = nullptr;
+
+		Object* closestEnemy = ThePartitionManager->getClosestObject(sourcePos, 100000 * MAP_XY_FACTOR, FROM_CENTER_2D, filters);
+		if (!closestEnemy) return nullptr;
+
+		filters[count] = nullptr;
+
+		if (selectionMode == Parameter::CLOSEST_TO_ENEMY) {
+			bestObj = ThePartitionManager->getClosestObject(closestEnemy->getPosition(), 100000 * MAP_XY_FACTOR, FROM_CENTER_2D, filters);
+		}
+		else if (selectionMode == Parameter::FARTHEST_FROM_ENEMY) {
+			bestObj = ThePartitionManager->getFarthestObject(closestEnemy->getPosition(), 100000 * MAP_XY_FACTOR, FROM_CENTER_2D, filters);
+		}
 		break;
 	}
 	default:

@@ -546,8 +546,13 @@ protected:
 	void doAIAddToBuildList(const AsciiString& player, const AsciiString& object, Coord3D* coords, Real angle, BOOLEAN initbuilt, INT rebuildTimes, BOOLEAN exactPositionOnly);
 	void doTransferAreaToPlayer(const AsciiString& areaName, const AsciiString& playerName);
 
+	void doTeamFlankType(const AsciiString& teamName, Int relationType, const AsciiString& objectType, Real angle, Real distance, Int selectionMode);
+	void doUnitFlankType(const AsciiString& unitName, Int relationType, const AsciiString& objectType, Real angle, Real distance, Int selectionMode);
+	void doTeamFlankLocation(const AsciiString& teamName, const AsciiString& waypointName, Real angle, Real distance);
+	void doUnitFlankLocation(const AsciiString& unitName, const AsciiString& waypointName, Real angle, Real distance);
+
 	// @n0ttws: 4 additions
-	// @-TanSo-: 125 additions
+	// @-TanSo-: 129 additions
 
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------

@@ -733,9 +733,14 @@ public:
 		DECREASE_PRIORITY_IN_SET_TYPE,								///< Decrease the priorty in a set by <Int> for <objectType>.
 
 		AI_PLAYER_CLOSEST_DOZER_BUILDING_PRIORITY,		///< The AI player chooses the AIData-entry closest to a non-busy dozer rather than the first unbuilt one.
-		AI_CLEAR_BUILDLIST,
-		AI_ADD_TO_BUILDLIST,
-		AREA_TRANSFER_TO_PLAYER,
+		AI_CLEAR_BUILDLIST,                           ///< A player clears the entire  build list
+		AI_ADD_TO_BUILDLIST,                          ///< A player adds an entry to the build list
+		AREA_TRANSFER_TO_PLAYER,											///< A player transfers all buildings inside an area to another player
+
+		TEAM_FLANK_TYPE,															///< A team flanks a(n) friend|neutral|enemy <objectType> until <Real> degrees at a <Real> feet distance with <selection mode>.
+		UNIT_FLANK_TYPE,															///< A unit flanks a(n) friend|neutral|enemy <objectType> until <Real> degrees at a <Real> feet distance with <selection mode>.
+		TEAM_FLANK_LOCATION,													///< A team flanks a location until <Real> degrees at a <Real> feet distance.
+		UNIT_FLANK_LOCATION,													///< A unit flanks a location until <Real> degrees at a <Real> feet distance.
 
 		//-------------------------------------------------------------------------------------------------
 		//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------
@@ -1020,7 +1025,9 @@ public:
 		FARTHEST,
 		RANDOM,
 		YOUNGEST,
-		OLDEST
+		OLDEST,
+		CLOSEST_TO_ENEMY,
+		FARTHEST_FROM_ENEMY
 	};
 
 	Parameter(ParameterType type, int val = 0) :
@@ -1279,7 +1286,7 @@ public:
 
 		PLAYER_COMPARISON_TEAM_INSTANCES,				// True if a player has <comparison> <int> instances of a team.
 
-		TEAM_CONTAINS_COMPARISON_RATIO_SIGHTED,		// True if a team has <comparison> <Real> times as many units as there are units the team sees.
+		TEAM_CONTAINS_COMPARISON_RATIO_SIGHTED,	// True if a team has <comparison> <Real> times as many units as there are units the team sees.
 		TEAM_CONTAINS_COMPARISON_TYPE_RATIO_SIGHTED,// True if a team has <comparison> <Real> times as many units of a type as there are units of a type the team sees.
 
 		SPOT_NEIGHBOURING_RELATION,							// True if a spot is neighbouring <relation> players.
@@ -1299,6 +1306,12 @@ public:
 
 		UNIT_RELOADED,													// True if a unit is (partially if chosen) reloaded.
 		TEAM_RELOADED,													// True if a team is (partially if chosen) reloaded.
+
+		AIDATA_BUILDS_LEFT,											// True if <comparison> <Int> AIData builds are left.
+		SKIRMISH_COMPARISON_SPECIAL_POWER_READY,// True if a <comparison> <Int> amount of that special power is ready (intended for multi super weapon use).
+		PLAYER_COMPARISON_FREE_FACTORY_SLOTS_TYPE,// True if a player has <comparison> <Int> amount of factories of <objectType> with less than <Int> units currently being produced.
+		AIDATA_BUILDS_IN_QUEUE,									// True if <comparison> <Int> AIData builds are in the queue.
+
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 		//-------------------------------------------------------------------------------------------------

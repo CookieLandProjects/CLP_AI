@@ -133,6 +133,7 @@ public:
 	virtual WorkerAIInterface* getWorkerAIInterface() override { return this; }
 	virtual const WorkerAIInterface* getWorkerAIInterface() const override { return this; }
 	virtual WorkerAIUpdate* getWorkerAIUpdate() override { return this; }
+	virtual const WorkerAIUpdate* getWorkerAIUpdate() const override { return this; }
 
 	// Dozer side
 	virtual void onDelete() override;

@@ -51,6 +51,9 @@
 #include "GameLogic/ScriptActions.h"
 #include "GameLogic/ScriptEngine.h"
 
+//@-TanSo-: We need this for idle checks, thanks :)
+#include "GameLogic/Module/DozerAIUpdate.h"
+#include "GameLogic/Module/WorkerAIUpdate.h"
 
 ///@todo - do delayed script evaluations for team scripts. jba.
 
@@ -1792,12 +1795,30 @@ Bool Team::isIdle() const
 	Bool idle = true; // assume idle.
 	for (DLINK_ITERATOR<Object> iter = iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
-		AIUpdateInterface *ai = iter.cur()->getAIUpdateInterface();
+		Object* pObj = iter.cur();
+		if (!pObj) continue;
+
+		AIUpdateInterface *ai = pObj->getAIUpdateInterface();
 		if (!ai) continue; // Non-ai things are idle.
 
 		if (iter.cur()->isEffectivelyDead())
 			continue;
 
+		// Dozers and workers are idle while building etc. Reject them if they are on a task though.
+		if (iter.cur()->isKindOf(KINDOF_DOZER))
+		{
+			DozerAIInterface* dozerAI = ai->getDozerAIInterface();
+			if (dozerAI && dozerAI->getCurrentTask() != DOZER_TASK_INVALID) {
+				return FALSE;
+			}
+			else {
+				WorkerAIUpdate* workerAI = ai->getWorkerAIUpdate();
+				if (workerAI && workerAI->getCurrentTask() != DOZER_TASK_INVALID) {
+					return FALSE;
+				}
+			}
+			continue;
+		}
 		if (!ai->isIdle())
 		{
 			idle = false;

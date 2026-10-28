@@ -4631,7 +4631,10 @@ Object* AIUpdateInterface::getNextMoodTarget( Bool calledByAI, Bool calledDuring
 	// if we're called by AI, and are human controlled, then our AI will not
 	// allow us to pursue the target. therefore, we should ensure that we only
 	// look for targets that are already within attack range (as opposed to vision range).
-	if (calledByAI && obj->getControllingPlayer()->getPlayerType() == PLAYER_HUMAN)
+
+	//@-TanSo-: This is BS. Units get wasted into defenses because they wont stop driving. Prevent this.
+	//if (calledByAI && obj->getControllingPlayer()->getPlayerType() == PLAYER_HUMAN)
+	if(calledByAI)
 	{
 		flags |= AI::WITHIN_ATTACK_RANGE;
 	}
@@ -5366,4 +5369,74 @@ Bool AIUpdateInterface::hasLocomotorForSurface(LocomotorSurfaceType surfaceType)
 		return FALSE;
 }
 
-// ------------------------------------------------------------------------------------------------
+// @CLP_AI additions  -----------------------------------------------------------------------------
+
+// @-TanSo-: aiFlankObject - circles an object until to a certain angle at a given distance.
+void AIUpdateInterface::aiFlankPosition(const Coord3D* targetPos, Real angle, Real distance)
+{
+	Object* me = getObject();
+	// just to be extra extra safe
+	if (!me || !targetPos)
+		return;
+
+	// Get our two candidates for flanking; left or right.
+	Real directionX = me->getPosition()->x - targetPos->x;
+	Real directionY = me->getPosition()->y - targetPos->y;
+	Real baseAngle = atan2(directionY, directionX);
+
+	Real leftAngle = baseAngle + angle * (PI / 180.0f);
+	Real rightAngle = baseAngle - angle * (PI / 180.0f);
+
+	Coord3D leftPosition = { targetPos->x + cos(leftAngle) * distance, targetPos->y + sin(leftAngle) * distance, targetPos->z };
+	Coord3D rightPosition = { targetPos->x + cos(rightAngle) * distance, targetPos->y + sin(rightAngle) * distance, targetPos->z };
+
+	// Figure out which to choose (calculated by build cost).
+	PartitionFilterAlive f1;
+	PartitionFilterPlayerAffiliation f2(me->getControllingPlayer(), ALLOW_ENEMIES, TRUE);
+	PartitionFilterSameMapStatus f3(me);
+
+	PartitionFilter* filters[] = { &f1, &f2, &f3, nullptr };
+
+	SimpleObjectIterator* iterLeft = ThePartitionManager->iterateObjectsInRange(&leftPosition, 500.0f, FROM_CENTER_2D, filters, ITER_FASTEST);
+	SimpleObjectIterator* iterRight = ThePartitionManager->iterateObjectsInRange(&rightPosition, 500.0f, FROM_CENTER_2D, filters, ITER_FASTEST);
+	MemoryPoolObjectHolder holdLeft(iterLeft);
+	MemoryPoolObjectHolder holdRight(iterRight);
+
+	Int leftCost = 0, rightCost = 0;
+	for (Object* them = iterLeft->first(); them; them = iterLeft->next()) {
+		const ThingTemplate* tt = them->getTemplate();
+		if (!tt)
+			continue;
+
+		leftCost += tt->friend_getBuildCost();
+	}
+	for (Object* them = iterRight->first(); them; them = iterRight->next()) {
+		const ThingTemplate* tt = them->getTemplate();
+		if (!tt)
+			continue;
+
+		rightCost += tt->friend_getBuildCost();
+	}
+
+	Real flankDirection = 0.0f;
+
+	if (leftCost <= rightCost)
+		flankDirection = 1.0f;
+	else
+		flankDirection = -1.0f;
+
+	// Now lay out the actual path. One point, each 30 degrees
+	std::vector<Coord3D> path;
+	for (Real currentAngle = 30.0f; currentAngle < angle; currentAngle += 30.0f)
+	{
+		Real pointAngle = baseAngle + flankDirection * currentAngle * (PI / 180.0f);
+		Coord3D pathPoint = { targetPos->x + cos(pointAngle) * distance, targetPos->y + sin(pointAngle) * distance, targetPos->z };
+		path.push_back(pathPoint);
+	}
+	// Do this once more with the target angle.
+	Real pointAngle = baseAngle + flankDirection * angle * (PI / 180.0f);
+	Coord3D pathPoint = { targetPos->x + cos(pointAngle) * distance, targetPos->y + sin(pointAngle) * distance, targetPos->z };
+	path.push_back(pathPoint);
+
+	privateFollowPath(&path, FALSE, CMD_FROM_AI, FALSE);
+}

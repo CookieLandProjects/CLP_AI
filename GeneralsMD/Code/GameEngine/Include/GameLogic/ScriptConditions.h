@@ -274,8 +274,13 @@ protected:
 	Bool evaluateUnitIsReloaded(Parameter* pUnitParm, Bool partially);
 	Bool evaluateTeamIsReloaded(Parameter* pTeamParm, Bool partially);
 
+	Bool evaluateAIDataBuildsLeft(Parameter* pComparisonParm, Int value, Parameter* objectType);
+	Bool evaluateComparisonSkirmishSpecialPowerIsReady(Parameter* pSkirmishPlayerParm, Parameter* pComparisonParm, Int value, Parameter* pPower);
+	Bool evaluateComparisonFreeFactorieSlotsType(Parameter* pPlayerParm, Parameter* pComparisonParm, Int value, Parameter* objectType, Int amountSlots);
+	Bool evaluateAIDataBuildsInQueue(Parameter* pComparisonParm, Int value, Parameter* objectType);
+
 	// @n0ttws: AI playstyle evaluation
-	// @-TanSo-: 60 additions, 1 helper method
+	// @-TanSo-: 64 additions, 1 helper method
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 	//-------------------------------------------------------------------------------------------------

@@ -2482,6 +2482,8 @@ AsciiString Parameter::getUiText() const
 			case RANDOM: uiText.format("Random"); break;
 			case YOUNGEST: uiText.format("Youngest"); break;
 			case OLDEST: uiText.format("Oldest"); break;
+			case CLOSEST_TO_ENEMY:uiText.format("Closest To Enemy"); break;
+			case FARTHEST_FROM_ENEMY:uiText.format("Farthest From Enemy"); break;
 			default: DEBUG_CRASH(("Unknown selection mode type."));
 			}
 			break;

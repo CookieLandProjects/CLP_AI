@@ -80,6 +80,10 @@
 #include "GameClient/Line2D.h"
 #include "GameClient/ControlBar.h"
 
+//@-TanSo-: We need this for idle checks, thanks :)
+#include "GameLogic/Module/DozerAIUpdate.h"
+#include "GameLogic/Module/WorkerAIUpdate.h"
+
 #ifdef RTS_DEBUG
 //#include "GameClient/InGameUI.h"	// for debugHints
 #endif
@@ -5977,8 +5981,7 @@ Bool PartitionFilterStatusBits::allow(Object* other)
 {
 	return (m_mask.testForAny(other->getStatusBits())) ? m_match : !m_match;
 }
-#include "GameLogic/Module/DozerAIUpdate.h"
-#include "GameLogic/Module/WorkerAIUpdate.h"
+
 // ------------------------------------------------------------------------------------------------
 Bool PartitionFilterIdle::allow(Object* other)
 {

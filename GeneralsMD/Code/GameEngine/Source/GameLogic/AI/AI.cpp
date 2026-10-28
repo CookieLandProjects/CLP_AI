@@ -739,23 +739,24 @@ Object *AI::findClosestEnemy( const Object *me, Real range, UnsignedInt qualifie
 		Real distSqr = ThePartitionManager->getDistanceSquared(me, theEnemy, FROM_BOUNDINGSPHERE_2D);
 		Real dist = sqrt(distSqr);
 
-		Real modifier = dist / getAiData()->m_attackPriorityDistanceModifier;;
-		//@-TanSo-: the above modifier should be Real.
-		// On our difficulty levels, make some more modifications.
+		Int modifier = dist / getAiData()->m_attackPriorityDistanceModifier;
+
+		//@-TanSo-: On our difficulty levels, do some more modifications.
 		if (difficulty >= DIFFICULTY_BRUTAL)
 		{
-			// Try to focus on stuff that has a movement debuff (sub 25% health).
-			Real maxHealth = theEnemy->getBodyModule()->getMaxHealth();
-			Real currentHealth = theEnemy->getBodyModule()->getHealth();
-			Real healthPercentage = currentHealth / maxHealth;
-
-			if (healthPercentage < 0.25) {
-				modifier *= healthPercentage + 0.25f; // Don't make the effect too strong.
-				
+			// Try to get rid of scaffolds for a quick buck.
+			if (theEnemy->getStatusBits().test(OBJECT_STATUS_UNDER_CONSTRUCTION)) {
+				modifier *= theEnemy->getConstructionPercent() / 100.0f;
 			}
-			//@-TanSo-: Also try to get rid of scaffolds for a quick buck.
-			else if (theEnemy->getStatusBits().test(OBJECT_STATUS_UNDER_CONSTRUCTION)) {
-				modifier *= theEnemy->getConstructionPercent() - 1.0f;
+			else {
+				// Also try to focus on stuff that has a movement debuff (sub 25% health).
+				Real maxHealth = theEnemy->getBodyModule()->getMaxHealth();
+				Real currentHealth = theEnemy->getBodyModule()->getHealth();
+				Real healthPercentage = currentHealth / maxHealth;
+
+				if (healthPercentage < 0.25) {
+					modifier *= healthPercentage + 0.25f; // Don't make the effect too strong.
+				}
 			}
 		}
 

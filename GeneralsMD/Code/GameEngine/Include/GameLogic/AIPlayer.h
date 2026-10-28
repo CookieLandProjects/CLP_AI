@@ -262,6 +262,7 @@ public:
 	Coord3D getSkirmishBuildListBaseCenter();
   Real getSkirmishBuildListBaseRadius();
 
+	std::vector<SupplyDockReservation> getSupplyDockReservations() { return m_supplyDockReservations; }
 	//-------------------------------------------------------------------------------------------------
 	//-------------------------------- @CLP_AI AIPLAYER ADDITIONS END ---------------------------------
 	//-------------------------------------------------------------------------------------------------
@@ -297,6 +298,7 @@ protected:
 	FactoryReservation* getReservation(ObjectID id);
 	void releaseFactoryReservations(Team* team);
 	void resetFactoryReservations() { m_factoryReservations.clear(); }				// Called during newMap().
+	Bool isNearTeamFactory(Object* factory, Team* team);
 
 	Bool isDockOccupied(ObjectID id) const;												// Is the dock already occupied? Don't build a second supply center here then!
 	void setDockOccupation(ObjectID dockID, ObjectID supplyID);		// Simply sets the reservation. Gets callled in reserveSupplySource().
@@ -369,24 +371,24 @@ protected:
 
 	ObjectID m_curWarehouseID;
 
-	// -TanSo-: Use of the factory reservation. Before this, team builds would be blended, which means
-	// that teams would be left halfway-built throughout the match and never leave base. Suppose we have
+	// -TanSo-: Use of the factory reservation. Before this, team builds would be blended, meaning
+	// teams would be left partially built throughout the match and never leave base. Suppose we have
 	// four teams, A with 5, B with 3, C with 2, and D with 2 units. The production line would look like this:
 	// -> Factory 1: A, D, C, B
 	// -> Factory 2: B, A, D, A
 	// -> Factory 3: C, B, A, A
-	// With the reservation, if the factories are far apart, teams now block factories
-	// for their own production like this:
+	// With the reservation, if the factories are far apart, teams now reserve factories
+	// for their own production, which could look like this:
 	// -> Factory 1: A, A, A, A, A
 	// -> Factory 2: B, B, B
 	// -> Factory 3: C, C, D, D
-	// @todo
-	// If lets say Factory 1 was close to Factory 2, it would instead look like this:
+  // If, for example, Factory 1 is close to Factory 2, the same team can reserve
+	// additional nearby factories, allowing production to be distributed:
 	// -> Factory 1: A, A, A, D, D
 	// -> Factory 2: A, A, C, C
 	// -> Factory 3: B, B, B
-
 	std::vector<FactoryReservation> m_factoryReservations;
+
 	// -Tanso-: Use of the supplyDockReservation. This prevents AI players from placing two supply centers
 	// next to the same dock by blocking the dock, then adding the ObjectID of the center later on.
 	std::vector<SupplyDockReservation> m_supplyDockReservations;

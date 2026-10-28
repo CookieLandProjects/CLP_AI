@@ -12901,6 +12901,99 @@ void ScriptActions::doTransferAreaToPlayer(const AsciiString& areaName, const As
 	}
 }
 
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamFlankType(const AsciiString& teamName, Int relationType, const AsciiString& objectType, Real angle, Real distance, Int selectionMode)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam) return;
+
+	UnsignedInt relation = 0;
+	switch (relationType)
+	{
+	case ENEMIES: relation = ALLOW_ENEMIES; break;
+	case NEUTRAL: relation = ALLOW_NEUTRAL; break;
+	case ALLIES: relation = ALLOW_ALLIES; break;
+	}
+
+	PartitionFilterPlayerAffiliation f1(pTeam->getControllingPlayer(), relation, TRUE);
+	PartitionFilter* filters[] = {&f1, nullptr};
+
+	Object* target = TheScriptEngine->getObjectWithSelectionMode(pTeam->getEstimateTeamPosition(), filters, objectType, selectionMode);
+	if (!target) return;
+
+	for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* pObj = iter.cur();
+		if (!pObj) continue;
+
+		AIUpdateInterface* ai = pObj->getAIUpdateInterface();
+		if (!ai) continue;
+
+		ai->aiFlankPosition(target->getPosition(), angle, distance);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doUnitFlankType(const AsciiString& unitName, Int relationType, const AsciiString& objectType, Real angle, Real distance, Int selectionMode)
+{
+	Object* pUnit = TheScriptEngine->getUnitNamed(unitName);
+	if (!pUnit) return;
+
+	UnsignedInt relation = 0;
+	switch (relationType)
+	{
+	case ENEMIES: relation = ALLOW_ENEMIES; break;
+	case NEUTRAL: relation = ALLOW_NEUTRAL; break;
+	case ALLIES: relation = ALLOW_ALLIES; break;
+	}
+
+	PartitionFilterPlayerAffiliation f1(pUnit->getControllingPlayer(), relation, TRUE);
+	PartitionFilter* filters[] = { &f1, nullptr };
+
+	Object* target = TheScriptEngine->getObjectWithSelectionMode(pUnit->getPosition(), filters, objectType, selectionMode);
+	if (!target) return;
+
+	AIUpdateInterface* ai = pUnit->getAIUpdateInterface();
+	if (!ai) return;
+
+	ai->aiFlankPosition(target->getPosition(), angle, distance);
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doTeamFlankLocation(const AsciiString& teamName, const AsciiString& waypointName, Real angle, Real distance)
+{
+	Team* pTeam = TheScriptEngine->getTeamNamed(teamName);
+	if (!pTeam) return;
+
+	Waypoint* pWay = TheTerrainLogic->getWaypointByName(waypointName);
+	if (!pWay) return;
+
+	for (DLINK_ITERATOR<Object> iter = pTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
+	{
+		Object* pObj = iter.cur();
+		if (!pObj) continue;
+
+		AIUpdateInterface* ai = pObj->getAIUpdateInterface();
+		if (!ai) continue;
+
+		ai->aiFlankPosition(pWay->getLocation(), angle, distance);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doUnitFlankLocation(const AsciiString& unitName, const AsciiString& waypointName, Real angle, Real distance)
+{
+	Object* pUnit = TheScriptEngine->getUnitNamed(unitName);
+	if (!pUnit) return;
+
+	Waypoint* pWay = TheTerrainLogic->getWaypointByName(waypointName);
+	if (!pWay) return;
+
+	AIUpdateInterface* ai = pUnit->getAIUpdateInterface();
+	if (!ai) return;
+
+	ai->aiFlankPosition(pWay->getLocation(), angle, distance);
+}
 
 //-------------------------------------------------------------------------------------------------
 //----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
@@ -14535,5 +14628,19 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 		case ScriptAction::AREA_TRANSFER_TO_PLAYER:
 			doTransferAreaToPlayer(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
 			return;
+
+		case ScriptAction::TEAM_FLANK_TYPE:
+			doTeamFlankType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getReal(), pAction->getParameter(4)->getReal(), pAction->getParameter(5)->getInt());
+			return;
+		case ScriptAction::UNIT_FLANK_TYPE:
+			doUnitFlankType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getReal(), pAction->getParameter(4)->getReal(), pAction->getParameter(5)->getInt());
+			return;
+		case ScriptAction::TEAM_FLANK_LOCATION:
+			doTeamFlankLocation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getReal(), pAction->getParameter(3)->getReal());
+			return;
+		case ScriptAction::UNIT_FLANK_LOCATION:
+			doUnitFlankLocation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getReal(), pAction->getParameter(3)->getReal());
+			return;
+
 	}
 }
