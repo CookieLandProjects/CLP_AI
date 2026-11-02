@@ -131,6 +131,7 @@ SpectreGunshipUpdate::SpectreGunshipUpdate( Thing *thing, const ModuleData* modu
 {
 	m_specialPowerModule = nullptr;
   m_gattlingID = INVALID_ID;
+  m_currentTargetID = INVALID_ID;
 	m_status = GUNSHIP_STATUS_IDLE;
 	m_initialTargetPosition.zero();
 	m_overrideTargetDestination.zero();
@@ -492,8 +493,11 @@ UpdateSleepTime SpectreGunshipUpdate::update()
 
       if ( m_status == GUNSHIP_STATUS_ORBITING )
       {
-        Object *validTargetObject = nullptr;
-
+        //-TanSo-: check whether our current target is still alive
+        Object *validTargetObject = TheGameLogic->findObjectByID(m_currentTargetID);
+        if (!validTargetObject) {
+          m_currentTargetID = INVALID_ID;
+        }
 
         if ( TheGameLogic->getFrame() >= m_orbitEscapeFrame )
         {
@@ -527,22 +531,26 @@ UpdateSleepTime SpectreGunshipUpdate::update()
 	          filters[numFilters] = nullptr;
 
 
-
-            // THIS WILL FIND A VALID TARGET WITHIN THE TARGETING RETICLE
-	          ObjectIterator *iter = ThePartitionManager->iterateObjectsInRange(&m_overrideTargetDestination,
-              data->m_targetingReticleRadius,
-              FROM_BOUNDINGSPHERE_2D,
-              filters,
-              ITER_SORTED_NEAR_TO_FAR);
-	          MemoryPoolObjectHolder holder(iter);
-	          for (Object *theEnemy = iter->first(); theEnemy; theEnemy = iter->next())
-	          {
-              if ( theEnemy && isFairDistanceFromShip( theEnemy ) )
+            if (m_currentTargetID == INVALID_ID)
+            {
+              // THIS WILL FIND A VALID TARGET WITHIN THE TARGETING RETICLE
+              ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(&m_overrideTargetDestination,
+                data->m_targetingReticleRadius,
+                FROM_BOUNDINGSPHERE_2D,
+                filters,
+                ITER_SORTED_NEAR_TO_FAR);
+              MemoryPoolObjectHolder holder(iter);
+              for (Object* theEnemy = iter->first(); theEnemy; theEnemy = iter->next())
               {
-                validTargetObject = theEnemy;
-                break;
+                if (theEnemy && isFairDistanceFromShip(theEnemy))
+                {
+                  validTargetObject = theEnemy;
+                  m_currentTargetID = theEnemy->getID();
+                  break;
+                }
               }
-	          }
+            }
+            
 
 
 
@@ -550,7 +558,7 @@ UpdateSleepTime SpectreGunshipUpdate::update()
             // SO THAT THE SPECTREGUNSHIP REQUIRES BABYSITTING AT ALL TIMES
             if (gunship->getControllingPlayer()->getPlayerType() != PLAYER_HUMAN )
             {
-              if ( ! validTargetObject )
+              if (m_currentTargetID == INVALID_ID)
               {
                 // set a flag to start the targeting decal fading, since there is nothing to kill there
                 // THIS WILL FIND A VALID TARGET ANYWHERE INSIDE THE TARGETING AREA (THE BIG CIRCLE)
@@ -566,6 +574,7 @@ UpdateSleepTime SpectreGunshipUpdate::update()
                   {
                     // WE GOT A HIT!!!! SHOOT HIM!
                     validTargetObject = theEnemy;
+                    m_currentTargetID = theEnemy->getID();
                     m_positionToShootAt = *validTargetObject->getPosition();
 
                     break;
@@ -642,25 +651,24 @@ UpdateSleepTime SpectreGunshipUpdate::update()
             }
 
 
-			const Player *localPlayer = rts::getObservedOrLocalPlayer();
+			      const Player *localPlayer = rts::getObservedOrLocalPlayer();
 
-			//Make sure the gunship is visible to the player before drawing effects.
-			if ( gunship->getShroudedStatus( localPlayer->getPlayerIndex() ) <= OBJECTSHROUD_PARTIAL_CLEAR )
-			{
+			      //Make sure the gunship is visible to the player before drawing effects.
+			      if ( gunship->getShroudedStatus( localPlayer->getPlayerIndex() ) <= OBJECTSHROUD_PARTIAL_CLEAR )
+			      {
 
-				// This makes the client smoke effects of the gattling cannon strafing the ground toward the attack position
+				      // This makes the client smoke effects of the gattling cannon strafing the ground toward the attack position
 						  ParticleSystem *sys = TheParticleSystemManager->createParticleSystem(tmp);
 						  if (sys)
-				{
-				  Coord3D impactPosition;
-				  impactPosition.x = m_gattlingTargetPosition.x + GameClientRandomValueReal( -5.0f, 5.0f );
-				  impactPosition.y = m_gattlingTargetPosition.y + GameClientRandomValueReal( -5.0f, 5.0f );
-				  impactPosition.z = TheTerrainLogic->getGroundHeight( impactPosition.x, impactPosition.y );
+				      {
+				        Coord3D impactPosition;
+				        impactPosition.x = m_gattlingTargetPosition.x + GameClientRandomValueReal( -5.0f, 5.0f );
+				        impactPosition.y = m_gattlingTargetPosition.y + GameClientRandomValueReal( -5.0f, 5.0f );
+				        impactPosition.z = TheTerrainLogic->getGroundHeight( impactPosition.x, impactPosition.y );
 							  sys->setPosition( &impactPosition );
 
-				}
-			}
-
+				      }
+			      }
           }
         }
 
@@ -695,7 +703,11 @@ UpdateSleepTime SpectreGunshipUpdate::update()
 
 
 
-
+   DEBUG_LOG(("strafingIncrement: %f\nokToFireHowitzerCounter: %d\nhowitzerFollowLag: %d",
+     data->m_strafingIncrement,
+     m_okToFireHowitzerCounter,
+     data->m_howitzerFollowLag
+     ));
 
 
 

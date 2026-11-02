@@ -3403,10 +3403,10 @@ Object *PartitionManager::getClosestObjects(
 				Coord3D distVec;
 				if (!(*distProc)(objPos, objToUse, thisObj->getPosition(), thisObj, thisDistSqr, distVec, closestDistSqr))
 					continue;
-
+				
 				if (!filtersAllow(filters, thisObj))
 					continue;
-
+				
 				// ok, this is within the range, and the filters allow it.
 				// add it to the iter, if we have one....
 				if (iterArg)

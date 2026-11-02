@@ -151,7 +151,7 @@ protected:
 
 //  ObjectID        m_howitzerID;
   ObjectID        m_gattlingID;
-
+  ObjectID        m_currentTargetID;          // -TanSo-: the AI's gunship is jumping targets. STOP THIS!!!
 
 	RadiusDecal			m_attackAreaDecal;
 	RadiusDecal			m_targetingReticleDecal;

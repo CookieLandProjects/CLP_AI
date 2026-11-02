@@ -115,7 +115,7 @@
 // but put them behind this macro.
 
 #ifndef RETAIL_COMPATIBLE_AIGROUP
-#define RETAIL_COMPATIBLE_AIGROUP (1) // AIGroup logic is expected to be CRC compatible with retail Generals 1.08, Zero Hour 1.04
+#define RETAIL_COMPATIBLE_AIGROUP (0) // AIGroup logic is expected to be CRC compatible with retail Generals 1.08, Zero Hour 1.04
 #endif
 
 #ifndef ENABLE_GAMETEXT_SUBSTITUTES
