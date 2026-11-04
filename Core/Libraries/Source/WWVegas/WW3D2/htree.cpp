@@ -55,10 +55,10 @@
 #include "hanim.h"
 #include "hcanim.h"
 #include <assert.h>
-#include "wwmath.h"
-#include "chunkio.h"
+#include "WWMath/wwmath.h"
+#include "WWLib/chunkio.h"
 #include "w3d_file.h"
-#include "wwmemlog.h"
+#include "WWDebug/wwmemlog.h"
 #include "hrawanim.h"
 #include "motchan.h"
 #include "ww3d.h"
@@ -209,9 +209,10 @@ int HTreeClass::Load_W3D(ChunkLoadClass & cload)
 	*/
 	memcpy(Name,header.Name,W3D_NAME_LEN);
 	NumPivots = header.NumPivots;
-	if (NumPivots > 0) {
-		Pivot = MSGW3DNEWARRAY("HTreeClass::Pivot") PivotClass[NumPivots];
+	if (NumPivots < 1) {
+		return LOAD_ERROR;
 	}
+	Pivot = MSGW3DNEWARRAY("HTreeClass::Pivot") PivotClass[NumPivots];
 
 	/*
 	** Now, read in all of the other chunks for this hierarchy.
@@ -638,7 +639,7 @@ void HTreeClass::Anim_Update_Without_Interpolation(const Matrix3D & root,HRawAni
 	endpivot=pivot+(NumPivots-1);
 	lastAnimPivot = &Pivot[num_anim_pivots];
 
-	for (int piv_idx=1; pivot < endpivot; pivot++,nodeMotion++) {
+	for (; pivot < endpivot; pivot++,nodeMotion++) {
 
 		// base pose
 		assert(pivot->Parent != nullptr);
@@ -866,7 +867,7 @@ void HTreeClass::Combo_Update
 			if (weight_total != 0.0f ) {
 				// SKB: Removed assert because I have a case where I don't want normalization.
 				// 	  One anim moves X, the other moves Y.  Assert was just in to warn programmers.
-//				WWASSERT(WWMath::Fabs( weight_total - 1.0 ) < WWMATH_EPSILON);
+//				WWASSERT(WWMath::Fabsf( weight_total - 1.0 ) < WWMATH_EPSILON);
 
 				pivot->Transform.Translate(trans);
 #ifdef ALLOW_TEMPORARIES
@@ -1077,7 +1078,19 @@ HTreeClass * HTreeClass::Alter_Avatar_HTree( const HTreeClass *tree, Vector3 &sc
 	// being stretched out on the Y-axis instead of the Z-axis like the rest of the bodies. Hence, the list of pivots
 	// below are ones that I will special case and scale them based on the Z-axis scaling factor instead of the Y-axis
 	// scaling factor.
-	const char * flip_list[] = { " RIGHTFOREARM", " RIGHTHAND", " LEFTFOREARM", " LEFTHAND", "RIGHTINDEX", "RIGHTFINGERS", "RIGHTTHUMB", "LEFTINDEX", "LEFTFINGERS", "LEFTTHUMB", nullptr };
+	const char * flip_list[] = {
+		" RIGHTFOREARM",
+		" RIGHTHAND",
+		" LEFTFOREARM",
+		" LEFTHAND",
+		"RIGHTINDEX",
+		"RIGHTFINGERS",
+		"RIGHTTHUMB",
+		"LEFTINDEX",
+		"LEFTFINGERS",
+		"LEFTTHUMB",
+		nullptr
+	};
 
 	// Clone the new tree with the tree that is passed in
 	HTreeClass * new_tree = new HTreeClass( *tree );
@@ -1204,8 +1217,8 @@ HTreeClass * HTreeClass::Create_Interpolated(const HTreeClass * tree_base,
 	// Clone the first one,
 	HTreeClass * new_tree = W3DNEW HTreeClass( *tree_base );
 
-	float	a_scale_abs = WWMath::Fabs( a_scale );
-	float	b_scale_abs = WWMath::Fabs( b_scale );
+	float	a_scale_abs = WWMath::Fabsf_Legacy( a_scale );
+	float	b_scale_abs = WWMath::Fabsf_Legacy( b_scale );
 
 	if ( a_scale_abs + b_scale_abs > 0 ) {
 

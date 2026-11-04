@@ -70,19 +70,19 @@
 
 #include "sphereobj.h"
 #include "w3d_util.h"
-#include "wwdebug.h"
+#include "WWDebug/wwdebug.h"
 #include "vertmaterial.h"
 #include "ww3d.h"
-#include "chunkio.h"
+#include "WWLib/chunkio.h"
 #include "rinfo.h"
 #include "coltest.h"
-#include "bound.h"
+#include "WWLib/bound.h"
 #include "inttest.h"
 #include "predlod.h"
-#include "matrix3.h"
-#include "wwmath.h"
+#include "WWMath/matrix3.h"
+#include "WWMath/wwmath.h"
 #include "assetmgr.h"
-#include "wwstring.h"
+#include "WWLib/wwstring.h"
 #include "camera.h"
 #include "statistics.h"
 #include "dx8wrapper.h"
@@ -1176,12 +1176,7 @@ SpherePrototypeClass::SpherePrototypeClass(SphereRenderObjClass *sphere)
 	//
 	if (sphere->SphereTexture != nullptr) {
 		StringClass name = sphere->SphereTexture->Get_Full_Path();
-		const char *filename = ::strrchr (name, '\\');
-		if (filename != nullptr) {
-			filename ++;
-		} else {
-			filename = name;
-		}
+		const char *filename = getFileName (name.str());
 
 		strlcpy(Definition.TextureName, filename, ARRAY_SIZE(Definition.TextureName));
 

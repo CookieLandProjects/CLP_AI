@@ -834,9 +834,9 @@ protected:	// Note - If you add any member vars, you must take them into account
 	ScriptAction *m_action;			///< First in a list of actions executed if the conditions are true.
 	ScriptAction *m_actionFalse;///< First in a list of actions executed if the conditions are false.
 	Script			*m_nextScript;	///< Next in the list of scripts.
+	UnsignedInt m_frameToEvaluateAt; ///< When to evaluate the conditions next, if m_delayEvaluationSeconds>0.
 
 // Runtime fields - not saved or read.
-	UnsignedInt m_frameToEvaluateAt; ///< When to evaluate the conditions next, if m_delayEvaluationSeconds>0.
 	Bool				m_hasWarnings; ///< Runtime flag used by the editor only.
 	AsciiString	m_conditionTeamName; ///< Runtime name used by ScriptEngine only.
 	Real				m_conditionTime;		///< Amount of time (cum) to evaluate conditions.
@@ -915,7 +915,7 @@ public:
 	OrCondition *findPreviousOrCondition( OrCondition *curOr );
 
 	// Support routines for ScriptEngine -
-	AsciiString getConditionTeamName() {return m_conditionTeamName;}
+	const AsciiString& getConditionTeamName() const {return m_conditionTeamName;}
 	void setConditionTeamName(AsciiString teamName) {m_conditionTeamName = teamName;}
 };
 
@@ -1005,7 +1005,8 @@ public:
 		NUM_ITEMS
 	};
 
-	enum { // Comparison types.  Stored in Int value.
+	enum {
+		// Comparison types.  Stored in Int value.
 		LESS_THAN = 0,
 		LESS_EQUAL,
 		EQUAL,
@@ -1014,7 +1015,8 @@ public:
 		NOT_EQUAL
 	};
 
-	enum { // Relation types. Stored in Int value. (Values from GameCommon.h)
+	enum {
+		// Relation types. Stored in Int value. (Values from GameCommon.h)
 		REL_ENEMY			= ENEMIES,
 		REL_NEUTRAL		= NEUTRAL,
 		REL_FRIEND		= ALLIES

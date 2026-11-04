@@ -43,8 +43,9 @@
 #include "Lib/BaseType.h"
 #include "WWMath/vector3.h"
 #include "WWMath/matrix3d.h"
+#include <Utility/bit_adapter.h>
 
-	#define AS_INT(x) (*(Int *)(&x))
+	#define AS_INT(x) (std::bit_cast<Int>(x))
 	#define DUMPVEL DUMPCOORD3DNAMED(&m_vel, "m_vel")
 	#define DUMPACCEL DUMPCOORD3DNAMED(&m_accel, "m_accel")
 	#define DUMPVECTOR3(x) DUMPVECTOR3NAMED(x, #x)
@@ -103,23 +104,23 @@
 
 #else // DEBUG_CRC
 
-	#define DUMPVEL {}
-	#define DUMPACCEL {}
-	#define DUMPVECTOR3(x) {}
-	#define DUMPVECTOR3NAMED(x, y) {}
-	#define DUMPCOORD3D(x) {}
-	#define DUMPCOORD3DNAMED(x, y) {}
-	#define DUMPMATRIX3D(x) {}
-	#define DUMPMATRIX3DNAMED(x, y) {}
+	#define DUMPVEL
+	#define DUMPACCEL
+	#define DUMPVECTOR3(x)
+	#define DUMPVECTOR3NAMED(x, y)
+	#define DUMPCOORD3D(x)
+	#define DUMPCOORD3DNAMED(x, y)
+	#define DUMPMATRIX3D(x)
+	#define DUMPMATRIX3DNAMED(x, y)
 
-	#define DUMPREAL(x) {}
-	#define DUMPREALNAMED(x, y) {}
+	#define DUMPREAL(x)
+	#define DUMPREALNAMED(x, y)
 
-	#define CRCDEBUG_LOG(x) {}
-	#define CRCDUMP_LOG(x) {}
-	#define CRCGEN_LOG(x) {}
+	#define CRCDEBUG_LOG(x)
+	#define CRCDUMP_LOG(x)
+	#define CRCGEN_LOG(x)
 
-	#define VERIFY_CRC {}
+	#define VERIFY_CRC
 
 #endif
 

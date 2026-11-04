@@ -36,14 +36,14 @@
 
 #include "StdAfx.h"
 #include "SoundEditDialog.h"
-#include "soundrobj.h"
-#include "AudibleSound.h"
+#include "WW3D2/soundrobj.h"
+#include "WWAudio/AudibleSound.h"
 #include "Utils.h"
-#include "Sound3D.h"
+#include "WWAudio/Sound3D.h"
 #include "PlaySoundDialog.h"
 #include "W3DViewDoc.h"
 #include "DataTreeView.h"
-#include "assetmgr.h"
+#include "WW3D2/assetmgr.h"
 
 
 #ifdef RTS_DEBUG
@@ -234,17 +234,11 @@ SoundEditDialogClass::OnOK ()
 	}
 
 	//
-	//	Create a sound definition from the settings on the dialog
+	//	Pass a sound with the settings on the dialog onto the render object
 	//
 	AudibleSoundClass *sound = Create_Sound_Object ();
-	AudibleSoundDefinitionClass definition;
-	definition.Initialize_From_Sound (sound);
+	SoundRObj->Set_Sound (sound);
 	REF_PTR_RELEASE (sound);
-
-	//
-	//	Pass the sound definition onto the render object
-	//
-	SoundRObj->Set_Sound (&definition);
 
 	//
 	//	Pass the flags onto the render object

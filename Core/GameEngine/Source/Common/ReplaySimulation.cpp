@@ -77,7 +77,7 @@ int ReplaySimulation::simulateReplaysInThisProcess(const std::vector<AsciiString
 	DWORD totalStartTimeMillis = GetTickCount();
 	for (size_t i = 0; i < filenames.size(); i++)
 	{
-		AsciiString filename = filenames[i];
+		const AsciiString &filename = filenames[i];
 		printf("Simulating Replay \"%s\"\n", filename.str());
 		fflush(stdout);
 		DWORD startTimeMillis = GetTickCount();
@@ -169,7 +169,8 @@ int ReplaySimulation::simulateReplaysInWorkerProcesses(const std::vector<AsciiSt
 			UnicodeString filenameWide;
 			filenameWide.translate(filenames[filenamePositionStarted]);
 			UnicodeString command;
-			command.format(L"\"%s\"%s%s -replay \"%s\"",
+			// Pass -useCwd, so that the worker keeps the working directory that it inherits from this process.
+			command.format(L"\"%s\"%s%s -useCwd -replay \"%s\"",
 				exePath,
 				TheGlobalData->m_windowed ? L" -win" : L"",
 				TheGlobalData->m_headless ? L" -headless" : L"",
@@ -210,7 +211,8 @@ std::vector<AsciiString> ReplaySimulation::resolveFilenameWildcards(const std::v
 	{
 		if (filename->find('*') || filename->find('?'))
 		{
-			AsciiString dir1 = TheRecorder->getReplayDir();
+			// An absolute path is searched as is, a relative path is searched in the replay directory.
+			AsciiString dir1 = isAbsolutePath(filename->str()) ? AsciiString::TheEmptyString : TheRecorder->getReplayDir();
 			AsciiString dir2 = *filename;
 			AsciiString wildcard = *filename;
 			{
@@ -218,7 +220,7 @@ std::vector<AsciiString> ReplaySimulation::resolveFilenameWildcards(const std::v
 				while (len)
 				{
 					char c = dir2.getCharAt(len-1);
-					if (c == '/' || c == '\\')
+					if (isPathSeparator(c))
 					{
 						wildcard.set(wildcard.str()+dir2.getLength());
 						break;

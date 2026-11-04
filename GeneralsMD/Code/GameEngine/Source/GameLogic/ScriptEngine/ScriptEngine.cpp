@@ -33,6 +33,7 @@
 #include "Common/FileSystem.h"
 #include "Common/FramePacer.h"
 #include "Common/GameState.h"
+#include "Common/GameUtility.h"
 #include "Common/LatchRestore.h"
 #include "Common/MessageStream.h"
 #include "Common/PerfTimer.h"
@@ -457,6 +458,7 @@ m_fade(FADE_NONE),
 m_freezeByScript(FALSE),
 m_frameObjectCountChanged(0),
 m_closeWindowTimer(0),
+m_letterBoxActive(FALSE),
 m_curFadeFrame(0),
 m_curFadeValue(0.0f),
 m_endGameTimer(0),
@@ -8130,6 +8132,7 @@ void ScriptEngine::reset()
 	m_numFlags = 1;
 	m_endGameTimer = -1;
 	m_closeWindowTimer = -1;
+	m_letterBoxActive = FALSE;
 
 //-------------------------------------------------------------------------------------------------
 //------------------------------- @CLP_AI SCRIPT ENGINE ADDITIONS ---------------------------------
@@ -10491,7 +10494,7 @@ void ScriptEngine::addObjectToCache(Object* pNewObject)
 				AsciiString newNameForDead;
 				newNameForDead.format("Reassigning dead object's name '%s' to object (%d) of type '%s'", objName.str(), pNewObject->getID(), pNewObject->getTemplate()->getName().str());
 				AppendDebugMessage(newNameForDead, FALSE);
-				DEBUG_LOG((newNameForDead.str()));
+				DEBUG_LOG(("%s", newNameForDead.str()));
 				it->second = pNewObject;
 				return;
 			} else {
@@ -10752,7 +10755,7 @@ Bool ScriptEngine::isSpecialPowerTriggered( Int playerIndex, const AsciiString& 
 
 	for (ListAsciiStringObjectIDIt findIt = specialList->begin(); findIt != specialList->end(); ++findIt)
 	{
-		AsciiStringObjectIDPair pair = *findIt;
+		const AsciiStringObjectIDPair &pair = *findIt;
 		if (pair.first == completedPower && (sourceObj == INVALID_ID || sourceObj == pair.second))
 		{
 			if (removeFromList) {
@@ -10777,7 +10780,7 @@ Bool ScriptEngine::isSpecialPowerMidway( Int playerIndex, const AsciiString& com
 
 	for (ListAsciiStringObjectIDIt findIt = specialList->begin(); findIt != specialList->end(); ++findIt)
 	{
-		AsciiStringObjectIDPair pair = *findIt;
+		const AsciiStringObjectIDPair &pair = *findIt;
 		if (pair.first == completedPower && (sourceObj == INVALID_ID || sourceObj == pair.second))
 		{
 			if (removeFromList) {
@@ -10802,7 +10805,7 @@ Bool ScriptEngine::isSpecialPowerComplete( Int playerIndex, const AsciiString& c
 
 	for (ListAsciiStringObjectIDIt findIt = specialList->begin(); findIt != specialList->end(); ++findIt)
 	{
-		AsciiStringObjectIDPair pair = *findIt;
+		const AsciiStringObjectIDPair &pair = *findIt;
 		if (pair.first == completedPower && (sourceObj == INVALID_ID || sourceObj == pair.second))
 		{
 			if (removeFromList) {
@@ -10827,7 +10830,7 @@ Bool ScriptEngine::isUpgradeComplete( Int playerIndex, const AsciiString& upgrad
 
 	for (ListAsciiStringObjectIDIt findIt = specialList->begin(); findIt != specialList->end(); ++findIt)
 	{
-		AsciiStringObjectIDPair pair = *findIt;
+		const AsciiStringObjectIDPair &pair = *findIt;
 		if (pair.first == upgrade && (sourceObj == INVALID_ID || sourceObj == pair.second))
 		{
 			if (removeFromList) {
@@ -10944,7 +10947,7 @@ void ScriptEngine::adjustToppleDirection( Object *object, Coord2D *direction)
 //-------------------------------------------------------------------------------------------------
 void ScriptEngine::adjustToppleDirection( Object *object, Coord3D *direction)
 {
-	AsciiString objName = object->getName();
+	const AsciiString &objName = object->getName();
 	if (objName.isEmpty() || !direction) {
 		return;
 	}
@@ -10994,7 +10997,8 @@ Bool ScriptEngine::evaluateConditions( Script *pScript, Team *thisTeam, Player *
 			}
 			pCondition = pCondition->getNext();
 		}
-		if (andTerm) { // The outer list is OR'ed - so any true inner means we are true.
+		if (andTerm) {
+			// The outer list is OR'ed - so any true inner means we are true.
 			testValue = true;
 			break;
 		}
@@ -11193,6 +11197,13 @@ void ScriptEngine::removeAllSequentialScripts(Object *obj)
 		}
 		if (seqScript->m_objectID == id) {
 			it = cleanupSequentialScript(it, TRUE);
+
+#if RTS_GENERALS && RETAIL_COMPATIBLE_CRC
+			// TheSuperHackers @info Preserve the original (bugged) traversal behavior by skipping the next element, if any.
+			if (it != m_sequentialScripts.end()) {
+				++it;
+			}
+#endif
 		}
     else
 		  ++it;
@@ -11437,7 +11448,8 @@ void ScriptEngine::evaluateAndProgressAllSequentialScripts()
 						itAdvanced = true;
 					}
 
-					if (itAdvanced) {	// check to make sure they aren't dead.
+					if (itAdvanced) {
+						// check to make sure they aren't dead.
 						if (obj && obj->isEffectivelyDead()) {
 							it = cleanupSequentialScript(it, true);
 							continue;
@@ -11832,6 +11844,22 @@ void ScriptEngine::doFreezeTime()
 void ScriptEngine::doUnfreezeTime()
 {
 	m_freezeByScript = FALSE;
+}
+
+//-------------------------------------------------------------------------------------------------
+/** Report the scripted letterbox opening or closing. */
+//-------------------------------------------------------------------------------------------------
+void ScriptEngine::friend_notifyLetterBoxActive(Bool active)
+{
+	m_letterBoxActive = active;
+}
+
+//-------------------------------------------------------------------------------------------------
+/** Is the letterbox active right now? */
+//-------------------------------------------------------------------------------------------------
+Bool ScriptEngine::isLetterBoxActive() const
+{
+	return m_letterBoxActive;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -12242,6 +12270,7 @@ void ScriptEngine::setGlobalDifficulty( GameDifficulty difficulty )
 	* 3: Added m_objectsShouldReceiveDifficultyBonus (JKMCD)
 	* 4: current music track info
 	* 5: add ChooseVictimAlwaysUsesNormal
+	* 6: TheSuperHackers @tweak Serialize m_letterBoxActive
 	*/
 // ------------------------------------------------------------------------------------------------
 void ScriptEngine::xfer( Xfer *xfer )
@@ -12249,7 +12278,11 @@ void ScriptEngine::xfer( Xfer *xfer )
 	Int i;
 
 	// version
+#if RETAIL_COMPATIBLE_XFER_SAVE
 	const XferVersion currentVersion = 5;
+#else
+	const XferVersion currentVersion = 6;
+#endif
 	XferVersion version = currentVersion;
 	xfer->xferVersion( &version, currentVersion );
 
@@ -12740,6 +12773,18 @@ void ScriptEngine::xfer( Xfer *xfer )
 		m_ChooseVictimAlwaysUsesNormal = false;
 	}
 
+	if (version >= 6)
+	{
+		xfer->xferBool(&m_letterBoxActive);
+	}
+	else
+	{
+		if (xfer->getXferMode() == XFER_LOAD)
+		{
+			m_letterBoxActive = FALSE;
+		}
+	}
+
 	if( xfer->getXferMode() == XFER_LOAD ) {
 		// We are doing a load.  If there is no fade active, do a black fade in to start.
 		if (m_fade == FADE_NONE) {
@@ -12771,6 +12816,8 @@ void ScriptEngine::loadPostProcess()
 		event.setPlayerIndex(ThePlayerList->getLocalPlayer()->getPlayerIndex());
 		TheAudio->addAudioEvent(&event);
 	}
+
+	rts::enableLetterBox(isLetterBoxActive());
 
 }
 
@@ -13162,6 +13209,7 @@ static const std::string F_SIZE =					"Size";
 static const std::string F_STARTSIZERATE ="StartSizeRate";
 static const std::string F_SIZERATE =			"SizeRate";
 static const std::string F_SIZERATEDAMP =	"SizeRateDamping";
+static const std::string F_VOLPARTICLEDEPTH = "VolParticleDepth";
 
 static const std::string F_ALPHA1 =				"Alpha1";
 static const std::string F_ALPHA2 =				"Alpha2";
@@ -13212,7 +13260,7 @@ static const std::string F_VOLSPHERERAD	=	"VolSphereRadius";
 static const std::string F_VOLCYLRAD =		"VolCylinderRadius";
 static const std::string F_VOLCYLLEN =		"VolCylinderLength";
 static const std::string F_ISHOLLOW =			"IsHollow";
-static const std::string F_ISXYPLANAR =		"IsGroundAligned";
+static const std::string F_PARTICLEALIGNMENT =		"IsGroundAligned";
 static const std::string F_ISEMITABOVEGROUNDONLY
 																			=		"IsEmitAboveGroundOnly";
 static const std::string F_ISPARTICLEUPTOWARDSEMITTER
@@ -13323,6 +13371,9 @@ void _writeSingleParticleSystem( File *out, ParticleSystemTemplate *templ )
 	sprintf(buff1, FORMAT_STRING, templ->m_sizeRateDamping.getMinimumValue());
 	sprintf(buff2, FORMAT_STRING, templ->m_sizeRateDamping.getMaximumValue());
 	thisEntry.append(SEP_HEAD).append(F_SIZERATEDAMP).append(EQ_WITH_SPACES).append(buff1).append(SEP_SPACE).append(buff2).append(SEP_EOL);
+
+	sprintf(buff1, "%d", templ->m_volumeParticleDepth);
+	thisEntry.append(SEP_HEAD).append(F_VOLPARTICLEDEPTH).append(EQ_WITH_SPACES).append(buff1).append(SEP_EOL);
 
 	sprintf(buff1, FORMAT_STRING, templ->m_alphaKey[0].var.getMinimumValue());
 	sprintf(buff2, FORMAT_STRING, templ->m_alphaKey[0].var.getMaximumValue());
@@ -13511,7 +13562,7 @@ void _writeSingleParticleSystem( File *out, ParticleSystemTemplate *templ )
 	}
 
 	thisEntry.append(SEP_HEAD).append(F_ISHOLLOW).append(EQ_WITH_SPACES).append((templ->m_isEmissionVolumeHollow ? STR_TRUE : STR_FALSE)).append(SEP_EOL);
-	thisEntry.append(SEP_HEAD).append(F_ISXYPLANAR).append(EQ_WITH_SPACES).append((templ->m_isGroundAligned ? STR_TRUE : STR_FALSE)).append(SEP_EOL);
+	thisEntry.append(SEP_HEAD).append(F_PARTICLEALIGNMENT).append(EQ_WITH_SPACES).append(GroundAlignmentTypeNames[templ->m_particleAlignment]).append(SEP_EOL);
 	thisEntry.append(SEP_HEAD).append(F_ISEMITABOVEGROUNDONLY).append(EQ_WITH_SPACES).append((templ->m_isEmitAboveGroundOnly ? STR_TRUE : STR_FALSE)).append(SEP_EOL);
 	thisEntry.append(SEP_HEAD).append(F_ISPARTICLEUPTOWARDSEMITTER).append(EQ_WITH_SPACES).append((templ->m_isParticleUpTowardsEmitter ? STR_TRUE : STR_FALSE)).append(SEP_EOL);
 
@@ -13627,7 +13678,8 @@ static void _reloadParticleSystemFromINI( AsciiString particleSystemName )
 			iniFile->nextLine(linebuff, INI_MAX_CHARS_PER_LINE);
 		}
 
-		{	// copy it to a temp file
+		{
+			// copy it to a temp file
 			if (iniFile->eof()) {
 				throw 0;
 			}

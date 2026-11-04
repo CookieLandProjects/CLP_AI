@@ -33,6 +33,7 @@
 #include "Common/AudioHandleSpecialValues.h"
 #include "Common/FramePacer.h"
 #include "Common/GameAudio.h"
+#include "Common/GameUtility.h"
 #include "Common/MapObject.h"							// For MAP_XY_FACTOR
 #include "Common/PartitionSolver.h"
 #include "Common/Player.h"
@@ -643,7 +644,7 @@ void ScriptActions::doCreateReinforcements(const AsciiString& team, const AsciiS
 
 		PartitionSolver partition(vecOfUnits, vecOfTransports, PREFER_FAST_SOLUTION);
 		partition.solve();
-		SolutionVec solution = partition.getSolution();
+		const SolutionVec& solution = partition.getSolution();
 		for (size_t i = 0; i < solution.size(); ++i) {
 			Object *unit = TheGameLogic->findObjectByID(solution[i].first);
 			Object *trans = TheGameLogic->findObjectByID(solution[i].second);
@@ -1518,7 +1519,7 @@ void ScriptActions::doLoadAllTransports(const AsciiString& teamName)
 
 	PartitionSolver partition(vecOfUnits, vecOfTransports, PREFER_FAST_SOLUTION);
 	partition.solve();
-	SolutionVec solution = partition.getSolution();
+	const SolutionVec& solution = partition.getSolution();
 	for (size_t i = 0; i < solution.size(); ++i) {
 		Object *unit = TheGameLogic->findObjectByID(solution[i].first);
 		Object *trans = TheGameLogic->findObjectByID(solution[i].second);
@@ -2995,13 +2996,15 @@ void ScriptActions::doCameraMotionBlurJump(const AsciiString& waypointName, Bool
 		passed = TRUE;
 		if (saturate) {
 			if (!TheTacticalView->setViewFilterMode(FM_VIEW_MB_IN_AND_OUT_SATURATE))
-			{	//failed to set filter so restore default state
+			{
+				//failed to set filter so restore default state
 				TheTacticalView->setViewFilter(FT_NULL_FILTER);
 				passed = FALSE;
 			}
 		} else {
 			if (!TheTacticalView->setViewFilterMode(FM_VIEW_MB_IN_AND_OUT_ALPHA))
-			{	//failed to set filter so restore default state
+			{
+				//failed to set filter so restore default state
 				TheTacticalView->setViewFilter(FT_NULL_FILTER);
 				passed = FALSE;
 			};
@@ -3043,7 +3046,8 @@ void ScriptActions::doCameraMotionBlur(Bool zoomIn, Bool saturate)
 			}
 		}
 		if (!TheTacticalView->setViewFilterMode(mode))
-		{	//failed to set the filter so restore everything to normal
+		{
+			//failed to set the filter so restore everything to normal
 			TheTacticalView->setViewFilter(FT_NULL_FILTER);
 		}
 	}
@@ -3921,16 +3925,8 @@ void ScriptActions::doPlayerExitAllBuildings(const AsciiString& playerName)
 //-------------------------------------------------------------------------------------------------
 void ScriptActions::doLetterBoxMode(Bool startLetterbox)
 {
-	if (startLetterbox)
-	{
-		HideControlBar(TRUE);
-		TheDisplay->enableLetterBox(TRUE);
-	}
-	else
-	{
-		ShowControlBar(FALSE);
-		TheDisplay->enableLetterBox(FALSE);
-	}
+	TheScriptEngine->friend_notifyLetterBoxActive(startLetterbox);
+	rts::enableLetterBox(startLetterbox);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -3947,7 +3943,8 @@ void ScriptActions::doBlackWhiteMode(Bool startBWMode, Int frames)
 	else
 	{
 		if ((TheTacticalView->getViewFilterType()) == FT_VIEW_BW_FILTER)
-		{	//mode already set, turn it off
+		{
+			//mode already set, turn it off
 			TheTacticalView->setFadeParameters(frames, -1);
 		}
 	}
@@ -5152,7 +5149,8 @@ void ScriptActions::doForceObjectSelection(const AsciiString& teamName, const As
 		}
 
 		if (obj->getTemplate() && obj->getTemplate()->getName() == objectType) {
-			if (bestGuess == nullptr || obj->getID() < bestGuess->getID()) { // lower ID means its newer
+			if (bestGuess == nullptr || obj->getID() < bestGuess->getID()) {
+				// lower ID means its newer
 				bestGuess = obj;
 			}
 		}
@@ -5348,11 +5346,68 @@ void ScriptActions::doMoveUnitTowardsNearest( const AsciiString& unitName, const
 	{
 		return;
 	}
-	PartitionFilterPolygonTrigger acceptWithin(trig);
-	PartitionFilterSameMapStatus filterMapStatus(obj);
-	PartitionFilter* filters[] = { &acceptWithin, &filterMapStatus, nullptr };
-	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(obj->getPosition(), filters, objectType, selectionMode);
-	if (!bestObj) return;
+
+	Object *bestObj = nullptr;
+
+	const ThingTemplate *templ = TheThingFactory->findTemplate( objectType, FALSE );
+	if( templ )
+	{
+		PartitionFilterThing thingsToAccept(templ, true);
+		PartitionFilterPolygonTrigger acceptWithin(trig);
+		PartitionFilterSameMapStatus filterMapStatus(obj);
+
+		PartitionFilter *filters[] = {
+			&thingsToAccept,
+			&acceptWithin,
+			&filterMapStatus,
+			nullptr
+		};
+
+		bestObj = ThePartitionManager->getClosestObject( obj->getPosition(), REALLY_FAR, FROM_CENTER_2D, filters );
+		if( !bestObj )
+		{
+			return;
+		}
+	}
+	else
+	{
+		ObjectTypes *objectTypes = TheScriptEngine->getObjectTypes( objectType );
+		if( objectTypes )
+		{
+			PartitionFilterPolygonTrigger acceptWithin( trig );
+			PartitionFilterSameMapStatus filterMapStatus( obj );
+
+			Coord3D pos = *obj->getPosition();
+			Real closestDist;
+			Real dist;
+
+			for( size_t typeIndex = 0; typeIndex < objectTypes->getListSize(); typeIndex++ )
+			{
+				AsciiString thisTypeName = objectTypes->getNthInList( typeIndex );
+				const ThingTemplate *thisType = TheThingFactory->findTemplate( thisTypeName );
+				if( thisType )
+				{
+					PartitionFilterThing f2( thisType, true );
+					PartitionFilter *filters[] = {
+						&f2,
+						&acceptWithin,
+						&filterMapStatus,
+						nullptr
+					};
+
+					Object *obj = ThePartitionManager->getClosestObject( &pos, REALLY_FAR, FROM_CENTER_2D, filters, &dist );
+					if( obj )
+					{
+						if( !bestObj || dist < closestDist )
+						{
+							bestObj = obj;
+							closestDist = dist;
+						}
+					}
+				}
+			}
+		}
+	}
 
 	ai->chooseLocomotorSet( LOCOMOTORSET_NORMAL );
 	ai->aiMoveToObject( bestObj, CMD_FROM_SCRIPT );
@@ -5398,9 +5453,46 @@ void ScriptActions::doMoveTeamTowardsNearest( const AsciiString& teamName, const
 	Coord3D teamPos = *team->getEstimateTeamPosition();
 	PartitionFilterSameMapStatus filterMapStatus( teamObj );
 	PartitionFilterPolygonTrigger acceptWithin( trig );
-	PartitionFilter* filters[] = { &acceptWithin, &filterMapStatus, nullptr };
-	Object* bestObj = TheScriptEngine->getObjectWithSelectionMode(&teamPos, filters, objectType, selectionMode);
-	if (!bestObj) return;
+	Object *bestObj = nullptr;
+
+	const ThingTemplate *templ = TheThingFactory->findTemplate( objectType, FALSE );
+	if( templ )
+	{
+		//Find the closest specified template.
+		PartitionFilterThing thingsToAccept( templ, true );
+		PartitionFilter *filters[] = {
+			&thingsToAccept,
+			&acceptWithin,
+			&filterMapStatus,
+			nullptr
+		};
+		bestObj = ThePartitionManager->getClosestObject( &teamPos, REALLY_FAR, FROM_CENTER_2D, filters );
+		if (!bestObj)
+		{
+			return;
+		}
+	}
+	else
+	{
+		//Find the closest object within the object template list.
+		ObjectTypes *objectTypes = TheScriptEngine->getObjectTypes( objectType );
+		if( objectTypes )
+		{
+			Real closestDist;
+			Real dist;
+			for( size_t typeIndex = 0; typeIndex < objectTypes->getListSize(); typeIndex++ )
+			{
+				AsciiString thisTypeName = objectTypes->getNthInList( typeIndex );
+				const ThingTemplate *thisType = TheThingFactory->findTemplate( thisTypeName );
+				if( thisType )
+				{
+					PartitionFilterThing thingToAccept( thisType, true );
+					PartitionFilter *filters[] = {
+						&thingToAccept,
+						&acceptWithin,
+						&filterMapStatus,
+						nullptr
+					};
 
 	for( iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance() )
 	{
@@ -5516,7 +5608,12 @@ void ScriptActions::doSkirmishCommandButtonOnMostValuable( const AsciiString& te
 	PartitionFilterValidCommandButtonTarget f2(srcObj, commandButton, true, CMD_FROM_SCRIPT);
 	PartitionFilterSameMapStatus filterMapStatus(srcObj);
 
-	PartitionFilter *filters[] = { &f1, &f2, &filterMapStatus, nullptr };
+	PartitionFilter *filters[] = {
+		&f1,
+		&f2,
+		&filterMapStatus,
+		nullptr
+	};
 	// @todo: Should we add the group's radius to the range? Seems like a possibility.
 	SimpleObjectIterator *iter = ThePartitionManager->iterateObjectsInRange(&pos, range, FROM_CENTER_2D, filters, ITER_SORTED_EXPENSIVE_TO_CHEAP);
 	MemoryPoolObjectHolder hold(iter);
@@ -5622,7 +5719,12 @@ void ScriptActions::doTeamUseCommandButtonOnNearestEnemy( const AsciiString& tea
 	Coord3D pos;
 	theGroup->getCenter(&pos);
 
-	PartitionFilter *filters[] = { &f1, &f2, &filterMapStatus, nullptr };
+	PartitionFilter *filters[] = {
+		&f1,
+		&f2,
+		&filterMapStatus,
+		nullptr
+	};
 	Object *obj = ThePartitionManager->getClosestObject(&pos, REALLY_FAR, FROM_CENTER_2D, filters);
 	if (!obj) {
 		return;
@@ -5674,7 +5776,14 @@ void ScriptActions::doTeamUseCommandButtonOnNearestGarrisonedBuilding( const Asc
 	Coord3D pos;
 	theGroup->getCenter(&pos);
 
-	PartitionFilter *filters[] = { &f1, &f2, &f3, &f4, &filterMapStatus, nullptr };
+	PartitionFilter *filters[] = {
+		&f1,
+		&f2,
+		&f3,
+		&f4,
+		&filterMapStatus,
+		nullptr
+	};
 	Object *obj = ThePartitionManager->getClosestObject(&pos, REALLY_FAR, FROM_CENTER_2D, filters);
 	if (!obj) {
 		return;
@@ -5725,7 +5834,13 @@ void ScriptActions::doTeamUseCommandButtonOnNearestKindof( const AsciiString& te
 	Coord3D pos;
 	theGroup->getCenter(&pos);
 
-	PartitionFilter *filters[] = { &f1, &f2, &f3, &filterMapStatus, nullptr };
+	PartitionFilter *filters[] = {
+		&f1,
+		&f2,
+		&f3,
+		&filterMapStatus,
+		nullptr
+	};
 	Object *obj = ThePartitionManager->getClosestObject(&pos, REALLY_FAR, FROM_CENTER_2D, filters);
 	if (!obj) {
 		return;
@@ -5776,7 +5891,13 @@ void ScriptActions::doTeamUseCommandButtonOnNearestBuilding( const AsciiString& 
 	Coord3D pos;
 	theGroup->getCenter(&pos);
 
-	PartitionFilter *filters[] = { &f1, &f2, &f3, &filterMapStatus, nullptr };
+	PartitionFilter *filters[] = {
+		&f1,
+		&f2,
+		&f3,
+		&filterMapStatus,
+		nullptr
+	};
 	Object *obj = ThePartitionManager->getClosestObject(&pos, REALLY_FAR, FROM_CENTER_2D, filters);
 	if (!obj) {
 		return;
@@ -5828,7 +5949,14 @@ void ScriptActions::doTeamUseCommandButtonOnNearestBuildingClass( const AsciiStr
 	Coord3D pos;
 	theGroup->getCenter(&pos);
 
-	PartitionFilter *filters[] = { &f1, &f2, &f3, &f4, &filterMapStatus, nullptr };
+	PartitionFilter *filters[] = {
+		&f1,
+		&f2,
+		&f3,
+		&f4,
+		&filterMapStatus,
+		nullptr
+	};
 	Object *obj = ThePartitionManager->getClosestObject(&pos, REALLY_FAR, FROM_CENTER_2D, filters);
 	if (!obj) {
 		return;
@@ -5881,7 +6009,13 @@ void ScriptActions::doTeamUseCommandButtonOnNearestObjectType( const AsciiString
 		PartitionFilterThing f2(thingTemplate, true);
 		PartitionFilterValidCommandButtonTarget f3(srcObj, commandButton, true, CMD_FROM_SCRIPT);
 		PartitionFilterSameMapStatus filterMapStatus(srcObj);
-		PartitionFilter *filters[] = { &f1, &f2, &f3, &filterMapStatus, nullptr };
+		PartitionFilter *filters[] = {
+			&f1,
+			&f2,
+			&f3,
+			&filterMapStatus,
+			nullptr
+		};
 
 		Coord3D pos;
 		theGroup->getCenter(&pos);
@@ -5913,7 +6047,13 @@ void ScriptActions::doTeamUseCommandButtonOnNearestObjectType( const AsciiString
 				if( thisType )
 				{
 					PartitionFilterThing f2( thisType, true );
-					PartitionFilter *filters[] = { &f1, &f2, &f3, &f4, nullptr };
+					PartitionFilter *filters[] = {
+						&f1,
+						&f2,
+						&f3,
+						&f4,
+						nullptr
+					};
 
 					Object *obj = ThePartitionManager->getClosestObject(&pos, REALLY_FAR, FROM_CENTER_2D, filters, &dist );
 					if( obj )
@@ -6001,7 +6141,12 @@ void ScriptActions::doTeamCaptureNearestUnownedFactionUnit( const AsciiString& t
 	Coord3D pos;
 	theGroup->getCenter(&pos);
 
-	PartitionFilter *filters[] = { &f1, &f2, &filterMapStatus, nullptr };
+	PartitionFilter *filters[] = {
+		&f1,
+		&f2,
+		&filterMapStatus,
+		nullptr
+	};
 	Object *obj = ThePartitionManager->getClosestObject(&pos, REALLY_FAR, FROM_CENTER_2D, filters);
 	if (!obj) {
 		return;

@@ -29,7 +29,7 @@
 
 #pragma once
 
-#include "../debug/debug.h"
+#include "debug/debug.h"
 #include "internal_funclevel.h"
 #include "internal_highlevel.h"
 #include "internal_cmd.h"
@@ -43,8 +43,8 @@
 
 class ProfileFastCS
 {
-  ProfileFastCS(const ProfileFastCS&) CPP_11(= delete);
-  ProfileFastCS& operator=(const ProfileFastCS&) CPP_11(= delete);
+  ProfileFastCS(const ProfileFastCS&) FUNCTION_DELETE;
+  ProfileFastCS& operator=(const ProfileFastCS&) FUNCTION_DELETE;
 
 	static HANDLE testEvent;
 
@@ -112,8 +112,8 @@ public:
 
 	class Lock
 	{
-    Lock(const Lock&) CPP_11(= delete);
-	Lock& operator=(const Lock&) CPP_11(= delete);
+    Lock(const Lock&) FUNCTION_DELETE;
+	Lock& operator=(const Lock&) FUNCTION_DELETE;
 
 		ProfileFastCS& CriticalSection;
 
@@ -140,7 +140,7 @@ void ProfileFreeMemory(void *ptr);
 __forceinline void ProfileGetTime(__int64 &t)
 {
 #if defined(_MSC_VER) && _MSC_VER < 1300
-  _asm
+  __asm
   {
     mov ecx,[t]
     push eax

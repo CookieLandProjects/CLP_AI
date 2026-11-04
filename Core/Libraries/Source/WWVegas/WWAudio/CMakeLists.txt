@@ -1,10 +1,7 @@
 set(WWAUDIO_SRC
-    AABTreeSoundCullClass.h
     AudibleSound.cpp
     AudibleSound.h
     AudioEvents.h
-    AudioSaveLoad.cpp
-    AudioSaveLoad.h
     FilteredSound.cpp
     FilteredSound.h
     Listener.cpp
@@ -24,7 +21,6 @@ set(WWAUDIO_SRC
     sound3dhandle.h
     SoundBuffer.cpp
     SoundBuffer.h
-    SoundChunkIDs.h
     SoundCullObj.h
     soundhandle.cpp
     soundhandle.h
@@ -49,8 +45,6 @@ set(WWAUDIO_SRC
 add_library(corei_wwaudio INTERFACE)
 
 target_sources(corei_wwaudio INTERFACE ${WWAUDIO_SRC})
-
-target_include_directories(corei_wwaudio INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(corei_wwaudio INTERFACE
     core_wwcommon

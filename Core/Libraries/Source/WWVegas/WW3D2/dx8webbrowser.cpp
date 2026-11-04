@@ -39,10 +39,7 @@
 #if defined(_MSC_VER) && _MSC_VER < 1300
 
 // Import the Browser Type Library
-// BGC, the path for the dll file is pretty odd, no?
-//      I'll leave it like this till I can figure out a
-//      better way.
-#import "../../../../../Run/BrowserEngine.dll" no_namespace
+#import "EABrowserEngine/BrowserEngine.tlb" no_namespace
 
 #else
 
@@ -196,7 +193,7 @@ void	DX8WebBrowser::CreateBrowser(const char* browsername, const char* url, int 
 	if(pBrowser)
 	{
 		_bstr_t brsname(browsername);
-		pBrowser->CreateBrowser(brsname, _bstr_t(url), reinterpret_cast<long>(hWnd), x, y, w, h, options, gamedispatch);
+		pBrowser->CreateBrowser(brsname, _bstr_t(url), (long)(intptr_t)hWnd, x, y, w, h, options, gamedispatch);
 		pBrowser->SetUpdateRate(brsname, updateticks);
 	}
 }

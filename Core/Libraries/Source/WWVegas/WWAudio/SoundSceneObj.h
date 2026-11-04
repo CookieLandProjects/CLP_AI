@@ -34,12 +34,11 @@
 
 #pragma once
 
-#include "always.h"
+#include "WWLib/always.h"
 #include "WWAudio.h"
-#include "bittype.h"
-#include "persist.h"
-#include "multilist.h"
-#include "mutex.h"
+#include "WWLib/bittype.h"
+#include "WWLib/multilist.h"
+#include "WWLib/mutex.h"
 
 /////////////////////////////////////////////////////////////////////////////////
 // Forward declarations
@@ -73,7 +72,7 @@ const uint32	SOUND_OBJ_START_ID	= 1000000000;
 // object that will be inserted in the culling system.
 //
 /////////////////////////////////////////////////////////////////////////////////
-class SoundSceneObjClass : public MultiListObjectClass, public PersistClass, public RefCountClass
+class SoundSceneObjClass : public MultiListObjectClass, public RefCountClass
 {
 	public:
 
@@ -174,12 +173,6 @@ class SoundSceneObjClass : public MultiListObjectClass, public PersistClass, pub
 		//
 		virtual void			Set_DropOff_Radius (float radius = 1) = 0;
 		virtual float			Get_DropOff_Radius () const = 0;
-
-		//////////////////////////////////////////////////////////////////////
-		//	From PersistClass
-		//////////////////////////////////////////////////////////////////////
-		virtual bool						Save (ChunkSaveClass &csave) override;
-		virtual bool						Load (ChunkLoadClass &cload) override;
 
 	protected:
 

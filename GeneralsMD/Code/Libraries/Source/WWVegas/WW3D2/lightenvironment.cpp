@@ -38,7 +38,7 @@
 
 
 #include "lightenvironment.h"
-#include "matrix3d.h"
+#include "WWMath/matrix3d.h"
 #include "camera.h"
 #include "light.h"
 #include "colorspace.h"
@@ -107,7 +107,7 @@ void LightEnvironmentClass::InputLightStruct::Init_From_Point_Or_Spot_Light
 
 	if (light.Get_Flag(LightClass::FAR_ATTENUATION)) {
 
-		if (WWMath::Fabs(atten_end - atten_start) < WWMATH_EPSILON) {
+		if (WWMath::Fabsf_Legacy(atten_end - atten_start) < WWMATH_EPSILON) {
 
 			/*
 			** Start and end are equal, attenuation is a "step" function

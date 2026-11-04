@@ -44,6 +44,7 @@ class Drawable;
 class FontLibrary;
 class GameWindowManager;
 class InGameUI;
+class Intro;
 class Keyboard;
 class Mouse;
 class ParticleSystemManager;
@@ -56,10 +57,8 @@ class SnowManager;
 
 /// Function pointers for use by GameClient callback functions.
 typedef void (*GameClientFuncPtr)( Drawable *draw, void *userData );
-//typedef std::hash_map<DrawableID, Drawable *, rts::hash<DrawableID>, rts::equal_to<DrawableID> > DrawablePtrHash;
-//typedef DrawablePtrHash::iterator DrawablePtrHashIt;
-
-typedef std::vector<Drawable*> DrawablePtrVector;
+typedef std::hash_map<DrawableID, Drawable *, rts::hash<DrawableID>, rts::equal_to<DrawableID>/**/> DrawablePtrHash;
+typedef DrawablePtrHash::iterator DrawablePtrHashIt;
 
 //-----------------------------------------------------------------------------
 /** The Client message dispatcher, this is the last "translator" on the message
@@ -91,6 +90,7 @@ public:
 	// subsystem methods
 	virtual void init() override;																					///< Initialize resources
 	virtual void update() override;																				///< Updates the GUI, display, audio, etc
+	virtual void draw() override;
 	virtual void reset() override;																					///< reset system
 
 	virtual void setFrame( UnsignedInt frame ) { m_frame = frame; }			///< Set the GameClient's internal frame number
@@ -153,6 +153,8 @@ public:
 	void incrementRenderedObjectCount() { m_renderedObjectCount++; }
 	virtual void notifyTerrainObjectMoved(Object *obj) = 0;
 
+	Bool skipCurrentIntroStage();
+
 	static Bool isMovieAbortRequested();
 
 protected:
@@ -166,8 +168,7 @@ protected:
 	UnsignedInt m_frame;																				///< Simulation frame number from server
 
 	Drawable *m_drawableList;																		///< All of the drawables in the world
-//	DrawablePtrHash m_drawableHash;															///< Used for DrawableID lookups
-	DrawablePtrVector m_drawableVector;
+	DrawablePtrHash m_drawableHash;															///< Used for DrawableID lookups
 
 	DrawableID m_nextDrawableID;																///< For allocating drawable id's
 	DrawableID allocDrawableID();													///< Returns a new unique drawable id
@@ -179,6 +180,7 @@ protected:
 
 private:
 
+	Intro* m_intro;
 	UnsignedInt m_renderedObjectCount;													///< Keeps track of the number of rendered objects -- resets each frame.
 
 	//---------------------------------------------------------------------------
@@ -231,30 +233,6 @@ private:
 			} \
 		} \
 	} while (0);
-
-/** -----------------------------------------------------------------------------------------------
- * Given an object id, return the associated object.
- * This method is the primary interface for accessing objects, and should be used
- * instead of pointers to "attach" objects to each other.
- */
-inline Drawable* GameClient::findDrawableByID( const DrawableID id )
-{
-	if( id == INVALID_DRAWABLE_ID )
-		return nullptr;
-
-//	DrawablePtrHashIt it = m_drawableHash.find(id);
-//	if (it == m_drawableHash.end()) {
-//		// no such drawable
-//		return nullptr;
-//	}
-//
-//	return (*it).second;
-
-	if( (size_t)id < m_drawableVector.size() )
-		return m_drawableVector[(size_t)id];
-
-	return nullptr;
-}
 
 
 // the singleton

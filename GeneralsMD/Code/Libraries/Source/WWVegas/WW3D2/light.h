@@ -36,9 +36,9 @@
 
 #pragma once
 
-#include "always.h"
-#include "rendobj.h"
-#include "w3derr.h"
+#include "WWLib/always.h"
+#include "WW3D2/rendobj.h"
+#include "WW3D2/w3derr.h"
 
 class ChunkLoadClass;
 class ChunkSaveClass;
@@ -143,12 +143,6 @@ public:
 	WW3DErrorType			Load_W3D(ChunkLoadClass & cload);
 	WW3DErrorType			Save_W3D(ChunkSaveClass & csave);
 
-	/////////////////////////////////////////////////////////////////////////////
-	// Persistent object save-load interface
-	/////////////////////////////////////////////////////////////////////////////
-	virtual const PersistFactoryClass &	Get_Factory () const override;
-	virtual bool								Save (ChunkSaveClass &csave) override;
-	virtual bool								Load (ChunkLoadClass &cload) override;
 	//bool isDonut() {return Donut; };
 	//void setDonut(bool donut) { Donut = donut; };
 

@@ -212,32 +212,20 @@ static Bool canSelectWrapper( Drawable *draw, void *userData )
 
 //-----------------------------------------------------------------------------
 /**
- * Deselect all drawables, and emit a "TEAM_DESTROY" message, since
- * the "team" was the group of currently selected units.
- */
-static void deselectAll()
-{
-
-	// deselect it all
-	TheInGameUI->deselectAllDrawables();
-}
-
-//-----------------------------------------------------------------------------
-/**
  * Select the given drawable, without playing its sound.
  * Returns true.
  */
 static Bool selectSingleDrawableWithoutSound( Drawable *draw )
 {
 
-	// since we are single selecting a drawable, unselect everything else
-	deselectAll();
-
-	// do the drawable selection
-	TheInGameUI->selectDrawable( draw );
-
 	Object *obj = draw->getObject();
 	if (obj != nullptr) {
+		// since we are single selecting a drawable, unselect everything else
+		TheInGameUI->deselectAllDrawables();
+
+		// do the drawable selection
+		TheInGameUI->selectDrawable(draw);
+
 		GameMessage *msg = TheMessageStream->appendMessage(GameMessage::MSG_CREATE_SELECTED_GROUP_NO_SOUND);
 		msg->appendBooleanArgument(TRUE);
 		msg->appendObjectIDArgument(obj->getID());
@@ -671,7 +659,7 @@ GameMessageDisposition SelectionTranslator::onMouseLeftDoubleClick(MAYBE_UNUSED 
 		selectMore->appendBooleanArgument(FALSE);
 		for (DrawableListIt it = listOfSelectedDrawables.begin(); it != listOfSelectedDrawables.end(); ++it) {
 			Drawable *draw = *it;
-			if (draw && draw->isSelectable()) {
+			if (draw && draw->isMassSelectable()) {
 				TheInGameUI->selectDrawable(draw);
 				selectMore->appendObjectIDArgument(draw->getObject()->getID());
 			}
@@ -798,7 +786,8 @@ GameMessageDisposition SelectionTranslator::onMouseLeftClick(MAYBE_UNUSED const 
 			si.selectMineBuildings = TRUE;
 		}
 		else if ( si.newCountMineBuildings > 0 )////////////// SO SORRY, I KNOW THIS IS MICKEY MOUSE ///////////////////
-		{ // What we are after here is to allow the drag select to get the building,
+		{
+			// What we are after here is to allow the drag select to get the building,
 			// if the other things in the list are going to be ignored anyway
 			// so we find out whether the other things are not selectable
 			// this came up with the new AmericaBuildingFireBase, which shows its contained
@@ -811,7 +800,8 @@ GameMessageDisposition SelectionTranslator::onMouseLeftClick(MAYBE_UNUSED const 
 			{
 				const Drawable *d = *it;
 				if ( d->isKindOf( KINDOF_STRUCTURE ) )
-				{// make sure there is really only the one building in the list, as it may be multiply listed
+				{
+					// make sure there is really only the one building in the list, as it may be multiply listed
 
 					if ( buildingID == INVALID_DRAWABLE_ID ) // this is the first building
 						buildingID = d->getID();
@@ -893,7 +883,7 @@ GameMessageDisposition SelectionTranslator::onMouseLeftClick(MAYBE_UNUSED const 
 	{
 		if (!addToGroup)
 		{
-			deselectAll();
+			TheInGameUI->deselectAllDrawables();
 		}
 
 		GameMessage *newMsg = TheMessageStream->appendMessage(GameMessage::MSG_CREATE_SELECTED_GROUP);
@@ -1063,7 +1053,7 @@ GameMessageDisposition SelectionTranslator::onRawMouseLeftButtonUp(MAYBE_UNUSED 
 			{
 				if( !TheInGameUI->getPreventLeftClickDeselectionInAlternateMouseModeForOneClick() )
 				{
-					deselectAll();
+					TheInGameUI->deselectAllDrawables();
 					m_lastGroupSelGroup = -1;
 				}
 				else
@@ -1130,7 +1120,7 @@ GameMessageDisposition SelectionTranslator::onRawMouseRightButtonUp(MAYBE_UNUSED
 			else if (!TheGlobalData->m_useAlternateMouse)
 			{
 				//No GUI command mode, so deselect everyone if we're in regular mouse mode.
-				deselectAll();
+				TheInGameUI->deselectAllDrawables();
 			}
 		}
 	}
@@ -1188,7 +1178,7 @@ GameMessageDisposition SelectionTranslator::onMetaSelectTeam(MAYBE_UNUSED const 
 				Squad *selectedSquad = player->getHotkeySquad(group);
 				if (selectedSquad != nullptr)
 				{
-					VecObjectPtr objlist = selectedSquad->getLiveObjects();
+					const VecObjectPtr& objlist = selectedSquad->getLiveObjects();
 					Int numObjs = objlist.size();
 					if (numObjs > 0)
 					{
@@ -1203,7 +1193,7 @@ GameMessageDisposition SelectionTranslator::onMetaSelectTeam(MAYBE_UNUSED const 
 
 		if ( performSelection )
 		{
-			TheInGameUI->deselectAllDrawables( false ); //No need to post message because we're just creating a new group!
+			TheInGameUI->deselectAllDrawables();
 
 			// no need to send two messages for selecting the same group.
 			TheMessageStream->appendMessage((GameMessage::Type)(GameMessage::MSG_SELECT_TEAM0 + group));
@@ -1213,7 +1203,7 @@ GameMessageDisposition SelectionTranslator::onMetaSelectTeam(MAYBE_UNUSED const 
 				Squad *selectedSquad = player->getHotkeySquad(group);
 				if (selectedSquad != nullptr)
 				{
-					VecObjectPtr objlist = selectedSquad->getLiveObjects();
+					const VecObjectPtr& objlist = selectedSquad->getLiveObjects();
 					Int numObjs = objlist.size();
 					for (Int i = 0; i < numObjs; ++i)
 					{
@@ -1256,7 +1246,7 @@ GameMessageDisposition SelectionTranslator::onMetaAddTeam(MAYBE_UNUSED const Gam
 				Squad *selectedSquad = player->getHotkeySquad(group);
 				if (selectedSquad != nullptr)
 				{
-					VecObjectPtr objlist = selectedSquad->getLiveObjects();
+					const VecObjectPtr& objlist = selectedSquad->getLiveObjects();
 					Int numObjs = objlist.size();
 					if (numObjs > 0)
 					{
@@ -1287,7 +1277,7 @@ GameMessageDisposition SelectionTranslator::onMetaAddTeam(MAYBE_UNUSED const Gam
 				Squad *selectedSquad = player->getHotkeySquad(group);
 				if (selectedSquad != nullptr)
 				{
-					VecObjectPtr objlist = selectedSquad->getLiveObjects();
+					const VecObjectPtr& objlist = selectedSquad->getLiveObjects();
 					Int numObjs = objlist.size();
 
 					// TheSuperHackers @bugfix skyaero 22/07/2025 Can't select other units if you have a structure selected. So deselect the structure to prevent group force attack exploit.
@@ -1313,7 +1303,8 @@ GameMessageDisposition SelectionTranslator::onMetaAddTeam(MAYBE_UNUSED const Gam
 GameMessageDisposition SelectionTranslator::onMetaViewTeam(MAYBE_UNUSED const GameMessage *msg)
 {
 	Int group = msg->getType() - GameMessage::MSG_META_VIEW_TEAM0;
-	if ( group >= 1 && group <= 10 )
+	// TheSuperHackers @bugfix Fix the group index range so control group 0 can be viewed.
+	if ( group >= 0 && group < 10 )
 	{
 		DEBUG_LOG(("META: view team %d",group));
 		Player *player = ThePlayerList->getLocalPlayer();
@@ -1322,7 +1313,7 @@ GameMessageDisposition SelectionTranslator::onMetaViewTeam(MAYBE_UNUSED const Ga
 			Squad *selectedSquad = player->getHotkeySquad(group);
 			if (selectedSquad != nullptr)
 			{
-				VecObjectPtr objlist = selectedSquad->getLiveObjects();
+				const VecObjectPtr& objlist = selectedSquad->getLiveObjects();
 				Int numObjs = objlist.size();
 				if (numObjs > 0)
 				{

@@ -284,78 +284,29 @@ Bool AITNGuardMachine::lookForInnerTarget(void)
 	//}
 	const std::list<ObjectID> *allTunnels = tunnels->getContainerList();
 	for( std::list<ObjectID>::const_iterator iter = allTunnels->begin(); iter != allTunnels->end(); iter++ ) {
-		//Object *currentTunnel = TheGameLogic->findObjectByID( *iter );
-		//if( currentTunnel ) {
-		//	// Check for attacking.
-		//	if (currentTunnel->getAI()) {
-		//		Object *victim = currentTunnel->getAI()->getGoalObject();
-		//		if (owner->getRelationship(victim) == ENEMIES) {
-		//			setNemesisID(victim->getID());
-		//			return true;
-		//		}
+		Object *currentTunnel = TheGameLogic->findObjectByID( *iter );
+		if( currentTunnel ) {
+			// Check for attacking.
+			if (currentTunnel->getAI()) {
+				Object *victim = currentTunnel->getAI()->getGoalObject();
+				if (owner->getRelationship(victim) == ENEMIES) {
+					setNemesisID(victim->getID());
+					return true;
+				}
 			}
-	//		// check for attacked.
-	//		BodyModuleInterface *body = currentTunnel->getBodyModule();
-	//		if (body) {
-	//			const DamageInfo *info = body->getLastDamageInfo();
-	//			if (info) {
-	//				if (info->out.m_noEffect) {
-	//					continue;
-	//				}
-	//				if (body->getLastDamageTimestamp() + TheAI->getAiData()->m_guardEnemyScanRate > TheGameLogic->getFrame()) {
-	//					// winner.
-	//					ObjectID attackerID = info->in.m_sourceID;
-	//					Object *attacker = TheGameLogic->findObjectByID(attackerID);
-
-	//					if( attacker )
-	//					{
-	//						if (owner->getRelationship(attacker) != ENEMIES) {
-	//							continue;
-	//						}
-	//						CanAttackResult result = getOwner()->getAbleToAttackSpecificObject(ATTACK_TUNNEL_NETWORK_GUARD, attacker, CMD_FROM_AI);
-	//						if( result == ATTACKRESULT_POSSIBLE || result == ATTACKRESULT_POSSIBLE_AFTER_MOVING )
-	//						{
-	//							setNemesisID(attackerID);
-	//							//owner->getTeam()->setTeamTargetObject(attacker);
-	//							//tunnels->updateNemesis(attacker);
-	//							return true;	// Transitions to AITNGuardInnerState.
-	//						}
-	//					}
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
-
-	for (std::list<ObjectID>::const_iterator iter = allTunnels->begin(); iter != allTunnels->end(); ++iter) {
-		Object* currentTunnel = TheGameLogic->findObjectByID(*iter);
-		if (!currentTunnel) {
-			continue;
-		}
-
-		const Coord3D* scanCenter = currentTunnel->getPosition();
-		Real visionRange = 400.0f;
-
-		PartitionFilterRelationship f1(owner, PartitionFilterRelationship::ALLOW_ENEMIES);
-		PartitionFilterSameMapStatus filterMapStatus(owner);
-
-		PartitionFilter* filters[8];
-		Int count = 0;
-		filters[count++] = &f1;
-		filters[count++] = &filterMapStatus;
-		filters[count++] = nullptr;
-
-		Object* threat = ThePartitionManager->getClosestObject(scanCenter, visionRange, FROM_CENTER_2D, filters);
-
-		if (threat) {
-			if (owner->getRelationship(threat) == ENEMIES && !threat->isEffectivelyDead()) {
-
-				setNemesisID(threat->getID());
-				//owner->getTeam()->setTeamTargetObject(threat);
-				//tunnels->updateNemesis(threat);
-
-				DEBUG_LOG(("PROACTIVE EXIT DECISION - Enemy detected near tunnel ID=%d, forcing exit! Threat ID=%d\n",
-					currentTunnel->getID(), threat->getID()));
+			// check for attacked.
+			BodyModuleInterface *body = currentTunnel->getBodyModule();
+			if (body) {
+				const DamageInfo *info = body->getLastDamageInfo();
+				if (info) {
+					if (info->out.m_noEffect) {
+						continue;
+					}
+					const UnsignedInt *lastDamageTimestamp = body->getLastDamageTimestamp();
+					if (lastDamageTimestamp && *lastDamageTimestamp + TheAI->getAiData()->m_guardEnemyScanRate > TheGameLogic->getFrame()) {
+						// winner.
+						ObjectID attackerID = info->in.m_sourceID;
+						Object *attacker = TheGameLogic->findObjectByID(attackerID);
 
 				return true;
 			}
