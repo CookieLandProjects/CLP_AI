@@ -203,6 +203,9 @@ Bool SpectreGunshipUpdate::initiateIntentToDoSpecialPower(const SpecialPowerTemp
 		UnsignedInt now = TheGameLogic->getFrame();
 		m_specialPowerModule->setReadyFrame( now );
    	m_initialTargetPosition.set( *targetPos );
+    m_overrideTargetDestination.set(*targetPos); // -TanSo-: WE NEED THIS AS WELL!!!
+    m_gattlingTargetPosition.set(*targetPos); // -TanSo-: WE NEED THIS AS WELL!!!
+
 		setLogicalStatus( GUNSHIP_STATUS_INSERTING );
 	}
 
@@ -531,23 +534,22 @@ UpdateSleepTime SpectreGunshipUpdate::update()
 	          filters[numFilters] = nullptr;
 
 
-            if (m_currentTargetID == INVALID_ID)
+
+            // THIS WILL FIND A VALID TARGET WITHIN THE TARGETING RETICLE
+            ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(&m_overrideTargetDestination,
+              data->m_targetingReticleRadius,
+              FROM_BOUNDINGSPHERE_2D,
+              filters,
+              ITER_SORTED_NEAR_TO_FAR);
+            MemoryPoolObjectHolder holder(iter);
+            for (Object* theEnemy = iter->first(); theEnemy; theEnemy = iter->next())
             {
-              // THIS WILL FIND A VALID TARGET WITHIN THE TARGETING RETICLE
-              ObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(&m_overrideTargetDestination,
-                data->m_targetingReticleRadius,
-                FROM_BOUNDINGSPHERE_2D,
-                filters,
-                ITER_SORTED_NEAR_TO_FAR);
-              MemoryPoolObjectHolder holder(iter);
-              for (Object* theEnemy = iter->first(); theEnemy; theEnemy = iter->next())
+              if (theEnemy && isFairDistanceFromShip(theEnemy))
               {
-                if (theEnemy && isFairDistanceFromShip(theEnemy))
-                {
-                  validTargetObject = theEnemy;
-                  m_currentTargetID = theEnemy->getID();
-                  break;
-                }
+                validTargetObject = theEnemy;
+                m_currentTargetID = theEnemy->getID();
+                m_positionToShootAt = *theEnemy->getPosition();
+                break;
               }
             }
             
@@ -558,28 +560,40 @@ UpdateSleepTime SpectreGunshipUpdate::update()
             // SO THAT THE SPECTREGUNSHIP REQUIRES BABYSITTING AT ALL TIMES
             if (gunship->getControllingPlayer()->getPlayerType() != PLAYER_HUMAN )
             {
-              if (m_currentTargetID == INVALID_ID)
-              {
-                // set a flag to start the targeting decal fading, since there is nothing to kill there
-                // THIS WILL FIND A VALID TARGET ANYWHERE INSIDE THE TARGETING AREA (THE BIG CIRCLE)
-	              ObjectIterator *iter = ThePartitionManager->iterateObjectsInRange(&m_initialTargetPosition,
-                  data->m_attackAreaRadius,
-                  FROM_BOUNDINGSPHERE_2D,
-                  filters,
-                  ITER_SORTED_NEAR_TO_FAR);
-	              MemoryPoolObjectHolder holder(iter);
-	              for (Object *theEnemy = iter->first(); theEnemy; theEnemy = iter->next())
-	              {
-                  if ( theEnemy && isFairDistanceFromShip( theEnemy ) )
+              // THIS WILL FIND A VALID TARGET WITHIN THE TARGETING RETICLE
+	            ObjectIterator *iter = ThePartitionManager->iterateObjectsInRange(&m_initialTargetPosition,
+                data->m_attackAreaRadius,
+                FROM_BOUNDINGSPHERE_2D,
+                filters,
+                ITER_SORTED_NEAR_TO_FAR);
+              MemoryPoolObjectHolder holder(iter);
+              //-TanSo-: See whether we want to keep the current target
+              Bool foundExisting = false;
+              if (m_currentTargetID != INVALID_ID) {
+                for (Object* theEnemy = iter->first(); theEnemy; theEnemy = iter->next())
+                {
+                  ObjectID enemyID = theEnemy->getID();
+                  if (enemyID == m_currentTargetID)
                   {
-                    // WE GOT A HIT!!!! SHOOT HIM!
                     validTargetObject = theEnemy;
-                    m_currentTargetID = theEnemy->getID();
-                    m_positionToShootAt = *validTargetObject->getPosition();
-
+                    m_currentTargetID = enemyID;
+                    m_positionToShootAt = *theEnemy->getPosition();
+                    foundExisting = true;
                     break;
                   }
-	              }
+                }
+              }
+              if (!foundExisting) {
+                for (Object* theEnemy = iter->first(); theEnemy; theEnemy = iter->next())
+                {
+                  if (theEnemy && isFairDistanceFromShip(theEnemy))
+                  {
+                    validTargetObject = theEnemy;
+                    m_currentTargetID = theEnemy->getID();
+                    m_positionToShootAt = *theEnemy->getPosition();
+                    break;
+                  }
+                }
               }
             }
 
@@ -627,7 +641,6 @@ UpdateSleepTime SpectreGunshipUpdate::update()
 				  const ParticleSystemTemplate *tmp = data->m_gattlingStrafeFXParticleSystem;
 				  if (tmp && gattling && gattling->testStatus( OBJECT_STATUS_IS_FIRING_WEAPON) )
 				  {
-
 
 
             // I am going to wind my gattling gun toward the next good spot,
@@ -703,12 +716,6 @@ UpdateSleepTime SpectreGunshipUpdate::update()
 
 
 
-   DEBUG_LOG(("strafingIncrement: %f\nokToFireHowitzerCounter: %d\nhowitzerFollowLag: %d",
-     data->m_strafingIncrement,
-     m_okToFireHowitzerCounter,
-     data->m_howitzerFollowLag
-     ));
-
 
 
 	return UPDATE_SLEEP_NONE;
@@ -783,6 +790,8 @@ void SpectreGunshipUpdate::cleanUp()
 #if defined TRACKERS
 	 m_howitzerTrackerDecal.clear();
 #endif
+
+   m_currentTargetID = INVALID_ID;
 }
 
 
@@ -869,7 +878,7 @@ void SpectreGunshipUpdate::xfer( Xfer *xfer )
 //	const SpectreGunshipUpdateModuleData *data = getSpectreGunshipUpdateModuleData();
 
 	// version
-	XferVersion currentVersion = 2;
+	XferVersion currentVersion = 3;
 	XferVersion version = currentVersion;
 	xfer->xferVersion( &version, currentVersion );
 
@@ -908,6 +917,11 @@ void SpectreGunshipUpdate::xfer( Xfer *xfer )
 	  xfer->xferUnsignedInt( &m_okToFireHowitzerCounter );
 		xfer->xferObjectID( &m_gattlingID );
 	}
+
+  if (version >= 3)
+  {
+    xfer->xferObjectID( &m_currentTargetID );
+  }
 
 }
 
