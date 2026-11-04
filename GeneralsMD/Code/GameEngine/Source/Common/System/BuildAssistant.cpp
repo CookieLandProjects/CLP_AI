@@ -121,9 +121,11 @@ Bool BuildAssistant::findLegalBuildLocation(const Coord3D &center,
 								tryPos.y = center.y + r * sin(theta);
 								tryPos.z = TheTerrainLogic->getGroundHeight(tryPos.x, tryPos.y);
 								if (isLocationLegalToBuild(&tryPos, tmpl, angle, flags, nullptr, player) == LBC_OK) {
-										LegalBuildCode clearCheck = isLocationClearOfObjects(&tryPos, tmpl, angle, nullptr, BuildAssistant::NO_OBJECT_OVERLAP, player);
-										if (clearCheck != LBC_OK) {
-												continue; // skippp!
+										if (!BitIsSet(flags, BuildAssistant::NO_OBJECT_OVERLAP)) {
+											LegalBuildCode clearCheck = isLocationClearOfObjects(&tryPos, tmpl, angle, nullptr, BuildAssistant::NO_OBJECT_OVERLAP, player);
+											if (clearCheck != LBC_OK) {
+												continue;
+											}
 										}
 										outPos = tryPos;
 										outPos.z = 0;
@@ -149,8 +151,8 @@ Bool BuildAssistant::findLegalBuildLocation(const Coord3D &center,
 										tryPos.y = y;
 										tryPos.z = TheTerrainLogic->getGroundHeight(tryPos.x, tryPos.y);
 										if (isLocationLegalToBuild(&tryPos, tmpl, angle, flagsPriority[0], nullptr, player) == LBC_OK) {
-												LegalBuildCode clearCheck = isLocationClearOfObjects(&tryPos, tmpl, angle, nullptr, BuildAssistant::NO_OBJECT_OVERLAP, player);
-												if (clearCheck == LBC_OK) {
+										if (!BitIsSet(flagsPriority[0], BuildAssistant::NO_OBJECT_OVERLAP)
+											|| isLocationClearOfObjects(&tryPos, tmpl, angle, nullptr, BuildAssistant::NO_OBJECT_OVERLAP, player) == LBC_OK) {
 														outPos = tryPos;
 														outPos.z = 0;
 														return TRUE;

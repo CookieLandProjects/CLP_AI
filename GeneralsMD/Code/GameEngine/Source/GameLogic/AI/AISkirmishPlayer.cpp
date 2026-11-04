@@ -1790,11 +1790,8 @@ void AISkirmishPlayer::buildSpecificAIBuildingFromID(const AsciiString& thingNam
 				const Real cell = PATHFIND_CELL_SIZE_F;
 				const Real step = cell;
 				const Real maxRadius = 300 * cell;
-				const Int flagsToTry[] = {
-					BuildAssistant::NO_OBJECT_OVERLAP,
-					BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP,
-					BuildAssistant::CLEAR_PATH | BuildAssistant::TERRAIN_RESTRICTIONS | BuildAssistant::NO_OBJECT_OVERLAP
-				};
+				// n0ttws 18/11/2025 - Avoid repeating the full search with stricter options after the permissive search fails.
+				const Int flagsToTry[] = { BuildAssistant::NO_OBJECT_OVERLAP };
 				Coord3D foundPos;
 				// n0ttws: Use me new wiggly wiggle :D
 				if (TheBuildAssistant->findLegalBuildLocation(center, tmpl, angle, foundPos, flagsToTry,

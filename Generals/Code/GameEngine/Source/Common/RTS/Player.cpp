@@ -386,6 +386,8 @@ void Player::init(const PlayerTemplate* pt)
 
 	deleteInstance(m_resourceGatheringManager);
 	m_resourceGatheringManager = nullptr;
+	if (pt != nullptr)
+		m_resourceGatheringManager = newInstance(ResourceGatheringManager);
 
 	for (Int i = 0; i < NUM_HOTKEY_SQUADS; ++i) {
 		deleteInstance(m_squads[i]);
