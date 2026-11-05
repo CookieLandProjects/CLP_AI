@@ -283,32 +283,32 @@ Bool AITNGuardMachine::lookForInnerTarget(void)
 	//	return true;	// Transitions to AITNGuardInnerState.
 	//}
 	const std::list<ObjectID> *allTunnels = tunnels->getContainerList();
-	for( std::list<ObjectID>::const_iterator iter = allTunnels->begin(); iter != allTunnels->end(); iter++ ) {
-		Object *currentTunnel = TheGameLogic->findObjectByID( *iter );
-		if( currentTunnel ) {
+	for (std::list<ObjectID>::const_iterator iter = allTunnels->begin(); iter != allTunnels->end(); iter++) {
+		Object* currentTunnel = TheGameLogic->findObjectByID(*iter);
+		if (currentTunnel) {
 			// Check for attacking.
 			if (currentTunnel->getAI()) {
-				Object *victim = currentTunnel->getAI()->getGoalObject();
+				Object* victim = currentTunnel->getAI()->getGoalObject();
 				if (owner->getRelationship(victim) == ENEMIES) {
 					setNemesisID(victim->getID());
 					return true;
 				}
 			}
 			// check for attacked.
-			BodyModuleInterface *body = currentTunnel->getBodyModule();
+			BodyModuleInterface* body = currentTunnel->getBodyModule();
 			if (body) {
-				const DamageInfo *info = body->getLastDamageInfo();
+				const DamageInfo* info = body->getLastDamageInfo();
 				if (info) {
 					if (info->out.m_noEffect) {
 						continue;
 					}
-					const UnsignedInt *lastDamageTimestamp = body->getLastDamageTimestamp();
+					const UnsignedInt* lastDamageTimestamp = body->getLastDamageTimestamp();
 					if (lastDamageTimestamp && *lastDamageTimestamp + TheAI->getAiData()->m_guardEnemyScanRate > TheGameLogic->getFrame()) {
 						// winner.
-						ObjectID attackerID = info->in.m_sourceID;
-						Object *attacker = TheGameLogic->findObjectByID(attackerID);
 
-				return true;
+						return true;
+					}
+				}
 			}
 		}
 	}

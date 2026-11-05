@@ -5475,39 +5475,41 @@ void ScriptActions::doMoveTeamTowardsNearest( const AsciiString& teamName, const
 	else
 	{
 		//Find the closest object within the object template list.
-		ObjectTypes *objectTypes = TheScriptEngine->getObjectTypes( objectType );
-		if( objectTypes )
+		ObjectTypes* objectTypes = TheScriptEngine->getObjectTypes(objectType);
+		if (objectTypes)
 		{
-			Real closestDist;
-			Real dist;
-			for( size_t typeIndex = 0; typeIndex < objectTypes->getListSize(); typeIndex++ )
+			for (size_t typeIndex = 0; typeIndex < objectTypes->getListSize(); typeIndex++)
 			{
-				AsciiString thisTypeName = objectTypes->getNthInList( typeIndex );
-				const ThingTemplate *thisType = TheThingFactory->findTemplate( thisTypeName );
-				if( thisType )
+				AsciiString thisTypeName = objectTypes->getNthInList(typeIndex);
+				const ThingTemplate* thisType = TheThingFactory->findTemplate(thisTypeName);
+				if (thisType)
 				{
-					PartitionFilterThing thingToAccept( thisType, true );
-					PartitionFilter *filters[] = {
+					PartitionFilterThing thingToAccept(thisType, true);
+					PartitionFilter* filters[] = {
 						&thingToAccept,
 						&acceptWithin,
 						&filterMapStatus,
 						nullptr
 					};
 
-	for( iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance() )
-	{
-		Object *obj = iter.cur();
-		if( !obj )
-		{
-			return;
+					for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+					{
+						Object* obj = iter.cur();
+						if (!obj)
+						{
+							return;
+						}
+						AIUpdateInterface* ai = obj->getAI();
+						if (!ai)
+						{
+							return;
+						}
+						ai->chooseLocomotorSet(LOCOMOTORSET_NORMAL);
+						ai->aiMoveToObject(bestObj, CMD_FROM_SCRIPT);
+					}
+				}
+			}
 		}
-		AIUpdateInterface *ai = obj->getAI();
-		if( !ai )
-		{
-			return;
-		}
-		ai->chooseLocomotorSet( LOCOMOTORSET_NORMAL );
-		ai->aiMoveToObject( bestObj, CMD_FROM_SCRIPT );
 	}
 }
 

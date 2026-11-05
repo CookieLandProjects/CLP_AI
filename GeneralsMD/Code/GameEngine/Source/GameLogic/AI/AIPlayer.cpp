@@ -1092,50 +1092,54 @@ Bool AIPlayer::isSupplySourceAttacked()
 {
 	//@-TanSo-: NO. 10 seconds is WAY too little. 2 Seconds is more reasonable.
 	const Int SCAN_RATE = 2; // don't scan more often than every 10 seconds.
+	const UnsignedInt RefreshRate = SCAN_RATE * LOGICFRAMES_PER_SECOND;
 	UnsignedInt curFrame = TheGameLogic->getFrame();
-	if (curFrame==0) {
+	const UnsignedInt scanWindowFrames = 4 * LOGICFRAMES_PER_SECOND;
+	if (m_player->getAttackedFrame() + scanWindowFrames < curFrame) {
+		if (curFrame == 0) {
+			m_supplySourceAttackCheckFrame = curFrame + RefreshRate;
+			return false; // can't be attacked on first frame.
+		}
+		m_attackedSupplyCenter = INVALID_ID;
+		if (curFrame < m_supplySourceAttackCheckFrame) {
+			return false;
+		}
+		if (m_player->getAttackedFrame() + scanWindowFrames < curFrame) {
+			return false; // haven't been attacked recently.
+		}
 		m_supplySourceAttackCheckFrame = curFrame + RefreshRate;
-		return false; // can't be attacked on first frame.
-	}
-	m_attackedSupplyCenter = INVALID_ID;
-	if (curFrame < m_supplySourceAttackCheckFrame) {
-		return false;
-	}
-	if (m_player->getAttackedFrame() + ScanWindow < curFrame) {
-		return false; // haven't been attacked recently.
-	}
-	m_supplySourceAttackCheckFrame = curFrame + RefreshRate;
 
-	// Scan my units.
-	Player::PlayerTeamList::const_iterator it;
-	for (it = m_player->getPlayerTeams()->begin(); it != m_player->getPlayerTeams()->end(); ++it) {
-		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
-			Team *team = iter.cur();
-			if (!team) {
-				continue;
-			}
-			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance()) {
-				Object *obj = objIter.cur();
-				if (!obj) {
+		// Scan my units.
+		Player::PlayerTeamList::const_iterator it;
+		for (it = m_player->getPlayerTeams()->begin(); it != m_player->getPlayerTeams()->end(); ++it) {
+			for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+				Team* team = iter.cur();
+				if (!team) {
 					continue;
 				}
-				if (!obj->isKindOf(KINDOF_CASH_GENERATOR) && !obj->isKindOf(KINDOF_DOZER) &&
-					!obj->isKindOf(KINDOF_HARVESTER)) {
-					continue;
-				}
-				// check for attacked.
-				BodyModuleInterface *body = obj->getBodyModule();
-				if (body) {
-					const DamageInfo *info = body->getLastDamageInfo();
-					if (info) {
-						if (info->out.m_noEffect) {
-							continue;
-						}
-						const UnsignedInt *lastDamageTimestamp = body->getLastDamageTimestamp();
-						if (lastDamageTimestamp && *lastDamageTimestamp + ScanWindow > curFrame) {
-							// winner.
-							m_attackedSupplyCenter = obj->getID();
-							return true;
+				for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance()) {
+					Object* obj = objIter.cur();
+					if (!obj) {
+						continue;
+					}
+					if (!obj->isKindOf(KINDOF_CASH_GENERATOR) && !obj->isKindOf(KINDOF_DOZER) &&
+						!obj->isKindOf(KINDOF_HARVESTER)) {
+						continue;
+					}
+					// check for attacked.
+					BodyModuleInterface* body = obj->getBodyModule();
+					if (body) {
+						const DamageInfo* info = body->getLastDamageInfo();
+						if (info) {
+							if (info->out.m_noEffect) {
+								continue;
+							}
+							const UnsignedInt* lastDamageTimestamp = body->getLastDamageTimestamp();
+							if (lastDamageTimestamp && *lastDamageTimestamp + scanWindowFrames > curFrame) {
+								// winner.
+								m_attackedSupplyCenter = obj->getID();
+								return true;
+							}
 						}
 					}
 				}
@@ -4712,7 +4716,7 @@ void AIPlayer::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingNam
 												Real desiredAngle = normalizeAngle(atan2(dy, dx));
 												Real warehouseOri = bestSupplyWarehouse->getOrientation();
 												Real diff1 = fabsf(normalizeAngle(desiredAngle - warehouseOri));
-												Real diff2 = fabsf(normalizeAngle(desiredAngle - normalizeAngle(warehouseOri + (Real)M_PI)));
+												Real diff2 = fabsf(normalizeAngle(desiredAngle - normalizeAngle(warehouseOri + (Real)PI)));
 												if (diff1 < diff2 && diff1 < fabsf(normalizeAngle(desiredAngle - desiredAngle))) {
 														desiredAngle = normalizeAngle(warehouseOri);
 												}

@@ -3244,14 +3244,6 @@ void GameLogic::friend_destroyInTunnelContain(const Object* strandedObject)
 }
 #endif
 
-			destroyObject(obj);
-		}
-
-		break;
-	}
-}
-#endif
-
 // ------------------------------------------------------------------------------------------------
 #ifdef DO_UNIT_TIMINGS
 

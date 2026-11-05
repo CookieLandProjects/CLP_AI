@@ -6065,7 +6065,7 @@ Object* PartitionManager::getFarthestObjects(
 	if (maxDist < HUGE_DIST)
 	{
 		// Don't search beyond the requested maximum distance.
-		maxRadius = minInt(m_maxGcoRadius, worldToCellDist(maxDist));
+		maxRadius = std::min(m_maxGcoRadius, worldToCellDist(maxDist));
 	}
 
 #if defined(INTENSE_DEBUG)

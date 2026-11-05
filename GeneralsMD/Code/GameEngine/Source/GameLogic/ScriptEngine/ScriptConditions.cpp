@@ -4257,8 +4257,11 @@ Bool ScriptConditions::evaluatePlayerAttackedInArea(Parameter* pPlayerParm, Para
 					continue;
 
 				Int currentFrame = TheGameLogic->getFrame();
-				if (currentFrame != theBodyModule->getLastDamageTimestamp() + 1)
-                continue;
+				const UnsignedInt* lastDamageTimestamp = theBodyModule->getLastDamageTimestamp();
+				if (!lastDamageTimestamp)
+					continue;
+				if (currentFrame != *lastDamageTimestamp + 1)
+					continue;
 
 				if (pPlayer->getRelationship(attackingPlayer->getDefaultTeam()) == ENEMIES) return true;
 			}
