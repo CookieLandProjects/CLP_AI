@@ -62,6 +62,7 @@
 //@-TanSo-: We need this, thanks :)
 #include "GameLogic/SidesList.h"
 #include "GameLogic/Module/ProductionUpdate.h"
+#include "GameLogic/TacticModule.h"
 
 class ObjectTypesTemp
 {
@@ -6158,6 +6159,47 @@ Bool ScriptConditions::evaluateAIDataBuildsInQueue(Parameter* pComparisonParm, I
 }
 
 //-------------------------------------------------------------------------------------------------
+Bool ScriptConditions::evaluateIdleConstructionUnits(Parameter* pPlayerParm, Parameter* pComparisonParm, Int value)
+{
+	Player* pPlayer = playerFromParam(pPlayerParm);
+	if (!pPlayer) return FALSE;
+
+	Int idleDozers = 0;
+	Player::PlayerTeamList::const_iterator it;
+	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+	{
+		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance())
+		{
+			Team* team = iter.cur();
+			if (!team) continue;
+
+			for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
+			{
+				Object* pObj = iter.cur();
+				if (!pObj || !pObj->getAI())
+					continue;
+
+				if (!pObj->isKindOf(KINDOF_DOZER))
+					continue;
+
+				if (pObj->isIdle())
+					idleDozers++;
+			}
+		}
+	}
+
+	switch (pComparisonParm->getInt())
+	{
+	case Parameter::LESS_THAN:			return idleDozers < value; break;
+	case Parameter::LESS_EQUAL:			return idleDozers <= value; break;
+	case Parameter::EQUAL:					return idleDozers == value; break;
+	case Parameter::GREATER_EQUAL:	return idleDozers >= value; break;
+	case Parameter::GREATER:				return idleDozers > value; break;
+	case Parameter::NOT_EQUAL:			return idleDozers != value; break;
+	}
+	return FALSE;
+}
+//-------------------------------------------------------------------------------------------------
 //---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------
 //-------------------------------------------------------------------------------------------------
 
@@ -6568,5 +6610,8 @@ Bool ScriptConditions::evaluateCondition( Condition *pCondition )
 			return evaluateComparisonFreeFactorieSlotsType(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getInt(), pCondition->getParameter(3), pCondition->getParameter(4)->getInt());
 		case Condition::AIDATA_BUILDS_IN_QUEUE:
 			return evaluateAIDataBuildsInQueue(pCondition->getParameter(0), pCondition->getParameter(1)->getInt(), pCondition->getParameter(2));
+
+		case Condition::SKIRMISH_COMPARISON_IDLE_DOZERS:
+			return evaluateIdleConstructionUnits(pCondition->getParameter(0), pCondition->getParameter(1), pCondition->getParameter(2)->getInt());
 	}
 }

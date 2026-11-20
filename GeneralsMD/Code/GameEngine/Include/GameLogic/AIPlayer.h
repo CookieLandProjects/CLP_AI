@@ -40,7 +40,6 @@ class BuildListInfo;
 struct FactoryReservation
 {
 	ObjectID factoryID;
-	//std::vector<Team*> teams; //@todo: make it possible to have one team make a reservation for multiple factories.
 	Team* team;
 };
 struct SupplyDockReservation
@@ -194,21 +193,21 @@ public: // AIPlayer interface, may be overridden by AISkirmishPlayer.  jba.
 
 	virtual void buildSpecificAITeam(TeamPrototype *teamProto, Bool priorityBuild); ///< Builds this team immediately.
 
-	virtual void buildAIBaseDefense(Bool flank); ///< Builds base defense on front or flank of base.
-	virtual void buildAIBaseDefenseFromVector(Bool flank, Real rotation, Real percent); // @-TanSo-: for whatever reason we need to put this into THIS public section...
-	virtual void buildAIBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName);
+	virtual void buildAIBaseDefense(Bool flank, Bool highPriority); ///< Builds base defense on front or flank of base.
+	virtual void buildAIBaseDefenseFromVector(Bool flank, Real rotation, Real percent, Bool highPriority);
+	virtual void buildAIBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName, Bool highPriority);
 	virtual void addAIBaseDefenseToVector(const AsciiString& objectType);
 	virtual void removeAIBaseDefenseFromVector(const AsciiString& objectType);
-	virtual void buildSpecificAIBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority);
+	virtual void buildSpecificAIBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority, Bool highPriority);
 	virtual void insertBuildListFromID(Int id);
 	virtual void normalizeBuildListFromID(Int id, Int spot);
 	virtual void setDefaultBuildList(Int id);
 	virtual void rotateBuildListFromID(Int id, Real angle);
 
 
-	virtual void buildAIBaseDefenseStructure(const AsciiString &thingName, Bool flank); ///< Builds base defense on front or flank of base.
+	virtual void buildAIBaseDefenseStructure(const AsciiString &thingName, Bool flank, Bool highPriority); ///< Builds base defense on front or flank of base.
 
-	virtual void buildSpecificAIBuilding(const AsciiString &thingName); ///< Builds this building as soon as possible.
+	virtual void buildSpecificAIBuilding(const AsciiString &thingName, Bool highPriority); ///< Builds this building as soon as possible.
 
 
 	virtual void recruitSpecificAITeam(TeamPrototype *teamProto, Real recruitRadius); ///< Builds this team immediately.
@@ -227,8 +226,8 @@ public:
 	/// Difficulty level for this player.
 	GameDifficulty getAIDifficulty() const;
 	void setAIDifficulty(GameDifficulty difficulty) {m_difficulty = difficulty;}
-	void buildBySupplies(Int minimumCash, const AsciiString &thingName ); ///< Builds a building by supplies.
-	void buildSpecificBuildingNearestTeam( const AsciiString &thingName, const Team *team );
+	void buildBySupplies(Int minimumCash, const AsciiString &thingName, Bool highPriority); ///< Builds a building by supplies.
+	void buildSpecificBuildingNearestTeam( const AsciiString &thingName, const Team *team, Bool highPriority);
 	void buildUpgrade(const AsciiString &upgrade ); ///< Builds an upgrade.
 	/// A team is about to be destroyed.
 	void aiPreTeamDestroy( const Team *team );
@@ -252,9 +251,9 @@ public:
 	//-------------------------------------------------------------------------------------------------
 	//---------------------------------- @CLP_AI AIPLAYER ADDITIONS -----------------------------------
 	//-------------------------------------------------------------------------------------------------
-	void buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real bAngle);
-	void buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real bAngle);
-	void buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real bAngle);
+	void buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real bAngle, Bool highPriority);
+	void buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real bAngle, Bool highPriority);
+	void buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real bAngle, Bool highPriority);
 
 	// Find a legal build position near center. Returns TRUE and gives outPos when found.
 	virtual Bool findLegalBuildPosition(const Coord3D &center, const ThingTemplate *tmpl, Real angle, Coord3D &outPos, Object *builder = nullptr, Bool skirmish = false, Real maxRadius = 0.0f);
@@ -392,4 +391,7 @@ protected:
 	// -Tanso-: Use of the supplyDockReservation. This prevents AI players from placing two supply centers
 	// next to the same dock by blocking the dock, then adding the ObjectID of the center later on.
 	std::vector<SupplyDockReservation> m_supplyDockReservations;
+
+public:
+	Bool hasDockReservation(ObjectID id);
 };

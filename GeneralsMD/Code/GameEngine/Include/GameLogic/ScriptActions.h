@@ -129,12 +129,12 @@ protected:
 	void doCreateObject(const AsciiString& objectName, const AsciiString& thingName, const AsciiString& team, Coord3D *pos, Real angle);
 	void doAttack(const AsciiString& attackerName, const AsciiString& victimName);
 	void doNamedAttack(const AsciiString& attackerName, const AsciiString& victimName);
-	void doBuildBuilding(const AsciiString& buildingType);
-	void doBuildSupplyCenter(const AsciiString& playerName, const AsciiString& buildingType, Int cash);
-	void doBuildObjectNearestTeam( const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& teamName );
+	void doBuildBuilding(const AsciiString& buildingType, Bool highPriority);
+	void doBuildSupplyCenter(const AsciiString& playerName, const AsciiString& buildingType, Int cash, Bool highPriority);
+	void doBuildObjectNearestTeam( const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& teamName, Bool highPriority);
 	void doBuildUpgrade(const AsciiString& playerName, const AsciiString& upgrade);
-	void doBuildBaseDefense(Bool flank);
-	void doBuildBaseStructure(const AsciiString& buildingType, Bool flank);
+	void doBuildBaseDefense(Bool flank, Bool highPriority);
+	void doBuildBaseStructure(const AsciiString& buildingType, Bool flank, Bool highPriority);
 	void createUnitOnTeamAt(const AsciiString& unitName, const AsciiString& objType, const AsciiString& teamName, const AsciiString& waypoint);
 	void doNamedAttackArea(const AsciiString& unitName, const AsciiString& areaName);
 	void doNamedAttackTeam(const AsciiString& unitName, const AsciiString& teamName);
@@ -389,13 +389,13 @@ protected:
 
 	void doPlayerSurrender(const AsciiString& playerName);
 	void doPlayerBuildUnit(const AsciiString& unitName, const AsciiString& playerName);
-	void doBuildObjectNearestTeamAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& teamName, Real angle);
-	void doBuildSupplyCenterAngle(const AsciiString& player, const AsciiString& buildingType, Int cash, Real angle);
-	void doBuildObjectNearestTypeAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, Real angle, Int selectionMode);
-	void doBuildObjectNearestKindOfAngle(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, Real angle, Int selectionMode);
+	void doBuildObjectNearestTeamAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& teamName, Real angle, Bool highPriority);
+	void doBuildSupplyCenterAngle(const AsciiString& player, const AsciiString& buildingType, Int cash, Real angle, Bool highPriority);
+	void doBuildObjectNearestTypeAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, Real angle, Int selectionMode, Bool highPriority);
+	void doBuildObjectNearestKindOfAngle(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, Real angle, Int selectionMode, Bool highPriority);
 	
-	void doBuildObjectNearestTypeAngleArea(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, const AsciiString& triggerArea, Real angle, Int selectionMode);
-	void doBuildObjectNearestKindOfAngleArea(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, const AsciiString& triggerArea, Real angle, Int selectionMode);
+	void doBuildObjectNearestTypeAngleArea(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, const AsciiString& triggerArea, Real angle, Int selectionMode, Bool highPriority);
+	void doBuildObjectNearestKindOfAngleArea(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, const AsciiString& triggerArea, Real angle, Int selectionMode, Bool highPriority);
 
 	void doTeamMoveRelative(const AsciiString& teamName, Coord3D* coords);
 	void doUnitMoveRelative(const AsciiString& unitName, Coord3D* coords);
@@ -450,8 +450,8 @@ protected:
 	void doPlayerSellAllBuildingsArea(const AsciiString& playerName, const AsciiString& triggerArea);
 	void doPlayerSellAllBuildingsTypeArea(const AsciiString& playerName, const AsciiString& objectType, const AsciiString& triggerArea);
 
-	void doAIPlayerBuildDefenseStructureFromVector(Bool flank, Real rotation, Real percent);
-	void doAIPlayerBuildDefenseStructureFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName);
+	void doAIPlayerBuildDefenseStructureFromVector(Bool flank, Real rotation, Real percent, Bool highPriority);
+	void doAIPlayerBuildDefenseStructureFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName, Bool highPriority);
 	void doAIPlayerAddBaseDefenseStructure(const AsciiString& objectType);
 	void doAIPlayerRemoveBaseDefenseStructure(const AsciiString& objectType);
 
@@ -484,7 +484,7 @@ protected:
 	void doUnitTeleportLocation(const AsciiString& unitName, const AsciiString& waypointName);
 	void doTeamTeleportLocation(const AsciiString& teamName, const AsciiString& waypointName);
 
-	void doBuildBuildingFromBuildListID(const AsciiString& objectType, Int buildListID);
+	void doBuildBuildingFromBuildListID(const AsciiString& objectType, Int buildListID, Bool highPriority);
 	void doInsertBuildListFromID(Int buildListID);
 	void doNormalizeBuildListIDToSpot(Int buildListID, Int spot);
 	void doSetDefaultBuildList(Int buildListID);
@@ -551,8 +551,11 @@ protected:
 	void doTeamFlankLocation(const AsciiString& teamName, const AsciiString& waypointName, Real angle, Real distance);
 	void doUnitFlankLocation(const AsciiString& unitName, const AsciiString& waypointName, Real angle, Real distance);
 
+	void doPlayerSendChat(const AsciiString& playerName, const AsciiString& message, Bool showName);
+	void doPlayerSendChatPrivate(const AsciiString& playerName, const AsciiString& message, Bool showName);
+
 	// @n0ttws: 4 additions
-	// @-TanSo-: 129 additions
+	// @-TanSo-: 131 additions
 
 	//-------------------------------------------------------------------------------------------------
 	//----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------

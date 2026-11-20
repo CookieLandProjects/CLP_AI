@@ -932,6 +932,7 @@ void AIPlayer::processBaseBuilding()
 					info->setObjectTimestamp(0); // ready to build.
 				}
 			}
+
 			// check if this building has any "rebuilds" left
 			if (info->isBuildable())
 			{
@@ -2085,7 +2086,7 @@ Bool AIPlayer::selectTeamToBuild()
 // ------------------------------------------------------------------------------------------------
 /** Build a specific team.  If priorityBuild, put at front of queue with priority set. */
 // ------------------------------------------------------------------------------------------------
-void AIPlayer::buildSpecificAIBuilding(const AsciiString &thingName)
+void AIPlayer::buildSpecificAIBuilding(const AsciiString &thingName, Bool highPriority)
 {
 	//
 	AsciiString teamStr = "Error : Solo ai doesn't support BuildSpecificBuilding. '";
@@ -2194,7 +2195,7 @@ void AIPlayer::buildUpgrade(const AsciiString &upgrade)
 // ------------------------------------------------------------------------------------------------
 /** Build a supply center near a supply source with minimumCash or more resources. */
 // ------------------------------------------------------------------------------------------------
-void AIPlayer::buildBySupplies(Int minimumCash, const AsciiString& thingName)
+void AIPlayer::buildBySupplies(Int minimumCash, const AsciiString& thingName, Bool highPriority)
 {
 	const ThingTemplate* tTemplate = nullptr;
 
@@ -2346,7 +2347,7 @@ void AIPlayer::buildBySupplies(Int minimumCash, const AsciiString& thingName)
 						Coord3D validated;
 						if (findLegalBuildPosition(center, tTemplate, finalAngle, validated, nullptr, /*skirmish=*/FALSE, 5 * SUPPLY_CENTER_CLOSE_DIST)) {
 								validated.z = 0;
-								m_player->addToPriorityBuildList(thingName, &validated, finalAngle);
+								m_player->addToPriorityBuildList(thingName, &validated, finalAngle, highPriority);
 						} else {
 								// Should we add anything here....? (TBD)
 						}
@@ -2411,7 +2412,7 @@ Bool AIPlayer::calcClosestConstructionZoneLocation( const ThingTemplate *constru
 // ------------------------------------------------------------------------------------------------
 /** Build a specific building nearest specified team. */
 // ------------------------------------------------------------------------------------------------
-void AIPlayer::buildSpecificBuildingNearestTeam( const AsciiString &thingName, const Team *team )
+void AIPlayer::buildSpecificBuildingNearestTeam( const AsciiString &thingName, const Team *team , Bool highPriority)
 {
 	const ThingTemplate* tTemplate = nullptr;
 
@@ -2483,7 +2484,7 @@ void AIPlayer::buildSpecificBuildingNearestTeam( const AsciiString &thingName, c
 								Coord3D tmp;
 								if (findLegalBuildPosition(validated, tTemplate, angle, tmp, nullptr, FALSE, 5 * SUPPLY_CENTER_CLOSE_DIST)) {
 										tmp.z = 0;
-										m_player->addToPriorityBuildList(thingName, &tmp, angle);
+										m_player->addToPriorityBuildList(thingName, &tmp, angle, highPriority);
 								} else {
 										// Should we add anything here....? (TBD)
 								}
@@ -2664,7 +2665,7 @@ Object* AIPlayer::findSupplyCenter(Int minimumCash)
 // ------------------------------------------------------------------------------------------------
 /**  Build a base defense. */
 // ------------------------------------------------------------------------------------------------
-void AIPlayer::buildAIBaseDefense(Bool flank)
+void AIPlayer::buildAIBaseDefense(Bool flank, Bool highPriority)
 {
 	//
 	AsciiString teamStr = "Error : Solo ai doesn't support buildAIBaseDefense. '";
@@ -2674,7 +2675,7 @@ void AIPlayer::buildAIBaseDefense(Bool flank)
 // ------------------------------------------------------------------------------------------------
 /** Build a base defense. */
 // ------------------------------------------------------------------------------------------------
-void AIPlayer::buildAIBaseDefenseStructure(const AsciiString &thingName, Bool flank)
+void AIPlayer::buildAIBaseDefenseStructure(const AsciiString &thingName, Bool flank, Bool highPriority)
 {
 	//
 	AsciiString teamStr = "Error : Solo ai doesn't support buildAIBaseDefenseStructure. '";
@@ -4540,7 +4541,7 @@ Int AIPlayer::getPlayerSuperweaponValueType(Coord3D* center, Int playerNdx, Real
 }
 
 //-------------------------------------------------------------------------------------------------
-void AIPlayer::buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real bAngle)
+void AIPlayer::buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real bAngle, Bool highPriority)
 {
 	const ThingTemplate* tTemplate = nullptr;
 
@@ -4605,14 +4606,14 @@ void AIPlayer::buildSpecificBuildingNearestTeamAngle(const AsciiString& thingNam
 														if (TheBuildAssistant->isLocationLegalToBuild(&tryPos, tTemplate, angle,
 																										BuildAssistant::NO_OBJECT_OVERLAP, nullptr, m_player) == LBC_OK) {
 																tryPos.z = 0;
-																m_player->addToPriorityBuildList(thingName, &tryPos, angle);
+																m_player->addToPriorityBuildList(thingName, &tryPos, angle, highPriority);
 																TheTerrainVisual->removeAllBibs();
 																return;
 														}
 												}
 												if (findLegalBuildPosition(center, tTemplate, angle, candidate, nullptr, FALSE, maxRadius)) {
 																candidate.z = 0;
-																m_player->addToPriorityBuildList(thingName, &candidate, angle);
+																m_player->addToPriorityBuildList(thingName, &candidate, angle, highPriority);
 																TheTerrainVisual->removeAllBibs();
 																return;
 												}
@@ -4624,7 +4625,7 @@ void AIPlayer::buildSpecificBuildingNearestTeamAngle(const AsciiString& thingNam
 }
 
 //-------------------------------------------------------------------------------------------------
-void AIPlayer::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real bAngle)
+void AIPlayer::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real bAngle, Bool highPriority)
 {
 	const ThingTemplate* tTemplate = nullptr;
 
@@ -4717,7 +4718,7 @@ void AIPlayer::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingNam
 						}
 					}
 						if (!valid) {
-								// debuggggggggggggggggggg (yes more gs, why not?)
+								// debugggggggggggggggggggGGGGGGGGGGGG (yes more gs, why not?) -- @-TanSo-: here, have some more!
 								const Coord3D* warehouseLocation = bestSupplyWarehouse->getPosition();
 								AsciiString debugMessage;
 								debugMessage.format(" %s - buildBySupplies unable to place near dock at (%.2f,%.2f).  Attempting to adjust position.",
@@ -4772,7 +4773,7 @@ void AIPlayer::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingNam
 						Coord3D validated;
 						if (findLegalBuildPosition(center, tTemplate, angle, validated, nullptr, FALSE, 5 * SUPPLY_CENTER_CLOSE_DIST)) {
 								validated.z = 0;
-								m_player->addToPriorityBuildList(thingName, &validated, angle);
+								m_player->addToPriorityBuildList(thingName, &validated, angle, highPriority);
 						} else {
 								// Should we add anything here....? (TBD)
 						}
@@ -4782,7 +4783,7 @@ void AIPlayer::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingNam
 }
 
 //-------------------------------------------------------------------------------------------------
-void AIPlayer::buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real bAngle)
+void AIPlayer::buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real bAngle, Bool highPriority)
 {
 	const ThingTemplate* tTemplate = nullptr;
 
@@ -4833,20 +4834,20 @@ void AIPlayer::buildSpecificBuildingNearestObjectAngle(const AsciiString& thingN
 		if (TheBuildAssistant->isLocationLegalToBuild(&tryPos, tTemplate, angle,
 				BuildAssistant::NO_OBJECT_OVERLAP, nullptr, m_player) == LBC_OK) {
 			tryPos.z = 0;
-			m_player->addToPriorityBuildList(thingName, &tryPos, angle);
+			m_player->addToPriorityBuildList(thingName, &tryPos, angle, highPriority);
 			TheTerrainVisual->removeAllBibs();
 			return;
 		}
 		if (findLegalBuildPosition(center, tTemplate, angle, candidate, nullptr, FALSE, maxRadius)) {
 			candidate.z = 0;
-			m_player->addToPriorityBuildList(thingName, &candidate, angle);
+			m_player->addToPriorityBuildList(thingName, &candidate, angle, highPriority);
 		}
 
 	TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
 }
 
 //-------------------------------------------------------------------------------------------------
-void AIPlayer::buildAIBaseDefenseFromVector(Bool flank, Real rotation, Real percent)
+void AIPlayer::buildAIBaseDefenseFromVector(Bool flank, Real rotation, Real percent, Bool highPriority)
 {
 	//
 	AsciiString teamStr = "Error : Solo ai doesn't support buildAIBaseDefense. '";
@@ -4854,7 +4855,7 @@ void AIPlayer::buildAIBaseDefenseFromVector(Bool flank, Real rotation, Real perc
 }
 
 //-------------------------------------------------------------------------------------------------
-void AIPlayer::buildAIBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName)
+void AIPlayer::buildAIBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName, Bool highPriority)
 {
 	//
 	AsciiString teamStr = "Error : Solo ai doesn't support buildAIBaseDefense. '";
@@ -4882,7 +4883,7 @@ Coord3D AIPlayer::getSkirmishBuildListBaseCenter() { return m_baseCenter; }
 Real AIPlayer::getSkirmishBuildListBaseRadius() { return m_baseRadius; }
 
 //-------------------------------------------------------------------------------------------------
-void AIPlayer::buildSpecificAIBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority)
+void AIPlayer::buildSpecificAIBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority, Bool highPriority)
 {
 	AsciiString teamStr = "Error : Solo ai doesn't support BuildSpecificBuildingFromID. '";
 	teamStr.concat(thingName);
@@ -4966,7 +4967,7 @@ void AIPlayer::releaseFactoryReservations(Team* team)
 //-------------------------------------------------------------------------------------------------
 Bool AIPlayer::isNearTeamFactory(Object* factory, Team* team)
 {
-	Real maxDistance = 500.0f; // Consider "close by" if within 500 feet from another factory.
+	Real maxDistance = 800.0f; // Consider "close by" if within 800 feet from another factory.
 
 	for (FactoryReservation reservation : m_factoryReservations)
 	{
@@ -4989,11 +4990,17 @@ Bool AIPlayer::isNearTeamFactory(Object* factory, Team* team)
 //-------------------------------------------------------------------------------------------------
 Bool AIPlayer::isDockOccupied(ObjectID id) const
 {
+	// Does the dock even exist?
+	Object* dockInQuestion = TheGameLogic->findObjectByID(id);
+	if (!dockInQuestion)
+		return false;
+
 	for (Int i = 0; i < ThePlayerList->getPlayerCount(); i++) {
 		Player* pPlayer = ThePlayerList->getNthPlayer(i);
-		if (!pPlayer || !pPlayer->getAi()) continue;
+		if (!pPlayer || !pPlayer->getAi())
+			continue;
 
-		// Avoid putting up a scaffold at a supply my friend is trying to harvest from.
+		// Avoid putting up a scaffold at a supply my friend is trying to harvest from. Enemies are fine, however.
 		if (pPlayer != m_player && pPlayer->getRelationship(m_player->getDefaultTeam()) != ALLIES)
 			continue;
 
@@ -5004,6 +5011,19 @@ Bool AIPlayer::isDockOccupied(ObjectID id) const
 				return true;
 		}
 	}
+
+	// It may be that our ally is a human player, and therefore doesn't set occupations. Check for them as well :)
+	PartitionFilterAlive f1;
+	PartitionFilterSameMapStatus f2(dockInQuestion);
+	PartitionFilterPlayerAffiliation f3(m_player, ALLOW_ALLIES, TRUE);
+	PartitionFilterAcceptByKindOf f4(MAKE_KINDOF_MASK(KINDOF_FS_SUPPLY_CENTER), KINDOFMASK_NONE);
+	PartitionFilter* filters[] = {&f1, &f2, &f3, &f4, nullptr};
+
+	// There is a supply center from an ally within 300 feet. Best to not infuriate that lil baby
+	if (ThePartitionManager->getClosestObject(dockInQuestion->getPosition(), 300.0f, FROM_CENTER_2D, filters))
+		return true;
+
+
 	return false;
 }
 
@@ -5028,27 +5048,39 @@ void AIPlayer::releaseDockReservations()
 {
 	for (Int i = 0; i < m_supplyDockReservations.size(); i++)
 	{
-		if (m_supplyDockReservations[i].centerID == INVALID_ID)
+		ObjectID id = m_supplyDockReservations[i].centerID;
+		if (id == INVALID_ID)
 			continue;
-		
-		Object* center = TheGameLogic->findObjectByID(m_supplyDockReservations[i].centerID);
 
 		Bool remove = false;
+		Object* center = TheGameLogic->findObjectByID(id);
 
 		if (center == nullptr)
 			remove = true;
-		//else if (center->isEffectivelyDead()) // dead.
-		//	remove = true;
-		//else if (center->getStatusBits().test(OBJECT_STATUS_SOLD)) // can't undo selling.
-		//	remove = true;
 		else if (center->getControllingPlayer() != m_player) // captured.
 			remove = true;
 		else if (center->getCreationTimeStamp() <= 0)
 			remove = true;
+		/*
+		else if (center->getStatusBits().test(OBJECT_STATUS_UNDER_CONSTRUCTION) && center->isEffectivelyDead())
+		{
+			// Figure out how to exactly remove the build list info entry for this
+			remove = true;
+		}*/
 
 		if (remove)
 			m_supplyDockReservations.erase(m_supplyDockReservations.begin() + i);
 	}
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool AIPlayer::hasDockReservation(ObjectID id)
+{
+	for (Int i = 0; i < m_supplyDockReservations.size(); i++) {
+		if (m_supplyDockReservations[i].dockID == id)
+			return TRUE;
+	}
+	return FALSE;
 }
 
 //-------------------------------------------------------------------------------------------------

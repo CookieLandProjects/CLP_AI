@@ -637,10 +637,11 @@ public:
 	// player. These are friend_s for player.
 	void friend_adjustPowerForPlayer( Bool incoming );
 
+	//@CLP_AI additions
 	Bool isBeingCaptured() const { return m_isBeingCaptured; }
 	void setIsBeingCaptured(Bool beingCaptured) { m_isBeingCaptured = beingCaptured; }
 	Int getCreationTimeStamp() const { return m_creationTimeStamp; }
-
+	Bool isIdle();					// @-TanSo-: I would leave this at the ai part, but dozer-idle relations SUCK.
 	Bool m_seenByEnemy;			// @-TanSo-: use this with our scripts so we can make AI attack only things it sees at this moment. Pretty fair, right?
 	Int m_lastSeenFrame;
 	Bool m_crushesInfantry;	// Why don't we make crushing modular? Let the user decide whether artillery should REALLY crush or not. 9/10 times it's a bad idea...

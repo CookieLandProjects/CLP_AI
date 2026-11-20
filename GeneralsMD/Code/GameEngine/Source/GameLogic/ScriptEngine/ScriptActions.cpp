@@ -1094,37 +1094,37 @@ void ScriptActions::doNamedAttack(const AsciiString& attackerName, const AsciiSt
 //-------------------------------------------------------------------------------------------------
 /** doBuildBuilding */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doBuildBuilding(const AsciiString& buildingType)
+void ScriptActions::doBuildBuilding(const AsciiString& buildingType, Bool highPriority)
 {
 	// This action ALWAYS occur on the current player.
 	Player *thePlayer = TheScriptEngine->getCurrentPlayer();
 	if (!thePlayer) return;
 
   // n0ttws: Wiggle logic moved to a more logical location now, was i drunk when making this?
-	thePlayer->buildSpecificBuilding(buildingType);
+	thePlayer->buildSpecificBuilding(buildingType, highPriority);
 }
 
 //-------------------------------------------------------------------------------------------------
 /** doBuildSupplyCenter */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doBuildSupplyCenter(const AsciiString& player, const AsciiString& buildingType, Int cash)
+void ScriptActions::doBuildSupplyCenter(const AsciiString& player, const AsciiString& buildingType, Int cash, Bool highPriority)
 {
 	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(player);
 	if (thePlayer) {
-		thePlayer->buildBySupplies(cash, buildingType);
+		thePlayer->buildBySupplies(cash, buildingType, highPriority);
 	}
 }
 
 //-------------------------------------------------------------------------------------------------
 /** doBuildObjectNearestTeam */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doBuildObjectNearestTeam( const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& teamName )
+void ScriptActions::doBuildObjectNearestTeam( const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& teamName, Bool highPriority)
 {
 	Player *thePlayer = TheScriptEngine->getPlayerFromAsciiString( playerName );
 	Team *theTeam = TheScriptEngine->getTeamNamed( teamName );
 	if( thePlayer && theTeam )
 	{
-		thePlayer->buildSpecificBuildingNearestTeam( buildingType, theTeam );
+		thePlayer->buildSpecificBuildingNearestTeam( buildingType, theTeam, highPriority);
 	}
 }
 
@@ -1143,24 +1143,24 @@ void ScriptActions::doBuildUpgrade(const AsciiString& player, const AsciiString&
 //-------------------------------------------------------------------------------------------------
 /** doBuildBaseDefense */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doBuildBaseDefense(Bool flank)
+void ScriptActions::doBuildBaseDefense(Bool flank, Bool highPriority)
 {
 	// This action ALWAYS occur on the current player.
 	Player *thePlayer = TheScriptEngine->getCurrentPlayer();
 	if (thePlayer) {
-		thePlayer->buildBaseDefense(flank);
+		thePlayer->buildBaseDefense(flank, highPriority);
 	}
 }
 
 //-------------------------------------------------------------------------------------------------
 /** doBuildBuilding */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doBuildBaseStructure(const AsciiString& buildingType, Bool flank)
+void ScriptActions::doBuildBaseStructure(const AsciiString& buildingType, Bool flank, Bool highPriority)
 {
 	// This action ALWAYS occur on the current player.
 	Player *thePlayer = TheScriptEngine->getCurrentPlayer();
 	if (thePlayer) {
-		thePlayer->buildBaseDefenseStructure(buildingType, flank);
+		thePlayer->buildBaseDefenseStructure(buildingType, flank, highPriority);
 	}
 }
 
@@ -6594,7 +6594,7 @@ void ScriptActions::doPlayerBuildUnit(const AsciiString& unitName, const AsciiSt
 		return;
 	}
 
-	AIPlayer* aiPlayer = player->getAIPlayer();
+	AIPlayer* aiPlayer = player->getAi();
 	if (!aiPlayer)
 	{
 		return;
@@ -8431,7 +8431,7 @@ void ScriptActions::doSkirmishFireSpecialPowerAtMostCostType(const AsciiString& 
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doBuildSupplyCenterAngle(const AsciiString& player, const AsciiString& buildingType, Int cash, Real angle)
+void ScriptActions::doBuildSupplyCenterAngle(const AsciiString& player, const AsciiString& buildingType, Int cash, Real angle, Bool highPriority)
 {
 	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(player);
 	if (thePlayer) {
@@ -8453,12 +8453,12 @@ void ScriptActions::doBuildSupplyCenterAngle(const AsciiString& player, const As
 
 		if (angle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
 
-		thePlayer->buildBySuppliesAngle(cash, buildingType, angle);
+		thePlayer->buildBySuppliesAngle(cash, buildingType, angle, highPriority);
 	}
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doBuildObjectNearestTeamAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& teamName, Real angle)
+void ScriptActions::doBuildObjectNearestTeamAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& teamName, Real angle, Bool highPriority)
 {
 	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
 
@@ -8482,12 +8482,12 @@ void ScriptActions::doBuildObjectNearestTeamAngle(const AsciiString& playerName,
 
 		if (angle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
 		
-		thePlayer->buildSpecificBuildingNearestTeamAngle(buildingType, theTeam, angle);
+		thePlayer->buildSpecificBuildingNearestTeamAngle(buildingType, theTeam, angle, highPriority);
 	}
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doBuildObjectNearestTypeAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, Real angle, Int selectionMode)
+void ScriptActions::doBuildObjectNearestTypeAngle(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, Real angle, Int selectionMode, Bool highPriority)
 {
 	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
 	if (!thePlayer) return;
@@ -8543,12 +8543,11 @@ void ScriptActions::doBuildObjectNearestTypeAngle(const AsciiString& playerName,
 		// Delegate placement and any advanced "wiggle" searching to the AI/dozer phase.
 		// All scripts should request the AI to build near the object; the AI will
 		// perform any necessary search/adjustment when a dozer is available.
-		thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle);
-		return;
+		thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle, highPriority);
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doBuildObjectNearestKindOfAngle(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, Real angle, Int selectionMode)
+void ScriptActions::doBuildObjectNearestKindOfAngle(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, Real angle, Int selectionMode, Bool highPriority)
 {
 	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
 	if (!thePlayer) return;
@@ -8604,24 +8603,14 @@ void ScriptActions::doBuildObjectNearestKindOfAngle(const AsciiString& playerNam
 
 	if (angle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
 
-		const ThingTemplate* tmpl = TheThingFactory->findTemplate(buildingType);
-		if (tmpl) {
-			Coord3D center = *bestObj->getPosition();
-			Real radAngle = (PI / 180.0f) * angle;
-
-			// Quick check if the center itself is valid; if so, request AI to build there.
-			if (TheBuildAssistant->isLocationLegalToBuild(&center, tmpl, radAngle, BuildAssistant::NO_OBJECT_OVERLAP, nullptr, thePlayer) == LBC_OK) {
-				thePlayer->buildSpecificBuilding(buildingType);
-				TheTerrainVisual->removeAllBibs();
-				return;
-			}
-		}
-
-		thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle);
+	// Delegate placement and any advanced "wiggle" searching to the AI/dozer phase.
+	// All scripts should request the AI to build near the object; the AI will
+	// perform any necessary search/adjustment when a dozer is available.
+	thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle, highPriority);
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doBuildObjectNearestTypeAngleArea(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, const AsciiString& triggerArea, Real angle, Int selectionMode)
+void ScriptActions::doBuildObjectNearestTypeAngleArea(const AsciiString& playerName, const AsciiString& buildingType, const AsciiString& objectType, const AsciiString& triggerArea, Real angle, Int selectionMode, Bool highPriority)
 {
 	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
 	if (!thePlayer) return;
@@ -8677,11 +8666,11 @@ void ScriptActions::doBuildObjectNearestTypeAngleArea(const AsciiString& playerN
 
 	if (angle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
 
-	thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle);
+	thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle, highPriority);
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doBuildObjectNearestKindOfAngleArea(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, const AsciiString& triggerArea, Real angle, Int selectionMode)
+void ScriptActions::doBuildObjectNearestKindOfAngleArea(const AsciiString& playerName, const AsciiString& buildingType, Int kindOf, const AsciiString& triggerArea, Real angle, Int selectionMode, Bool highPriority)
 {
 	Player* thePlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
 	if (!thePlayer) return;
@@ -8740,7 +8729,7 @@ void ScriptActions::doBuildObjectNearestKindOfAngleArea(const AsciiString& playe
 
 	if (angle == 362.0f) angle = (Real)GameLogicRandomValue(0, 359);
 
-	thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle);
+	thePlayer->buildSpecificBuildingNearestObjectAngle(buildingType, bestObj, angle, highPriority);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -9613,21 +9602,21 @@ void ScriptActions::doPlayerSellAllBuildingsTypeArea(const AsciiString& playerNa
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doAIPlayerBuildDefenseStructureFromVector(Bool flank, Real rotation, Real percent)
+void ScriptActions::doAIPlayerBuildDefenseStructureFromVector(Bool flank, Real rotation, Real percent, Bool highPriority)
 {
 	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
 	if(!pPlayer) return;
 
-	pPlayer->buildBaseDefenseFromVector(flank, rotation, percent);
+	pPlayer->buildBaseDefenseFromVector(flank, rotation, percent, highPriority);
 }
 
 //-------------------------------------------------------------------------------------------------
-void  ScriptActions::doAIPlayerBuildDefenseStructureFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName)
+void  ScriptActions::doAIPlayerBuildDefenseStructureFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName, Bool highPriority)
 {
 	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
 	if (!pPlayer) return;
 
-	pPlayer->buildBaseDefenseFromVectorAtPlayer(flank, rotation, percent, playerName);
+	pPlayer->buildBaseDefenseFromVectorAtPlayer(flank, rotation, percent, playerName, highPriority);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -10722,12 +10711,12 @@ void ScriptActions::doTeamTeleportLocation(const AsciiString& teamName, const As
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doBuildBuildingFromBuildListID(const AsciiString& objectType, Int buildListID)
+void ScriptActions::doBuildBuildingFromBuildListID(const AsciiString& objectType, Int buildListID, Bool highPriority)
 {
 	Player* pPlayer = TheScriptEngine->getCurrentPlayer();
 	if (!pPlayer) return;
 
-		pPlayer->buildSpecificBuildingFromID(objectType, buildListID, true);
+		pPlayer->buildSpecificBuildingFromID(objectType, buildListID, true, highPriority);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -10769,14 +10758,6 @@ void ScriptActions::doResetBuildListID(Int buildListID)
 	// @-TanSo-: Bring it back to the default rotation...
 	pPlayer->normalizeBuildListFromID(buildListID, 0);
 	//... and clear all flags.
-	/*if (idList)
-	{
-		for (BuildListInfo* info = idList->m_buildList; info; info = info->getNext())
-		{
-				info->setConsumedInIDList(FALSE);
-				info->setBuildLocationBlocked(FALSE);
-		}
-	}*/
 	if (idList->m_buildList)
 		idList->m_buildList->resetFlags();
 }
@@ -11389,6 +11370,9 @@ void ScriptActions::doPlayerHuntArea(const AsciiString& playerName, const AsciiS
 				if (!pObj) continue;
 
 				if (!pObj->isInside(pArea))
+					continue;
+
+				if (!pObj->isKindOf(KINDOF_CAN_ATTACK))
 					continue;
 
 				if (pObj->isKindOf(KINDOF_DOZER) || pObj->isKindOf(KINDOF_HARVESTER) ||pObj->isKindOf(KINDOF_IGNORES_SELECT_ALL))
@@ -12996,6 +12980,64 @@ void ScriptActions::doUnitFlankLocation(const AsciiString& unitName, const Ascii
 }
 
 //-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerSendChat(const AsciiString& playerName, const AsciiString& message, Bool showName)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+	
+	UnicodeString msg;
+	msg.translate(message);
+
+	if (showName) {
+		msg.format(L"[%s] %ls", pPlayer->getPlayerDisplayName().str(), msg.str());
+	}
+
+	Bool fromObserver = !pPlayer->isPlayerActive();
+	Bool amIObserver = !ThePlayerList->getLocalPlayer()->isPlayerActive();
+
+	// We'll ignore whether the player is blocked because this is script-activated.
+	if (!fromObserver || amIObserver)
+	{
+		RGBColor rgb;
+		rgb.setFromInt(pPlayer->getPlayerColor());
+		TheInGameUI->messageColor(&rgb, L"%ls", msg.str());
+
+		// feedback for received chat messages in-game
+		AudioEventRTS audioEvent("GUICommunicatorIncoming");
+		TheAudio->addAudioEvent(&audioEvent);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
+void ScriptActions::doPlayerSendChatPrivate(const AsciiString& playerName, const AsciiString& message, Bool showName)
+{
+	Player* pPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
+	if (!pPlayer) return;
+
+	UnicodeString msg;
+	msg.translate(message);
+
+	if (showName) {
+		msg.format(L"[%s] %ls", pPlayer->getPlayerDisplayName().str(), msg.str());
+	}
+
+	Bool fromObserver = !pPlayer->isPlayerActive();
+	Bool amIObserver = !ThePlayerList->getLocalPlayer()->isPlayerActive();
+
+	// We'll ignore whether the player is blocked because this is script-activated.
+	if (!fromObserver && ThePlayerList->getLocalPlayer()->getRelationship(pPlayer->getDefaultTeam()) != ENEMIES || amIObserver)
+	{
+		RGBColor rgb;
+		rgb.setFromInt(pPlayer->getPlayerColor());
+		TheInGameUI->messageColor(&rgb, L"%ls", msg.str());
+
+		// feedback for received chat messages in-game
+		AudioEventRTS audioEvent("GUICommunicatorIncoming");
+		TheAudio->addAudioEvent(&audioEvent);
+	}
+}
+
+//-------------------------------------------------------------------------------------------------
 //----------------------------- @CLP_AI SCRIPT ACTION ADDITIONS END -------------------------------
 //-------------------------------------------------------------------------------------------------
 
@@ -13056,28 +13098,28 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			doCreateReinforcements(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
 			return;
 		case ScriptAction::SKIRMISH_BUILD_BUILDING:
-			doBuildBuilding(pAction->getParameter(0)->getString());
+			doBuildBuilding(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
 			return;
 		case ScriptAction::AI_PLAYER_BUILD_SUPPLY_CENTER:
-			doBuildSupplyCenter(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
+			doBuildSupplyCenter(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TEAM:
-			doBuildObjectNearestTeam( pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString() );
+			doBuildObjectNearestTeam( pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::AI_PLAYER_BUILD_UPGRADE:
 			doBuildUpgrade(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString());
 			return;
 		case ScriptAction::SKIRMISH_BUILD_BASE_DEFENSE_FRONT:
-			doBuildBaseDefense(false);
+			doBuildBaseDefense(false, pAction->getParameter(0)->getInt());
 			return;
 		case ScriptAction::SKIRMISH_BUILD_BASE_DEFENSE_FLANK:
-			doBuildBaseDefense(true);
+			doBuildBaseDefense(true, pAction->getParameter(0)->getInt());
 			return;
 		case ScriptAction::SKIRMISH_BUILD_STRUCTURE_FRONT:
-			doBuildBaseStructure(pAction->getParameter(0)->getString(), false);
+			doBuildBaseStructure(pAction->getParameter(0)->getString(), false, pAction->getParameter(1)->getInt());
 			return;
 		case ScriptAction::SKIRMISH_BUILD_STRUCTURE_FLANK:
-			doBuildBaseStructure(pAction->getParameter(0)->getString(), true);
+			doBuildBaseStructure(pAction->getParameter(0)->getString(), true, pAction->getParameter(1)->getInt());
 			return;
 		case ScriptAction::RECRUIT_TEAM:
 			doRecruitTeam(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal());
@@ -14262,10 +14304,10 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			doSkirmishFireSpecialPowerAtMostCostType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
 			return;
 		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TEAM_ROTATED:
-			doBuildObjectNearestTeamAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getReal());
+			doBuildObjectNearestTeamAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getReal(), pAction->getParameter(4)->getInt());
 			return;
 		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_SUPPLY_ROTATED:
-			doBuildSupplyCenterAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getReal());
+			doBuildSupplyCenterAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getReal(), pAction->getParameter(4)->getInt());
 			return;
 		case ScriptAction::TEAM_MOVE_AWAY_FROM_RELATION:
 			doTeamMoveAwayFromRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getInt());
@@ -14274,10 +14316,10 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			doUnitMoveAwayFromRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED:
-			doBuildObjectNearestTypeAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getReal(), pAction->getParameter(4)->getInt());
+			doBuildObjectNearestTypeAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getReal(), pAction->getParameter(4)->getInt(), pAction->getParameter(5)->getInt());
 			return;
 		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED:
-			doBuildObjectNearestKindOfAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getReal(), pAction->getParameter(4)->getInt());
+			doBuildObjectNearestKindOfAngle(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getReal(), pAction->getParameter(4)->getInt(), pAction->getParameter(5)->getInt());
 			return;
 		case ScriptAction::TEAM_MOVE_TOWARDS_RELATION:
 			doTeamMoveTowardsRelation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getInt());
@@ -14334,10 +14376,10 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			doPlayerSellAllBuildingsTypeArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString());
       return;
 		case ScriptAction::AI_PLAYER_BUILD_DEFENSE_FRONT_FROM_VECTOR_ROTATED_PERCENT:
-			doAIPlayerBuildDefenseStructureFromVector(false, pAction->getParameter(0)->getReal(), pAction->getParameter(1)->getReal());
+			doAIPlayerBuildDefenseStructureFromVector(false, pAction->getParameter(0)->getReal(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt());
 			return;
 		case ScriptAction::AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT:
-			doAIPlayerBuildDefenseStructureFromVector(true, pAction->getParameter(0)->getReal(), pAction->getParameter(1)->getReal());
+			doAIPlayerBuildDefenseStructureFromVector(true, pAction->getParameter(0)->getReal(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getInt());
 			return;
 		case ScriptAction::AI_PLAYER_ADD_DEFENSE_TO_VECTOR:
 			doAIPlayerAddBaseDefenseStructure(pAction->getParameter(0)->getString());
@@ -14346,16 +14388,16 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			doAIPlayerRemoveBaseDefenseStructure(pAction->getParameter(0)->getString());
 			return;
 		case ScriptAction::AI_PLAYER_BUILD_DEFENSE_FRONT_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER:
-			doAIPlayerBuildDefenseStructureFromVectorAtPlayer(false, pAction->getParameter(0)->getReal(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getString());
+			doAIPlayerBuildDefenseStructureFromVectorAtPlayer(false, pAction->getParameter(0)->getReal(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::AI_PLAYER_BUILD_DEFENSE_FLANK_FROM_VECTOR_ROTATED_PERCENT_AT_PLAYER:
-			doAIPlayerBuildDefenseStructureFromVectorAtPlayer(true, pAction->getParameter(0)->getReal(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getString());
+			doAIPlayerBuildDefenseStructureFromVectorAtPlayer(true, pAction->getParameter(0)->getReal(), pAction->getParameter(1)->getReal(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getInt());
 			return;
 		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_KINDOF_ROTATED_AREA:
-			doBuildObjectNearestKindOfAngleArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString(), pAction->getParameter(4)->getReal(), pAction->getParameter(5)->getInt());
+			doBuildObjectNearestKindOfAngleArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt(), pAction->getParameter(3)->getString(), pAction->getParameter(4)->getReal(), pAction->getParameter(5)->getInt(), pAction->getParameter(6)->getInt());
       return;
 		case ScriptAction::AI_PLAYER_BUILD_TYPE_NEAREST_TYPE_ROTATED_AREA:
-			doBuildObjectNearestTypeAngleArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getString(), pAction->getParameter(4)->getReal(), pAction->getParameter(5)->getInt());
+			doBuildObjectNearestTypeAngleArea(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getString(), pAction->getParameter(3)->getString(), pAction->getParameter(4)->getReal(), pAction->getParameter(5)->getInt(), pAction->getParameter(6)->getInt());
 			return;
 		case ScriptAction::TEAM_ATTACK_TYPE:
 			doTeamAttackType(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
@@ -14432,7 +14474,7 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			return;
 
 		case ScriptAction::AI_PLAYER_BUILD_SPECIFIC_FROM_ID:
-			doBuildBuildingFromBuildListID(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt());
+			doBuildBuildingFromBuildListID(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getInt(), pAction->getParameter(2)->getInt());
 			return;
 		case ScriptAction::AI_PLAYER_INSERT_BUILDLIST_FROM_ID:
 			doInsertBuildListFromID(pAction->getParameter(0)->getInt());
@@ -14642,5 +14684,11 @@ void ScriptActions::executeAction( ScriptAction *pAction )
 			doUnitFlankLocation(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getReal(), pAction->getParameter(3)->getReal());
 			return;
 
+		case ScriptAction::PLAYER_SEND_CHAT:
+			doPlayerSendChat(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
+			return;
+		case ScriptAction::PLAYER_SEND_CHAT_PRIVATE:
+			doPlayerSendChatPrivate(pAction->getParameter(0)->getString(), pAction->getParameter(1)->getString(), pAction->getParameter(2)->getInt());
+			return;
 	}
 }

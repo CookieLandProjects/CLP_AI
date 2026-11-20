@@ -3277,6 +3277,7 @@ void PartitionManager::calcRadiusVec()
 
 //-----------------------------------------------------------------------------
 //DECLARE_PERF_TIMER(getClosestObjects)
+__declspec(noinline)
 Object *PartitionManager::getClosestObjects(
 	const Object *obj,
 	const Coord3D *pos,
@@ -3361,10 +3362,10 @@ Object *PartitionManager::getClosestObjects(
 	Int maxRadiusLimit = maxRadius + 3;
 	if (maxRadiusLimit > m_maxGcoRadius) maxRadiusLimit = m_maxGcoRadius;
 #else
-	Int maxRadiusLimit = maxRadius;
+	//Int maxRadiusLimit = maxRadius;
 #endif
 
-	Bool foundAny = false;
+	//Bool foundAny = false;
 
 	static Int theIterFlag = 1;	// nonzero, thanks
 	++theIterFlag;
@@ -3373,7 +3374,7 @@ Object *PartitionManager::getClosestObjects(
 		m_radiusVec[curRadius] contains a list of the cells (foo) that could
 		contain objects that are <= (curRadius * cellSize) distance away from cell (0,0).
 	*/
-  for (Int curRadius = 0; curRadius <= maxRadiusLimit; ++curRadius)
+	/*for (Int curRadius = 0; curRadius <= maxRadiusLimit; ++curRadius)
   {
     const OffsetVec& offsets = m_radiusVec[curRadius];
 		if (offsets.empty())
@@ -3432,8 +3433,37 @@ Object *PartitionManager::getClosestObjects(
 
 			}
 		}
-  }
+  }*/
+	// --------------------------------------------------------------
+	// --------------------------------------------------------------
+	// -TanSo-: THIS IS A TEST! Currently, even though this is linear, this seems to be slightly more efficient. *For now*
+	for (Object* pObj = TheGameLogic->getFirstObject(); pObj; pObj = pObj->getNextObject())
+	{
+		if (!pObj || pObj == obj)
+			continue;
 
+		Real distSqr = 0.0f;
+		Coord3D distVec;
+		if (!(*distProc)(objPos, objToUse, pObj->getPosition(), pObj, distSqr, distVec, closestDistSqr))
+			continue;
+
+		if (!filtersAllow(filters, pObj))
+			continue;
+
+		if (iterArg) {
+			iterArg->insert(pObj, distSqr);
+		}
+		else {
+			if (distSqr < closestDistSqr || !closestObj) {
+				closestObj = pObj;
+				closestDistSqr = distSqr;
+				closestVec = distVec;
+			}
+		}
+	}
+	
+	// --------------------------------------------------------------
+	// --------------------------------------------------------------
 #else // not FASTER_GCO
 
 	CellOutwardIterator iter(this, cellCenterX, cellCenterY);

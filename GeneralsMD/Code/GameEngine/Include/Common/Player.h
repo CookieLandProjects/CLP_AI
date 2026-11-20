@@ -85,6 +85,7 @@ class BattlePlanBonuses;
 
 // -TanSo-: we need this as well, thanks!
 class AISideBuildList;
+class TacticModule;
 
 enum BattlePlanStatus CPP_11(: Int);
 enum UpgradeStatusType CPP_11(: Int);
@@ -467,25 +468,27 @@ public:
 	AISideBuildList* findIDBuildList(Int id);
 
 	// The only place that actually messes with m_pBuildList
-	void insertBuildListInfo(BuildListInfo* info, Bool isPriority);
+	void insertBuildListInfo(BuildListInfo* info, Bool isPriority, Bool highPriority);
 	void clearBuildLocationBlocks();
 
 	// Script executions
-	void buildSpecificBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority);
+	void buildSpecificBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority, Bool highPriority);
 	void insertBuildListFromID(Int id);
 	void normalizeBuildListFromID(Int id, Int spot);
 	void setDefaultBuildList(Int id);
 	void rotateBuildListFromID(Int id, Real angle);
 
 	virtual Bool computeSuperweaponTargetType(const SpecialPowerTemplate* power, Coord3D* retPos, Int playerNdx, Real weaponRadius, const AsciiString& objectType);
-	void buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real angle);
-	void buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real angle);
-	void buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real angle);
+	void buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real angle, Bool highPriority);
+	void buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real angle, Bool highPriority);
+	void buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real angle, Bool highPriority);
 	void updateLastFrameSeen();
 	void countObjectsByThingTemplateArea(Int numTmplates, const ThingTemplate* const* things, Bool ignoreDead, Int* counts, Bool ignoreUnderConstruction, const PolygonTrigger* triggerArea) const;
 
 	Bool getClosestDozerBuildingPriority() { return m_closestDozerBuildingPriority; }
 	void setClosestDozerBuildingPriority(Bool b) { m_closestDozerBuildingPriority = b; }
+
+	TacticModule* getTacticModule() { return m_tacticModule; }
 	//-------------------------------------------------------------------------------------------------
 	//--------------------------------- @CLP_AI PLAYER ADDITIONS END ----------------------------------
 	//-------------------------------------------------------------------------------------------------
@@ -586,7 +589,7 @@ public:
 	BuildListInfo *getBuildList( void ) { return m_pBuildList; }		///< returns the build list. (build list might be modified by the solo AI)
 	void addToBuildListTransfered(Object* obj);
 	void addToBuildList(Object *obj);			///< Adds this to the build list.	 Used for factories placed instead of in build list.
-	void addToPriorityBuildList(AsciiString templateName, Coord3D *pos, Real angle);			///< Adds this to the build list.	 Used for factories placed instead of in build list.
+	void addToPriorityBuildList(AsciiString templateName, Coord3D *pos, Real angle, Bool highPriority = FALSE);			///< Adds this to the build list.	 Used for factories placed instead of in build list.
 	void addToBuildListAdvancedEPO(const ThingTemplate* tmpl, const Coord3D& location, Real bAngle, INT rebuildTimes, BOOLEAN exactPositionOnly);
 	void addToBuildListAdvanced(Object* obj, INT rebuildTimes, BOOLEAN exactPositionOnly);
 
@@ -624,28 +627,28 @@ public:
 	void buildSpecificTeam(TeamPrototype *teamProto);
 
 	/// Build an instance of a specific building.  Gets passed to aiPlayer.
-	void buildSpecificBuilding(const AsciiString &thingName);
+	void buildSpecificBuilding(const AsciiString &thingName, Bool highPriority);
 
 	/// Build a building near a supply dump with at least cash.  Gets passed to aiPlayer.
-	void buildBySupplies(Int minimumCash, const AsciiString &thingName);
+	void buildBySupplies(Int minimumCash, const AsciiString &thingName, Bool highPriority);
 
 	/// Build an instance of a specific building nearest specified team.  Gets passed to aiPlayer.
-	void buildSpecificBuildingNearestTeam( const AsciiString &thingName, const Team *team );
+	void buildSpecificBuildingNearestTeam( const AsciiString &thingName, const Team *team, Bool highPriority);
 
 	/// Build an upgrade.  Gets passed to aiPlayer.
 	void buildUpgrade(const AsciiString &upgrade);
 
 	/// Build base defense on front or flank of base.  Gets passed to aiPlayer.
-	void buildBaseDefense(Bool flank);
+	void buildBaseDefense(Bool flank, Bool highPriority);
 
   /// @-TanSo-: Build base defense on front or flank of base based on our vector.  Gets passed to aiPlayer.
-	void buildBaseDefenseFromVector(Bool flank, Real rotation, Real percent);
-	void buildBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName);
+	void buildBaseDefenseFromVector(Bool flank, Real rotation, Real percent, Bool highPriority);
+	void buildBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName, Bool highPriority);
 	void addAIBaseDefenseToVector(const AsciiString& objectType);
 	void removeAIBaseDefenseFromVector(const AsciiString& objectType);
 
 	/// Build structure type on front or flank of base.  Gets passed to aiPlayer.
-	void buildBaseDefenseStructure(const AsciiString &thingName, Bool flank);
+	void buildBaseDefenseStructure(const AsciiString &thingName, Bool flank, Bool highPriority);
 
 	/// Recruits an instance of a specific team.  Gets passed to aiPlayer.
 	void recruitSpecificTeam(TeamPrototype *teamProto, Real recruitRadius);
@@ -888,7 +891,5 @@ private:
 	Bool									m_logicalRetaliationModeEnabled;
 
 	Bool m_closestDozerBuildingPriority; // Prioritize buildings with the closest dozer to save travel time.
-
-	public:
-		AIPlayer* getAIPlayer() { return m_ai; }
+	TacticModule* m_tacticModule;
 };

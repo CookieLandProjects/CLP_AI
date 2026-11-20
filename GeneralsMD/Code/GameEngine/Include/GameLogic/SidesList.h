@@ -305,6 +305,7 @@ protected:
 	Int			 m_currentGatherers;				///< Number of gatherers available.
 	Bool		 m_priorityBuild;						///< Is priority build.
 
+	Bool		m_highPriorityBuild;				///< -TanSo-: Very urgent build.
 	Bool		m_consumedInIDList;					///< -TanSo-: Make sure we do not build the same building twice in an ID list.
 	Bool		m_buildLocationBlocked;			///< -TanSo-: Skip this entry if we cannot build it right now and move on.
 
@@ -374,6 +375,12 @@ public:
 	BuildListInfo *duplicate();
 	// -TanSo-: Also be able to duplicate a single entry, please!
 	BuildListInfo* duplicateSingle();
+
+	// -TanSo-: high Priority will be preferred over the normal priorityBuild. Needed for especially urgent builds like army stealing.
+	void setHighPriorityBuild() { m_highPriorityBuild = true; }
+	void removeHighPriorityBuild() { m_highPriorityBuild = false; }
+	Bool isHighPriorityBuild() { return m_highPriorityBuild; }
+
 	Bool isConsumedInIDList() { return m_consumedInIDList; }
 	void setConsumedInIDList(Bool b) { m_consumedInIDList = b; }
 	Bool isBuildLocationBlocked() { return m_buildLocationBlocked; }

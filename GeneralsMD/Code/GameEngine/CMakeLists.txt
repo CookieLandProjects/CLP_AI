@@ -249,6 +249,7 @@ set(GAMEENGINE_SRC
     Include/GameLogic/Locomotor.h
     Include/GameLogic/LocomotorSet.h
 #    Include/GameLogic/LogicRandomValue.h
+    Include/GameLogic/TacticModule.h # @CLP_AI addition
     Include/GameLogic/Module/ActiveBody.h
     Include/GameLogic/Module/ActiveShroudUpgrade.h
     Include/GameLogic/Module/AIUpdate.h
@@ -833,6 +834,7 @@ set(GAMEENGINE_SRC
     Source/GameLogic/AI/AIStates.cpp
     Source/GameLogic/AI/AITNGuard.cpp
     Source/GameLogic/AI/Squad.cpp
+    Source/GameLogic/AI/TacticModule.cpp # @CLP_AI addition
     Source/GameLogic/AI/TurretAI.cpp
     Source/GameLogic/Map/PolygonTrigger.cpp
     Source/GameLogic/Map/SidesList.cpp

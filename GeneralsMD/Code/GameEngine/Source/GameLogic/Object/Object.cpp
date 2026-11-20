@@ -39,6 +39,7 @@
 #include "Common/ModuleFactory.h"
 #include "Common/Player.h"
 #include "Common/PlayerList.h"
+#include "Common/PlayerList.h"
 #include "Common/Radar.h"
 #include "Common/SpecialPower.h"
 #include "Common/Team.h"
@@ -80,6 +81,7 @@
 #include "GameLogic/Module/DestroyModule.h"
 #include "GameLogic/Module/DieModule.h"
 #include "GameLogic/Module/DozerAIUpdate.h"
+#include "GameLogic/Module/WorkerAIUpdate.h"
 #include "GameLogic/Module/ObjectDefectionHelper.h"
 #include "GameLogic/Module/ObjectRepulsorHelper.h"
 #include "GameLogic/Module/ObjectSMCHelper.h"
@@ -6629,4 +6631,25 @@ ObjectID Object::calculateCountermeasureToDivertTo( const Object& victim )
 		}
 	}
 	return INVALID_ID;
+}
+
+//-------------------------------------------------------------------------------------------------
+Bool Object::isIdle()
+{
+	// Dozers and workers are idle while building etc. Reject them if they are on a task though.
+	if (isKindOf(KINDOF_DOZER))
+	{
+		DozerAIInterface* dozerAI = m_ai->getDozerAIInterface();
+		if (dozerAI && dozerAI->getCurrentTask() != DOZER_TASK_INVALID) {
+			return FALSE;
+		}
+		else {
+			WorkerAIUpdate* workerAI = m_ai->getWorkerAIUpdate();
+			if (workerAI && workerAI->getCurrentTask() != DOZER_TASK_INVALID) {
+				return FALSE;
+			}
+		}
+		return TRUE;
+	}
+	return m_ai->isIdle();
 }

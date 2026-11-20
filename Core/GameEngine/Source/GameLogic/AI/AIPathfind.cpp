@@ -4245,7 +4245,7 @@ void Pathfinder::classifyFence( Object *obj, Bool insert )
 	// TheSuperHackers @fix Mauller 16/06/2025 Fixes uninitialized variables.
 #if RETAIL_COMPATIBLE_CRC
 	//CRCDEBUG_LOG(("Pathfinder::classifyFence - (%d,%d)", cellBounds.hi.x, cellBounds.hi.y));
-
+	/*
 	// For retail the values on the stack are often either 0 or larger than the map size.
 	// We initialize them to reduce the likelihood of a mismatch.
 	if (m_classifyFenceZeroInit)
@@ -4257,7 +4257,7 @@ void Pathfinder::classifyFence( Object *obj, Bool insert )
 	{
 		cellBounds.hi.x = 1000000;
 		cellBounds.hi.y = 1000000;
-	}
+	}*/
 #else
 	cellBounds.hi.x = REAL_TO_INT_CEIL((pos->x + 0.5f)/PATHFIND_CELL_SIZE_F);
 	cellBounds.hi.y = REAL_TO_INT_CEIL((pos->y + 0.5f)/PATHFIND_CELL_SIZE_F);

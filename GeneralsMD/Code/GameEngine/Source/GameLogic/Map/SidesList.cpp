@@ -950,7 +950,8 @@ m_automaticallyBuild(true),
 m_priorityBuild(false),
 m_buildingName(AsciiString::TheEmptyString),
 m_consumedInIDList(false),
-m_buildLocationBlocked(false)
+m_buildLocationBlocked(false),
+m_highPriorityBuild(false)
 {
 	m_location.zero();
 	m_rallyPointOffset.x = 0.0f;

@@ -58,11 +58,11 @@ public:	// AIPlayer interface methods.
 
 	virtual void buildSpecificAITeam(TeamPrototype *teamProto, Bool priorityBuild) override; ///< Builds this team immediately.
 
-	virtual void buildSpecificAIBuilding(const AsciiString &thingName) override; ///< Builds this building as soon as possible.
+	virtual void buildSpecificAIBuilding(const AsciiString &thingName, Bool highPriority) override; ///< Builds this building as soon as possible.
 
-	virtual void buildAIBaseDefense(Bool flank) override; ///< Builds base defense on front or flank of base.
+	virtual void buildAIBaseDefense(Bool flank, Bool highPriority) override; ///< Builds base defense on front or flank of base.
 
-	virtual void buildAIBaseDefenseStructure(const AsciiString &thingName, Bool flank) override; ///< Builds base defense on front or flank of base.
+	virtual void buildAIBaseDefenseStructure(const AsciiString &thingName, Bool flank, Bool highPriority) override; ///< Builds base defense on front or flank of base.
 
 	virtual void recruitSpecificAITeam(TeamPrototype *teamProto, Real recruitRadius) override; ///< Builds this team immediately.
 
@@ -73,14 +73,14 @@ public:	// AIPlayer interface methods.
 	virtual Player *getAiEnemy() override;	///< Solo AI attacks based on scripting.  Only skirmish auto-acquires an enemy at this point.  jba.
 
 	// @CLP_AI Additions
-  virtual void buildAIBaseDefenseFromVector(Bool flank, Real rotation, Real percent); ///< Do the same as buildAIBaseDefense, but use the vector and randomize the outcome.
-	virtual void buildAIBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName);
-	virtual void buildAIBaseDefenseStructureFromVector(const AsciiString& thingName, Bool flank, Real rotation, Real percent);
-	virtual void buildAIBaseDefenseStructureFromVectorAtPlayer(const AsciiString& thingName, Bool flank, Real rotation, Real percent, const AsciiString& playerName);
+  virtual void buildAIBaseDefenseFromVector(Bool flank, Real rotation, Real percent, Bool highPriority); ///< Do the same as buildAIBaseDefense, but use the vector and randomize the outcome.
+	virtual void buildAIBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName, Bool highPriority);
+	virtual void buildAIBaseDefenseStructureFromVector(const AsciiString& thingName, Bool flank, Real rotation, Real percent, Bool highPriority);
+	virtual void buildAIBaseDefenseStructureFromVectorAtPlayer(const AsciiString& thingName, Bool flank, Real rotation, Real percent, const AsciiString& playerName, Bool highPriority);
 	virtual void addAIBaseDefenseToVector(const AsciiString &thingName);
 	virtual void removeAIBaseDefenseFromVector(const AsciiString& thingName);
 	virtual void insertBuildListFromID(Int id);
-	virtual void buildSpecificAIBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority);
+	virtual void buildSpecificAIBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority, Bool highPriority);
 	virtual void normalizeBuildListFromID(Int id, Int spot);
 	virtual void setDefaultBuildList(Int id);
 	virtual void rotateBuildListFromID(Int id, Real angle);

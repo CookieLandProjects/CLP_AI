@@ -742,6 +742,9 @@ public:
 		TEAM_FLANK_LOCATION,													///< A team flanks a location until <Real> degrees at a <Real> feet distance.
 		UNIT_FLANK_LOCATION,													///< A unit flanks a location until <Real> degrees at a <Real> feet distance.
 
+		PLAYER_SEND_CHAT,															///< A player sends a chat message.
+		PLAYER_SEND_CHAT_PRIVATE,											///< A player sends a chat message exclusively to his team.
+
 		//-------------------------------------------------------------------------------------------------
 		//--------------------------- @CLP_AI SCRIPT ACTIONS ADDITIONS END --------------------------------
 		//-------------------------------------------------------------------------------------------------
@@ -1311,6 +1314,7 @@ public:
 		SKIRMISH_COMPARISON_SPECIAL_POWER_READY,// True if a <comparison> <Int> amount of that special power is ready (intended for multi super weapon use).
 		PLAYER_COMPARISON_FREE_FACTORY_SLOTS_TYPE,// True if a player has <comparison> <Int> amount of factories of <objectType> with less than <Int> units currently being produced.
 		AIDATA_BUILDS_IN_QUEUE,									// True if <comparison> <Int> AIData builds are in the queue.
+		SKIRMISH_COMPARISON_IDLE_DOZERS,        // True if a player has <comparison> <Int> idle construction units.
 
 		//-------------------------------------------------------------------------------------------------
 		//---------------------------- @CLP_AI SCRIPT CONDITION ADDITIONS END -----------------------------

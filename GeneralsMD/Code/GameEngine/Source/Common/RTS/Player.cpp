@@ -100,7 +100,7 @@
 #include "GameLogic/VictoryConditions.h"
 
 #include "GameNetwork/GameInfo.h"
-
+#include "GameLogic/TacticModule.h"
 
 //Grey for neutral.
 #define NEUTRAL_PLAYER_COLOR 0xffffffff
@@ -357,6 +357,7 @@ Player::Player( Int playerIndex )
 
 	m_crushesInfantry = false;
 	m_closestDozerBuildingPriority = false;
+	m_tacticModule = nullptr;
 }
 
 //=============================================================================
@@ -510,6 +511,8 @@ void Player::init(const PlayerTemplate* pt)
 
 	if (TheAI->getAiData()->m_aiCrushesInfantry)
 		m_crushesInfantry = true;
+
+	m_tacticModule = new TacticModule(this);
 }
 
 //=============================================================================
@@ -715,7 +718,7 @@ void Player::addToBuildList(Object *obj)
 }
 
 //=============================================================================
-void Player::addToPriorityBuildList(AsciiString templateName, Coord3D *pos, Real angle)
+void Player::addToPriorityBuildList(AsciiString templateName, Coord3D *pos, Real angle, Bool highPriority)
 {
 	BuildListInfo *newInfo = newInstance( BuildListInfo );
 	newInfo->setTemplateName(templateName);
@@ -724,6 +727,10 @@ void Player::addToPriorityBuildList(AsciiString templateName, Coord3D *pos, Real
 	newInfo->markPriorityBuild();
 	newInfo->setNumRebuilds(1);	 // Build once.
 	newInfo->setNextBuildList(m_pBuildList);
+
+	if (highPriority)
+		newInfo->setHighPriorityBuild();
+
 	m_pBuildList = newInfo;
 }
 
@@ -801,6 +808,9 @@ void Player::update()
 	// @-TanSo-: We don't need it that often, so only do it sporadically.
 	if (TheGameLogic->getFrame() % 15 == 0)
 		updateLastFrameSeen();
+
+	if (m_tacticModule && isPlayerActive())
+		m_tacticModule->update();
 }
 
 //=============================================================================
@@ -2450,50 +2460,50 @@ void Player::buildSpecificTeam( TeamPrototype *teamProto)
 }
 
 //=============================================================================
-void Player::buildBaseDefense(Bool flank)
+void Player::buildBaseDefense(Bool flank, Bool highPriority)
 {
 	if (m_ai)
 	{
 		// Do a priority build.
-		m_ai->buildAIBaseDefense(flank);
+		m_ai->buildAIBaseDefense(flank, highPriority);
 	}
 }
 
 //=============================================================================
-void Player::buildBaseDefenseStructure(const AsciiString &thingName, Bool flank)
+void Player::buildBaseDefenseStructure(const AsciiString &thingName, Bool flank, Bool highPriority)
 {
 	if (m_ai)
 	{
 		// Do a priority build.
-		m_ai->buildAIBaseDefenseStructure(thingName, flank);
+		m_ai->buildAIBaseDefenseStructure(thingName, flank, highPriority);
 	}
 }
 
 //=============================================================================
-void Player::buildSpecificBuilding(const AsciiString &thingName)
+void Player::buildSpecificBuilding(const AsciiString &thingName, Bool highPriority)
 {
 	if (m_ai)
 	{
 		// Do a priority build.
-		m_ai->buildSpecificAIBuilding(thingName);
+		m_ai->buildSpecificAIBuilding(thingName, highPriority);
 	}
 }
 
 //=============================================================================
-void Player::buildBySupplies(Int minimumCash, const AsciiString &thingName)
+void Player::buildBySupplies(Int minimumCash, const AsciiString &thingName, Bool highPriority)
 {
 	if (m_ai)
 	{
-		m_ai->buildBySupplies(minimumCash, thingName);
+		m_ai->buildBySupplies(minimumCash, thingName, highPriority);
 	}
 }
 
 //=============================================================================
-void Player::buildSpecificBuildingNearestTeam( const AsciiString &thingName, const Team *team )
+void Player::buildSpecificBuildingNearestTeam( const AsciiString &thingName, const Team *team, Bool highPriority)
 {
 	if( m_ai )
 	{
-		m_ai->buildSpecificBuildingNearestTeam( thingName, team );
+		m_ai->buildSpecificBuildingNearestTeam( thingName, team, highPriority);
 	}
 }
 
@@ -4680,49 +4690,49 @@ Bool Player::computeSuperweaponTargetType(const SpecialPowerTemplate* power, Coo
 }
 
 //-------------------------------------------------------------------------------------------------
-void Player::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real angle)
+void Player::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingName, Real angle, Bool highPriority)
 {
 	if (m_ai)
 	{
-		m_ai->buildBySuppliesAngle(minimumCash, thingName, angle);
+		m_ai->buildBySuppliesAngle(minimumCash, thingName, angle, highPriority);
 	}
 }
 
 //-------------------------------------------------------------------------------------------------
-void Player::buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real angle)
+void Player::buildSpecificBuildingNearestTeamAngle(const AsciiString& thingName, const Team* team, Real angle, Bool highPriority)
 {
 	if (m_ai)
 	{
-		m_ai->buildSpecificBuildingNearestTeamAngle(thingName, team, angle);
+		m_ai->buildSpecificBuildingNearestTeamAngle(thingName, team, angle, highPriority);
 	}
 }
 
 //-------------------------------------------------------------------------------------------------
-void Player::buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real angle)
+void Player::buildSpecificBuildingNearestObjectAngle(const AsciiString& thingName, const Object* bestObj, Real angle, Bool highPriority)
 {
 	if (m_ai)
 	{
-		m_ai->buildSpecificBuildingNearestObjectAngle(thingName, bestObj, angle);
+		m_ai->buildSpecificBuildingNearestObjectAngle(thingName, bestObj, angle, highPriority);
 	}
 }
 
 //-------------------------------------------------------------------------------------------------
-void Player::buildBaseDefenseFromVector(Bool flank, Real rotation, Real percent)
+void Player::buildBaseDefenseFromVector(Bool flank, Real rotation, Real percent, Bool highPriority)
 {
 	if (m_ai)
 	{
 		// Do a priority build.
-		m_ai->buildAIBaseDefenseFromVector(flank, rotation, percent);
+		m_ai->buildAIBaseDefenseFromVector(flank, rotation, percent, highPriority);
 	}
 }
 
 //-------------------------------------------------------------------------------------------------
-void Player::buildBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName)
+void Player::buildBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName, Bool highPriority)
 {
 	if (m_ai)
 	{
 		// Do a priority build.
-		m_ai->buildAIBaseDefenseFromVectorAtPlayer(flank, rotation, percent, playerName);
+		m_ai->buildAIBaseDefenseFromVectorAtPlayer(flank, rotation, percent, playerName, highPriority);
 	}
 }
 
@@ -4851,14 +4861,17 @@ AISideBuildList* Player::findIDBuildList(Int id)
 }
 
 //-------------------------------------------------------------------------------------------------
-void Player::insertBuildListInfo(BuildListInfo* info, Bool isPriority)
+void Player::insertBuildListInfo(BuildListInfo* info, Bool isPriority, Bool highPriority)
 {
 	if (!info)
 		return;
 
 	if (isPriority)
 		info->markPriorityBuild();
-		
+
+	if (highPriority)
+		info->setHighPriorityBuild();
+
 	BuildListInfo* head = m_pBuildList;
 
 	if (!head)
@@ -4922,10 +4935,10 @@ void Player::clearBuildLocationBlocks()
 }
 
 //-------------------------------------------------------------------------------------------------
-void Player::buildSpecificBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority)
+void Player::buildSpecificBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority, Bool highPriority)
 {
 	if (m_ai)
-		m_ai->buildSpecificAIBuildingFromID(thingName, id, isPriority);
+		m_ai->buildSpecificAIBuildingFromID(thingName, id, isPriority, highPriority);
 }
 
 //-------------------------------------------------------------------------------------------------

@@ -206,6 +206,15 @@ void AISkirmishPlayer::processBaseBuilding()
 			if (!isLocationSafe(info->getLocation(), curPlan)) {
 				continue;
 			}
+
+			//@-TanSo-: High priority always has its way first
+			if (info->isHighPriorityBuild()) {
+				if (!isPriority) {
+					bldgPlan = curPlan;
+					bldgInfo = info;
+					isPriority = true;
+				}
+			}
 			if (info->isPriorityBuild()) {
 
 				// Always take priority build, unless we already have priority build.
@@ -425,7 +434,7 @@ Bool AISkirmishPlayer::selectTeamToBuild()
 /**
 	Build a specific building.
 	*/
-void AISkirmishPlayer::buildSpecificAIBuilding(const AsciiString &thingName)
+void AISkirmishPlayer::buildSpecificAIBuilding(const AsciiString &thingName, Bool highPriority)
 {
 	// @-TanSo-: if m_closestDozerBuildingPriority, try to fetch the building closest to any dozer.
 	Real closestDist = FLT_MAX;
@@ -460,6 +469,8 @@ void AISkirmishPlayer::buildSpecificAIBuilding(const AsciiString &thingName)
 			if (!m_player->getClosestDozerBuildingPriority()) {
 						foundUnbuilt = true;
 						info->markPriorityBuild();
+						if (highPriority)
+							closestInfo->setHighPriorityBuild();
 					break;
 				}
 				else {
@@ -501,6 +512,8 @@ void AISkirmishPlayer::buildSpecificAIBuilding(const AsciiString &thingName)
 		if (m_player->getClosestDozerBuildingPriority() && closestInfo) {
 			foundUnbuilt = true;
 			closestInfo->markPriorityBuild();
+			if (highPriority)
+				closestInfo->setHighPriorityBuild();
 		}
 
 		if (foundUnbuilt) {
@@ -625,7 +638,7 @@ Player *AISkirmishPlayer::getAiEnemy()
 /**
 	Build base defense structures on the front or flank of the base.
 */
-void AISkirmishPlayer::buildAIBaseDefense(Bool flank)
+void AISkirmishPlayer::buildAIBaseDefense(Bool flank, Bool highPriority)
 {
 	const AISideInfo *resInfo = TheAI->getAiData()->m_sideInfo;
 	AsciiString defenseTemplateName;
@@ -637,7 +650,7 @@ void AISkirmishPlayer::buildAIBaseDefense(Bool flank)
 		resInfo = resInfo->m_next;
 	}
 	if (resInfo) {
-		buildAIBaseDefenseStructure(resInfo->m_baseDefenseStructure1, flank);
+		buildAIBaseDefenseStructure(resInfo->m_baseDefenseStructure1, flank, highPriority);
 	}
 }
 
@@ -663,7 +676,7 @@ void AISkirmishPlayer::buildAIBaseDefense(Bool flank)
 	John A.
 
 	*/
-void AISkirmishPlayer::buildAIBaseDefenseStructure(const AsciiString &thingName, Bool flank)
+void AISkirmishPlayer::buildAIBaseDefenseStructure(const AsciiString &thingName, Bool flank, Bool highPriority)
 {
 	const ThingTemplate *tTemplate = TheThingFactory->findTemplate(thingName);
 	if (tTemplate==nullptr) {
@@ -768,7 +781,7 @@ void AISkirmishPlayer::buildAIBaseDefenseStructure(const AsciiString &thingName,
 			m_curFrontBaseDefense++;
 		}
 		if (canBuild) {
-			m_player->addToPriorityBuildList(thingName, &buildPos, placeAngle);
+			m_player->addToPriorityBuildList(thingName, &buildPos, placeAngle, highPriority);
 			break;
 		}
 	}	while (true);
@@ -1337,7 +1350,7 @@ Real AISkirmishPlayer::getCurrentRightFlankLeftDefenseAngle() { return m_curRigh
 Real AISkirmishPlayer::getCurrentRightFlankRightDefenseAngle() { return m_curRightFlankRightDefenseAngle; }
 
 // @-TanSo-: take a random building from m_baseDefenseStructures and feed it back to the existing function.
-void AISkirmishPlayer::buildAIBaseDefenseFromVector(Bool flank, Real rotation, Real percent)
+void AISkirmishPlayer::buildAIBaseDefenseFromVector(Bool flank, Real rotation, Real percent, Bool highPriority)
 {
 	const AISideInfo* resInfo = TheAI->getAiData()->m_sideInfo;
 
@@ -1347,14 +1360,14 @@ void AISkirmishPlayer::buildAIBaseDefenseFromVector(Bool flank, Real rotation, R
 		if (m_player->canBuild(TheThingFactory->findTemplate(resInfo->m_baseDefenseStructures[randomIndex])))
 		{
 			DEBUG_LOG(("Now Building: %s", resInfo->m_baseDefenseStructures[randomIndex].str()));
-			buildAIBaseDefenseStructureFromVector(resInfo->m_baseDefenseStructures[randomIndex], flank, rotation, percent);
+			buildAIBaseDefenseStructureFromVector(resInfo->m_baseDefenseStructures[randomIndex], flank, rotation, percent, highPriority);
 		}
 	}
 }
 
 //-------------------------------------------------------------------------------------------------
 
-void AISkirmishPlayer::buildAIBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName)
+void AISkirmishPlayer::buildAIBaseDefenseFromVectorAtPlayer(Bool flank, Real rotation, Real percent, const AsciiString& playerName, Bool highPriority)
 {
 	const AISideInfo* resInfo = TheAI->getAiData()->m_sideInfo;
 
@@ -1364,13 +1377,13 @@ void AISkirmishPlayer::buildAIBaseDefenseFromVectorAtPlayer(Bool flank, Real rot
 		if (m_player->canBuild(TheThingFactory->findTemplate(resInfo->m_baseDefenseStructures[randomIndex])))
 		{
 			DEBUG_LOG(("Now Building: %s", resInfo->m_baseDefenseStructures[randomIndex].str()));
-			buildAIBaseDefenseStructureFromVectorAtPlayer(resInfo->m_baseDefenseStructures[randomIndex], flank, rotation, percent, playerName);
+			buildAIBaseDefenseStructureFromVectorAtPlayer(resInfo->m_baseDefenseStructures[randomIndex], flank, rotation, percent, playerName, highPriority);
 		}
 	}
 }
 
 //-------------------------------------------------------------------------------------------------
-void AISkirmishPlayer::buildAIBaseDefenseStructureFromVector(const AsciiString& thingName, Bool flank, Real rotation, Real percent)
+void AISkirmishPlayer::buildAIBaseDefenseStructureFromVector(const AsciiString& thingName, Bool flank, Real rotation, Real percent, Bool highPriority)
 {
 	const ThingTemplate* tTemplate = TheThingFactory->findTemplate(thingName);
 	if (tTemplate == nullptr) {
@@ -1504,14 +1517,14 @@ void AISkirmishPlayer::buildAIBaseDefenseStructureFromVector(const AsciiString& 
 			m_curFrontBaseDefense++;
 		}
 		if (canBuild) {
-			m_player->addToPriorityBuildList(thingName, &buildPos, placeAngle);
+			m_player->addToPriorityBuildList(thingName, &buildPos, placeAngle, highPriority);
 			break;
 		}
 	} while (true);
 }
 
 //-------------------------------------------------------------------------------------------------
-void AISkirmishPlayer::buildAIBaseDefenseStructureFromVectorAtPlayer(const AsciiString& thingName, Bool flank, Real rotation, Real percent, const AsciiString& playerName)
+void AISkirmishPlayer::buildAIBaseDefenseStructureFromVectorAtPlayer(const AsciiString& thingName, Bool flank, Real rotation, Real percent, const AsciiString& playerName, Bool highPriority)
 {
 	Player* targetPlayer = TheScriptEngine->getPlayerFromAsciiString(playerName);
 	if (!targetPlayer) return;
@@ -1653,7 +1666,7 @@ void AISkirmishPlayer::buildAIBaseDefenseStructureFromVectorAtPlayer(const Ascii
 		TheTerrainVisual->removeAllBibs();	// isLocationLegalToBuild adds bib feedback, turn it off.  jba.
 
 		if (canBuild) {
-			m_player->addToPriorityBuildList(thingName, &buildPos, placeAngle);
+			m_player->addToPriorityBuildList(thingName, &buildPos, placeAngle, highPriority);
 			break;
 		}
 	} while (true);
@@ -1754,14 +1767,14 @@ void AISkirmishPlayer::insertBuildListFromID(Int id)
 
 		if (copy)
 		{
-			m_player->insertBuildListInfo(copy, false);
+			m_player->insertBuildListInfo(copy, false, false);
 			info->setConsumedInIDList(TRUE);
 		}
 	}
 }
 
 //-------------------------------------------------------------------------------------------------
-void AISkirmishPlayer::buildSpecificAIBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority)
+void AISkirmishPlayer::buildSpecificAIBuildingFromID(const AsciiString& thingName, Int id, Bool isPriority, Bool highPriority)
 {
 	AISideBuildList* list = m_player->findIDBuildList(id);
 	if (!list)
@@ -1802,7 +1815,7 @@ void AISkirmishPlayer::buildSpecificAIBuildingFromID(const AsciiString& thingNam
 					copy->setAngle(angle);
 				}
 			}
-			m_player->insertBuildListInfo(copy, isPriority);
+			m_player->insertBuildListInfo(copy, isPriority, highPriority);
 			info->setConsumedInIDList(TRUE);
 			return;
 		}
