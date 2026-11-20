@@ -92,7 +92,7 @@ public:
 			{ "PropagateDamageTypesToSlavesWhenExisting",   INI::parseDamageTypeFlags, nullptr, offsetof( SpawnBehaviorModuleData, m_damageTypesToPropagateToSlaves ) },
 			{ "InitialBurst",				      INI::parseInt,						        nullptr, offsetof( SpawnBehaviorModuleData, m_initialBurst ) },
 			{ "SlavesHaveFreeWill",				INI::parseBool,										nullptr, offsetof( SpawnBehaviorModuleData, m_slavesHaveFreeWill ) },
-			{ 0, 0, 0, 0 }
+			{ nullptr, nullptr, nullptr, 0 }
 
 		};
     p.add(dataFieldParse);
@@ -122,6 +122,7 @@ public:
 	virtual Bool areAllSlavesStealthed() const = 0;
 	virtual void revealSlaves() = 0;
 	virtual Bool doSlavesHaveFreedom() const = 0;
+	virtual Int getSlaveCount() const = 0;
 };
 
 // ------------------------------------------------------------------------------------------------
@@ -177,6 +178,7 @@ public:
 	virtual Bool areAllSlavesStealthed() const override;
 	virtual void revealSlaves() override;
 	virtual Bool doSlavesHaveFreedom() const override { return getSpawnBehaviorModuleData()->m_slavesHaveFreeWill; }
+	virtual Int getSlaveCount() const override { return m_spawnCount; }
 
 	// **********************************************************************************************
 	// our own methods

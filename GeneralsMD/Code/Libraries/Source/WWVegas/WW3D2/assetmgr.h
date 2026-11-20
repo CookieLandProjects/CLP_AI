@@ -37,14 +37,14 @@
 
 #pragma once
 
-#include "always.h"
-#include "Vector.h"
+#include "WWLib/always.h"
+#include "WWLib/Vector.h"
 #include "htreemgr.h"
 #include "hanimmgr.h"
-#include "SLIST.h"
-#include "texture.h"
-#include "hashtemplate.h"
-#include "simplevec.h"
+#include "WWLib/SLIST.h"
+#include "WW3D2/texture.h"
+#include "WWLib/hashtemplate.h"
+#include "WWLib/simplevec.h"
 
 class	HAnimClass;
 class	HTreeClass;
@@ -286,6 +286,11 @@ public:
 	** Access to FontChars. Used by Render2DSentenceClass. Can return null.
 	*/
 	virtual FontCharsClass *		Get_FontChars( const char * name, int point_size, bool is_bold = false );
+
+	/*
+	** Discard the cached glyphs of every font without destroying the fonts.
+	*/
+	virtual void Free_All_FontChars_Glyph_Caches();
 
 	/*
 	** Access to HTrees, Used by Animatable3DObj's

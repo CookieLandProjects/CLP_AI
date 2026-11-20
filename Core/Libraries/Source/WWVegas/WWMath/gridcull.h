@@ -54,14 +54,11 @@
 #pragma once
 
 #include "cullsys.h"
-#include "mempool.h"
+#include "WWLib/mempool.h"
 #include "frustum.h"
 #include "aabox.h"
 #include "lineseg.h"
 #include "obbox.h"
-
-class ChunkLoadClass;
-class ChunkSaveClass;
 
 /*
 ** GridCullSystemClass
@@ -94,9 +91,6 @@ public:
 
 	virtual void		Re_Partition(const Vector3 & min,const Vector3 & max,float objdim);
 	virtual void		Update_Culling(CullableClass * obj) override;
-
-	virtual void		Load(ChunkLoadClass & cload);
-	virtual void		Save(ChunkSaveClass & csave);
 
 	virtual int			Get_Object_Count () const { return ObjCount; }
 

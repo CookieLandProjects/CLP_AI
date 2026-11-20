@@ -26,11 +26,11 @@
  *                                                                                             *
  *              Original Author:: Greg Hjelstrom                                               *
  *                                                                                             *
- *                      $Author:: Greg_h                                                      $*
+ *                      $Author:: Jani_p                                                      $*
  *                                                                                             *
- *                     $Modtime:: 1/08/01 10:04a                                              $*
+ *                     $Modtime:: 11/24/01 5:49p                                              $*
  *                                                                                             *
- *                    $Revision:: 1                                                           $*
+ *                    $Revision:: 2                                                           $*
  *                                                                                             *
  *---------------------------------------------------------------------------------------------*
  * Functions:                                                                                  *
@@ -38,11 +38,11 @@
 
 #pragma once
 
-#include "always.h"
-#include "vector3.h"
-#include "Vector3i.h"
-#include "aaplane.h"
-#include "bittype.h"
+#include "WWLib/always.h"
+#include "WWMath/vector3.h"
+#include "WWMath/Vector3i.h"
+#include "WWMath/aaplane.h"
+#include "WWLib/bittype.h"
 #include "meshgeometry.h"
 #include <float.h>
 
@@ -64,6 +64,7 @@ public:
 	~AABTreeBuilderClass();
 
 	void					Build_AABTree(int polycount,TriIndex * polys,int vertcount,Vector3 * verts);
+	void					Build_AABTree(int polycount,Vector3i* polys,int vertcount,Vector3 * verts);
 	void					Export(ChunkSaveClass & csave);
 
 	int					Node_Count();

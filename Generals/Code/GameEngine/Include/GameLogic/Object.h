@@ -29,7 +29,6 @@
 #pragma once
 
 #include "Lib/BaseType.h"
-#include "ref_ptr.h"
 
 #include "Common/Geometry.h"
 #include "Common/Snapshot.h"
@@ -262,6 +261,7 @@ public:
 
 	void onCollide( Object *other, const Coord3D *loc, const Coord3D *normal );
 
+	Real getCarrierDeckHeight() const;
 	// access to modules
 	//-----------------------------------------------------------------------------
 
@@ -424,7 +424,7 @@ public:
 	void onContainedBy( Object *containedBy );
 	void onRemovedFrom( Object *removedFrom );
 	Int getTransportSlotCount() const;
-	void friend_setContainedBy( Object *containedBy ) { m_containedBy = containedBy; }
+	void friend_setContainedBy( Object *containedBy );
 	const Object* getEnclosingContainedBy() const; ///< Find the first enclosing container in the containment chain.
 	const Object* getOuterObject() const; ///< Get the top-level object
 
@@ -648,6 +648,10 @@ protected:
 
 	virtual void reactToTransformChange(const Matrix3D* oldMtx, const Coord3D* oldPos, Real oldAngle) override;
 
+#if RTS_GENERALS && RETAIL_COMPATIBLE_CRC
+	void removeFromTunnelContain();
+#endif
+
 private:
 
 	// yes, private. No, really. Private. Don't expose.
@@ -717,7 +721,7 @@ private:
 
 	Object*												m_containedBy;					/**< an object can only be contained by at most one
 																	other object, this is that object (if present) */
-	ObjectID											m_containedByID;	///< ID of the object we're contained by; only to be used when m_containedBy cannot be used
+	ObjectID											m_xferContainedByID;	///< xfer uses IDs to store pointers and looks them up after
 	UnsignedInt										m_containedByFrame;	///< frame we were contained by m_containedBy
 
 	Real													m_constructionPercent;			///< for objects being built ... this is the amount completed (0.0 to 100.0)
@@ -777,7 +781,7 @@ private:
 };
 
 // deleteInstance is not meant to be used with Object in order to require the use of TheGameLogic->destroyObject()
-void deleteInstance(Object* object) CPP_11(= delete);
+void deleteInstance(Object* object) FUNCTION_DELETE;
 
 // describe an object as an AsciiString: e.g. "Object 102 (KillerBuggy) [GLARocketBuggy, owned by player 2 (GLAIntroPlayer)]"
 AsciiString DebugDescribeObject(const Object *obj);

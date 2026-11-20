@@ -38,23 +38,23 @@
 #include "StdAfx.h"
 #include "W3DView.h"
 #include "DataTreeView.h"
-#include "rendobj.h"
+#include "WW3D2/rendobj.h"
 #include "ViewerAssetMgr.h"
 #include "Globals.h"
 #include "W3DViewDoc.h"
 #include "MainFrm.h"
-#include "distlod.h"
-#include "animobj.h"
-#include "hcanim.h"
+#include "WW3D2/distlod.h"
+#include "WW3D2/animobj.h"
+#include "WW3D2/hcanim.h"
 #include "AssetInfo.h"
 #include "Utils.h"
-#include "Vector.h"
-#include "part_emt.h"
-#include "agg_def.h"
-#include "bmp2d.h"
-#include "hlod.h"
+#include "WWLib/Vector.h"
+#include "WW3D2/part_emt.h"
+#include "WW3D2/agg_def.h"
+#include "WW3D2/bmp2d.h"
+#include "WW3D2/hlod.h"
 #include "ViewerScene.h"
-#include "texture.h"
+#include "WW3D2/texture.h"
 
 #ifdef RTS_DEBUG
 #define new DEBUG_NEW
@@ -267,8 +267,8 @@ CDataTreeView::Load_Materials_Into_Tree ()
 
 			// Allocate a new asset information class to associate with this entry
 			ptexture->Add_Ref ();
-			AssetInfoClass *asset_info = new AssetInfoClass (texture_name, TypeMaterial, nullptr, (DWORD)ptexture);
-			GetTreeCtrl ().SetItemData (tree_item, (ULONG)asset_info);
+			AssetInfoClass *asset_info = new AssetInfoClass (texture_name, TypeMaterial, nullptr, (uintptr_t)ptexture);
+			GetTreeCtrl ().SetItemData (tree_item, (uintptr_t)asset_info);
 		}
 	}
 }
@@ -394,7 +394,7 @@ CDataTreeView::LoadAssetsIntoTree ()
 
 						// Allocate a new asset information class to associate with this entry
 						AssetInfoClass *asset_info = new AssetInfoClass (pszItemName, assetType);
-						GetTreeCtrl ().SetItemData (hItem, (ULONG)asset_info);
+						GetTreeCtrl ().SetItemData (hItem, (uintptr_t)asset_info);
 					}
 				}
 			}
@@ -472,7 +472,7 @@ CDataTreeView::LoadAnimationsIntoTree ()
                         ASSERT (hAnimationNode != nullptr);
 
                         // Associate the items name with its entry
-                        GetTreeCtrl ().SetItemData (hAnimationNode, (ULONG)new AssetInfoClass (pszAnimName, TypeAnimation));
+                        GetTreeCtrl ().SetItemData (hAnimationNode, (uintptr_t)new AssetInfoClass (pszAnimName, TypeAnimation));
                     }
                 }
 
@@ -490,7 +490,7 @@ CDataTreeView::LoadAnimationsIntoTree ()
                         ASSERT (hAnimationNode != nullptr);
 
                         // Associate the items name with its entry
-                        GetTreeCtrl ().SetItemData (hAnimationNode, (ULONG)new AssetInfoClass (pszAnimName, TypeAnimation));
+                        GetTreeCtrl ().SetItemData (hAnimationNode, (uintptr_t)new AssetInfoClass (pszAnimName, TypeAnimation));
                     }
                 }
 
@@ -508,7 +508,7 @@ CDataTreeView::LoadAnimationsIntoTree ()
                         ASSERT (hAnimationNode != nullptr);
 
                         // Associate the items name with its entry
-                        GetTreeCtrl ().SetItemData (hAnimationNode, (ULONG)new AssetInfoClass (pszAnimName, TypeAnimation));
+                        GetTreeCtrl ().SetItemData (hAnimationNode, (uintptr_t)new AssetInfoClass (pszAnimName, TypeAnimation));
                     }
                 }
 
@@ -568,7 +568,7 @@ CDataTreeView::LoadAnimationsIntoTree (HTREEITEM hItem)
                         ASSERT (hAnimationNode != nullptr);
 
                         // Associate the items name with its entry
-                        GetTreeCtrl ().SetItemData (hAnimationNode, (ULONG)new AssetInfoClass (pszAnimName, TypeAnimation));
+                        GetTreeCtrl ().SetItemData (hAnimationNode, (uintptr_t)new AssetInfoClass (pszAnimName, TypeAnimation));
                     }
                 }
 
@@ -763,7 +763,7 @@ CDataTreeView::Add_Asset_To_Tree
 
 			// Associate the render object with its entry in the tree
 			AssetInfoClass *asset_info = new AssetInfoClass (name, type);
-			GetTreeCtrl ().SetItemData (htree_item, (ULONG)asset_info);
+			GetTreeCtrl ().SetItemData (htree_item, (uintptr_t)asset_info);
 
 			// Load the object's animations into the tree (if necessary)
 			if (asset_info->Can_Asset_Have_Animations ()) {

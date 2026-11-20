@@ -38,14 +38,14 @@
 #include "ww3d.h"
 #include "rinfo.h"
 #include "predlod.h"
-#include "v3_rnd.h"
+#include "WWMath/v3_rnd.h"
 #include "texture.h"
 #include "coltest.h"
 #include "w3d_file.h"
 #include "texture.h"
 #include "dx8wrapper.h"
-#include "vp.h"
-#include "Vector3i.h"
+#include "WWMath/vp.h"
+#include "WWMath/Vector3i.h"
 #include "sortingrenderer.h"
 
 static SegLineRendererClass _LineRenderer;
@@ -176,9 +176,7 @@ void StreakLineClass::Set_LocsWidthsColors( unsigned int num_points,
 		Set_Widths( num_points, widths );
 
 		//sanity check
-		int locCount = PointLocations.Count();
-		int widCount = PointWidths.Count();
-		WWASSERT(locCount == widCount);
+		WWASSERT(PointLocations.Count() == PointWidths.Count());
 
 	}
 
@@ -187,9 +185,7 @@ void StreakLineClass::Set_LocsWidthsColors( unsigned int num_points,
 		Set_Colors( num_points, colors );
 
 		//sanity check
-		int locCount = PointLocations.Count();
-		int colCount = PointColors.Count();
-		WWASSERT(locCount == colCount);
+		WWASSERT(PointLocations.Count() == PointColors.Count());
 
 	}
 
@@ -362,7 +358,7 @@ void StreakLineClass::Set_Opacity(float opacity)
 
 void StreakLineClass::Set_Noise_Amplitude(float amplitude)
 {
-	LineRenderer.Set_Noise_Amplitude(WWMath::Fabs(amplitude));
+	LineRenderer.Set_Noise_Amplitude(WWMath::Fabsf_Legacy(amplitude));
 
 	Invalidate_Cached_Bounding_Volumes();
 }

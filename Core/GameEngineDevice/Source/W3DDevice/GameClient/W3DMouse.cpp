@@ -34,7 +34,7 @@
 #include "WW3D2/hanim.h"
 #include "WW3D2/camera.h"
 
-#include "assetmgr.h"
+#include "WW3D2/assetmgr.h"
 
 #include "W3DDevice/Common/W3DConvert.h"
 #include "W3DDevice/GameClient/W3DMouse.h"
@@ -44,8 +44,8 @@
 #include "GameClient/Display.h"
 #include "GameClient/Image.h"
 #include "GameClient/InGameUI.h"
-#include "mutex.h"
-#include "thread.h"
+#include "WWLib/mutex.h"
+#include "WWLib/thread.h"
 
 
 //Since there can't be more than 1 mouse, might as well keep these static.
@@ -190,7 +190,8 @@ Bool W3DMouse::loadD3DCursorTextures(MouseCursor cursor)
 	m_currentFrames=0;
 
 	if (animFrames == 1)
-	{	//single animation frame without trailing numbers
+	{
+		//single animation frame without trailing numbers
 		snprintf(FrameName, ARRAY_SIZE(FrameName), "%s.tga", baseName);
 		cursorTextures[cursor][0]=	am->Get_Texture(FrameName);
 		m_currentD3DSurface[0]=cursorTextures[cursor][0]->Get_Surface_Level();
@@ -366,7 +367,8 @@ void W3DMouse::setCursor( MouseCursor cursor )
 
 	m_directionFrame=0;
 	if (m_currentRedrawMode == RM_WINDOWS)
-	{	//Windows default cursor needs to refreshed whenever we get a WM_SETCURSOR
+	{
+		//Windows default cursor needs to refreshed whenever we get a WM_SETCURSOR
 		m_currentD3DCursor=NONE;
 		m_currentW3DCursor=NONE;
 		m_currentPolygonCursor=NONE;
@@ -490,7 +492,8 @@ void W3DMouse::draw()
 		{	m_pDev->ShowCursor(TRUE);	//Enable DX8 cursor
 
 			if (TheDisplay && !TheDisplay->getWindowed())
-			{	//if we're full-screen, need to manually move cursor image
+			{
+				//if we're full-screen, need to manually move cursor image
 				POINT ptCursor;
 
 				GetCursorPos( &ptCursor );
@@ -567,8 +570,8 @@ void W3DMouse::draw()
 				{
 					offset = TheInGameUI->getScrollAmount();
 					offset.normalize();
-					Real theta = atan2(-offset.y, offset.x);
-					theta -= (Real)M_PI/2;
+					Real theta = WWMath::Atan2(-offset.y, offset.x);
+					theta -= (Real)WWMATH_HALF_PI;
 					tm.Rotate_Z(theta);
 				}
 				cursorModels[m_currentW3DCursor]->Set_Transform(tm);
@@ -603,7 +606,8 @@ void W3DMouse::setRedrawMode(RedrawMode mode)
 	switch (mode)
 	{
 		case RM_WINDOWS:
-		{	//Windows mouse doesn't need an update thread.
+		{
+			//Windows mouse doesn't need an update thread.
 			if (thread.Is_Running())
 				thread.Stop();
 			freeD3DAssets();	//using Windows resources
@@ -616,7 +620,8 @@ void W3DMouse::setRedrawMode(RedrawMode mode)
 		break;
 
 		case RM_W3D:
-		{	//Model mouse updated only at render time so doesn't
+		{
+			//Model mouse updated only at render time so doesn't
 			//require thread.
 			if (thread.Is_Running())
 				thread.Stop();
@@ -629,7 +634,8 @@ void W3DMouse::setRedrawMode(RedrawMode mode)
 		break;
 
 		case RM_POLYGON:
-		{	//Polygon mouse updated only at render time so doesn't
+		{
+			//Polygon mouse updated only at render time so doesn't
 			//require thread.
 			if (thread.Is_Running())
 				thread.Stop();
@@ -643,7 +649,8 @@ void W3DMouse::setRedrawMode(RedrawMode mode)
 		break;
 
 		case RM_DX8:
-		{	//this cursor type is drawn by DX8 and can be refreshed
+		{
+			//this cursor type is drawn by DX8 and can be refreshed
 			//independent of rendering rate.  Uses another thread to do
 			//position updates.
 			initD3DAssets();	//make sure textures loaded.
@@ -671,13 +678,13 @@ void W3DMouse::setCursorDirection(MouseCursor cursor)
 		if (offset.x || offset.y)
 		{
 			offset.normalize();
-			Real theta = atan2(offset.y, offset.x);
-			theta = fmod(theta+M_PI*2,M_PI*2);
+			Real theta = WWMath::Atan2(offset.y, offset.x);
+			theta = fmod(theta+WWMATH_TWO_PI,WWMATH_TWO_PI);
 			Int numDirections=m_cursorInfo[m_currentCursor].numDirections;
 			//Figure out which of our predrawn cursor orientations best matches the
 			//actual cursor direction.  Frame 0 is assumed to point right and continue
 			//clockwise.
-			m_directionFrame=(Int)(theta/(2.0f*M_PI/(Real)numDirections)+0.5f);
+			m_directionFrame=(Int)(theta/(WWMATH_TWO_PI/(Real)numDirections)+0.5f);
 			if (m_directionFrame >= numDirections)
 				m_directionFrame = 0;
 		}

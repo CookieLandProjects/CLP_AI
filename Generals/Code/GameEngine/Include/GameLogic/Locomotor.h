@@ -58,6 +58,7 @@ enum LocomotorAppearance CPP_11(: Int)
 	LOCO_WINGS,
 	LOCO_CLIMBER,			// human climber - backs down cliffs.
 	LOCO_OTHER,
+	LOCO_MOTORCYCLE, // Added in Zero Hour
 
 	LOCOMOTOR_APPEARANCE_COUNT
 };
@@ -82,10 +83,11 @@ static const char *const TheLocomotorAppearanceNames[] =
 	"WINGS",
 	"CLIMBER",
 	"OTHER",
+	"MOTORCYCLE",
 
 	nullptr
 };
-static_assert(ARRAY_SIZE(TheLocomotorAppearanceNames) == LOCOMOTOR_APPEARANCE_COUNT + 1, "Array size");
+static_assert(ARRAY_SIZE(TheLocomotorAppearanceNames) == LOCOMOTOR_APPEARANCE_COUNT + 1, "Incorrect array size");
 #endif
 
 //-------------------------------------------------------------------------------------------------
@@ -117,7 +119,7 @@ static const char *const TheLocomotorBehaviorZNames[] =
 
 	nullptr
 };
-static_assert(ARRAY_SIZE(TheLocomotorBehaviorZNames) == LOCOMOTOR_BEHAVIOR_Z_COUNT + 1, "Array size");
+static_assert(ARRAY_SIZE(TheLocomotorBehaviorZNames) == LOCOMOTOR_BEHAVIOR_Z_COUNT + 1, "Incorrect array size");
 #endif
 
 //-------------------------------------------------------------------------------------------------
@@ -137,10 +139,20 @@ public:
 
 	void validate();
 
-protected:
-
-
 private:
+
+	/// TheSuperHackers @info Speeds authored in INI are understated by the forward speed the Locomotor measures
+	/// itself with, which is what made objects move faster on diagonal headings than on axis aligned ones.
+	/// These accessors hand out the authored speed compensated for that, in world distance per logic frame.
+	/// They all return the authored value unchanged in retail compatible builds.
+	Real getActualMaxSpeed() const;
+	Real getActualMaxSpeedDamaged() const;
+	Real getActualMinSpeed() const;
+	Real getActualMinTurnSpeed() const;
+
+	/// Compensate an authored speed. Returns it unchanged when the mover is commanded with retail speeds.
+	Real scaleSpeed(Real speed) const;
+
 	/**
 		Units check:
 
@@ -161,6 +173,9 @@ private:
 	Real											m_liftDamaged;					///< max lift when damaged
 	Real											m_braking;							///< max braking (deceleration)
 	Real											m_minTurnSpeed;					///< we must be going >= this speed in order to turn
+#if USE_RETAIL_PHYSICS_FORWARD_SPEED_AVERAGE()
+	Real											m_speedScale;						///< factor that turns an authored speed into its compensated speed
+#endif
 	Real											m_preferredHeight;			///< our preferred height (if flying)
 	Real											m_preferredHeightDamping;		///< how aggressively to adjust to preferred height: 1.0 = very much so, 0.1 = gradually, etc
 	Real											m_circlingRadius;				///< for flying things, the radius at which they circle their "maintain" destination. (pos = cw, neg = ccw, 0 = smallest possible)
@@ -171,7 +186,8 @@ private:
 	LocomotorAppearance				m_appearance;						///< how we should diddle the Drawable to imitate this motion
 	LocomotorPriority					m_movePriority;					///< Where we move - front, middle, back.
 
-	Real											m_accelPitchLimit;			///< Maximum amount we will pitch up or down under acceleration (including recoil.)
+	Real											m_accelPitchLimit;			///< Maximum amount we will pitch up  under acceleration (including recoil.)
+	Real											m_decelPitchLimit;			///< Maximum amount we will pitch down under deceleration (including recoil.)
 	Real											m_bounceKick;						///< How much simulating rough terrain "bounces" a wheel up.
 	Real											m_pitchStiffness;				///< How stiff the springs are forward & back.
 	Real											m_rollStiffness;				///< How stiff the springs are side to side.
@@ -209,6 +225,12 @@ private:
 	Real											m_wanderWidthFactor;
 	Real											m_wanderLengthFactor;
 	Real											m_wanderAboutPointRadius;
+
+
+	Real											m_rudderCorrectionDegree;
+	Real											m_rudderCorrectionRate;
+	Real											m_elevatorCorrectionDegree;
+	Real											m_elevatorCorrectionRate;
 };
 
 typedef OVERRIDE<LocomotorTemplate> LocomotorTemplateOverride;
@@ -249,8 +271,10 @@ public:
 	LocomotorSurfaceTypeMask getLegalSurfaces() const { return m_template->m_surfaces; }
 
 	AsciiString getTemplateName() const { return m_template->m_name;}
-	Real getMinSpeed() const { return m_template->m_minSpeed;}
+	Real getMinSpeed() const;
+	Real getMinTurnSpeed() const;
 	Real getAccelPitchLimit() const { return m_template->m_accelPitchLimit;}	///< Maximum amount we will pitch up or down under acceleration (including recoil.)
+	Real getDecelPitchLimit() const { return m_template->m_decelPitchLimit;}	///< Maximum amount we will pitch down under deceleration (including recoil.)
 	Real getBounceKick() const { return m_template->m_bounceKick;}						///< How much simulating rough terrain "bounces" a wheel up.
 	Real getPitchStiffness() const { return m_template->m_pitchStiffness;}			///< How stiff the springs are forward & back.
 	Real getRollStiffness() const { return m_template->m_rollStiffness;}				///< How stiff the springs are side to side.
@@ -282,6 +306,13 @@ public:
 	Real getMaxWheelCompression() const {return m_template->m_maximumWheelCompression;}
 	Real getWheelTurnAngle() const {return m_template->m_wheelTurnAngle;}
 
+
+	Real getRudderCorrectionDegree()	  const { return m_template->m_rudderCorrectionDegree;}			///< How much we roll in response to acceleration.
+	Real getRudderCorrectionRate()	    const { return m_template->m_rudderCorrectionRate;}			///< How much we roll in response to acceleration.
+	Real getElevatorCorrectionDegree() const { return m_template->m_elevatorCorrectionDegree;}			///< How much we roll in response to acceleration.
+	Real getElevatorCorrectionRate()	  const { return m_template->m_elevatorCorrectionRate;}			///< How much we roll in response to acceleration.
+
+
 	Real getWanderWidthFactor() const {return m_template->m_wanderWidthFactor;}
 	Real getWanderAboutPointRadius() const {return m_template->m_wanderAboutPointRadius;}
 
@@ -294,12 +325,14 @@ public:
 		DEBUG_ASSERTCRASH(!(speed <= 0.0f && m_template->m_appearance == LOCO_THRUST), ("THRUST locos may not have zero speeds!"));
 		m_maxSpeed = speed;
 	}
+	void setMaxSpeedToMinSpeed() { setMaxSpeed(m_template->m_minSpeed); }
 	void setMaxAcceleration(Real accel) { m_maxAccel = accel; }
 	void setMaxBraking(Real braking) { m_maxBraking = braking; }
 	void setMaxTurnRate(Real turn) { m_maxTurnRate = turn; }
 	void setAllowInvalidPosition(Bool allow) { setFlag(ALLOW_INVALID_POSITION, allow); }
 	void setCloseEnoughDist( Real dist ) { m_closeEnoughDist = dist; }
 	void setCloseEnoughDist3D( Bool setting ) { setFlag(IS_CLOSE_ENOUGH_DIST_3D, setting); }
+	Bool isInvalidPositionAllowed() const { return getFlag( ALLOW_INVALID_POSITION ); }
 
 	void setPreferredHeight( Real height ) { m_preferredHeight = height; }
 
@@ -349,8 +382,9 @@ public:
 	void startMove(); ///< Indicates that a move is starting, primarily to reset the donut timer. jba.
 
 protected:
+	Real getMaxSpeedOverride() const;
+
 	void moveTowardsPositionLegs(Object* obj, PhysicsBehavior *physics, const Coord3D& goalPos, Real onPathDistToGoal, Real desiredSpeed);
-	void moveTowardsPositionLegsWander(Object* obj, PhysicsBehavior *physics, const Coord3D& goalPos, Real onPathDistToGoal, Real desiredSpeed);
 	void moveTowardsPositionClimb(Object* obj, PhysicsBehavior *physics, const Coord3D& goalPos, Real onPathDistToGoal, Real desiredSpeed);
 	void moveTowardsPositionWheels(Object* obj, PhysicsBehavior *physics, const Coord3D& goalPos, Real onPathDistToGoal, Real desiredSpeed);
 	void moveTowardsPositionTreads(Object* obj, PhysicsBehavior *physics, const Coord3D& goalPos, Real onPathDistToGoal, Real desiredSpeed);

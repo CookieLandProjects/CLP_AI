@@ -22,15 +22,15 @@
  *                                                                                             *
  *                 Project Name : WW3D                                                         *
  *                                                                                             *
- *                     $Archive:: /VSS_Sync/ww3d2/meshgeometry.h                              $*
+ *                     $Archive:: /Commando/Code/ww3d2/meshgeometry.h                         $*
  *                                                                                             *
  *              Original Author:: Greg Hjelstrom                                               *
  *                                                                                             *
- *                      $Author:: Vss_sync                                                    $*
+ *                      $Author:: Jani_p                                                      $*
  *                                                                                             *
- *                     $Modtime:: 8/29/01 7:29p                                               $*
+ *                     $Modtime:: 11/24/01 7:28p                                              $*
  *                                                                                             *
- *                    $Revision:: 10                                                          $*
+ *                    $Revision:: 11                                                          $*
  *                                                                                             *
  *---------------------------------------------------------------------------------------------*
  * Functions:                                                                                  *
@@ -38,18 +38,18 @@
 
 #pragma once
 
-#include "always.h"
-#include "bittype.h"
-#include "simplevec.h"
-#include "sharebuf.h"
-#include "w3derr.h"
-#include "vector3.h"
-#include "Vector3i.h"
-#include "vector4.h"
-#include "wwdebug.h"
-#include "multilist.h"
-#include "coltest.h"
-#include "inttest.h"
+#include "WWLib/always.h"
+#include "WWLib/bittype.h"
+#include "WWLib/simplevec.h"
+#include "WWLib/sharebuf.h"
+#include "WW3D2/w3derr.h"
+#include "WWMath/vector3.h"
+#include "WWMath/Vector3i.h"
+#include "WWMath/vector4.h"
+#include "WWDebug/wwdebug.h"
+#include "WWLib/multilist.h"
+#include "WW3D2/coltest.h"
+#include "WW3D2/inttest.h"
 
 
 class AABoxClass;
@@ -57,10 +57,12 @@ class OBBoxClass;
 class SphereClass;
 class ChunkLoadClass;
 class AABTreeClass;
+class HTreeClass;
+class RenderInfoClass;
 
 // Define which kind of index vector to use (16- or 32 bit)
-//typedef Vector3i16 TriIndex;
-typedef Vector3i TriIndex;
+typedef Vector3i16 TriIndex;
+//typedef Vector3i TriIndex;
 
 /*
 ** The following two defines control two space-saving optimizations.  In Renegade I've found
@@ -215,6 +217,11 @@ protected:
 	WW3DErrorType				read_vertex_shade_indices(ChunkLoadClass & cload);
 	WW3DErrorType				read_aabtree(ChunkLoadClass &cload);
 
+	// functions to compute the deformed vertices of skins.
+	// Destination pointers MUST point to arrays large enough to hold all vertices
+	void get_deformed_vertices(Vector3 *dst_vert, Vector3 *dst_norm, const HTreeClass * htree);
+	void get_deformed_vertices(Vector3 *dst_vert, const HTreeClass * htree);
+	void get_deformed_screenspace_vertices(Vector4 *dst_vert,const RenderInfoClass & rinfo,const Matrix3D & mesh_tm,const HTreeClass * htree);
 
 	// General info
 	ShareBufferClass<char> *							MeshName;

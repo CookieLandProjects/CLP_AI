@@ -33,9 +33,9 @@
 #pragma once
 
 #include "SoundSceneObj.h"
-#include "bittype.h"
-#include "vector3.h"
-#include "matrix3d.h"
+#include "WWLib/bittype.h"
+#include "WWMath/vector3.h"
+#include "WWMath/matrix3d.h"
 
 /////////////////////////////////////////////////////////////////////////////////
 //
@@ -114,13 +114,6 @@ class LogicalSoundClass : public SoundSceneObjClass
 		//
 		virtual void			Set_DropOff_Radius (float radius = 1) override { m_DropOffRadius = radius; }
 		virtual float			Get_DropOff_Radius () const override { return m_DropOffRadius; }
-
-		//////////////////////////////////////////////////////////////////////
-		//	From PersistClass
-		//////////////////////////////////////////////////////////////////////
-		virtual bool									Save (ChunkSaveClass &csave) override;
-		virtual bool									Load (ChunkLoadClass &cload) override;
-		virtual const PersistFactoryClass &	Get_Factory () const override;
 
 	protected:
 

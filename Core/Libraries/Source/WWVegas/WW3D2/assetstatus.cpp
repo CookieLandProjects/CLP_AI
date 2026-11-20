@@ -17,13 +17,13 @@
 */
 
 #include "assetstatus.h"
-#include "hashtemplate.h"
-#include "wwstring.h"
-#include "RAWFILE.h"
+#include "WWLib/hashtemplate.h"
+#include "WWLib/wwstring.h"
+#include "WWLib/RAWFILE.h"
 
 AssetStatusClass AssetStatusClass::Instance;
 
-const char* ReportCategoryNames[AssetStatusClass::REPORT_COUNT]={
+const char* ReportCategoryNames[]={
 	"LOAD_ON_DEMAND_ROBJ",
 	"LOAD_ON_DEMAND_HANIM",
 	"LOAD_ON_DEMAND_HTREE",
@@ -31,6 +31,7 @@ const char* ReportCategoryNames[AssetStatusClass::REPORT_COUNT]={
 	"MISSING_HANIM",
 	"MISSING_HTREE"
 };
+static_assert(ARRAY_SIZE(ReportCategoryNames) == AssetStatusClass::REPORT_COUNT, "Incorrect array size");
 
 AssetStatusClass::AssetStatusClass()
 	:

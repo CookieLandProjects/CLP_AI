@@ -133,6 +133,21 @@ public:
 	Real getForwardSpeed2D() const;															///< compute speed along object's 2d direction vector
 	Real getForwardSpeed3D() const;															///< compute speed along object's 3d direction vector
 
+#if USE_RETAIL_PHYSICS_FORWARD_SPEED_DISCREPANCY_IN_CINEMATICS()
+	static Bool useLegacyForwardSpeedInCinematics();
+#endif
+
+	static Bool useLegacyForwardSpeed()
+	{
+#if USE_RETAIL_PHYSICS_FORWARD_SPEED_DISCREPANCY()
+		return true;
+#elif USE_RETAIL_PHYSICS_FORWARD_SPEED_DISCREPANCY_IN_CINEMATICS()
+		return useLegacyForwardSpeedInCinematics();
+#else
+		return false;
+#endif
+	}
+
 	ObjectID getCurrentOverlap() const;					///< return object(s) being overlapped
 	ObjectID getPreviousOverlap() const;					///< return object(s) that were overlapped last frame
 	ObjectID getLastCollidee() const;					///< return object that was last collided with... can be quite old
@@ -170,17 +185,20 @@ public:
 	void setAllowCollideForce(Bool allow) { setFlag(ALLOW_COLLIDE_FORCE, allow); }
 	void setAllowAirborneFriction(Bool allow) { setFlag(APPLY_FRICTION2D_WHEN_AIRBORNE, allow); }
 	void setImmuneToFallingDamage(Bool allow) { setFlag(IMMUNE_TO_FALLING_DAMAGE, allow); }
+	void setStunned(Bool allow) { setFlag(IS_STUNNED, allow); }
 
 	Bool getAllowToFall() const { return getFlag(ALLOW_TO_FALL); }
 
 	void setIsInFreeFall(Bool allow) { setFlag(IS_IN_FREEFALL, allow); }
 	Bool getIsInFreeFall() const { return getFlag(IS_IN_FREEFALL); }
 
+	Bool getIsStunned() const { return getFlag(IS_STUNNED); }
+
 	void setExtraBounciness(Real b) { m_extraBounciness = b; }
 	void setExtraFriction(Real b) { m_extraFriction = b; }
 
 	void setBounceSound(const AudioEventRTS* bounceSound);
-	const AudioEventRTS* getBounceSound() { return m_bounceSound ? &m_bounceSound->m_event : TheAudio->getValidSilentAudioEvent(); }
+	const AudioEventRTS* getBounceSound() { return m_bounceSound ? m_bounceSound.Peek() : TheAudio->getValidSilentAudioEvent(); }
 
 	/**
 		Reset all values (vel, accel, etc) to starting values.
@@ -238,7 +256,8 @@ private:
 		HAS_PITCHROLLYAW								= 0x0080,
 		IMMUNE_TO_FALLING_DAMAGE				= 0x0100,
 		IS_IN_FREEFALL									= 0x0200,
-		IS_IN_UPDATE										= 0x0400
+		IS_IN_UPDATE										= 0x0400,
+		IS_STUNNED											= 0x0800, // Added in Zero Hour
 	};
 
 	/*
@@ -249,7 +268,7 @@ private:
 	Real												m_yawRate;								///< rate of rotation around up vector
 	Real												m_rollRate;								///< rate of rotation around forward vector
 	Real												m_pitchRate;							///< rate or rotation around side vector
-	DynamicAudioEventRTS*				m_bounceSound;						///< The sound for when this thing bounces, or nullptr
+	RefCountPtr<DynamicAudioEventRTS> m_bounceSound;			///< The sound for when this thing bounces, or nullptr
 	Coord3D											m_accel;									///< current acceleration
 	Coord3D											m_prevAccel;							///< last frame's acceleration
 	Coord3D											m_vel;										///< current velocity
@@ -284,6 +303,7 @@ inline ObjectID PhysicsBehavior::getPreviousOverlap() const
 	return m_previousOverlap;
 }
 
+//-------------------------------------------------------------------------------------------------
 inline ObjectID PhysicsBehavior::getLastCollidee() const
 {
 	return m_lastCollidee;

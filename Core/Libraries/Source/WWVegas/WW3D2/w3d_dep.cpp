@@ -62,8 +62,8 @@ public:
 #include "w3d_dep.h"
 #include "w3d_file.h"
 #include <assert.h>
-#include <chunkio.h>
-#include "ffactory.h"
+#include <WWLib/chunkio.h>
+#include "WWLib/ffactory.h"
 
 
 /*
@@ -518,11 +518,7 @@ static void Get_W3D_Name(const char* filename, char* w3d_name, size_t w3d_name_s
 
 	// Figure out the first character of the name of the file
 	// (bypass the path if it was given).
-	const char *start = strrchr(filename, '\\');
-	if (start)
-		++start;					// point to first character after the last backslash
-	else
-		start = filename;		// point to the start of the filename
+	const char *start = getFileName(filename);
 
 	// We don't want to copy the .w3d extension. Find where
 	// it occurs.

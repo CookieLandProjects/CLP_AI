@@ -666,7 +666,7 @@ Object *AIPlayer::buildStructureNow(const ThingTemplate *bldgPlan, BuildListInfo
 		{
 			Coord3D rallyPoint;
 			Bool gotOffset = false;
-			if (fabs(info->getRallyOffset()->x) > 1.0f || fabs(info->getRallyOffset()->y)>1.0f) {
+			if (WWMath::Fabs(info->getRallyOffset()->x) > 1.0f || WWMath::Fabs(info->getRallyOffset()->y)>1.0f) {
 				gotOffset;
 			}
 			if (!exitInterface->getNaturalRallyPoint(rallyPoint)) {
@@ -798,7 +798,7 @@ Object *AIPlayer::buildStructureWithDozer(const ThingTemplate *bldgPlan, BuildLi
 		dx = dozer->getPosition()->x - pos.x;
 		dy = dozer->getPosition()->y - pos.y;
 
-		Int count = sqrt(dx*dx+dy*dy)/(PATHFIND_CELL_SIZE_F/2);
+		Int count = WWMath::Sqrt(dx*dx+dy*dy)/(PATHFIND_CELL_SIZE_F/2);
 		if (count<2) count = 2;
 		Int i;
 		color.green = 1;
@@ -820,7 +820,7 @@ Object *AIPlayer::buildStructureWithDozer(const ThingTemplate *bldgPlan, BuildLi
 		{
 			Coord3D rallyPoint;
 			Bool gotOffset = false;
-			if (fabs(info->getRallyOffset()->x) > 1.0f || fabs(info->getRallyOffset()->y)>1.0f) {
+			if (WWMath::Fabs(info->getRallyOffset()->x) > 1.0f || WWMath::Fabs(info->getRallyOffset()->y)>1.0f) {
 				gotOffset;
 			}
 			if (!exitInterface->getNaturalRallyPoint(rallyPoint)) {
@@ -1093,49 +1093,54 @@ Bool AIPlayer::isSupplySourceAttacked()
 {
 	//@-TanSo-: NO. 10 seconds is WAY too little. 2 Seconds is more reasonable.
 	const Int SCAN_RATE = 2; // don't scan more often than every 10 seconds.
+	const UnsignedInt RefreshRate = SCAN_RATE * LOGICFRAMES_PER_SECOND;
 	UnsignedInt curFrame = TheGameLogic->getFrame();
-	if (curFrame==0) {
-		m_supplySourceAttackCheckFrame = curFrame+SCAN_RATE;
-		return false; // can't be attacked on first frame.
-	}
-	m_attackedSupplyCenter = INVALID_ID;
-	if (curFrame < m_supplySourceAttackCheckFrame) {
-		return false;
-	}
-	if (m_player->getAttackedFrame()+SCAN_RATE < curFrame) {
-		return false; // haven't been attacked recently.
-	}
-	m_supplySourceAttackCheckFrame = curFrame+SCAN_RATE;
+	const UnsignedInt scanWindowFrames = 4 * LOGICFRAMES_PER_SECOND;
+	if (m_player->getAttackedFrame() + scanWindowFrames < curFrame) {
+		if (curFrame == 0) {
+			m_supplySourceAttackCheckFrame = curFrame + RefreshRate;
+			return false; // can't be attacked on first frame.
+		}
+		m_attackedSupplyCenter = INVALID_ID;
+		if (curFrame < m_supplySourceAttackCheckFrame) {
+			return false;
+		}
+		if (m_player->getAttackedFrame() + scanWindowFrames < curFrame) {
+			return false; // haven't been attacked recently.
+		}
+		m_supplySourceAttackCheckFrame = curFrame + RefreshRate;
 
-	// Scan my units.
-	Player::PlayerTeamList::const_iterator it;
-	for (it = m_player->getPlayerTeams()->begin(); it != m_player->getPlayerTeams()->end(); ++it) {
-		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
-			Team *team = iter.cur();
-			if (!team) {
-				continue;
-			}
-			for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance()) {
-				Object *obj = objIter.cur();
-				if (!obj) {
+		// Scan my units.
+		Player::PlayerTeamList::const_iterator it;
+		for (it = m_player->getPlayerTeams()->begin(); it != m_player->getPlayerTeams()->end(); ++it) {
+			for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
+				Team* team = iter.cur();
+				if (!team) {
 					continue;
 				}
-				if (!obj->isKindOf(KINDOF_CASH_GENERATOR) && !obj->isKindOf(KINDOF_DOZER) &&
-					!obj->isKindOf(KINDOF_HARVESTER)) {
-					continue;
-				}
-				// check for attacked.
-				BodyModuleInterface *body = obj->getBodyModule();
-				if (body) {
-					const DamageInfo *info = body->getLastDamageInfo();
-					if (info) {
-						if (info->out.m_noEffect) {
-							continue;
-						}
-						if (body->getLastDamageTimestamp() + SCAN_RATE > curFrame) {
-							// winner.
-							m_attackedSupplyCenter = obj->getID();
-							return true;
+				for (DLINK_ITERATOR<Object> objIter = team->iterate_TeamMemberList(); !objIter.done(); objIter.advance()) {
+					Object* obj = objIter.cur();
+					if (!obj) {
+						continue;
+					}
+					if (!obj->isKindOf(KINDOF_CASH_GENERATOR) && !obj->isKindOf(KINDOF_DOZER) &&
+						!obj->isKindOf(KINDOF_HARVESTER)) {
+						continue;
+					}
+					// check for attacked.
+					BodyModuleInterface* body = obj->getBodyModule();
+					if (body) {
+						const DamageInfo* info = body->getLastDamageInfo();
+						if (info) {
+							if (info->out.m_noEffect) {
+								continue;
+							}
+							const UnsignedInt* lastDamageTimestamp = body->getLastDamageTimestamp();
+							if (lastDamageTimestamp && *lastDamageTimestamp + scanWindowFrames > curFrame) {
+								// winner.
+								m_attackedSupplyCenter = obj->getID();
+								return true;
+							}
 						}
 					}
 				}
@@ -1243,6 +1248,16 @@ void AIPlayer::onUnitProduced( Object *factory, Object *unit )
 	// To keep retail compatibility it needs to be set true in VS6 builds.
 #if defined(_MSC_VER) && _MSC_VER < 1300
 	Bool supplyTruck = true;
+
+#if RTS_GENERALS
+	// A special initialization case for the call site in SpawnBehavior::createSpawn
+	// to mimic the initialization behavior in the retail Generals binary.
+	if (TheGameLogic->m_onUnitProducedZeroInit)
+	{
+		supplyTruck = false;
+	}
+#endif
+
 #else
 	Bool supplyTruck = false;
 #endif
@@ -1346,10 +1361,10 @@ Bool AIPlayer::computeSuperweaponTarget(const SpecialPowerTemplate *power, Coord
 	Region2D bounds;
 	getPlayerStructureBounds(&bounds, playerNdx);
 
-	if( bounds.hi.x == 0
-		&& bounds.lo.x == 0
-		&& bounds.hi.y == 0
-		&& bounds.lo.y == 0
+	if( bounds.hi.x == 0 &&
+		bounds.lo.x == 0 &&
+		bounds.hi.y == 0 &&
+		bounds.lo.y == 0
 		)
 	{
 		Region3D bounds3D;
@@ -1545,7 +1560,7 @@ Int AIPlayer::getPlayerSuperweaponValue(Coord3D *center, Int playerNdx, Real rad
 				Real dy = center->y - pos.y;
 				if (dx*dx+dy*dy<radSqr)
 				{
-					Real dist = sqrt(dx*dx+dy*dy);
+					Real dist = WWMath::Sqrt(dx*dx+dy*dy);
 					Real factor = 1.0f - (dist/(2*radius)); // 1.0 in center, 0.5 on edges.
 					Real value = pObj->getTemplate()->calcCostToBuild(pPlayer);
 					if (pObj->isKindOf(KINDOF_COMMANDCENTER))
@@ -3148,7 +3163,8 @@ void AIPlayer::doBaseBuilding()
 			if (m_readyToBuildStructure) {
 				processBaseBuilding();
 			}
-			if (m_buildDelay<1) {	// processBaseBuilding may reset m_buildDelay.
+			if (m_buildDelay<1) {
+				// processBaseBuilding may reset m_buildDelay.
 				m_buildDelay = 2*LOGICFRAMES_PER_SECOND; // check again in 2 seconds.
 			}
 			// Note that this timer gets shortcut when a building is completed.
@@ -3163,7 +3179,8 @@ void AIPlayer::doBaseBuilding()
 void AIPlayer::checkReadyTeams()
 {
 	// See if any ready teams are gathered at their rally point
-	{	// needed to scope iter.  silly ms c++.
+	{
+		// needed to scope iter.  silly ms c++.
 		for ( DLINK_ITERATOR<TeamInQueue> iter = iterate_TeamReadyQueue(); !iter.done(); iter.advance())
 		{
 			TeamInQueue *team = iter.cur();
@@ -3244,7 +3261,8 @@ void AIPlayer::checkReadyTeams()
 void AIPlayer::checkQueuedTeams()
 {
 	// See if any teams are expired.
-	{	// needed to scope iter.  silly ms c++.
+	{
+		// needed to scope iter.  silly ms c++.
 		for ( DLINK_ITERATOR<TeamInQueue> iter = iterate_TeamBuildQueue(); !iter.done(); iter.advance())
 		{
 			TeamInQueue *team = iter.cur();
@@ -3276,7 +3294,8 @@ void AIPlayer::checkQueuedTeams()
 	}
 
 	// See if any teams are ready.
-	{	// needed to scope iter.  silly ms c++.
+	{
+		// needed to scope iter.  silly ms c++.
 		for ( DLINK_ITERATOR<TeamInQueue> iter = iterate_TeamBuildQueue(); !iter.done(); iter.advance())
 		{
 			TeamInQueue *team = iter.cur();
@@ -3554,7 +3573,7 @@ void AIPlayer::computeCenterAndRadiusOfBase(Coord3D *center, Real *radius)
 		Real radSqr = dx*dx+dy*dy;
 		if (radSqr>maxRadSqr) maxRadSqr=radSqr;
 	}
-	*radius = sqrt(maxRadSqr);
+	*radius = WWMath::Sqrt(maxRadSqr);
 }
 
 //----------------------------------------------------------------------------------------------------------
@@ -3563,7 +3582,8 @@ void AIPlayer::computeCenterAndRadiusOfBase(Coord3D *center, Real *radius)
  */
 Bool AIPlayer::dozerInQueue()
 {
-	{	// needed to scope iter.  silly ms c++.
+	{
+		// needed to scope iter.  silly ms c++.
 		for ( DLINK_ITERATOR<TeamInQueue> iter = iterate_TeamBuildQueue(); !iter.done(); iter.advance())
 		{
 			TeamInQueue *team = iter.cur();
@@ -4214,19 +4234,24 @@ void WorkOrder::loadPostProcess()
 /**
  * Get the bounds for a player's structure.
  */
-void AIPlayer::getPlayerStructureBounds( Region2D *bounds, Int playerNdx, Bool conservative )
+void AIPlayer::getPlayerStructureBounds(Region2D *bounds, Int playerNdx, Bool conservative)
 {
-	Player::PlayerTeamList::const_iterator it;
-	Bool firstObject = true;
-	Bool firstStructure = true;
-	bounds->hi.x = bounds->lo.x = bounds->hi.y = bounds->lo.y = 0;
-	Region2D objBounds;
-	objBounds.hi.x = objBounds.lo.x = objBounds.hi.y = objBounds.lo.y = 0;
+#if RTS_GENERALS && RETAIL_COMPATIBLE_CRC
+	// TheSuperHackers @info In the Generals code, lo.y used to be uninitialized for both Region2D variables in this function.
+#endif
+	bounds->zero();
 
 	Player* pPlayer = ThePlayerList->getNthPlayer(playerNdx);
 	if (pPlayer == nullptr)
 		return;
-	for (it = pPlayer->getPlayerTeams()->begin(); it != pPlayer->getPlayerTeams()->end(); ++it)
+
+	Bool firstObject = true;
+	Bool firstStructure = true;
+	Region2D objBounds;
+	objBounds.zero();
+
+	const Player::PlayerTeamList& list = *pPlayer->getPlayerTeams();
+	for (Player::PlayerTeamList::const_iterator it = list.begin(); it != list.end(); ++it)
 	{
 		for (DLINK_ITERATOR<Team> iter = (*it)->iterate_TeamInstanceList(); !iter.done(); iter.advance())
 		{
@@ -4258,10 +4283,7 @@ void AIPlayer::getPlayerStructureBounds( Region2D *bounds, Int playerNdx, Bool c
 					}
 					else
 					{
-						if (objBounds.lo.x>pos.x) objBounds.lo.x = pos.x;
-						if (objBounds.lo.y>pos.y) objBounds.lo.y = pos.y;
-						if (objBounds.hi.x<pos.x) objBounds.hi.x = pos.x;
-						if (objBounds.hi.y<pos.y) objBounds.hi.y = pos.y;
+						objBounds.uniteWith(pos.asCoord2D());
 					}
 					if (firstStructure)
 					{
@@ -4271,10 +4293,7 @@ void AIPlayer::getPlayerStructureBounds( Region2D *bounds, Int playerNdx, Bool c
 					}
 					else
 					{
-						if (bounds->lo.x>pos.x) bounds->lo.x = pos.x;
-						if (bounds->lo.y>pos.y) bounds->lo.y = pos.y;
-						if (bounds->hi.x<pos.x) bounds->hi.x = pos.x;
-						if (bounds->hi.y<pos.y) bounds->hi.y = pos.y;
+						bounds->uniteWith(pos.asCoord2D());
 					}
 				}
 			}
@@ -4698,7 +4717,7 @@ void AIPlayer::buildBySuppliesAngle(Int minimumCash, const AsciiString& thingNam
 												Real desiredAngle = normalizeAngle(atan2(dy, dx));
 												Real warehouseOri = bestSupplyWarehouse->getOrientation();
 												Real diff1 = fabsf(normalizeAngle(desiredAngle - warehouseOri));
-												Real diff2 = fabsf(normalizeAngle(desiredAngle - normalizeAngle(warehouseOri + (Real)M_PI)));
+												Real diff2 = fabsf(normalizeAngle(desiredAngle - normalizeAngle(warehouseOri + (Real)PI)));
 												if (diff1 < diff2 && diff1 < fabsf(normalizeAngle(desiredAngle - desiredAngle))) {
 														desiredAngle = normalizeAngle(warehouseOri);
 												}

@@ -38,9 +38,9 @@
 
 #pragma once
 
-#include "always.h"
-#include "wwdebug.h"
-#include "sphere.h"
+#include "WWLib/always.h"
+#include "WWDebug/wwdebug.h"
+#include "WWMath/sphere.h"
 
 class DX8Wrapper;
 class SortingRendererClass;
@@ -119,6 +119,8 @@ class DynamicIBAccessClass
 	void Allocate_DX8_Dynamic_Buffer();
 
 public:
+	enum { MAX_INDEX_COUNT = 0xffff }; ///< index_count is an unsigned short
+
 	DynamicIBAccessClass(unsigned short type, unsigned short index_count);
 	~DynamicIBAccessClass();
 

@@ -58,7 +58,7 @@
 
 #pragma once
 
-#include "always.h"
+#include "WWLib/always.h"
 #include "vector4.h"
 #include "matrix3d.h"
 #include "matrix3.h"
@@ -574,7 +574,7 @@ WWINLINE Matrix4x4* Matrix4x4::Inverse(Matrix4x4* out, float* detOut, const Matr
 	if (detOut)
 			*detOut = det;
 
-	if (fabsf(det) < 1e-8f)
+	if (WWMath::Fabsf(det) < 1e-8f)
 			return NULL;
 
 	const float invDet = 1.0f / det;

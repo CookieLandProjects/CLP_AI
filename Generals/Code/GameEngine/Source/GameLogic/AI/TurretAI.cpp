@@ -146,14 +146,28 @@ void TurretStateMachine::crc( Xfer *xfer )
 }
 
 // ------------------------------------------------------------------------------------------------
-/** Xfer Method */
+/** Xfer Method
+	* Version Info:
+	* 1: Initial version
+	* 2: TheSuperHackers @bugfix bobtista 19/07/2026 Serialize the base StateMachine state.
+	*    Without this the turret reverts to its default state on load.
+	*/
 // ------------------------------------------------------------------------------------------------
 void TurretStateMachine::xfer( Xfer *xfer )
 {
-	XferVersion cv = 1;
-	XferVersion v = cv;
-	xfer->xferVersion( &v, cv );
+	// version
+#if RETAIL_COMPATIBLE_XFER_SAVE
+	XferVersion currentVersion = 1;
+#else
+	XferVersion currentVersion = 2;
+#endif
+	XferVersion version = currentVersion;
+	xfer->xferVersion( &version, currentVersion );
 
+	if (version >= 2)
+	{
+		StateMachine::xfer(xfer);
+	}
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -161,6 +175,7 @@ void TurretStateMachine::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 void TurretStateMachine::loadPostProcess()
 {
+	StateMachine::loadPostProcess();
 }
 
 //----------------------------------------------------------------------------------------------------------
@@ -386,7 +401,7 @@ Bool TurretAI::friend_turnTowardsAngle(Real desiredAngle, Real rateModifier, Rea
 	Real angleDiff = normalizeAngle(desiredAngle - actualAngle);
 
 	// Are we close enough to the desired angle to just snap there?
-	if (fabs(angleDiff) < turnRate)
+	if (WWMath::Fabs(angleDiff) < turnRate)
 	{
 		// we are centered
 		actualAngle = desiredAngle;
@@ -409,7 +424,7 @@ Bool TurretAI::friend_turnTowardsAngle(Real desiredAngle, Real rateModifier, Rea
 	if( m_angle != origAngle )
 		getOwner()->reactToTurretChange( m_whichTurret, origAngle, m_pitch );
 
-	Bool aligned = fabs(m_angle - desiredAngle) <= relThresh;
+	Bool aligned = WWMath::Fabs(m_angle - desiredAngle) <= relThresh;
 
 	return aligned;
 }
@@ -427,7 +442,7 @@ Bool TurretAI::friend_turnTowardsPitch(Real desiredPitch, Real rateModifier)
 	Real pitchRate = getPitchRate() * rateModifier;
 	Real pitchDiff = normalizeAngle(desiredPitch - actualPitch);
 
-	if (fabs(pitchDiff) < pitchRate)
+	if (WWMath::Fabs(pitchDiff) < pitchRate)
 	{
 		// we are centered
 		actualPitch = desiredPitch;
@@ -1070,7 +1085,7 @@ StateReturnType TurretAIAimTurretState::update()
 			turret->friend_setPositiveSweep(!turret->friend_getPositiveSweep());
 
 		Real angleDiff = normalizeAngle(relAngle - turret->getTurretAngle());
-		turnAlignedToNemesis = (fabs(angleDiff) < sweep);
+		turnAlignedToNemesis = (WWMath::Fabs(angleDiff) < sweep);
 	}
 
 	Bool pitchAlignedToNemesis = true;

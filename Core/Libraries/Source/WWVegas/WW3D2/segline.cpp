@@ -38,14 +38,14 @@
 #include "ww3d.h"
 #include "rinfo.h"
 #include "predlod.h"
-#include "v3_rnd.h"
+#include "WWMath/v3_rnd.h"
 #include "texture.h"
 #include "coltest.h"
 #include "w3d_file.h"
 #include "texture.h"
 #include "dx8wrapper.h"
-#include "vp.h"
-#include "Vector3i.h"
+#include "WWMath/vp.h"
+#include "WWMath/Vector3i.h"
 #include "sortingrenderer.h"
 
 static SegLineRendererClass _LineRenderer;
@@ -258,7 +258,7 @@ void SegmentedLineClass::Set_Opacity(float opacity)
 
 void SegmentedLineClass::Set_Noise_Amplitude(float amplitude)
 {
-	LineRenderer.Set_Noise_Amplitude(WWMath::Fabs(amplitude));
+	LineRenderer.Set_Noise_Amplitude(WWMath::Fabsf_Legacy(amplitude));
 
 	Invalidate_Cached_Bounding_Volumes();
 }

@@ -90,10 +90,10 @@
 
 #include "boxrobj.h"
 #include "w3d_util.h"
-#include "wwdebug.h"
+#include "WWDebug/wwdebug.h"
 #include "vertmaterial.h"
 #include "ww3d.h"
-#include "chunkio.h"
+#include "WWLib/chunkio.h"
 #include "rinfo.h"
 #include "coltest.h"
 #include "inttest.h"
@@ -460,7 +460,7 @@ void BoxRenderObjClass::render_box(RenderInfoClass & rinfo,const Vector3 & cente
 		*/
 		DWORD color = DX8Wrapper::Convert_Color(Color,Opacity);
 
-		int buffer_type = BUFFER_TYPE_DYNAMIC_SORTING;
+		int buffer_type = BUFFER_TYPE_DYNAMIC_DX8;
 
 		DynamicVBAccessClass vbaccess(buffer_type,dynamic_fvf_type,NUM_BOX_VERTS);
 		{
@@ -510,9 +510,6 @@ void BoxRenderObjClass::render_box(RenderInfoClass & rinfo,const Vector3 & cente
 
 		DX8Wrapper::Set_Index_Buffer(ibaccess,0);
 		DX8Wrapper::Set_Vertex_Buffer(vbaccess);
-
-		SphereClass sphere;
-		Get_Obj_Space_Bounding_Sphere(sphere);
 
 		DX8Wrapper::Draw_Triangles(buffer_type,0,NUM_BOX_FACES,0,NUM_BOX_VERTS);
 	}
@@ -805,6 +802,9 @@ void AABoxRenderObjClass::update_cached_box()
 bool AABoxRenderObjClass::Cast_Ray(RayCollisionTestClass & raytest)
 {
 	if ((Get_Collision_Type() & raytest.CollisionType) == 0) return false;
+	if (Is_Animation_Hidden()) return false;
+	if (raytest.Result->StartBad) return false;
+
 	if (CollisionMath::Collide(raytest.Ray,CachedBox,raytest.Result)) {
 		raytest.CollidedRenderObj = this;
 		return true;
@@ -828,6 +828,8 @@ bool AABoxRenderObjClass::Cast_Ray(RayCollisionTestClass & raytest)
 bool AABoxRenderObjClass::Cast_AABox(AABoxCollisionTestClass & boxtest)
 {
 	if ((Get_Collision_Type() & boxtest.CollisionType) == 0) return false;
+	if (boxtest.Result->StartBad) return false;
+
 	if (CollisionMath::Collide(boxtest.Box,boxtest.Move,CachedBox,boxtest.Result)) {
 		boxtest.CollidedRenderObj = this;
 		return true;
@@ -851,6 +853,8 @@ bool AABoxRenderObjClass::Cast_AABox(AABoxCollisionTestClass & boxtest)
 bool AABoxRenderObjClass::Cast_OBBox(OBBoxCollisionTestClass & boxtest)
 {
 	if ((Get_Collision_Type() & boxtest.CollisionType) == 0) return false;
+	if (boxtest.Result->StartBad) return false;
+
 	if (CollisionMath::Collide(boxtest.Box,boxtest.Move,CachedBox,Vector3(0,0,0),boxtest.Result)) {
 		boxtest.CollidedRenderObj = this;
 		return true;
@@ -1181,6 +1185,9 @@ void OBBoxRenderObjClass::update_cached_box()
 bool OBBoxRenderObjClass::Cast_Ray(RayCollisionTestClass & raytest)
 {
 	if ((Get_Collision_Type() & raytest.CollisionType) == 0) return false;
+	if (Is_Animation_Hidden()) return false;
+	if (raytest.Result->StartBad) return false;
+
 	if (CollisionMath::Collide(raytest.Ray,CachedBox,raytest.Result)) {
 		raytest.CollidedRenderObj = this;
 		return true;
@@ -1204,6 +1211,8 @@ bool OBBoxRenderObjClass::Cast_Ray(RayCollisionTestClass & raytest)
 bool OBBoxRenderObjClass::Cast_AABox(AABoxCollisionTestClass & boxtest)
 {
 	if ((Get_Collision_Type() & boxtest.CollisionType) == 0) return false;
+	if (boxtest.Result->StartBad) return false;
+
 	if (CollisionMath::Collide(boxtest.Box,boxtest.Move,CachedBox,Vector3(0,0,0),boxtest.Result)) {
 		boxtest.CollidedRenderObj = this;
 		return true;
@@ -1227,6 +1236,8 @@ bool OBBoxRenderObjClass::Cast_AABox(AABoxCollisionTestClass & boxtest)
 bool OBBoxRenderObjClass::Cast_OBBox(OBBoxCollisionTestClass & boxtest)
 {
 	if ((Get_Collision_Type() & boxtest.CollisionType) == 0) return false;
+	if (boxtest.Result->StartBad) return false;
+
 	if (CollisionMath::Collide(boxtest.Box,boxtest.Move,CachedBox,Vector3(0,0,0),boxtest.Result)) {
 		boxtest.CollidedRenderObj = this;
 		return true;

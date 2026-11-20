@@ -33,8 +33,10 @@
 
 // USER INCLUDES //////////////////////////////////////////////////////////////
 #include "Common/ActionManager.h"
+#include "Common/FramePacer.h"
 #include "Common/GameEngine.h"
 #include "Common/GameState.h"
+#include "Common/Recorder.h"
 #include "Common/GameUtility.h"
 #include "Common/GlobalData.h"
 #include "Common/PerfTimer.h"
@@ -43,7 +45,6 @@
 #include "Common/ThingFactory.h"
 #include "Common/ThingTemplate.h"
 #include "Common/Xfer.h"
-#include "Common/GameLOD.h"
 #include "GameClient/Anim2D.h"
 #include "GameClient/CampaignManager.h"
 #include "GameClient/ChallengeGenerals.h"
@@ -64,6 +65,7 @@
 #include "GameClient/HotKey.h"
 #include "GameClient/IMEManager.h"
 #include "GameClient/InGameUI.h"
+#include "GameClient/Intro.h"
 #include "GameClient/Keyboard.h"
 #include "GameClient/LanguageFilter.h"
 #include "GameClient/LookAtXlat.h"
@@ -79,7 +81,6 @@
 #include "GameClient/View.h"
 #include "GameClient/VideoPlayer.h"
 #include "GameClient/WindowXlat.h"
-#include "GameLogic/FPUControl.h"
 #include "GameLogic/GameLogic.h"
 #include "GameLogic/GhostObject.h"
 #include "GameLogic/Object.h"
@@ -109,6 +110,8 @@ GameClient::GameClient()
 
 	m_nextDrawableID = (DrawableID)1;
 	TheDrawGroupInfo = new DrawGroupInfo;
+
+	m_intro = nullptr;
 }
 
 //std::vector<std::string>	preloadTextureNamesGlobalHack;
@@ -128,18 +131,6 @@ GameClient::~GameClient()
 	// clear any drawable TOC we might have
 	m_drawableTOC.clear();
 
-	//DEBUG_LOG(("Preloaded texture files ------------------------------------------"));
-	//for (Int oog=0; oog<preloadTextureNamesGlobalHack2.size(); ++oog)
-	//{
-	//	DEBUG_LOG(("%s", preloadTextureNamesGlobalHack2[oog]));
-	//}
-	//DEBUG_LOG(("------------------------------------------------------------------"));
-	//for (oog=0; oog<preloadTextureNamesGlobalHack.size(); ++oog)
-	//{
-	//	DEBUG_LOG(("%s", preloadTextureNamesGlobalHack[oog]));
-	//}
-	//DEBUG_LOG(("End Texture files ------------------------------------------------"));
-
 	delete TheCampaignManager;
 	TheCampaignManager = nullptr;
 
@@ -151,6 +142,10 @@ GameClient::~GameClient()
 		destroyDrawable( draw );
 	}
 	m_drawableList = nullptr;
+
+	// Should be destroyed before the Display String Manager
+	delete m_intro;
+	m_intro = nullptr;
 
 	// delete the ray effects
 	delete TheRayEffects;
@@ -255,7 +250,7 @@ void GameClient::init()
 	}
 
 	// create the display string factory
-	TheDisplayStringManager = createDisplayStringManager();
+	TheDisplayStringManager = TheGlobalData->m_headless ? NEW DisplayStringManagerDummy : createDisplayStringManager();
 	if( TheDisplayStringManager )	{
 		TheDisplayStringManager->init();
 		TheDisplayStringManager->setName("TheDisplayStringManager");
@@ -311,7 +306,7 @@ void GameClient::init()
 	}
 
 	// create the font library
-	TheFontLibrary = createFontLibrary();
+	TheFontLibrary = TheGlobalData->m_headless ? NEW FontLibraryDummy : createFontLibrary();
 	if( TheFontLibrary )
 		TheFontLibrary->init();
 
@@ -434,6 +429,8 @@ void GameClient::init()
 		TheSnowManager->setName("TheSnowManager");
 	}
 
+	m_intro = NEW Intro;
+
 #ifdef PERF_TIMERS
 	TheGraphDraw = new GraphDraw;
 #endif
@@ -444,18 +441,18 @@ void GameClient::init()
 /** Reset the game client for a new game */
 void GameClient::reset()
 {
-	Drawable *draw, *nextDraw;
-//	m_drawableHash.clear();
-//	m_drawableHash.resize(DRAWABLE_HASH_SIZE);
-
-	m_drawableVector.clear();
-	m_drawableVector.resize(DRAWABLE_HASH_SIZE, nullptr);
+	m_drawableHash.clear();
+#if USING_STLPORT
+	m_drawableHash.resize(DRAWABLE_HASH_SIZE);
+#else
+	m_drawableHash.reserve(DRAWABLE_HASH_SIZE);
+#endif
 
 	// need to reset the in game UI to clear drawables before they are destroyed
 	TheInGameUI->reset();
 
 	// destroy all Drawables
-	for( draw = m_drawableList; draw; draw = nextDraw )
+	for( Drawable *draw = m_drawableList, *nextDraw = nullptr; draw; draw = nextDraw )
 	{
 		nextDraw = draw->getNextDrawable();
 		destroyDrawable( draw );
@@ -516,73 +513,28 @@ void GameClient::update()
 	// create the FRAME_TICK message
 	GameMessage *frameMsg = TheMessageStream->appendMessage( GameMessage::MSG_FRAME_TICK );
 	frameMsg->appendTimestampArgument( getFrame() );
-	static Bool playSizzle = FALSE;
-	// We need to show the movie first.
-	if(TheGlobalData->m_playIntro && !TheDisplay->isMoviePlaying())
+
+	// Update intro
+	if (m_intro != nullptr)
 	{
-		if(TheGameLODManager && TheGameLODManager->didMemPass())
-			TheDisplay->playLogoMovie("EALogoMovie", 5000, 3000);
-		else
-			TheDisplay->playLogoMovie("EALogoMovie640", 5000, 3000);
-		TheWritableGlobalData->m_playIntro = FALSE;
-		TheWritableGlobalData->m_afterIntro = TRUE;
-		playSizzle = TRUE;
-	}
+		m_intro->update();
 
-	//Initial Game Condition.  We must show the movie first and then we can display the shell
-	if(TheGlobalData->m_afterIntro && !TheDisplay->isMoviePlaying())
-	{
-		if( playSizzle && TheGlobalData->m_playSizzle )
+		if (m_intro->isDone())
 		{
-			TheWritableGlobalData->m_allowExitOutOfMovies = TRUE;
-			if(TheGameLODManager && TheGameLODManager->didMemPass())
-				TheDisplay->playMovie("Sizzle");
-			else
-				TheDisplay->playMovie("Sizzle640");
-			playSizzle = FALSE;
-		}
-		else
-		{
-			TheWritableGlobalData->m_breakTheMovie = TRUE;
-			TheWritableGlobalData->m_allowExitOutOfMovies = TRUE;
-
-			if(TheGameLODManager && !TheGameLODManager->didMemPass())
-			{
-				TheWritableGlobalData->m_breakTheMovie = FALSE;
-
-				WindowLayout *legal = TheWindowManager->winCreateLayout("Menus/LegalPage.wnd");
-				if(legal)
-				{
-					legal->hide(FALSE);
-					legal->bringForward();
-					Int beginTime = timeGetTime();
-					while(beginTime + 4000 > timeGetTime() )
-					{
-						if (GameClient::isMovieAbortRequested())
-						{
-							break;
-						}
-
-						TheWindowManager->update();
-						// redraw all views, update the GUI
-						TheDisplay->draw();
-						Sleep(100);
-					}
-					setFPMode();
-
-
-					legal->destroyWindows();
-					deleteInstance(legal);
-
-				}
-				TheWritableGlobalData->m_breakTheMovie = TRUE;
-
-
-			}
+			delete m_intro;
+			m_intro = nullptr;
 
 			TheShell->showShellMap(TRUE);
 			TheShell->showShell();
-			TheWritableGlobalData->m_afterIntro = FALSE;
+
+			if (TheGlobalData->m_loadSaveGame.isNotEmpty())
+			{
+				TheGameState->loadQueuedSaveGame();
+			}
+			else if (TheGlobalData->m_loadReplayGame.isNotEmpty())
+			{
+				TheRecorder->loadQueuedReplay();
+			}
 		}
 	}
 
@@ -624,7 +576,7 @@ void GameClient::update()
       TheInGameUI->setCameraTrackingDrawable( FALSE );
   }
 
-	if(TheGlobalData->m_playIntro || TheGlobalData->m_afterIntro)
+	if (m_intro != nullptr)
 	{
 		// redraw all views, update the GUI
 		TheDisplay->UPDATE();
@@ -678,9 +630,11 @@ void GameClient::update()
 
 
 		// call the update for all client drawables
+		const Real timeScale = TheFramePacer->getActualLogicTimeScaleOverFpsRatio();
 		Drawable* draw = firstDrawable();
 		while (draw)
-		{	// update() could free the Drawable, so go ahead and grab 'next'
+		{
+			// update() could free the Drawable, so go ahead and grab 'next'
 			Drawable* next = draw->getNextDrawable();
 #if ENABLE_CONFIGURABLE_SHROUD
 			if (TheGlobalData->m_shroudOn)
@@ -725,7 +679,7 @@ void GameClient::update()
 					draw->setFullyObscuredByShroud(ss >= OBJECTSHROUD_FOGGED);
 				}
 			}
-			draw->updateDrawable();
+			draw->updateDrawable(timeScale);
 			draw = next;
 		}
 	}
@@ -738,15 +692,6 @@ void GameClient::update()
 	}
 #endif
 
-	// update all particle systems
-	if( !freezeTime )
-	{
-		// update particle systems
-		TheParticleSystemManager->setLocalPlayerIndex(localPlayerIndex);
-//		TheParticleSystemManager->update();
-
-	}
-
 	// update the terrain visuals
 	{
 		TheTerrainVisual->UPDATE();
@@ -755,6 +700,15 @@ void GameClient::update()
 	// update display
 	{
 		TheDisplay->UPDATE();
+	}
+
+	// update all particle systems
+	// TheSuperHackers @info The particle update follows the display update, because that
+	// moves bone-attached particle systems to the current client bone transforms of their drawables.
+	if( !freezeTime && TheGameLogic->hasUpdated() )
+	{
+		TheParticleSystemManager->setLocalPlayerIndex(localPlayerIndex);
+		TheParticleSystemManager->UPDATE();
 	}
 
 	{
@@ -782,9 +736,26 @@ void GameClient::update()
 	}
 }
 
+void GameClient::draw()
+{
+	if (m_intro != nullptr)
+	{
+		m_intro->draw();
+	}
+}
+
 void GameClient::step()
 {
 	TheDisplay->step();
+}
+
+Bool GameClient::skipCurrentIntroStage()
+{
+	if (m_intro != nullptr)
+	{
+		return m_intro->skipCurrentIntroStage();
+	}
+	return false;
 }
 
 Bool GameClient::isMovieAbortRequested()
@@ -799,7 +770,7 @@ Bool GameClient::isMovieAbortRequested()
 	{
 		TheKeyboard->UPDATE();
 		KeyboardIO *io = TheKeyboard->findKey(KEY_ESC, KeyboardIO::STATUS_UNUSED);
-		if (io && BitIsSet(io->state, KEY_STATE_DOWN))
+		if (io && BitIsSet(io->state, KEY_STATE_UP))
 		{
 			io->setUsed();
 			return TRUE;
@@ -867,6 +838,22 @@ void GameClient::updateFakeDrawables()
 }
 
 /** -----------------------------------------------------------------------------------------------
+ * Given an object id, return the associated object.
+ * This method is the primary interface for accessing objects, and should be used
+ * instead of pointers to "attach" objects to each other.
+ */
+Drawable* GameClient::findDrawableByID( const DrawableID id )
+{
+	DrawablePtrHashIt it = m_drawableHash.find(id);
+	if (it == m_drawableHash.end()) {
+		// no such drawable
+		return nullptr;
+	}
+
+	return (*it).second;
+}
+
+/** -----------------------------------------------------------------------------------------------
  * Destroy the drawable immediately.
  */
 void GameClient::destroyDrawable( Drawable *draw )
@@ -910,13 +897,8 @@ void GameClient::addDrawableToLookupTable(Drawable *draw )
 	if( draw == nullptr )
 		return;
 
-	// add to lookup
-//	m_drawableHash[ draw->getID() ] = draw;
-	DrawableID newID = draw->getID();
-	while( newID >= m_drawableVector.size() ) // Fail case is hella rare, so faster to double up on size() call
-		m_drawableVector.resize(m_drawableVector.size() * 2, nullptr);
-
-	m_drawableVector[ newID ] = draw;
+	// add to lookup table
+	m_drawableHash[ draw->getID() ] = draw;
 
 }
 
@@ -927,13 +909,11 @@ void GameClient::removeDrawableFromLookupTable( Drawable *draw )
 {
 
 	// sanity
-	// TheSuperHackers @fix Mauller/Xezon 24/04/2025 Prevent out of range access to vector lookup table
-	if( draw == nullptr || static_cast<size_t>(draw->getID()) >= m_drawableVector.size() )
+	if( draw == nullptr )
 		return;
 
-	// remove from table
-//	m_drawableHash.erase( draw->getID() );
-	m_drawableVector[ draw->getID() ] = nullptr;
+	// remove from lookup table
+	m_drawableHash.erase( draw->getID() );
 
 }
 

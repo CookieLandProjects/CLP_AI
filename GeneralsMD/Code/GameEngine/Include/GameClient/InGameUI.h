@@ -369,6 +369,7 @@ public:  // ********************************************************************
 	virtual void update() override;														///< Update the UI by calling preDraw(), draw(), and postDraw()
 	virtual void reset() override;															///< Reset
 	//-----------------------------------------------------------------------------------------------
+	void validate();
 
 	// interface for the popup messages
 	virtual void popupMessage( const AsciiString& message, Int x, Int y, Int width, Bool pause, Bool pauseMusic);
@@ -448,7 +449,7 @@ public:  // ********************************************************************
 	// Drawable selection mechanisms
 	virtual void selectDrawable( Drawable *draw );					///< Mark given Drawable as "selected"
 	virtual void deselectDrawable( Drawable *draw );				///< Clear "selected" status from Drawable
-	virtual void deselectAllDrawables( Bool postMsg = true );							///< Clear the "select" flag from all drawables
+	virtual void deselectAllDrawables();							///< Clear the "select" flag from all drawables
 	virtual Int getSelectCount() { return m_selectCount; }		///< Get count of currently selected drawables
 	virtual Int getMaxSelectCount() { return m_maxSelectCount; }	///< Get the max number of selected drawables
 	virtual UnsignedInt getFrameSelectionChanged() { return m_frameSelectionChanged; }	///< Get the max number of selected drawables
@@ -584,6 +585,10 @@ public:  // ********************************************************************
 	void setDrawRMBScrollAnchor(Bool b) { m_drawRMBScrollAnchor = b; }
 	void setMoveRMBScrollAnchor(Bool b) { m_moveRMBScrollAnchor = b; }
 
+	void showReplayControls();
+	void hideReplayControls();
+	void toggleReplayControls();
+
 private:
 	virtual Int getIdleWorkerCount();
 	virtual Object *findIdleWorker( Object *obj);
@@ -696,7 +701,9 @@ protected:
 	void expireHint( HintType type, UnsignedInt hintIndex );
 
 	void createControlBar();			///< create the control bar user interface
+	void destroyControlBar();
 	void createReplayControl();		///< create the replay control window
+	void destroyReplayControl();
 
 	void setMouseCursor(Mouse::MouseCursor c);
 
@@ -769,16 +776,19 @@ protected:
 
 	// Render FPS Counter
 	DisplayString *							m_renderFpsString;
+	DisplayString *							m_renderFpsLowString;
 	DisplayString *							m_renderFpsLimitString;
 	AsciiString									m_renderFpsFont;
 	Int													m_renderFpsPointSize;
 	Bool												m_renderFpsBold;
 	Coord2D											m_renderFpsPosition;
 	Color												m_renderFpsColor;
+	Color												m_renderFpsLowColor;
 	Color												m_renderFpsLimitColor;
 	Color												m_renderFpsDropColor;
 	UnsignedInt									m_renderFpsRefreshMs;
 	UnsignedInt									m_lastRenderFps;
+	UnsignedInt									m_lastRenderFpsLow;
 	UnsignedInt									m_lastRenderFpsLimit;
 	UnsignedInt									m_lastRenderFpsUpdateMs;
 
@@ -811,6 +821,7 @@ protected:
 		{
 			LabelType_Team,
 			LabelType_Money,
+			LabelType_MoneyPerMinute,
 			LabelType_Rank,
 			LabelType_Xp,
 
@@ -821,6 +832,7 @@ protected:
 		{
 			ValueType_Team,
 			ValueType_Money,
+			ValueType_MoneyPerMinute,
 			ValueType_Rank,
 			ValueType_Xp,
 			ValueType_Name,
@@ -958,6 +970,9 @@ protected:
 	Bool												m_moveRMBScrollAnchor;
 	Bool												m_clientQuiet;         ///< When the user clicks exit,restart, etc. this is set true
 																												///< to skip some client sounds/fx during shutdown
+
+	GameWindow *m_controlBarWindow;
+	GameWindow *m_replayWindow;
 
 	// World Animation Data
 	WorldAnimationList					m_worldAnimationList;		///< the list of world animations

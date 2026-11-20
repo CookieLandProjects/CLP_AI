@@ -49,17 +49,17 @@
  *   WWProfileManager::Release_In_Order_Iterator -- Return an "in-order" iterator              *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "always.h"
+#include "WWLib/always.h"
 #include "wwprofile.h"
-#include "FastAllocator.h"
+#include "WWLib/FastAllocator.h"
 #include "wwdebug.h"
 //#include "systimer.h"
-#include "systimer.h"
-#include "RAWFILE.h"
-#include "ffactory.h"
-#include "simplevec.h"
-#include "cpudetect.h"
-#include "hashtemplate.h"
+#include "WWLib/systimer.h"
+#include "WWLib/RAWFILE.h"
+#include "WWLib/ffactory.h"
+#include "WWLib/simplevec.h"
+#include "WWLib/cpudetect.h"
+#include "WWLib/hashtemplate.h"
 #include <Utility/intrin_compat.h>
 
 static SimpleDynVecClass<WWProfileHierarchyNodeClass*> ProfileCollectVector;
@@ -951,11 +951,14 @@ void	WWProfileInOrderIterator::First()
 
 void	WWProfileInOrderIterator::Next()
 {
-	if ( CurrentNode->Get_Child() ) {				// If I have a child, go to child
+	if ( CurrentNode->Get_Child() ) {
+		// If I have a child, go to child
 		CurrentNode = CurrentNode->Get_Child();
-	} else if ( CurrentNode->Get_Sibling() ) {	// If I have a sibling, go to sibling
+	} else if ( CurrentNode->Get_Sibling() ) {
+		// If I have a sibling, go to sibling
 		CurrentNode = CurrentNode->Get_Sibling();
-	} else {											//	if not, go to my parent's sibling, or his.......
+	} else {
+		//	if not, go to my parent's sibling, or his.......
 		// Find a parent with a sibling....
 		bool done = false;
 		while ( CurrentNode != nullptr && !done ) {
@@ -991,10 +994,8 @@ WWTimeItClass::~WWTimeItClass()
 	__int64 End;
 	WWProfile_Get_Ticks( &End );
 	End -= Time;
-#ifdef WWDEBUG
-	float time = End * WWProfile_Get_Inv_Processor_Ticks_Per_Second();
-	WWDEBUG_SAY(( "*** WWTIMEIT *** %s took %1.9f", Name, time ));
-#endif
+
+	WWDEBUG_SAY(( "*** WWTIMEIT *** %s took %1.9f", Name, End * WWProfile_Get_Inv_Processor_Ticks_Per_Second() ));
 }
 
 

@@ -38,11 +38,11 @@
 
 #pragma once
 
-#include "always.h"
-#include "aabox.h"
-#include "obbox.h"
-#include "tri.h"
-#include "colmath.h"
+#include "WWLib/always.h"
+#include "WWMath/aabox.h"
+#include "WWMath/obbox.h"
+#include "WWMath/tri.h"
+#include "WWMath/colmath.h"
 #include "coltype.h"
 
 
@@ -127,9 +127,9 @@ inline bool AABoxIntersectionTestClass::Cull(const AABoxClass & cull_box)
 	Vector3::Subtract(cull_box.Center,Box.Center,&dc);
 	Vector3::Add(cull_box.Extent,Box.Extent,&r);
 
-	if (WWMath::Fabs(dc.X) > r.X) return true;
-	if (WWMath::Fabs(dc.Y) > r.Y) return true;
-	if (WWMath::Fabs(dc.Z) > r.Z) return true;
+	if (WWMath::Fabsf_Legacy(dc.X) > r.X) return true;
+	if (WWMath::Fabsf_Legacy(dc.Y) > r.Y) return true;
+	if (WWMath::Fabsf_Legacy(dc.Z) > r.Z) return true;
 
 	return false;
 }
@@ -228,9 +228,9 @@ inline bool OBBoxIntersectionTestClass::Cull(const AABoxClass & cull_box)
 	Vector3::Subtract(cull_box.Center,BoundingBox.Center,&dc);
 	Vector3::Add(cull_box.Extent,BoundingBox.Extent,&r);
 
-	if (WWMath::Fabs(dc.X) > r.X) return true;
-	if (WWMath::Fabs(dc.Y) > r.Y) return true;
-	if (WWMath::Fabs(dc.Z) > r.Z) return true;
+	if (WWMath::Fabsf_Legacy(dc.X) > r.X) return true;
+	if (WWMath::Fabsf_Legacy(dc.Y) > r.Y) return true;
+	if (WWMath::Fabsf_Legacy(dc.Z) > r.Z) return true;
 
 	return false;
 }
